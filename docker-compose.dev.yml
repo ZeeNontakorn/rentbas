@@ -1,0 +1,63 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: laravel-app-dev
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+      - node_modules:/var/www/html/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - laravel-dev
+    environment:
+      - PHP_IDE_CONFIG=serverName=Docker
+
+  mysql:
+    image: mysql:8
+    container_name: laravel-mysql-dev
+    restart: unless-stopped
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_DATABASE: example_app
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - laravel-dev
+
+  vite:
+    image: node:20-alpine
+    container_name: laravel-vite-dev
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+    command: sh -c "[ -d node_modules/vite ] && npm run dev -- --host 0.0.0.0 || (npm install && npm run dev -- --host 0.0.0.0)"
+    networks:
+      - laravel-dev
+
+volumes:
+  mysql_data:
+  vendor:
+  node_modules:
+
+networks:
+  laravel-dev:
+    driver: bridge

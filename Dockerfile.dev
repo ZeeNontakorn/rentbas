@@ -1,0 +1,53 @@
+# ใช้ PHP 8.4 พร้อม Apache เป็น base image
+FROM php:8.4-apache
+
+# เปิดใช้งาน mod_rewrite ของ Apache
+RUN a2enmod rewrite
+
+# ตั้งค่า Apache document root ไปที่โฟลเดอร์ public ของ Laravel
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# ติดตั้ง dependencies ที่จำเป็นของระบบ และ Xdebug สำหรับ Development
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ติดตั้ง Composer ล่าสุด
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# หมายเหตุ: ไม่ต้องติดตั้ง Node.js ใน container นี้ เพราะใช้ vite service แยกใน docker-compose.dev.yml
+
+# ตั้งค่าการใช้งาน PHP สำหรับ Development
+RUN cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+# ตั้งค่า Xdebug
+RUN echo "xdebug.mode=develop,debug" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" \
+    && echo "xdebug.client_host=host.docker.internal" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini" \
+    && echo "xdebug.start_with_request=yes" >> "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini"
+
+# ตั้งค่าโฟลเดอร์ทำงาน
+WORKDIR /var/www/html
+
+# หมายเหตุ: ไม่ได้คัดลอก Source code เข้ามา เพราะจะใช้ bind-mount ผ่าน docker-compose แทน
+
+# เปิดพอร์ต 80 เพื่อให้ container รับ HTTP ได้
+EXPOSE 80
+
+# รัน Apache เมื่อตัว container เริ่มทำงาน
+CMD ["apache2-foreground"]

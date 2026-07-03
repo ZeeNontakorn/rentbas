@@ -1,0 +1,342 @@
+@extends('layouts.app')
+
+@section('title', 'Court Booking')
+
+@section('content')
+<div class="bg-white min-h-screen text-[#111827]">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
+.bk-main { font-family: 'Sarabun', 'Kanit', sans-serif; }
+.bk-main h1, .bk-main h2, .bk-main h3 { font-family: 'Kanit', sans-serif; }
+
+/* Slot CSS */
+.slot-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 10px;
+    text-align: center;
+    background: #fff;
+    cursor: pointer;
+    transition: all .2s;
+}
+.slot-card:hover.available {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.slot-card.selected {
+    border: 2px solid #87D068 !important;
+    padding: 11px 9px; /* offset for border */
+}
+.slot-time {
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+.slot-btn {
+    width: 100%;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 0;
+}
+.slot-card.available .slot-btn { background: #f3f4f6; color: #4b5563; }
+.slot-card.selected .slot-btn { background: #87D068; color: #fff; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.slot-card.pending-s .slot-btn { background: #fef3c7; color: #92400e; cursor: not-allowed; }
+.slot-card.approved-s .slot-btn { background: #fee2e2; color: #b91c1c; cursor: not-allowed; }
+.slot-card.past-s .slot-btn { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+
+.court-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Kanit', sans-serif;
+}
+.court-item:hover { background: #f9fafb; }
+.court-item.active { background: #fff7ed; font-weight: 600; }
+
+.modal-bg {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    width: 100%; max-width: 400px;
+    border-radius: 12px;
+    padding: 30px 24px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+</style>
+
+<div class="bk-main max-w-[1200px] mx-auto px-4 py-8" data-aos="fade-up">
+
+    {{-- Header --}}
+    <div class="mb-6 flex items-baseline gap-4" data-aos="fade-right">
+        <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Court Booking</h1>
+        <span class="text-gray-600 text-[15px]">จองสนามบาสเกตบอล</span>
+    </div>
+
+    {{-- Banner Dynamic --}}
+    @php
+        $cid = $selectedCourt ? $selectedCourt->id : 1;
+        
+        // รูปภาพสนามบาสเกตบอลแบบเต็มสนาม (รวบรวมจาก Unsplash หลากหลายมุมมอง)
+        $realCourts = [
+            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Close up hoop (Default)
+            'https://cloudfront-us-east-1.images.arcpublishing.com/advancelocal/3KSOTN63CVB7XOHBQ3TSYFBJUM.jpg', // Bright gym
+            'https://wallpapers.com/images/hd/empty-basketball-court-arena-night-ulqjxg9elf5v3jja.jpg', // Indoor court side view
+            'https://images.unsplash.com/photo-1574907060871-4555aa8aca75?q=80&w=2148&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Dark gym with hoop
+            'https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=1400&auto=format&fit=crop', // Ball & floor
+        ];
+        
+        // เลือกรูปแบบวนลูปตาม ID ของ Court
+        $bannerImg = $realCourts[($cid - 1) % count($realCourts)];
+    @endphp
+
+    <div class="w-full h-[280px] rounded-[16px] overflow-hidden mb-10 shadow-sm relative group" data-aos="zoom-in" data-aos-delay="100">
+        <img src="{{ $bannerImg }}"
+             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1400&auto=format&fit=crop'"
+             alt="Court Banner" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+        
+        {{-- Overlay gradient for text readability and premium look --}}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-6 left-8 text-white">
+            <span class="bg-[#87D068] text-black font-bold text-xs px-2 py-1 rounded mb-2 inline-block">SELECTED</span>
+            <h2 class="text-3xl font-bold tracking-wide">{{ $selectedCourt ? $selectedCourt->name : 'โปรดเลือกสนาม' }}</h2>
+        </div>
+    </div>
+
+    @if ($errors->any())
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+            @foreach ($errors->all() as $err)
+                <div>• {{ $err }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Layout Grid --}}
+    <div class="flex flex-col lg:flex-row gap-6">
+
+        {{-- LEFT COLUMN --}}
+        <div class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
+            
+            {{-- BOX 1: เลือกสนาม --}}
+            <div class="border border-gray-300 rounded-lg p-5">
+                <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('courtList').classList.toggle('hidden')">
+                    <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
+                    <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between w-[110px] text-[13px] bg-white">
+                        <span class="truncate">{{ $selectedCourt->name ?? 'เลือก' }}</span>
+                        <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+                {{-- Dropdown Data --}}
+                <div id="courtList" class="hidden mt-4 border-t border-gray-100 pt-3 flex flex-col gap-1">
+                    @foreach($courts as $court)
+                        <a href="{{ route('booking.index', ['court_id' => $court->id, 'date' => $date]) }}" 
+                           class="court-item rounded {{ $selectedCourt?->id == $court->id ? 'active' : '' }}">
+                           {{ $court->name }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- BOX 2: เลือกวันที่ --}}
+            @php
+                $cDate = \Carbon\Carbon::parse($date);
+                $thDays = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+                $thMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+                $thMonthsFull = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+            @endphp
+            <div class="border border-gray-300 rounded-lg p-5 flex flex-col">
+                <span class="font-bold text-[15px] text-gray-900 mb-5">2. เลือกวันที่</span>
+                
+                {{-- Outline Input Date --}}
+                <div class="relative w-full rounded border border-purple-400 p-[1px] mb-2 focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600">
+                    <span class="absolute -top-2.5 left-2 bg-white px-1 text-[10px] font-bold text-purple-600 tracking-wider">Date</span>
+                    <form id="dateForm" method="GET" action="{{ route('booking.index') }}">
+                        <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
+                        <input type="date" name="date" value="{{ $date }}"
+                               min="{{ now()->toDateString() }}" max="{{ now()->addMonth()->toDateString() }}"
+                               onchange="document.getElementById('dateForm').submit()"
+                               class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
+                    </form>
+                </div>
+
+                {{-- Mock Calendar below --}}
+                <div class="bg-[#f8f9fe] rounded-lg mt-3 p-3 text-center border border-gray-100 flex-1">
+                    <p class="font-bold text-[14px] text-gray-900 mt-2">เลือก {{ $thDays[$cDate->dayOfWeek] }} ที่ {{ $cDate->day }} {{ $thMonthsFull[$cDate->month] }} {{ $cDate->year + 543 }}</p>
+                    <p class="text-[12px] text-gray-500 mt-2">จองได้ล่วงหน้าได้สูงสุด 1 เดือน</p>
+                </div>
+            </div>
+
+        </div>
+
+        {{-- RIGHT COLUMN --}}
+        <div class="flex-1 flex flex-col gap-6">
+
+            {{-- BOX 3: เลือกเวลา --}}
+            <div class="border border-gray-300 rounded-lg p-6 bg-white min-h-[400px]">
+                <div class="flex justify-between items-center mb-8">
+                    <span class="font-bold text-[15px] text-gray-900">3. เลือกเวลา - {{ $cDate->day }} {{ $thMonthsFull[$cDate->month] }} {{ $cDate->year + 543 }}</span>
+                    <span class="font-bold text-[14px] text-gray-900">เวลาปัจจุบัน <span id="currentClock">{{ now()->format('H:i') }}</span> น.</span>
+                </div>
+
+                @if(!$selectedCourt)
+                    <div class="text-center py-20 text-gray-400 font-medium">กรุณาเลือกสนาม</div>
+                @else
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        @foreach($slots as $slot)
+                            @php
+                                $isAvail = $slot['status'] === 'available';
+                                $sClass = match($slot['status']) {
+                                    'available' => 'available', 'pending' => 'pending-s',
+                                    'approved' => 'approved-s', 'closed' => 'past-s', 'past' => 'past-s',
+                                    default => 'past-s'
+                                };
+                                $sLabel = match($slot['status']) {
+                                    'available'=>'ว่าง', 'pending'=>'รออนุมัติ', 'approved'=>'จองแล้ว',
+                                    'closed'=>'ปิดบริการ', 'past'=>'ผ่านมาแล้ว', default=>''
+                                };
+                            @endphp
+
+                            <div class="slot-card {{ $sClass }}" 
+                                 {!! $isAvail ? 'onclick="selectTime(\''.substr($slot['start'], 0, 5).'\',\''.substr($slot['end'], 0, 5).'\',\''.$slot['label'].'\', this)"' : '' !!}>
+                                <div class="slot-time">{{ $slot['label'] }}</div>
+                                <div class="slot-btn">{{ $sLabel }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            {{-- BOX 4: ยืนยันการจอง --}}
+            <div id="confirmBox" class="hidden border border-gray-300 rounded-lg p-6 bg-white">
+                <span class="font-bold text-[15px] text-gray-900 block mb-6">4 .ตรวจสอบรายละเอียดการจอง</span>
+                
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex gap-4 sm:gap-8 text-[14px] text-gray-900 flex-wrap">
+                        <p>วันที่ <span class="font-bold">{{ $cDate->day }} {{ $thMonths[$cDate->month] }}. {{ $cDate->year }}</span></p>
+                        <p>สนามที่ <span class="font-bold">{{ str_replace('สนามที่ ', '', $selectedCourt?->name) }}</span></p>
+                        <p>เวลา <span id="confirmTime" class="font-bold"></span> น.</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('booking.store') }}">
+                        @csrf
+                        <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
+                        <input type="hidden" name="booking_date" value="{{ $date }}">
+                        <input type="hidden" name="start_time" id="valStart">
+                        <input type="hidden" name="end_time" id="valEnd">
+                        <button type="submit" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition">
+                            ยืนยัน
+                        </button>
+                    </form>
+                </div>
+                <div class="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-500">
+                    กรุณาตรวจสอบ 'วันที่' และ 'เวลา' อีกครั้งก่อนกดยืนยัน
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{{-- SUCCESS MODAL --}}
+@if(session('success_booking'))
+    @php $sb = session('success_booking'); @endphp
+    <div class="modal-bg">
+        <div class="modal-content relative">
+            <div class="w-16 h-16 mx-auto bg-green-50 rounded-full flex items-center justify-center border-4 border-[#87D068] mb-4">
+                <svg class="w-8 h-8 text-[#87D068]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-[#87D068] mb-6 tracking-wide" style="font-family:'Kanit',sans-serif;">รอแอดมินอนุมัติ</h2>
+            
+            <div class="text-left border border-gray-200 rounded-lg p-5 mb-6">
+                <p class="font-bold text-gray-900 mb-3 text-[15px]">รายละเอียดการจอง</p>
+                
+                <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
+                    <span class="text-gray-500">สนาม</span>
+                    <span class="text-gray-900 text-right">{{ $sb['court_name'] }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
+                    <span class="text-gray-500">วันที่</span>
+                    <span class="text-gray-900 text-right">
+                        @php
+                            $sbt = \Carbon\Carbon::parse($sb['date']);
+                            $mn = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                            echo $sbt->day . ' ' . $mn[$sbt->month] . ' ' . ($sbt->year+543);
+                        @endphp
+                    </span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
+                    <span class="text-gray-500">เวลา</span>
+                    <span class="text-gray-900 text-right">{{ $sb['time'] }}</span>
+                </div>
+                <div class="flex justify-between py-2 text-sm">
+                    <span class="text-gray-500">สถานะ</span>
+                    <span class="font-bold text-gray-900 text-right">{{ $sb['status'] }}</span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 text-blue-900 rounded-lg p-4 text-left mb-6">
+                <p class="font-bold text-sm mb-2">ข้อควรทราบ</p>
+                <ul class="text-[12px] space-y-1 text-gray-700 pl-4" style="list-style-type:disc;">
+                    <li>กรุณามาถึงก่อนเวลาเล่นอย่างน้อย 10 นาที</li>
+                    <li>สามารถยกเลิกการจองได้ที่หน้าประวัติการจอง</li>
+                    <li>ยกเลิกได้ก่อนเวลาเล่นจริงอย่างน้อย 24 ชั่วโมง</li>
+                    <li>เวลาในการอนุมัติ โดยปกติ ไม่เกิน 15 นาที</li>
+                </ul>
+            </div>
+
+            <div class="flex gap-4">
+                <a href="{{ route('booking.index') }}" class="flex-1 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 text-center hover:bg-gray-50">จองเพิ่ม</a>
+                <a href="{{ route('history') }}" class="flex-1 py-3 bg-[#0b0b1a] rounded-lg font-bold text-white text-center hover:bg-[#1a1a2e]">ดูประวัติการจอง</a>
+            </div>
+        </div>
+    </div>
+@endif
+
+</div>
+
+@push('scripts')
+<script>
+let selEl = null;
+
+function selectTime(start, end, label, el) {
+    if (selEl) {
+        selEl.classList.remove('selected');
+        selEl.querySelector('.slot-btn').innerHTML = 'ว่าง';
+    }
+
+    if (selEl === el) {
+        selEl = null;
+        document.getElementById('confirmBox').classList.add('hidden');
+        return;
+    }
+
+    el.classList.add('selected');
+    el.querySelector('.slot-btn').innerHTML = `
+        กำลังเลือก 
+        <svg class="w-3.5 h-3.5 bg-white text-[#87D068] rounded-full p-[1px] ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+    `;
+    selEl = el;
+
+    document.getElementById('valStart').value = start;
+    document.getElementById('valEnd').value = end;
+    document.getElementById('confirmTime').textContent = label;
+    document.getElementById('confirmBox').classList.remove('hidden');
+}
+
+setInterval(() => {
+    let d = new Date();
+    document.getElementById('currentClock').innerText = 
+        String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}, 60000);
+</script>
+@endpush
+@endsection

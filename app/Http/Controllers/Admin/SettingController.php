@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Setting;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class SettingController extends Controller
+{
+    /**
+     * Show edit form
+     */
+    public function edit()
+    {
+        $settings = [
+            'about_title'      => Setting::getVal('about_title',      'สนามที่ได้มาตรฐาน ระบบการจองที่ทันสมัย'),
+            'about_desc'       => Setting::getVal('about_desc',        'BCBS Arena คือสนามบาสเก็ตบอลมาตรฐานสากล ทีมงานพร้อมดูแลตลอด 24 ชั่วโมง'),
+            'promo_subtitle'   => Setting::getVal('promo_subtitle',    'อัปเดตโปรโมชั่นสุดพิเศษ'),
+            'promo_title'      => Setting::getVal('promo_title',       'Preview Promotion'),
+            'promo_card_title' => Setting::getVal('promo_card_title',  'BASKETBALL'),
+            'promo_card_sub'   => Setting::getVal('promo_card_sub',    'โปรโมชั่นพิเศษ'),
+            'promo_image'      => Setting::getVal('promo_image',       'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop'),
+            'hero_img_1'       => Setting::getVal('hero_img_1', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2000&auto=format&fit=crop'),
+            'hero_img_2'       => Setting::getVal('hero_img_2', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000&auto=format&fit=crop'),
+            'hero_img_3'       => Setting::getVal('hero_img_3', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=2000&auto=format&fit=crop'),
+            'about_img_1'      => Setting::getVal('about_img_1', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=900&auto=format&fit=crop'),
+            'about_img_2'      => Setting::getVal('about_img_2', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop'),
+            'about_img_3'      => Setting::getVal('about_img_3', 'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop'),
+            'courts_bg'        => Setting::getVal('courts_bg', 'https://images.pexels.com/photos/18460191/pexels-photo-18460191.jpeg'),
+            'community_img'    => Setting::getVal('community_img', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=900&auto=format&fit=crop')
+        ];
+
+        return view('edit-text', compact('settings'));
+    }
+
+    /**
+     * Update settings
+     */
+    public function update(Request $request)
+    {
+        $data = $request->validate([
+            'about_title'      => ['nullable', 'string', 'max:255'],
+            'about_desc'       => ['nullable', 'string', 'max:1000'],
+            'promo_subtitle'   => ['nullable', 'string', 'max:255'],
+            'promo_title'      => ['nullable', 'string', 'max:255'],
+            'promo_card_title' => ['nullable', 'string', 'max:255'],
+            'promo_card_sub'   => ['nullable', 'string', 'max:255'],
+            'promo_image_file' => ['nullable', 'image', 'max:5120'],
+            'hero_img_1_file'  => ['nullable', 'image', 'max:5120'],
+            'hero_img_2_file'  => ['nullable', 'image', 'max:5120'],
+            'hero_img_3_file'  => ['nullable', 'image', 'max:5120'],
+            'about_img_1_file' => ['nullable', 'image', 'max:5120'],
+            'about_img_2_file' => ['nullable', 'image', 'max:5120'],
+            'about_img_3_file' => ['nullable', 'image', 'max:5120'],
+            'courts_bg_file'   => ['nullable', 'image', 'max:10240'],
+            'community_img_file'=> ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $imageFields = [
+            'promo_image_file' => 'promo_image',
+            'hero_img_1_file'  => 'hero_img_1',
+            'hero_img_2_file'  => 'hero_img_2',
+            'hero_img_3_file'  => 'hero_img_3',
+            'about_img_1_file' => 'about_img_1',
+            'about_img_2_file' => 'about_img_2',
+            'about_img_3_file' => 'about_img_3',
+            'courts_bg_file'   => 'courts_bg',
+            'community_img_file'=>'community_img',
+        ];
+
+        foreach ($imageFields as $fileInput => $settingKey) {
+            if ($request->hasFile($fileInput)) {
+                $path = $request->file($fileInput)->store('site', 'public');
+                // Store the path that can be used with asset() or Storage::url()
+                $data[$settingKey] = 'storage/' . $path;
+            }
+            unset($data[$fileInput]);
+        }
+
+        // Persist all settings
+        foreach ($data as $key => $value) {
+            if ($value !== null) {
+                Setting::updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
+            }
+        }
+
+        return back()->with('success', 'บันทึกข้อมูลและรูปภาพหน้าเว็บเรียบร้อยแล้ว');
+    }
+}

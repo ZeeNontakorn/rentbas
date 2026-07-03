@@ -1,0 +1,104 @@
+<?php
+
+use App\Http\Controllers\Admin\CourtController as AdminCourtController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+
+
+
+// 1. Landing Page — ใครๆ ก็เข้าได้
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Public schedule API (used by home calendar to show real booking status)
+Route::get('/schedule', [HomeController::class, 'schedule'])->name('schedule');
+
+
+
+// 2. Guest Routes — เฉพาะคนที่ยังไม่ Login (หน้า Login/Register)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+
+
+// 3. OTP Verification Routes — หน้าสำหรับยืนยันรหัส
+Route::controller(AuthController::class)->group(function () {
+    Route::get('/verify-otp', 'showVerifyOtp')->name('verify-otp');
+    Route::post('/verify-otp', 'verifyOtp')->name('verify-otp.post');
+    Route::post('/resend-otp', 'resendOtp')->name('otp.resend');
+});
+
+
+
+// 4. Authenticated User Routes — ต้อง Login (auth) และยืนยันรหัส (verified_otp) แล้วเท่านั้น
+Route::middleware(['auth'])->group(function () {
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/request-otp-email', [ProfileController::class, 'requestOtpForEmailChange'])->name('profile.request-otp-email');
+
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Booking System
+    Route::prefix('booking')->name('booking.')->group(function () {
+        Route::get('/', [BookingController::class, 'index'])->name('index');
+        Route::get('/court/{court}', [BookingController::class, 'show'])->name('show');
+        Route::post('/', [BookingController::class, 'store'])->name('store');
+        Route::post('/{booking}/cancel', [BookingController::class, 'cancel'])->name('cancel');
+    });
+
+    // History
+    Route::get('/history', [BookingController::class, 'history'])->name('history');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+});
+
+
+
+// 5. Admin Routes — ต้องเป็น Admin เท่านั้น
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
+    Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
+    Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+    Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
+    Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
+    Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
+    // ระบบจัดการผู้ใช้ (User Management)
+    Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
+
+    // ตั้งค่าเว็บไซต์ (Site Settings)
+    Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
+    Route::post('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('edit.text.update');
+});
+
+
+
+
+// 6. Password Reset via OTP
+Route::controller(AuthController::class)->group(function () {
+    Route::get('/forgot-password',  'showForgotPasswordForm')->name('password.request');
+    Route::post('/forgot-password', 'sendResetLinkEmail')->name('password.email');
+
+    Route::get('/reset-otp',        'showResetOtpForm')->name('password.otp.form');
+    Route::post('/reset-otp',       'verifyResetOtp')->name('password.otp.verify');
+
+    Route::get('/reset-password',   'showResetPasswordForm')->name('password.reset.form');
+    Route::post('/reset-password',  'resetPassword')->name('password.reset');
+});
+
