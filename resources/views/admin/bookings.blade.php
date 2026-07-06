@@ -82,11 +82,11 @@
                                             <form method="POST" action="{{ route('admin.bookings.reject', $b) }}" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="reject_reason" value="Admin rejected from Dashboard">
-                                                <button class="bg-red-500 text-white text-xs px-3 py-1 rounded">ยกเลิก</button>
+                                                <button class="bg-red-500 text-white text-xs px-3 py-1 rounded">ปฏิเสธ</button>
                                             </form>
                                             <form method="POST" action="{{ route('admin.bookings.approve', $b) }}" class="inline">
                                                 @csrf
-                                                <button class="bg-green-500 text-white text-xs px-3 py-1 rounded">ยืนยัน</button>
+                                                <button class="bg-green-500 text-white text-xs px-3 py-1 rounded">อนุมัติ</button>
                                             </form>
                                         </div>
                                     @else
