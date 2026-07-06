@@ -62,10 +62,14 @@
     background: rgba(0,0,0,0.6);
     z-index: 1000;
     display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
 }
 .modal-content {
     background: #fff;
     width: 100%; max-width: 400px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
     border-radius: 12px;
     padding: 30px 24px;
     text-align: center;
@@ -259,7 +263,7 @@
 
             <h2 class="text-2xl font-bold text-[#87D068] mb-6 tracking-wide" style="font-family:'Kanit',sans-serif;">รอแอดมินอนุมัติ</h2>
 
-            <div class="text-left border border-gray-200 rounded-lg p-5 mb-6 max-h-[280px] overflow-y-auto">
+            <div class="text-left border border-gray-200 rounded-lg p-5 mb-6">
                 <p class="font-bold text-gray-900 mb-3 text-[15px]">รายละเอียดการจอง ({{ count($sbList) }} รายการ)</p>
 
                 @foreach($sbList as $sb)
