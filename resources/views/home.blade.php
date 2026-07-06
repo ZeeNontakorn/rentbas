@@ -1034,7 +1034,7 @@ html { scroll-behavior: smooth; }
             <p class="footer-addr-title" style="margin-bottom:12px;">แผนที่</p>
             <div class="footer-map">
                 <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3876.8455292!2d100.9169!3d13.2875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311d9a3b7e4b45b9%3A0xcb4b7d14c3d944f2!2z4Liz4Liq4Li44Lit4LiB4LiC4LmJ4LiyIOC4hOC4p-C4suC4meC4muC4o-C4o-C4q-C4suC4h-C4iuC4ueC5iA!5e0!3m2!1sth!2sth!4v1712000000000!5m2!1sth!2sth"
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d62113.64127603402!2d100.8897096!3d13.3438947!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311d4bd8ee3abfa9%3A0x49305e14f78f3b2c!2zVEhBVEEgSE9NRUNPVVJUIOKAkyBUSEFUQSBTUE9SVCBIUSAmIEJhc2tldGJhbGwgKENob25idXJpKSDguJfguLLguJfguYjguLIg4Liq4Liz4LiZ4Lix4LiB4LiH4Liy4LiZ4LmD4Lir4LiN4LmIIOC5geC4peC4sOC4quC4meC4suC4oeC4muC4suC4quC5gOC4geC4leC4muC4reC4pSDguIrguKXguJrguLjguKPguLU!5e0!3m2!1sen!2sth!4v1783309229694!5m2!1sen!2sth" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
                     allowfullscreen
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
