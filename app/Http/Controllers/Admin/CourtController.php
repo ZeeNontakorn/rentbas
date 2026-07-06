@@ -8,9 +8,82 @@ use App\Models\Court;
 use App\Models\CourtClosure;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
 {
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('courts', 'name')],
+            'court_status' => ['required', 'in:open,closed'],
+            'return_date' => ['nullable', 'date'],
+            'return_court_id' => ['nullable', 'integer', 'exists:courts,id'],
+        ], [
+            'name.required' => 'กรอกชื่อสนาม',
+            'name.unique' => 'ชื่อสนามถูกใช้แล้ว',
+            'court_status.required' => 'เลือกสถานะ',
+        ]);
+
+        $court = Court::create([
+            'name' => $data['name'],
+            'court_status' => $data['court_status'],
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'เพิ่มสนามเรียบร้อยแล้ว',
+                'court' => $court,
+                'redirect' => route('admin.courts', [
+                    'court_id' => $court->id,
+                    'date' => $data['return_date'] ?? now()->toDateString(),
+                ]),
+            ]);
+        }
+
+        return redirect()->route('admin.courts', [
+            'court_id' => $court->id,
+            'date' => $data['return_date'] ?? now()->toDateString(),
+        ])->with('success', 'เพิ่มสนามเรียบร้อยแล้ว');
+    }
+
+    public function update(Request $request, Court $court)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('courts', 'name')->ignore($court->id)],
+            'court_status' => ['required', 'in:open,closed'],
+            'return_date' => ['nullable', 'date'],
+            'return_court_id' => ['nullable', 'integer', 'exists:courts,id'],
+        ], [
+            'name.required' => 'กรอกชื่อสนาม',
+            'name.unique' => 'ชื่อสนามซ้ำ',
+            'court_status.required' => 'เลือกสถานะ',
+        ]);
+
+        $court->update([
+            'name' => $data['name'],
+            'court_status' => $data['court_status'],
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'อัปเดตข้อมูลสนามเรียบร้อยแล้ว',
+                'court' => $court,
+                'redirect' => route('admin.courts', [
+                    'court_id' => $court->id,
+                    'date' => $data['return_date'] ?? now()->toDateString(),
+                ]),
+            ]);
+        }
+
+        return redirect()->route('admin.courts', [
+            'court_id' => $court->id,
+            'date' => $data['return_date'] ?? now()->toDateString(),
+        ])->with('success', 'อัปเดตข้อมูลสนามเรียบร้อยแล้ว');
+    }
+
     public function index(Request $request)
     {
         $courts = Court::orderBy('id')->get();
@@ -26,7 +99,7 @@ class CourtController extends Controller
         $slots = [];
         if ($selectedCourt) {
             $dateCarbon = Carbon::parse($date);
-            
+
             // Check if court is globally closed
             $isGloballyClosed = ($selectedCourt->court_status === 'closed');
 
@@ -48,7 +121,7 @@ class CourtController extends Controller
                     ->first();
 
                 $status = 'available';
-                
+
                 if ($isGloballyClosed) {
                     $status = 'unavailable'; // Or a specific 'closed' status
                 } elseif ($closure) {

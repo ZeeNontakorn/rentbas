@@ -76,6 +76,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
+    Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
+    Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
     Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
     // ระบบจัดการผู้ใช้ (User Management)
