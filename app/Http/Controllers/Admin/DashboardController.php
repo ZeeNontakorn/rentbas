@@ -65,7 +65,7 @@ class DashboardController extends Controller
             ->whereDate('booking_date', $date)
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($court_id, fn ($q) => $q->where('court_id', $court_id))
-            ->orderByDesc('start_time')
+            ->latest()
             ->paginate(20)
             ->withQueryString();
 
