@@ -21,13 +21,24 @@ class BookingController extends Controller
     {
         $courts = Court::orderBy('name')->get();
         $dateParam = $request->query('date', now()->toDateString());
+
         try {
-            $date = Carbon::parse($dateParam)->toDateString();
+            $parsedDate = Carbon::parse($dateParam);
+            $maxDate = now()->addMonth();
+            $minDate = now()->startOfDay();
+
+            if ($parsedDate->startOfDay()->gt($maxDate->startOfDay())) {
+                $date = $maxDate->toDateString();
+            } elseif ($parsedDate->startOfDay()->lt($minDate)) {
+                $date = now()->toDateString();
+            } else {
+                $date = $parsedDate->toDateString();
+            }
         } catch (\Exception $e) {
             $date = now()->toDateString();
         }
-        $courtId = $request->query('court_id', $courts->first()?->id);
 
+        $courtId = $request->query('court_id', $courts->first()?->id);
         $selectedCourt = $courts->firstWhere('id', $courtId);
 
         $slots = [];
@@ -46,13 +57,18 @@ class BookingController extends Controller
 
                 $slotStart = $dateCarbon->copy()->setTimeFromTimeString($start);
                 $slotEnd = $dateCarbon->copy()->setTimeFromTimeString($end);
+
                 $isClosed = $selectedCourt->isClosedAt($slotStart, $slotEnd);
                 $isPast = $slotStart->lte(now());
 
                 $status = 'available';
-                if ($isClosed) $status = 'closed';
-                elseif ($booking) $status = $booking->status; // pending | approved
-                elseif ($isPast) $status = 'past';
+                if ($isClosed) {
+                    $status = 'closed';
+                } elseif ($booking) {
+                    $status = $booking->status; // pending | approved
+                } elseif ($isPast) {
+                    $status = 'past';
+                }
 
                 $slots[] = [
                     'label' => sprintf('%02d:00 - %02d:00', $h, $h + 1),
@@ -81,11 +97,13 @@ class BookingController extends Controller
      */
     public function store(Request $request)
     {
+        $maxDate = now()->addMonth()->toDateString();
+
         $data = $request->validate([
-            'court_id' => ['required','integer','exists:courts,id'],
-            'booking_date' => ['required','date','after_or_equal:today'],
-            'start_time' => ['required','date_format:H:i'],
-            'end_time' => ['required','date_format:H:i','after:start_time'],
+            'court_id' => ['required', 'integer', 'exists:courts,id'],
+            'booking_date' => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $maxDate],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
 
         if ($data['start_time'] < '06:00' || $data['end_time'] > '22:00') {
@@ -110,15 +128,16 @@ class BookingController extends Controller
         $booking = DB::transaction(function () use ($data, $startDb, $endDb, $court, $request) {
             $overlap = Booking::where('court_id', $data['court_id'])
                 ->whereDate('booking_date', $data['booking_date'])
-                ->whereIn('status', ['pending','approved'])
-                ->where(function($q) use ($startDb, $endDb) {
-                    $q->where('start_time','<',$endDb)
-                      ->where('end_time','>',$startDb);
+                ->whereIn('status', ['pending', 'approved'])
+                ->where(function ($q) use ($startDb, $endDb) {
+                    $q->where('start_time', '<', $endDb)
+                        ->where('end_time', '>', $startDb);
                 })
                 ->lockForUpdate()
                 ->exists();
 
-            if ($overlap) return null;
+            if ($overlap)
+                return null;
 
             $booking = Booking::create([
                 'user_id' => $request->user()->id,
@@ -130,7 +149,7 @@ class BookingController extends Controller
             ]);
 
             // Notify admins
-            User::where('role','admin')->get()->each(function($admin) use ($booking, $request, $court, $data) {
+            User::where('role', 'admin')->get()->each(function ($admin) use ($booking, $request, $court, $data) {
                 // ส่งข้อความแจ้งเตือนพร้อมรายละเอียดการจอง โดยใช้ '|' เป็นตัวแบ่งระหว่างข้อความหลักกับรายละเอียดเพิ่มเติม
                 Notification::create([
                     'user_id' => $admin->id,
@@ -161,32 +180,32 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id, 403);
 
-        if (!in_array($booking->status,['pending','approved'])) {
-            return back()->withErrors(['status'=>'ไม่สามารถยกเลิกรายการนี้ได้']);
+        if (!in_array($booking->status, ['pending', 'approved'])) {
+            return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการนี้ได้']);
         }
 
         if ($booking->isStarted()) {
-            return back()->withErrors(['status'=>'ไม่สามารถยกเลิกรายการที่ถึงเวลาเล่นแล้วได้']);
+            return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการที่ถึงเวลาเล่นแล้วได้']);
         }
 
-        $booking->update(['status'=>'cancelled']);
+        $booking->update(['status' => 'cancelled']);
 
-        User::where('role','admin')->get()->each(function($admin) use ($booking) {
+        User::where('role', 'admin')->get()->each(function ($admin) use ($booking) {
             $bDate = Carbon::parse($booking->booking_date)->toDateString();
             Notification::create([
-                'user_id'=>$admin->id,
-                'title'=>'ผู้ใช้ยกเลิกการจอง',
-                'message'=>"คุณ {$booking->user->name} ยกเลิกการจอง {$booking->court->name} วันที่ {$bDate}",
+                'user_id' => $admin->id,
+                'title' => 'ผู้ใช้ยกเลิกการจอง',
+                'message' => "คุณ {$booking->user->name} ยกเลิกการจอง {$booking->court->name} วันที่ {$bDate}",
             ]);
         });
 
-        return back()->with('success','ยกเลิกการจองเรียบร้อย');
+        return back()->with('success', 'ยกเลิกการจองเรียบร้อย');
     }
 
     public function approve(Booking $booking)
     {
         if ($booking->status !== 'pending') {
-            return back()->withErrors(['status'=>'รายการนี้ถูกดำเนินการไปแล้ว']);
+            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว']);
         }
 
         $bDate = Carbon::parse($booking->booking_date)->toDateString();
@@ -194,29 +213,29 @@ class BookingController extends Controller
         $endAt = Carbon::parse("{$bDate} {$booking->end_time}");
 
         if ($booking->court->isClosedAt($startAt, $endAt)) {
-            return back()->withErrors(['status'=>'ไม่สามารถอนุมัติได้เนื่องจากสนามปิดให้บริการในช่วงเวลานี้']);
+            return back()->withErrors(['status' => 'ไม่สามารถอนุมัติได้เนื่องจากสนามปิดให้บริการในช่วงเวลานี้']);
         }
 
         $overlap = Booking::where('court_id', $booking->court_id)
             ->whereDate('booking_date', $bDate)
             ->where('status', 'approved')
             ->where('id', '!=', $booking->id)
-            ->where(function($q) use ($booking) {
-                $q->where('start_time','<',$booking->end_time)
-                  ->where('end_time','>',$booking->start_time);
+            ->where(function ($q) use ($booking) {
+                $q->where('start_time', '<', $booking->end_time)
+                    ->where('end_time', '>', $booking->start_time);
             })
             ->exists();
 
         if ($overlap) {
-            return back()->withErrors(['status'=>'ไม่สามารถอนุมัติได้เนื่องจากมีรายการจองอื่นที่อนุมัติแล้วในช่วงเวลานี้ (ทับซ้อนกัน)']);
+            return back()->withErrors(['status' => 'ไม่สามารถอนุมัติได้เนื่องจากมีรายการจองอื่นที่อนุมัติแล้วในช่วงเวลานี้ (ทับซ้อนกัน)']);
         }
 
-        $booking->update(['status'=>'approved']);
+        $booking->update(['status' => 'approved']);
 
         Notification::create([
-            'user_id'=>$booking->user_id,
-            'title'=>'การจองได้รับการอนุมัติ',
-            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate} เวลา {$booking->start_time}-{$booking->end_time} ได้รับการอนุมัติแล้ว",
+            'user_id' => $booking->user_id,
+            'title' => 'การจองได้รับการอนุมัติ',
+            'message' => "การจอง {$booking->court->name} วันที่ {$bDate} เวลา {$booking->start_time}-{$booking->end_time} ได้รับการอนุมัติแล้ว",
         ]);
 
         if ($booking->user?->email) {
@@ -224,7 +243,7 @@ class BookingController extends Controller
                 ->send(new BookingApprovedMail($booking));
         }
 
-        return back()->with('success','อนุมัติการจองเรียบร้อย');
+        return back()->with('success', 'อนุมัติการจองเรียบร้อย');
     }
 
     /**
@@ -233,26 +252,26 @@ class BookingController extends Controller
     public function reject(Request $request, Booking $booking)
     {
         $data = $request->validate([
-            'reject_reason'=>['required','string','max:500'],
+            'reject_reason' => ['required', 'string', 'max:500'],
         ]);
 
         if ($booking->status !== 'pending') {
-            return back()->withErrors(['status'=>'รายการนี้ถูกดำเนินการไปแล้ว']);
+            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว']);
         }
 
         $booking->update([
-            'status'=>'rejected',
-            'reject_reason'=>$data['reject_reason'],
+            'status' => 'rejected',
+            'reject_reason' => $data['reject_reason'],
         ]);
 
         $bDate = Carbon::parse($booking->booking_date)->toDateString();
         Notification::create([
-            'user_id'=>$booking->user_id,
-            'title'=>'การจองถูกปฏิเสธ',
-            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate} ถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
+            'user_id' => $booking->user_id,
+            'title' => 'การจองถูกปฏิเสธ',
+            'message' => "การจอง {$booking->court->name} วันที่ {$bDate} ถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
         ]);
 
-        return back()->with('success','ปฏิเสธการจองเรียบร้อย');
+        return back()->with('success', 'ปฏิเสธการจองเรียบร้อย');
     }
 
     /**
@@ -264,25 +283,25 @@ class BookingController extends Controller
         $today = now()->toDateString();
 
         $current = Booking::with('court')
-            ->where('user_id',$userId)
-            ->where(function($q) use ($today){
-                $q->whereIn('status',['pending','approved'])
-                  ->whereDate('booking_date','>=',$today);
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($today) {
+                $q->whereIn('status', ['pending', 'approved'])
+                    ->whereDate('booking_date', '>=', $today);
             })
             ->orderBy('booking_date')
             ->orderBy('start_time')
             ->get();
 
         $past = Booking::with('court')
-            ->where('user_id',$userId)
-            ->where(function($q) use ($today){
-                $q->whereIn('status',['rejected','cancelled'])
-                  ->orWhereDate('booking_date','<',$today);
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($today) {
+                $q->whereIn('status', ['rejected', 'cancelled'])
+                    ->orWhereDate('booking_date', '<', $today);
             })
             ->orderByDesc('booking_date')
             ->orderByDesc('start_time')
             ->get();
 
-        return view('booking.history', compact('current','past'));
+        return view('booking.history', compact('current', 'past'));
     }
 }
