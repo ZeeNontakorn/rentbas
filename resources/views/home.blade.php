@@ -1072,9 +1072,9 @@ html { scroll-behavior: smooth; }
     <div class="footer-bottom">
         <p class="footer-copy">© 2026 BCBS Basketball Court Booking System. All Rights Reserved.</p>
         <div class="footer-links">
-            <a href="#">ติดตามเรา</a>
+            <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
             <a href="#">ข้อกำหนดการใช้งาน</a>
-            <a href="#">ติดต่อ</a>
+            <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
         </div>
     </div>
 </footer>
