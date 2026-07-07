@@ -20,7 +20,7 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { font-family: 'Sarabun', sans-serif; background: #fff; color: #374151; -webkit-font-smoothing: antialiased; }
+body { font-family: 'Sarabun', sans-serif; background: #fff; color: #374151; -webkit-font-smoothing: antialiased; padding-top: 56px; }
 h1,h2,h3,h4,h5 { font-family: 'Kanit', sans-serif; }
 a { text-decoration: none; color: inherit; }
 img { display: block; max-width: 100%; }
@@ -37,6 +37,8 @@ img { display: block; max-width: 100%; }
     padding: 0 48px;
     position: sticky;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 200;
     border-bottom: 1px solid var(--border);
 }

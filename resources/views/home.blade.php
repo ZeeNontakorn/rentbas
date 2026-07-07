@@ -32,6 +32,7 @@ html { scroll-behavior: smooth; }
     font-family: 'Sarabun', sans-serif;
     color: #e0e0e0;
     -webkit-font-smoothing: antialiased;
+    padding-top: 56px;
 }
 .home-content h1, .home-content h2, .home-content h3, .home-content h4, .home-content h5 { font-family: 'Kanit', sans-serif; }
 .home-content a { text-decoration: none; color: inherit; }
@@ -48,6 +49,8 @@ html { scroll-behavior: smooth; }
     padding: 0 max(24px, calc((100% - var(--max-w)) / 2));
     position: sticky;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 200;
     border-bottom: 1px solid var(--border);
 }
@@ -117,19 +120,13 @@ html { scroll-behavior: smooth; }
     position: relative;
     height: 68vh;
     min-height: 440px;
-    overflow: hidden;
-}
-.hero-slide {
-    position: absolute; inset: 0;
     background-size: cover;
     background-position: center;
-    opacity: 0;
-    transition: opacity 1.4s ease;
+    background-attachment: fixed;
 }
-.hero-slide.active { opacity: 1; }
-.hero-slide::after {
+.hero::before {
     content: '';
-    position: absolute; inset: 0;
+    position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(160deg, rgba(13,15,30,.82) 0%, rgba(13,15,30,.45) 60%, rgba(0,0,0,.2) 100%);
 }
 .hero-content {
@@ -166,41 +163,6 @@ html { scroll-behavior: smooth; }
     line-height: 1.6;
 }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.btn-white {
-    padding: 12px 30px;
-    border: 1.5px solid rgba(255,255,255,.5);
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all .2s;
-}
-.btn-white:hover { border-color: #fff; background: rgba(255,255,255,.1); }
-.btn-primary {
-    padding: 12px 30px;
-    background: var(--ore);
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: background .2s, transform .15s;
-}
-.btn-primary:hover { background: var(--ore-d); transform: translateY(-1px); }
-.hero-dots {
-    position: absolute; bottom: 22px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    display: flex; gap: 6px;
-}
-.hdot {
-    width: 6px; height: 6px; border-radius: 3px;
-    background: rgba(255,255,255,.3);
-    cursor: pointer;
-    transition: width .3s, background .3s;
-}
-.hdot.active { width: 22px; background: var(--ore); }
 
 /* hero stats bar */
 .hero-stats {
@@ -622,17 +584,10 @@ html { scroll-behavior: smooth; }
 .promo-tag { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ore); margin-bottom: 6px; }
 .promo-title { font-size: clamp(40px,6vw,56px); font-weight: 800; color: var(--ink); }
 
-.promo-container { width: 100%; position: relative; }
-.promo-track {
-    display: flex; width: max-content;
-    animation: promoScroll 45s linear infinite;
-}
-.promo-slide {
-    display: flex; gap: 16px; padding-right: 16px;
-}
+.promo-container { width: 100%; padding: 0 5%; }
 .promo-card {
-    border-radius: 10px; overflow: hidden; height: 200px; position: relative;
-    cursor: pointer; flex-shrink: 0; width: min(85vw, 360px);
+    border-radius: 12px; overflow: hidden; height: 400px; position: relative;
+    cursor: pointer; width: 100%;
 }
 .promo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
 .promo-card:hover img { transform: scale(1.06); }
@@ -646,10 +601,7 @@ html { scroll-behavior: smooth; }
 .promo-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; line-height: 1.1; letter-spacing: .06em; }
 .promo-card-sub { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
 
-@keyframes promoScroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-25%); }
-}
+
 
 /* ─── FOOTER ─── */
 .footer {
@@ -735,11 +687,7 @@ html { scroll-behavior: smooth; }
 </div>
 
 {{-- ═══ HERO ═══ --}}
-<section class="hero">
-    <div class="hero-slide active" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_1', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2000&auto=format&fit=crop') }}')"></div>
-    <div class="hero-slide" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_2', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000&auto=format&fit=crop') }}')"></div>
-    <div class="hero-slide" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_3', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=2000&auto=format&fit=crop') }}')"></div>
-
+<section class="hero" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_1', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2000&auto=format&fit=crop') }}')">
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">Bangsaen Basketball Club · BCBS</p>
         <h1 class="hero-title">BCBS<br><span>Thata</span></h1>
@@ -752,12 +700,6 @@ html { scroll-behavior: smooth; }
                 <a href="{{ route('booking.index') }}" class="btn-primary">จองสนาม ↗</a>
             @endguest
         </div>
-    </div>
-
-    <div class="hero-dots" id="hero-dots">
-        <div class="hdot active" onclick="goSlide(0)"></div>
-        <div class="hdot" onclick="goSlide(1)"></div>
-        <div class="hdot" onclick="goSlide(2)"></div>
     </div>
 
     <div class="hero-stats">
@@ -856,7 +798,7 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">พร้อมจอง</a>
+                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง</a>
                     @else
                         <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
                     @endif
@@ -941,9 +883,9 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="community-text" data-aos="fade-up" data-aos-delay="400">
         <p class="community-tag">The Community</p>
-        <h2 class="community-title">มาร่วมสร้างประสบการณ์ดีๆ<br>กับเรา</h2>
+        <h2 class="community-title">มาร่วมสร้างประสบการณ์ดีๆกับเรา</h2>
         <p class="community-desc">
-            เข้าร่วมเครือข่ายนักบาสเกตบอลคุณภาพ<br>พบปะผู้เล่นระดับสูงและโค้ชมืออาชีพในพื้นที่บางแสน
+            เข้าร่วมเครือข่ายนักบาสเกตบอลคุณภาพพบปะผู้เล่นระดับสูงและโค้ชมืออาชีพในพื้นที่บางแสน
         </p>
     </div>
 </section>
@@ -952,56 +894,31 @@ html { scroll-behavior: smooth; }
 <section class="promo-section" data-aos="fade-up">
     <div class="promo-header">
         <p class="promo-tag">{{ \App\Models\Setting::getVal('promo_subtitle', 'รับชมโปรโมชั่นสุดพิเศษ') }}</p>
-        <h2 class="promo-title">{{ \App\Models\Setting::getVal('promo_title', 'Preview Promotion') }}</h2>
+        <h2 class="promo-title">{{ \App\Models\Setting::getVal('promo_title', 'Promotion') }}</h2>
     </div>
-    <div class="promo-container" data-aos="fade-up" data-aos-delay="100">
-        <div class="promo-track">
-            @for ($i = 0; $i < 4; $i++)
-            <div class="promo-slide">
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">{{ \App\Models\Setting::getVal('promo_card_title', 'BASKETBALL') }}</p>
-                        <p class="promo-card-sub">{{ \App\Models\Setting::getVal('promo_card_sub', 'โปรโมชั่นพิเศษ') }}</p>
+
+    <div class="promo-container">
+        @php
+            $promoImg = \App\Models\Setting::getVal('promo_image', null);
+            $promoTitle = \App\Models\Setting::getVal('promo_card_title', 'Special Offer');
+            $promoSub = \App\Models\Setting::getVal('promo_card_sub', 'Book now and enjoy');
+        @endphp
+
+        <div class="promo-card">
+            @if($promoImg)
+                <img src="{{ $promoImg }}" alt="promotion">
+            @else
+                <div style="width:100%; height:100%; background:linear-gradient(135deg, var(--ore) 0%, var(--ore-d) 100%); display:flex; align-items:center; justify-content:center;">
+                    <div style="text-align:center; color:#fff;">
+                        <div style="font-size:16px; font-weight:600;">Promotion Image Placeholder</div>
+                        <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-top:8px;">Upload image in edit page</div>
                     </div>
                 </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">MEMBERS ONLY</p>
-                        <p class="promo-card-sub">ส่วนลดพิเศษสมาชิก</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">NEW MEMBER</p>
-                        <p class="promo-card-sub">สมาชิกใหม่รับสิทธิ์พิเศษ</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">VIP LOUNGE</p>
-                        <p class="promo-card-sub">บริการพิเศษสำหรับ VIP</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://library.sportingnews.com/styles/twitter_card_120x120/s3/2023-11/United%20Center%20Court%20110323.jpg?itok=lP4n8TXX" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">TOURNAMENT</p>
-                        <p class="promo-card-sub">ทัวร์นาเมนต์ชิงชัย</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">CLINIC TRAINING</p>
-                        <p class="promo-card-sub">ฝึกทักษะกับโค้ชมืออาชีพ</p>
-                    </div>
-                </div>
+            @endif
+            <div class="promo-card-inner">
+                <div class="promo-card-title">{{ $promoTitle }}</div>
+                <div class="promo-card-sub">{{ $promoSub }}</div>
             </div>
-            @endfor
         </div>
     </div>
 </section>
@@ -1058,18 +975,7 @@ html { scroll-behavior: smooth; }
 // ─── COURTS DATA จาก DB ───
 const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
 
-// ─── HERO SLIDESHOW ───
-const slides = document.querySelectorAll('.hero-slide');
-const dots   = document.querySelectorAll('.hdot');
-let cur = 0, timer;
-function goSlide(n) {
-    slides[cur].classList.remove('active'); dots[cur].classList.remove('active');
-    cur = n;
-    slides[cur].classList.add('active'); dots[cur].classList.add('active');
-    clearInterval(timer); timer = setInterval(nextSlide, 5000);
-}
-function nextSlide() { goSlide((cur + 1) % slides.length); }
-timer = setInterval(nextSlide, 5000);
+// Slideshow removed - using static hero image
 
 // ─── MOBILE MENU ───
 function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('open'); }
