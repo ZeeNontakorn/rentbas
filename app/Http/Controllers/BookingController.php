@@ -154,15 +154,6 @@ class BookingController extends Controller
                     'status' => 'pending',
                 ]);
 
-                // Notify admins
-                User::where('role', 'admin')->get()->each(function ($admin) use ($booking, $request, $court, $bookingDate, $item) {
-                    Notification::create([
-                        'user_id' => $admin->id,
-                        'title' => 'คำขอจองใหม่',
-                        'message' => "คุณ {$request->user()->name} ขอจอง {$court->name} |วันที่ {$bookingDate} เวลา {$item['start_time']}-{$item['end_time']}",
-                    ]);
-                });
-
                 $created[] = [
                     'court_name' => $court->name,
                     'date' => $bookingDate,
@@ -173,6 +164,26 @@ class BookingController extends Controller
 
             return ['created' => $created, 'failed' => $failed];
         });
+
+        // แจ้งเตือนแอดมิน "1 ครั้งต่อ 1 การจอง" ไม่ว่าผู้ใช้จะเลือกกี่ช่วงเวลาก็ตาม
+        // (เดิมยิงแยกทีละ item ในลูป ทำให้ badge จำนวนแจ้งเตือนพุ่งเกินจริงเวลาเลือกหลายเวลาพร้อมกัน)
+        if (!empty($result['created'])) {
+            // แต่ละรายการขึ้นบรรทัดใหม่ (คั่นด้วย , แล้วตามด้วย \n) แทนที่จะเรียงติดกันเป็นพืดยาว
+            $summaryLines = collect($result['created'])
+                ->map(fn ($c) => "{$c['court_name']} {$c['time']}")
+                ->implode(",\n");
+
+            $count = count($result['created']);
+            $title = $count > 1 ? "คำขอจองใหม่ ({$count} รายการ)" : 'คำขอจองใหม่';
+
+            User::where('role', 'admin')->get()->each(function ($admin) use ($request, $bookingDate, $summaryLines, $title) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title' => $title,
+                    'message' => "คุณ {$request->user()->name} ขอจอง |วันที่ {$bookingDate}\n{$summaryLines}",
+                ]);
+            });
+        }
 
         if (empty($result['created'])) {
             return back()->withErrors(['bookings' => 'ไม่สามารถทำการจองได้: ' . implode(', ', $result['failed'])]);
@@ -249,7 +260,7 @@ class BookingController extends Controller
         Notification::create([
             'user_id'=>$booking->user_id,
             'title'=>'การจองได้รับการอนุมัติ',
-            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate} เวลา {$booking->start_time}-{$booking->end_time} ได้รับการอนุมัติแล้ว",
+            'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
         ]);
 
         if ($booking->user?->email) {
@@ -282,7 +293,7 @@ class BookingController extends Controller
         Notification::create([
             'user_id'=>$booking->user_id,
             'title'=>'การจองถูกปฏิเสธ',
-            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate} ถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
+            'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
         ]);
 
         return back()->with('success','ปฏิเสธการจองเรียบร้อย');
@@ -333,7 +344,7 @@ class BookingController extends Controller
             Notification::create([
                 'user_id' => $booking->user_id,
                 'title' => 'การจองได้รับการอนุมัติ',
-                'message' => "การจอง {$booking->court->name} วันที่ {$bDate} เวลา {$booking->start_time}-{$booking->end_time} ได้รับการอนุมัติแล้ว",
+                'message' => "การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
             ]);
 
             if ($booking->user?->email) {
@@ -368,7 +379,7 @@ class BookingController extends Controller
             Notification::create([
                 'user_id' => $booking->user_id,
                 'title' => 'การจองถูกปฏิเสธ',
-                'message' => "การจอง {$booking->court->name} วันที่ {$bDate} ถูกปฏิเสธ — เหตุผล: ปฏิเสธพร้อมกันหลายรายการโดยแอดมิน",
+                'message' => "การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: ปฏิเสธพร้อมกันหลายรายการโดยแอดมิน",
             ]);
         }
 

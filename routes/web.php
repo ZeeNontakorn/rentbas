@@ -65,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 });
 
 
@@ -75,6 +76,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+    Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
+    Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
     Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
@@ -101,4 +104,3 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/reset-password',   'showResetPasswordForm')->name('password.reset.form');
     Route::post('/reset-password',  'resetPassword')->name('password.reset');
 });
-
