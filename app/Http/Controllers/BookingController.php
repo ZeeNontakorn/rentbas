@@ -180,8 +180,8 @@ class BookingController extends Controller
     {
         abort_unless($booking->user_id === $request->user()->id, 403);
 
-        if (!in_array($booking->status, ['pending', 'approved'])) {
-            return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการนี้ได้']);
+        if ($booking->status !== 'pending') {
+            return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการนี้ได้ เนื่องจากได้รับการอนุมัติหรือดำเนินการไปแล้ว']);
         }
 
         if ($booking->isStarted()) {

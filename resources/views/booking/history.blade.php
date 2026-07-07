@@ -171,7 +171,7 @@
                                     {{ $stLabel }}
                                 </span>
                                 
-                                @if(!$b->isStarted())
+                                @if(!$b->isStarted() && $b->status === 'pending')
                                     <form method="POST" action="{{ route('booking.cancel', $b) }}" onsubmit="return confirm('ยืนยันยกเลิกการจองนี้?');" class="md:ml-auto block">
                                         @csrf
                                         <button type="submit" class="btn-cancel w-full md:w-auto text-center">ยกเลิก</button>
