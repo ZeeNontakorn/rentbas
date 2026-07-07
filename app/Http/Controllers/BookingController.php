@@ -298,8 +298,7 @@ class BookingController extends Controller
                 $q->whereIn('status', ['rejected', 'cancelled'])
                     ->orWhereDate('booking_date', '<', $today);
             })
-            ->orderByDesc('booking_date')
-            ->orderByDesc('start_time')
+            ->orderByDesc('updated_at')
             ->get();
 
         return view('booking.history', compact('current', 'past'));
