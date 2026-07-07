@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Court;
+use App\Models\CourtClosure;
 use App\Models\SiteVisit;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -68,5 +70,94 @@ class HomeController extends Controller
         }
 
         return response()->json(['slots' => $slots]);
+    }
+
+    /**
+     * Public API – per-day availability for a whole month (calendar dots).
+     * status: free (มีอย่างน้อย 1 slot ว่าง) | full (เต็มทุก slot) | past (ทั้งวันผ่านไปแล้ว)
+     */
+    public function monthAvailability(Request $request)
+    {
+        $month = $request->query('month', now()->format('Y-m'));
+        try {
+            $start = Carbon::createFromFormat('Y-m-d', $month.'-01')->startOfMonth();
+        } catch (\Exception $e) {
+            $start = now()->startOfMonth();
+        }
+        $end   = $start->copy()->endOfMonth();
+        $now   = now();
+        $today = $now->copy()->startOfDay();
+
+        $courts = Court::orderBy('name')->get();
+
+        // preload การจองทั้งเดือน → set: "date|court_id|HH:MM:SS"
+        $bookings = Booking::whereBetween('booking_date', [$start->toDateString(), $end->toDateString()])
+            ->whereIn('status', ['pending', 'approved'])
+            ->get(['booking_date', 'court_id', 'start_time']);
+        $bookedSet = [];
+        foreach ($bookings as $b) {
+            $bd = $b->booking_date instanceof \Carbon\CarbonInterface
+                ? $b->booking_date->toDateString()
+                : substr((string) $b->booking_date, 0, 10);
+            $bookedSet["{$bd}|{$b->court_id}|{$b->start_time}"] = true;
+        }
+
+        // preload closures ทั้งเดือน (กันยิง query ต่อ slot)
+        $closures = CourtClosure::whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->get(['court_id', 'date', 'start_time', 'end_time']);
+
+        $days = [];
+        for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+            $ds = $d->toDateString();
+
+            if ($d->lt($today)) {          // ทั้งวันผ่านไปแล้ว → ไม่มีจุด
+                $days[$ds] = 'past';
+                continue;
+            }
+
+            $available = 0;
+            foreach ($courts as $court) {
+                for ($h = 6; $h < 22; $h++) {
+                    $startStr  = sprintf('%02d:00:00', $h);
+                    $endStr    = sprintf('%02d:00:00', $h + 1);
+                    $slotStart = Carbon::parse("{$ds} {$startStr}");
+                    $slotEnd   = Carbon::parse("{$ds} {$endStr}");
+
+                    if ($slotEnd->lte($now)) continue;                                   // past slot
+                    if ($this->slotClosed($court, $closures, $ds, $startStr, $endStr, $slotStart, $slotEnd)) continue; // closed
+                    if (isset($bookedSet["{$ds}|{$court->id}|{$startStr}"])) continue;    // booked
+
+                    $available++;
+                }
+            }
+
+            $days[$ds] = $available > 0 ? 'free' : 'full';
+        }
+
+        return response()->json(['days' => $days]);
+    }
+
+    /**
+     * In-memory มิเรอร์ของ Court::isClosedAt() ใช้ closures ที่ preload มาแล้ว
+     */
+    private function slotClosed(Court $court, $closures, string $ds, string $startStr, string $endStr, $slotStart, $slotEnd): bool
+    {
+        if ($court->court_status === 'closed') {
+            return true;
+        }
+        if ($court->closed_from && $court->closed_until
+            && $slotStart->lt($court->closed_until) && $slotEnd->gt($court->closed_from)) {
+            return true;
+        }
+        foreach ($closures as $c) {
+            $cDate = $c->date instanceof \Carbon\CarbonInterface
+                ? $c->date->toDateString()
+                : substr((string) $c->date, 0, 10);
+            if ($c->court_id == $court->id && $cDate === $ds
+                && $c->start_time < $endStr && $c->end_time > $startStr) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -477,7 +477,11 @@ html { scroll-behavior: smooth; }
 }
 .bk-day.has-free::after {
     content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
-    width: 3px; height: 3px; border-radius: 50%; background: var(--ore);
+    width: 3px; height: 3px; border-radius: 50%; background: var(--green);
+}
+.bk-day.is-full::after {
+    content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 3px; height: 3px; border-radius: 50%; background: var(--red);
 }
 .bk-day.selected::after { background: rgba(255,255,255,.7); }
 
@@ -1099,9 +1103,22 @@ const MONTHS = ['มกราคม','กุมภาพันธ์','มีน
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 const HOURS = [];
-for (let h = 6; h <= 22; h++) HOURS.push(String(h).padStart(2,'0') + ':00');
+for (let h = 6; h < 22; h++) HOURS.push(String(h).padStart(2,'0') + ':00');
 
 let calYear, calMonth, selDate = null;
+let monthStatus = {};   // { '2026-07-05':'full', '2026-07-06':'free', ... } จาก backend
+
+// ดึงสรุปว่าง/เต็มของเดือนที่กำลังแสดง แล้ววาดปฏิทินใหม่
+async function loadMonthStatus() {
+    const m = calYear + '-' + String(calMonth + 1).padStart(2,'0');
+    try {
+        const res = await fetch('{{ route("month.availability") }}?month=' + m);
+        monthStatus = (await res.json()).days || {};
+    } catch (e) {
+        monthStatus = {};
+    }
+    renderCal();
+}
 
 function renderCal() {
     const dim = new Date(calYear, calMonth + 1, 0).getDate();
@@ -1120,7 +1137,14 @@ function renderCal() {
         const isPast = new Date(calYear, calMonth, d) < new Date(td.getFullYear(), td.getMonth(), td.getDate());
         if (td.getFullYear()===calYear && td.getMonth()===calMonth && td.getDate()===d) cls += ' today';
         if (selDate === ds) cls += ' selected';
-        if (!isPast) cls += ' has-free';
+        const dsStatus = monthStatus[ds];   // 'free' | 'full' | 'past' | undefined
+        if (isPast || dsStatus === 'past') {
+            /* วันผ่านแล้ว — ไม่มีจุด */
+        } else if (dsStatus === 'full') {
+            cls += ' is-full';    // จุดแดง = เต็มทุก slot
+        } else {
+            cls += ' has-free';   // จุดเขียว = ยังมีว่าง (default ระหว่างรอโหลด)
+        }
         el.className = cls; el.textContent = d;
         el.onclick = () => selectDate(ds, d);
         g.appendChild(el);
@@ -1160,8 +1184,9 @@ async function renderSch(ds) {
     tb.innerHTML = '';
     HOURS.forEach(h => {
         const startTime = h + ':00'; // e.g. '08:00:00'
+        const hEnd = String(parseInt(h) + 1).padStart(2,'0') + ':00'; // '07:00' → '08:00'
         const tr = document.createElement('tr');
-        let html = '<td><span class="hour-chip">' + h + '</span></td>';
+        let html = '<td><span class="hour-chip">' + h + ' - ' + hEnd + '</span></td>';
         COURTS.forEach(c => {
             const status = (slots[c.id] && slots[c.id][startTime]) || 'available';
             if (status === 'booked') {
@@ -1186,7 +1211,7 @@ function bookSlot(h, courtId, ds) {
 function calPrev() {
     const now = new Date();
     if (calYear === now.getFullYear() && calMonth === now.getMonth()) return;
-    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCal();
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } loadMonthStatus();
 }
 function calNext() {
     const now = new Date();
@@ -1194,13 +1219,14 @@ function calNext() {
     const maxYear = now.getFullYear() + (maxMonth > 11 ? 1 : 0);
     const maxMo = maxMonth % 12;
     if (calYear === maxYear && calMonth === maxMo) return;
-    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCal();
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } loadMonthStatus();
 }
 
 const now2 = new Date();
 calYear = now2.getFullYear(); calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
+loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 </script>
