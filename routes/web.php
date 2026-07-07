@@ -40,16 +40,13 @@ Route::controller(AuthController::class)->group(function () {
 
 
 // 4. Authenticated User Routes — ต้อง Login (auth) และยืนยันรหัส (verified_otp) แล้วเท่านั้น
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth','verified_otp'])->group(function () {
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/request-otp-email', [ProfileController::class, 'requestOtpForEmailChange'])->name('profile.request-otp-email');
-
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Booking System
     Route::prefix('booking')->name('booking.')->group(function () {
@@ -66,6 +63,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 });
+
+ // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
 
