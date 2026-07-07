@@ -3,6 +3,9 @@
 @section('title', 'จัดการสถานะสนาม')
 
 @section('content')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pb-10">
 
         <style>
@@ -134,23 +137,6 @@
                 </button>
             </div>
 
-            <div class="fixed top-6 right-6 z-[70] w-[min(24rem,calc(100vw-2rem))] space-y-3 pointer-events-none">
-                @if (session('success'))
-                    <div data-toast
-                        class="pointer-events-auto rounded-2xl border border-emerald-200 bg-white/95 backdrop-blur shadow-lg px-4 py-3 flex items-start gap-3 text-sm text-emerald-800">
-                        <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1 pt-0.5">
-                            <div class="font-semibold">สำเร็จ</div>
-                            <div class="text-emerald-700">{{ session('success') }}</div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-
             <div class="flex flex-col lg:flex-row gap-6 mt-8">
 
                 {{-- LEFT COLUMN --}}
@@ -171,7 +157,7 @@
                                 </svg>
                             </div>
                             <div id="courtList"
-                                class="hidden absolute top-full mt-1 left-0 w-[150px] bg-white border border-gray-200 rounded-md shadow-xl z-50 flex flex-col overflow-hidden">
+                                class="hidden absolute top-full mt-1 left-0 w-[220px] max-h-[380px] overflow-y-auto overflow-x-hidden bg-white border border-gray-200 rounded-md shadow-xl z-50 flex flex-col">
                                 @foreach ($courts as $court)
                                     <div
                                         class="flex items-center justify-between gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0 {{ $selectedCourt?->id == $court->id ? 'font-bold bg-gray-50 text-[#87D068]' : '' }}">
@@ -381,13 +367,49 @@
             <script>
                 let selEl = null;
 
+                // ----- SweetAlert2 Toast (มุมขวาบน, ปิดเองอัตโนมัติ) -----
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+
                 document.addEventListener('DOMContentLoaded', function() {
-                    document.querySelectorAll('[data-toast]').forEach((toast) => {
-                        window.setTimeout(() => {
-                            toast.classList.add('transition', 'duration-300', 'opacity-0', 'translate-y-2');
-                            window.setTimeout(() => toast.remove(), 300);
-                        }, 4500);
-                    });
+                    // Toast ที่ถูกฝากไว้ก่อนเปลี่ยนหน้า (จากฟอร์ม AJAX เช่น สร้าง/แก้ไขสนาม)
+                    try {
+                        const pending = sessionStorage.getItem('pendingToast');
+                        if (pending) {
+                            sessionStorage.removeItem('pendingToast');
+                            Toast.fire(JSON.parse(pending));
+                        }
+                    } catch (e) {}
+
+                    @if (session('success'))
+                        Toast.fire({
+                            icon: 'success',
+                            title: @js(session('success'))
+                        });
+                    @endif
+
+                    @if (session('error'))
+                        Toast.fire({
+                            icon: 'error',
+                            title: @js(session('error'))
+                        });
+                    @endif
+
+                    @if ($errors->any())
+                        Toast.fire({
+                            icon: 'error',
+                            title: @js($errors->first())
+                        });
+                    @endif
                 });
 
                 function openCourtModal(mode = 'create', courtId = null, courtName = '', courtStatus = 'open') {
@@ -559,19 +581,37 @@
                             Object.entries(data.errors || {}).forEach(([field, messages]) => {
                                 setFieldError(field, messages[0]);
                             });
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'กรุณาตรวจสอบข้อมูลให้ครบถ้วน'
+                            });
                             return; // ✅ modal ไม่ปิด ไม่ reload — แค่โชว์ error ตรงช่อง
                         }
 
                         if (!res.ok) {
-                            alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+                            });
                             return;
                         }
 
                         const data = await res.json();
+                        // ฝาก toast ไว้ใน sessionStorage ก่อนเปลี่ยนหน้า เพราะ response แบบ JSON
+                        // ฝั่ง server ไม่ได้ flash session('success') ให้ (flash จะมีเฉพาะ response แบบ redirect ปกติ)
+                        try {
+                            sessionStorage.setItem('pendingToast', JSON.stringify({
+                                icon: 'success',
+                                title: data.message || 'บันทึกข้อมูลเรียบร้อยแล้ว'
+                            }));
+                        } catch (e) {}
                         // สำเร็จ ค่อยพาไปหน้าที่อัปเดตแล้ว (modal จะปิดเพราะเปลี่ยนหน้า)
                         window.location.href = data.redirect || window.location.href;
                     } catch (err) {
-                        alert('เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'
+                        });
                     } finally {
                         if (submitBtn) {
                             submitBtn.disabled = false;
@@ -582,27 +622,43 @@
                 });
 
                 function selectAdminTime(start, end, status, el) {
-                    if (selEl) {
-                        selEl.classList.remove('selected');
-                    }
+                    const applySelection = () => {
+                        if (selEl) {
+                            selEl.classList.remove('selected');
+                        }
+
+                        el.classList.add('selected');
+                        selEl = el;
+
+                        document.getElementById('st_val').value = start;
+                        document.getElementById('en_val').value = end;
+                        document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end
+                            .substring(0, 5);
+
+                        document.getElementById('statusBox').classList.remove('hidden');
+                    };
 
                     // Check if it's booked by user, maybe warn before allowing override
                     if (status.includes('book')) {
-                        if (!confirm(
-                                'ช่วงเวลานี้มีการจองโดยผู้ใช้งานอยู่แล้ว ต้องการแก้ไขสถานะทับซ้อนหรือไม่? (ระบบจะนับเฉพาะสถานะใหม่ที่คุณเลือก)'
-                                )) {
-                            return;
-                        }
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'ยืนยันการแก้ไขสถานะ?',
+                            text: 'ช่วงเวลานี้มีการจองโดยผู้ใช้งานอยู่แล้ว ต้องการแก้ไขสถานะทับซ้อนหรือไม่? (ระบบจะนับเฉพาะสถานะใหม่ที่คุณเลือก)',
+                            showCancelButton: true,
+                            confirmButtonText: 'ยืนยัน',
+                            cancelButtonText: 'ยกเลิก',
+                            confirmButtonColor: '#5271ff',
+                            cancelButtonColor: '#6b7280',
+                            reverseButtons: true,
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                applySelection();
+                            }
+                        });
+                        return;
                     }
 
-                    el.classList.add('selected');
-                    selEl = el;
-
-                    document.getElementById('st_val').value = start;
-                    document.getElementById('en_val').value = end;
-                    document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end.substring(0, 5);
-
-                    document.getElementById('statusBox').classList.remove('hidden');
+                    applySelection();
                 }
 
                 setInterval(() => {
