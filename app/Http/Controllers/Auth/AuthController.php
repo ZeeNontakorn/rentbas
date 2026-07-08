@@ -105,7 +105,13 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'])->onlyInput('email');
         }
 
+        if (! $user->is_verified) {
+            $this->issueOtp($user); // ส่ง OTP รอบใหม่ให้ทันที เพราะรอบเก่าอาจหมดอายุ/ถูกลบไปแล้ว
+            $request->session()->put('pending_otp_user_id', $user->id);
 
+            return redirect()->route('verify-otp')
+                ->with('error', 'กรุณายืนยันรหัส OTP ก่อนเข้าใช้งานระบบ — เราส่งรหัสใหม่ไปให้ทางอีเมลแล้ว');
+        }
 
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
@@ -175,20 +181,20 @@ class AuthController extends Controller
     }
 
     public function resendOtp(Request $request)
-{
-    $userId = $request->session()->get('pending_otp_user_id');
+    {
+        $userId = $request->session()->get('pending_otp_user_id');
 
-    if (!$userId) {
-        return redirect()->route('login');
+        if (!$userId) {
+            return redirect()->route('login');
+        }
+
+        $user = User::findOrFail($userId);
+
+        // ใช้ฟังก์ชัน issueOtp ที่เราแยกไว้ (นี่คือข้อดีของการแยก Method ครับ!)
+        $this->issueOtp($user);
+
+        return back()->with('success', 'ส่งรหัส OTP ใหม่ไปยังอีเมลของคุณเรียบร้อยแล้ว (มีอายุ 5 นาที)');
     }
-
-    $user = User::findOrFail($userId);
-
-    // ใช้ฟังก์ชัน issueOtp ที่เราแยกไว้ (นี่คือข้อดีของการแยก Method ครับ!)
-    $this->issueOtp($user);
-
-    return back()->with('success', 'ส่งรหัส OTP ใหม่ไปยังอีเมลของคุณเรียบร้อยแล้ว (มีอายุ 5 นาที)');
-}
 
     public function showResetOtpForm(Request $request)
     {
