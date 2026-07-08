@@ -6,6 +6,8 @@
 @php
     $site = \App\Models\Setting::values([
         'hero_img_1',
+        'hero_img_2',
+        'hero_img_3',
         'about_title',
         'about_desc',
         'about_img_1',
@@ -19,6 +21,14 @@
         'promo_card_sub',
         'promo_image',
     ]);
+@endphp
+
+@php
+    $heroSlides = array_values(array_filter([
+        $site['hero_img_1'] ?? null,
+        $site['hero_img_2'] ?? null,
+        $site['hero_img_3'] ?? null,
+    ]));
 @endphp
 
 <style>
@@ -70,6 +80,17 @@ html { scroll-behavior: smooth; }
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+    overflow: hidden;
+}
+.hero-bg-fader {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    opacity: 0;
+    transition: opacity .9s ease;
 }
 .hero::before {
     content: '';
@@ -83,7 +104,7 @@ html { scroll-behavior: smooth; }
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 0 24px 78px;
+    padding: 0 24px 100px;
 }
 .hero-eyebrow {
     font-size: 11px;
@@ -114,7 +135,6 @@ html { scroll-behavior: smooth; }
 /* hero stats bar */
 .hero-stats {
     position: absolute; bottom: 0; left: 0; right: 0;
-    z-index: 3;
     display: flex;
     background: rgba(13,15,30,.85);
     backdrop-filter: blur(8px);
@@ -665,7 +685,8 @@ html { scroll-behavior: smooth; }
 </div>
 
 {{-- ═══ HERO ═══ --}}
-<section class="hero" style="background-image:url('{{ $site['hero_img_1'] }}')">
+<section id="hero-section" class="hero" style="background-image:url('{{ $heroSlides[0] ?? ($site['hero_img_1'] ?? '') }}')">
+    <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">Bangsaen Basketball Club · BCBS</p>
         <h1 class="hero-title">BCBS<br><span>Thata</span></h1>
@@ -961,8 +982,43 @@ html { scroll-behavior: smooth; }
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
+const HERO_SLIDES = @json($heroSlides);
+
 // ─── COURTS DATA จาก DB ───
 const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
+
+// ─── HERO SLIDESHOW ───
+function initHeroSlideshow() {
+    const hero = document.getElementById('hero-section');
+    const fader = document.getElementById('hero-bg-fader');
+    if (!hero || !Array.isArray(HERO_SLIDES) || HERO_SLIDES.length <= 1) return;
+
+    let idx = 0;
+    const uniqueSlides = [...new Set(HERO_SLIDES.filter(Boolean))];
+    if (uniqueSlides.length <= 1) return;
+
+    const rotationMs = 5000;
+    const fadeMs = 900;
+
+    setInterval(() => {
+        const nextIdx = (idx + 1) % uniqueSlides.length;
+        const nextImage = uniqueSlides[nextIdx];
+        if (!fader) {
+            idx = nextIdx;
+            hero.style.backgroundImage = `url('${nextImage}')`;
+            return;
+        }
+
+        fader.style.backgroundImage = `url('${nextImage}')`;
+        fader.style.opacity = '1';
+
+        setTimeout(() => {
+            hero.style.backgroundImage = `url('${nextImage}')`;
+            fader.style.opacity = '0';
+            idx = nextIdx;
+        }, fadeMs);
+    }, rotationMs);
+}
 
 // ─── SCROLL TOP ───
 window.addEventListener('scroll', () => {
@@ -1119,6 +1175,7 @@ renderCal();
 loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
+initHeroSlideshow();
 
 function copyPhone(btn) {
     const phone = '081-246-0000';

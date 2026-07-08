@@ -193,10 +193,10 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพที่ {{ $i }}</label>
+                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="hero_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-hero-{{ $i }}')">
-                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             @endforeach
                         </div>
@@ -209,10 +209,10 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพส่วน About ที่ {{ $i }}</label>
+                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="about_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-about-{{ $i }}')">
-                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             @endforeach
                         </div>
@@ -224,17 +224,17 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">พื้นหลังส่วนสนาม (Courts Background)</label>
+                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="courts_bg_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-courts')">
-                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพส่วน Community</label>
+                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="community_img_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-community')">
-                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                         </div>
                     </div>
