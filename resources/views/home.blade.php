@@ -490,7 +490,7 @@ html { scroll-behavior: smooth; }
 .slot-unavailable {
     background: #f1f3f5; color: #adb5bd; cursor: default;
     border: 1px solid #dee2e6;
-} 
+}
 
 .slot-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .slot-free .slot-dot { background: #2f9e44; }
@@ -1086,7 +1086,7 @@ async function renderSch(ds) {
             } else if (status === 'maintenance') {
                 html += '<td><span class="slot-badge slot-maintenance"><span class="slot-dot"></span>ปิดปรับปรุง</span></td>';
             } else if (status === 'unavailable') {
-                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';        
+                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
             } else {
                 html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${h}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }

@@ -3,7 +3,7 @@
 @section('title', 'แก้ไขเนื้อหาและโปรโมชั่น')
 
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8">
+<div class="bg-slate-50 text-gray-900 min-h-screen min-w-screen py-8">
     <div class="container mx-auto px-6 max-w-4xl">
 
         {{-- Header --}}
@@ -54,9 +54,7 @@
                         <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
                         <p class="text-xs text-gray-400">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
                     </div>
-                    <div class="js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold border-green-200 bg-green-50 text-green-700" data-saved-label="บันทึกแล้ว" data-dirty-label="ยังไม่บันทึก" data-saved-class="border-green-200 bg-green-50 text-green-700" data-dirty-class="border-yellow-200 bg-yellow-50 text-yellow-700">
-                        บันทึกแล้ว
-                    </div>
+                    <x-save-status />
                 </div>
 
                 <div class="space-y-4">
@@ -81,17 +79,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <button type="reset"
-                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-                        ยกเลิก
-                    </button>
-                    <button type="submit"
-                            class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        บันทึก
-                    </button>
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
                 </div>
             </form>
 
@@ -103,9 +92,7 @@
                         <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
                         <p class="text-xs text-gray-400">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
                     </div>
-                    <div class="js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold border-green-200 bg-green-50 text-green-700" data-saved-label="บันทึกแล้ว" data-dirty-label="ยังไม่บันทึก" data-saved-class="border-green-200 bg-green-50 text-green-700" data-dirty-class="border-yellow-200 bg-yellow-50 text-yellow-700">
-                        บันทึกแล้ว
-                    </div>
+                    <x-save-status />
                 </div>
 
                 <div class="space-y-4">
@@ -181,17 +168,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <button type="reset"
-                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-                        ยกเลิก
-                    </button>
-                    <button type="submit"
-                            class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        บันทึก
-                    </button>
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
                 </div>
             </form>
 
@@ -203,9 +181,7 @@
                         <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
                         <p class="text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
                     </div>
-                    <div class="js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold border-green-200 bg-green-50 text-green-700" data-saved-label="บันทึกแล้ว" data-dirty-label="ยังไม่บันทึก" data-saved-class="border-green-200 bg-green-50 text-green-700" data-dirty-class="border-yellow-200 bg-yellow-50 text-yellow-700">
-                        บันทึกแล้ว
-                    </div>
+                    <x-save-status />
                 </div>
 
                 <div class="space-y-6">
@@ -220,7 +196,7 @@
                                 <input type="file" name="hero_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-hero-{{ $i }}')">
-                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
+                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             @endforeach
                         </div>
@@ -236,7 +212,7 @@
                                 <input type="file" name="about_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-about-{{ $i }}')">
-                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
+                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             @endforeach
                         </div>
@@ -251,14 +227,14 @@
                                 <input type="file" name="courts_bg_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-courts')">
-                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
+                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพส่วน Community</label>
                                 <input type="file" name="community_img_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-community')">
-                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
+                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                         </div>
                     </div>
@@ -266,17 +242,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <button type="reset"
-                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-                        ยกเลิก
-                    </button>
-                    <button type="submit"
-                            class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        บันทึก
-                    </button>
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
                 </div>
             </form>
 
