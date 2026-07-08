@@ -104,7 +104,7 @@ html { scroll-behavior: smooth; }
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 0 24px 100px;
+    padding: 0 24px 80px;
 }
 .hero-eyebrow {
     font-size: 11px;
