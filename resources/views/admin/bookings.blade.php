@@ -6,7 +6,7 @@
     $statusMap = [
         'pending' => ['label' => 'รออนุมัติ', 'color' => 'orange', 'bg' => 'bg-orange-100', 'text' => 'text-orange-500'],
         'approved' => ['label' => 'อนุมัติแล้ว', 'color' => 'green', 'bg' => 'bg-green-100', 'text' => 'text-green-500'],
-        'rejected' => ['label' => 'ปฏิเสธ', 'color' => 'red', 'bg' => 'bg-red-100', 'text' => 'text-red-500'],
+        'rejected' => ['label' => 'ปฏิเสธแล้ว', 'color' => 'red', 'bg' => 'bg-red-100', 'text' => 'text-red-500'],
         'cancelled' => ['label' => 'ยกเลิก', 'color' => 'red', 'bg' => 'bg-red-100', 'text' => 'text-red-500'],
     ];
 
