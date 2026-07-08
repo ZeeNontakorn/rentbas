@@ -29,4 +29,16 @@ class NotificationController extends Controller
 
         return back();
     }
+
+    /**
+     * ทำเครื่องหมายว่าอ่านแล้วทั้งหมดในครั้งเดียว
+     */
+    public function markAllAsRead()
+    {
+        Notification::where('user_id', auth()->id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return back();
+    }
 }

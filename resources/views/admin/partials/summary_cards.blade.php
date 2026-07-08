@@ -19,7 +19,7 @@
             <div class="text-sm text-gray-500 font-medium mb-1 group-hover:text-green-500 transition">คำขอการจองในวันนี้</div>
             <div class="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition">{{ $stats['today_pending'] ?? 0 }}</div>
         </div>
-        <div class="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition">
+        <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -32,7 +32,7 @@
             <div class="text-sm text-gray-500 font-medium mb-1 group-hover:text-orange-500 transition">การจองที่อนุมัติในวันนี้</div>
             <div class="text-3xl font-bold text-gray-900 group-hover:text-orange-600 transition">{{ $stats['today_approved'] ?? 0 }}</div>
         </div>
-        <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition">
+        <div class="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -40,10 +40,10 @@
     </a>
 
     <!-- ยกเลิก -->
-    <a href="{{ route('admin.bookings', ['date' => now()->toDateString(), 'status' => 'cancelled']) }}" class="bg-white rounded-2xl p-6 shadow-sm flex items-center justify-between border border-gray-100 hover:shadow-md hover:border-red-200 transition group cursor-pointer">
+    <a href="{{ route('admin.bookings', ['date' => now()->toDateString(), 'status' => 'rejected']) }}" class="bg-white rounded-2xl p-6 shadow-sm flex items-center justify-between border border-gray-100 hover:shadow-md hover:border-red-200 transition group cursor-pointer">
         <div>
-            <div class="text-sm text-gray-500 font-medium mb-1 group-hover:text-red-500 transition">การจองที่ถูกยกเลิกในวันนี้</div>
-            <div class="text-3xl font-bold text-gray-900 group-hover:text-red-600 transition">{{ $stats['today_cancelled'] ?? 0 }}</div>
+            <div class="text-sm text-gray-500 font-medium mb-1 group-hover:text-red-500 transition">การจองที่ถูกปฏิเสธในวันนี้</div>
+            <div class="text-3xl font-bold text-gray-900 group-hover:text-red-600 transition">{{ $stats['today_rejected'] ?? 0 }}</div>
         </div>
         <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
