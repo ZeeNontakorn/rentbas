@@ -65,4 +65,26 @@ class Court extends Model
 
         return false;
     }
+    public function getClosureType(string $from, string $to, string $date): ?string
+    {
+
+        if ($this->court_status === 'closed') {
+            return 'closed';
+        }
+
+
+        // Check court_closures
+        $dateStr = $date;
+        $startTime = $from;
+        $endTime = $to;
+
+        $closure = CourtClosure::where('court_id', $this->id)
+            ->whereDate('date', $dateStr)
+            ->where('start_time', '<=', $endTime)
+            ->where('end_time', '>=', $startTime)
+            ->first();
+
+
+        return $closure?->type;
+    }
 }

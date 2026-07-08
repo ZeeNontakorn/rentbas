@@ -17,6 +17,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Public schedule API (used by home calendar to show real booking status)
 Route::get('/schedule', [HomeController::class, 'schedule'])->name('schedule');
 
+// Per-day availability for the calendar dots (whole month)
+Route::get('/month-availability', [HomeController::class, 'monthAvailability'])->name('month.availability');
+
 
 
 // 2. Guest Routes — เฉพาะคนที่ยังไม่ Login (หน้า Login/Register)
