@@ -104,3 +104,8 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/reset-password',  'resetPassword')->name('password.reset');
 });
 
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    abort_unless(file_exists($fullPath), 404);
+    return response()->file($fullPath);
+})->where('path', '.*');
