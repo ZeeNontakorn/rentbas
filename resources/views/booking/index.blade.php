@@ -62,10 +62,14 @@
     background: rgba(0,0,0,0.6);
     z-index: 1000;
     display: flex; align-items: center; justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
 }
 .modal-content {
     background: #fff;
     width: 100%; max-width: 400px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
     border-radius: 12px;
     padding: 30px 24px;
     text-align: center;
@@ -149,6 +153,15 @@
                         @endforeach
                     </div>
                 </div>
+                {{-- Dropdown Data --}}
+                <div id="courtList" class="hidden mt-4 border-t border-gray-100 pt-3 flex flex-col gap-1">
+                    @foreach($courts as $court)
+                        <a href="{{ route('booking.index', ['court_id' => $court->id, 'date' => $date]) }}"
+                           class="court-item rounded {{ $selectedCourt?->id == $court->id ? 'active' : '' }}">
+                           {{ $court->name }}
+                        </a>
+                    @endforeach
+                </div>
             </div>
 
             {{-- BOX 2: เลือกวันที่ --}}
@@ -166,9 +179,9 @@
                     <span class="absolute -top-2.5 left-2 bg-white px-1 text-[10px] font-bold text-purple-600 tracking-wider">Date</span>
                     <form id="dateForm" method="GET" action="{{ route('booking.index') }}">
                         <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
-                        <input type="date" name="date" value="{{ $date }}"
+                        <input type="date" name="date" id="dateInput" value="{{ $date }}"
                                min="{{ now()->toDateString() }}" max="{{ now()->addMonth()->toDateString() }}"
-                               onchange="document.getElementById('dateForm').submit()"
+                               onchange="validateAndSubmitDate(this)"
                                class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
                     </form>
                 </div>
@@ -185,7 +198,7 @@
         {{-- RIGHT COLUMN --}}
         <div class="flex-1 flex flex-col gap-6">
 
-            {{-- BOX 3: เลือกเวลา --}}
+            {{-- BOX 3: เลือกเวลา (เลือกได้หลายช่วงเวลาพร้อมกัน) --}}
             <div class="border border-gray-300 rounded-lg p-6 bg-white min-h-[400px]">
                 <div class="flex justify-between items-center mb-8">
                     <span class="font-bold text-[15px] text-gray-900">3. เลือกเวลา - {{ $cDate->day }} {{ $thMonthsFull[$cDate->month] }} {{ $cDate->year + 543 }}</span>
@@ -211,7 +224,10 @@
                             @endphp
 
                             <div class="slot-card {{ $sClass }}"
-                                 {!! $isAvail ? 'onclick="selectTime(\''.substr($slot['start'], 0, 5).'\',\''.substr($slot['end'], 0, 5).'\',\''.$slot['label'].'\', this)"' : '' !!}>
+                                 data-start="{{ substr($slot['start'], 0, 5) }}"
+                                 data-end="{{ substr($slot['end'], 0, 5) }}"
+                                 data-label="{{ $slot['label'] }}"
+                                 {!! $isAvail ? 'onclick="selectTime(this)"' : '' !!}>
                                 <div class="slot-time">{{ $slot['label'] }}</div>
                                 <div class="slot-btn">{{ $sLabel }}</div>
                             </div>
@@ -222,28 +238,24 @@
 
             {{-- BOX 4: ยืนยันการจอง --}}
             <div id="confirmBox" class="hidden border border-gray-300 rounded-lg p-6 bg-white">
-                <span class="font-bold text-[15px] text-gray-900 block mb-6">4 .ตรวจสอบรายละเอียดการจอง</span>
+                <span class="font-bold text-[15px] text-gray-900 block mb-6">4. ตรวจสอบรายละเอียดการจอง</span>
 
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex flex-col gap-3">
                     <div class="flex gap-4 sm:gap-8 text-[14px] text-gray-900 flex-wrap">
                         <p>วันที่ <span class="font-bold">{{ $cDate->day }} {{ $thMonths[$cDate->month] }}. {{ $cDate->year }}</span></p>
                         <p>สนามที่ <span class="font-bold">{{ str_replace('สนามที่ ', '', $selectedCourt?->name) }}</span></p>
-                        <p>เวลา <span id="confirmTime" class="font-bold"></span> น.</p>
                     </div>
 
-                    <form method="POST" action="{{ route('booking.store') }}">
-                        @csrf
-                        <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
-                        <input type="hidden" name="booking_date" value="{{ $date }}">
-                        <input type="hidden" name="start_time" id="valStart">
-                        <input type="hidden" name="end_time" id="valEnd">
-                        <button type="submit" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition">
+                    <div id="confirmList" class="flex flex-col gap-2 text-[14px] text-gray-900 mt-2"></div>
+
+                    <div class="flex justify-end mt-2">
+                        <button type="button" onclick="submitBooking()" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition">
                             ยืนยัน
                         </button>
-                    </form>
+                    </div>
                 </div>
                 <div class="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-500">
-                    กรุณาตรวจสอบ 'วันที่' และ 'เวลา' อีกครั้งก่อนกดยืนยัน
+                    กรุณาตรวจสอบ 'วันที่' และ 'เวลา' ของทุกรายการอีกครั้งก่อนกดยืนยัน
                 </div>
             </div>
 
@@ -253,7 +265,11 @@
 
 {{-- SUCCESS MODAL --}}
 @if(session('success_booking'))
-    @php $sb = session('success_booking'); @endphp
+    @php
+        $sbList = session('success_booking');
+        // รองรับทั้งกรณี array เดี่ยว (จองรายการเดียว) และ array ของหลายรายการ (จองหลายเวลาพร้อมกัน)
+        $sbList = isset($sbList['court_name']) ? [$sbList] : $sbList;
+    @endphp
     <div class="modal-bg">
         <div class="modal-content relative">
             <div class="w-16 h-16 mx-auto bg-green-50 rounded-full flex items-center justify-center border-4 border-[#87D068] mb-4">
@@ -263,30 +279,34 @@
             <h2 class="text-2xl font-bold text-[#87D068] mb-6 tracking-wide" style="font-family:'Kanit',sans-serif;">รอแอดมินอนุมัติ</h2>
 
             <div class="text-left border border-gray-200 rounded-lg p-5 mb-6">
-                <p class="font-bold text-gray-900 mb-3 text-[15px]">รายละเอียดการจอง</p>
+                <p class="font-bold text-gray-900 mb-3 text-[15px]">รายละเอียดการจอง ({{ count($sbList) }} รายการ)</p>
 
-                <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
-                    <span class="text-gray-500">สนาม</span>
-                    <span class="text-gray-900 text-right">{{ $sb['court_name'] }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
-                    <span class="text-gray-500">วันที่</span>
-                    <span class="text-gray-900 text-right">
-                        @php
-                            $sbt = \Carbon\Carbon::parse($sb['date']);
-                            $mn = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-                            echo $sbt->day . ' ' . $mn[$sbt->month] . ' ' . ($sbt->year+543);
-                        @endphp
-                    </span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
-                    <span class="text-gray-500">เวลา</span>
-                    <span class="text-gray-900 text-right">{{ $sb['time'] }}</span>
-                </div>
-                <div class="flex justify-between py-2 text-sm">
-                    <span class="text-gray-500">สถานะ</span>
-                    <span class="font-bold text-gray-900 text-right">{{ $sb['status'] }}</span>
-                </div>
+                @foreach($sbList as $sb)
+                    <div class="mb-3 pb-3 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0">
+                        <div class="flex justify-between py-1 text-sm">
+                            <span class="text-gray-500">สนาม</span>
+                            <span class="text-gray-900 text-right">{{ $sb['court_name'] }}</span>
+                        </div>
+                        <div class="flex justify-between py-1 text-sm">
+                            <span class="text-gray-500">วันที่</span>
+                            <span class="text-gray-900 text-right">
+                                @php
+                                    $sbt = \Carbon\Carbon::parse($sb['date']);
+                                    $mn = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                                    echo $sbt->day . ' ' . $mn[$sbt->month] . ' ' . ($sbt->year+543);
+                                @endphp
+                            </span>
+                        </div>
+                        <div class="flex justify-between py-1 text-sm">
+                            <span class="text-gray-500">เวลา</span>
+                            <span class="text-gray-900 text-right">{{ $sb['time'] }}</span>
+                        </div>
+                        <div class="flex justify-between py-1 text-sm">
+                            <span class="text-gray-500">สถานะ</span>
+                            <span class="font-bold text-gray-900 text-right">{{ $sb['status'] }}</span>
+                        </div>
+                    </div>
+                @endforeach
             </div>
 
             <div class="bg-blue-50 text-blue-900 rounded-lg p-4 text-left mb-6">
@@ -311,31 +331,112 @@
 
 @push('scripts')
 <script>
-let selEl = null;
+// เก็บ selection เป็นรายการ (array) เพื่อให้เลือกได้หลายช่วงเวลาในสนามเดียวพร้อมกัน
+let selections = []; // [{ start, end, label, el }]
 
-function selectTime(start, end, label, el) {
-    if (selEl) {
-        selEl.classList.remove('selected');
-        selEl.querySelector('.slot-btn').innerHTML = 'ว่าง';
-    }
+function findSelectionIndex(el) {
+    return selections.findIndex(s => s.el === el);
+}
 
-    if (selEl === el) {
-        selEl = null;
-        document.getElementById('confirmBox').classList.add('hidden');
+function selectTime(el) {
+    const idx = findSelectionIndex(el);
+
+    // กด slot เดิมซ้ำ = ยกเลิกการเลือกอันนี้ออกจากรายการ (ไม่กระทบ slot อื่นที่เลือกไว้)
+    if (idx !== -1) {
+        selections.splice(idx, 1);
+        el.classList.remove('selected');
+        el.querySelector('.slot-btn').innerHTML = 'ว่าง';
+        updateConfirmBox();
         return;
     }
 
+    // เลือกเพิ่มได้เรื่อยๆ ไม่ยกเลิก slot อื่นที่เลือกไว้ก่อนหน้า
     el.classList.add('selected');
     el.querySelector('.slot-btn').innerHTML = `
         กำลังเลือก
         <svg class="w-3.5 h-3.5 bg-white text-[#87D068] rounded-full p-[1px] ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
     `;
-    selEl = el;
 
-    document.getElementById('valStart').value = start;
-    document.getElementById('valEnd').value = end;
-    document.getElementById('confirmTime').textContent = label;
-    document.getElementById('confirmBox').classList.remove('hidden');
+    selections.push({
+        start: el.dataset.start,
+        end: el.dataset.end,
+        label: el.dataset.label,
+        el,
+    });
+
+    updateConfirmBox();
+}
+
+function removeSelection(index) {
+    const s = selections[index];
+    if (s && s.el) {
+        s.el.classList.remove('selected');
+        s.el.querySelector('.slot-btn').innerHTML = 'ว่าง';
+    }
+    selections.splice(index, 1);
+    updateConfirmBox();
+}
+
+function updateConfirmBox() {
+    const box = document.getElementById('confirmBox');
+    const list = document.getElementById('confirmList');
+
+    if (selections.length === 0) {
+        box.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+    }
+
+    box.classList.remove('hidden');
+    list.innerHTML = selections.map((s, idx) => {
+        return `<div class="flex justify-between items-center border-b border-gray-50 pb-2">
+                    <span class="text-gray-500">เวลา <span class="font-bold text-gray-900">${s.label} น.</span></span>
+                    <button type="button" onclick="removeSelection(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
+                </div>`;
+    }).join('');
+}
+
+function submitBooking() {
+    if (selections.length === 0) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{{ route('booking.store') }}";
+
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = '_token';
+    csrf.value = '{{ csrf_token() }}';
+    form.appendChild(csrf);
+
+    const dateInput = document.createElement('input');
+    dateInput.type = 'hidden';
+    dateInput.name = 'booking_date';
+    dateInput.value = '{{ $date }}';
+    form.appendChild(dateInput);
+
+    selections.forEach((s, idx) => {
+        const ci = document.createElement('input');
+        ci.type = 'hidden';
+        ci.name = `bookings[${idx}][court_id]`;
+        ci.value = "{{ $selectedCourt?->id }}";
+        form.appendChild(ci);
+
+        const st = document.createElement('input');
+        st.type = 'hidden';
+        st.name = `bookings[${idx}][start_time]`;
+        st.value = s.start;
+        form.appendChild(st);
+
+        const et = document.createElement('input');
+        et.type = 'hidden';
+        et.name = `bookings[${idx}][end_time]`;
+        et.value = s.end;
+        form.appendChild(et);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 setInterval(() => {
@@ -343,6 +444,27 @@ setInterval(() => {
     document.getElementById('currentClock').innerText =
         String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }, 60000);
+
+function validateAndSubmitDate(input) {
+    const maxDate = new Date("{{ now()->addMonth()->toDateString() }}");
+    const minDate = new Date("{{ now()->toDateString() }}");
+    const selectedDate = new Date(input.value);
+
+    maxDate.setHours(0,0,0,0);
+    minDate.setHours(0,0,0,0);
+    selectedDate.setHours(0,0,0,0);
+
+    if (selectedDate > maxDate) {
+        alert("สามารถจองล่วงหน้าได้สูงสุด 1 เดือนเท่านั้น");
+        input.value = "{{ now()->addMonth()->toDateString() }}";
+    }
+    else if (selectedDate < minDate) {
+        alert("ไม่สามารถเลือกวันย้อนหลังได้");
+        input.value = "{{ now()->toDateString() }}";
+    }
+
+    document.getElementById('dateForm').submit();
+}
 </script>
 @endpush
 @endsection

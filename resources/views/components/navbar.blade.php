@@ -70,16 +70,56 @@
                     </button>
 
                     {{-- Dropdown สำหรับแสดงรายการแจ้งเตือน --}}
-                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-[90vw] max-w-sm sm:w-80 bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto max-h-96 z-50">
+                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto max-h-96 z-50">
+                        @if($notifications->isNotEmpty())
+                            <div class="flex justify-between items-center px-3 py-2 border-b border-gray-700 sticky top-0 bg-gray-800 z-10">
+                                <span class="text-xs text-gray-400 font-medium">แจ้งเตือนล่าสุด</span>
+                                <form method="POST" action="{{ route('notifications.readAll') }}">
+                                    @csrf
+                                    <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านทั้งหมด</button>
+                                </form>
+                            </div>
+                        @endif
                         @if($notifications->isEmpty())
                         {{-- ถ้าไม่มีแจ้งเตือน --}}
                             <div class="p-4 text-center text-gray-400">ไม่มีการแจ้งเตือนใหม่</div>
                         @else
+                @php
+                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน -> จัดการการจอง
+                    $defaultNotifTarget = auth()->user()->role === 'admin' ? route('admin.bookings') : route('history');
+                    // แต่ถ้าเป็นแจ้งเตือนผลการจอง (อนุมัติ/ปฏิเสธ) ให้ไปหน้าประวัติการจองเสมอ ไม่ว่าจะ role ไหน
+                    $historyOnlyTitles = ['การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ'];
+                @endphp
                             @foreach($notifications as $n)
-                            {{-- แต่ละรายการแจ้งเตือน --}}
-                                <div class="p-3 border-b border-gray-700 hover:bg-gray-700 flex justify-between items-start">
+                            {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
+                                @php
+                                    $notifTarget = in_array($n->title, $historyOnlyTitles) ? route('history') : $defaultNotifTarget;
+
+                                    // สีประจำประเภทแจ้งเตือน ให้แยกอนุมัติ/ปฏิเสธออกจากกันชัดเจน
+                                    $accentBorder = 'border-gray-700';
+                                    $accentText = 'text-orange-400';
+                                    $accentIcon = null;
+                                    if ($n->title === 'การจองได้รับการอนุมัติ') {
+                                        $accentBorder = 'border-l-4 border-l-green-500';
+                                        $accentText = 'text-green-400';
+                                        $accentIcon = ['bg' => 'bg-green-500/15', 'color' => 'text-green-400', 'path' => 'M5 13l4 4L19 7'];
+                                    } elseif ($n->title === 'การจองถูกปฏิเสธ') {
+                                        $accentBorder = 'border-l-4 border-l-red-500';
+                                        $accentText = 'text-red-400';
+                                        $accentIcon = ['bg' => 'bg-red-500/15', 'color' => 'text-red-400', 'path' => 'M6 18L18 6M6 6l12 12'];
+                                    }
+                                @endphp
+                                <div class="p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start cursor-pointer"
+                                     onclick="window.location.href='{{ $notifTarget }}'">
                                     <div class="flex-1 pr-2">
-                                        <div class="font-semibold text-[15px] truncate">{{ $n->title ?? 'การจอง' }}</div>
+                                        <div class="flex items-center gap-2">
+                                            @if($accentIcon)
+                                                <span class="w-5 h-5 rounded-full {{ $accentIcon['bg'] }} {{ $accentIcon['color'] }} flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="{{ $accentIcon['path'] }}"></path></svg>
+                                                </span>
+                                            @endif
+                                            <div class="font-semibold text-[15px] truncate">{{ $n->title ?? 'การจอง' }}</div>
+                                        </div>
                                         <div class="text-[13px] text-gray-300 mt-1 leading-tight">
                                             @php
                                             // แยกข้อความโดยใช้ '|' เป็นตัวแบ่ง
@@ -89,16 +129,16 @@
                                             {{-- แสดงส่วนแรกของข้อความ (หลัก) --}}
                                             {{ $msgParts[0] }}
 
-                                            {{-- แสดงส่วนที่สองของข้อความ (ถ้ามี) --}}
+                                            {{-- แสดงส่วนที่สองของข้อความ (ถ้ามี) — แปลง \n เป็นขึ้นบรรทัดใหม่จริง --}}
                                             @if(isset($msgParts[1]) && trim($msgParts[1]) !== '')
-                                                <div class="mt-1 font-medium text-orange-400">{{ $msgParts[1] }}</div>
+                                                <div class="mt-1 font-medium {{ $accentText }}">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
                                             @endif
                                         </div>
                                         {{-- แสดงวันที่สร้างแจ้งเตือน --}}
                                         <div class="text-[11px] text-gray-400 mt-2">{{ $n->created_at->format('d M Y H:i') }}</div>
                                     </div>
-                                    {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) --}}
-                                    <form method="POST" action="{{ route('notifications.read', $n) }}">
+                                    {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) — กันไม่ให้คลิกทะลุไปเปิดหน้าปลายทางด้วย --}}
+                                    <form method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
                                         @csrf
                                         <button type="submit" class="text-[11px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition whitespace-nowrap">อ่านแล้ว</button>
                                     </form>
