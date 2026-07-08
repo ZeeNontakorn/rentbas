@@ -144,7 +144,7 @@
 
                     {{-- BOX 1: เลือกสนาม --}}
                     <div
-                        class="relative z-50 border border-gray-200 bg-white rounded-lg p-5 flex items-center justify-between">
+                        class="relative z-3 border border-gray-200 bg-white rounded-lg p-5 flex items-center justify-between">
                         <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
 
                         <div class="relative w-[120px]">
