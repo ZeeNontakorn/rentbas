@@ -667,8 +667,15 @@ html { scroll-behavior: smooth; }
 .footer-map iframe { width: 100%; height: 100%; border: none; }
 .footer-social { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .social-badge {
-    padding: 5px 14px; background: rgba(255,255,255,.06);
-    border-radius: 20px; font-size: 11px; color: rgba(255,255,255,.5);
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 5px 14px;
+    background: rgba(255,255,255,.06);
+    border-radius: 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
     transition: background .2s, color .2s;
 }
 .social-badge:hover { background: var(--ore); color: #fff; }
@@ -718,6 +725,13 @@ html { scroll-behavior: smooth; }
 @media (max-width: 480px) {
     .courts-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 52px; }
+}
+
+.icon-footer{
+    width: 15px;
+    height: auto;
+    vertical-align: middle;
+    margin-right: 5px;
 }
 </style>
 
@@ -1024,9 +1038,22 @@ html { scroll-behavior: smooth; }
             <div style="margin-top:20px;">
                 <p class="footer-addr-title" style="margin-bottom:10px;">ติดตามข่าวสาร</p>
                 <div class="footer-social">
-                    <a href="#" class="social-badge">📘 สนามบาส บางแสนคลับ</a>
-                    <a href="#" class="social-badge">▶ BangsaenClub YT</a>
-                    <a href="#" class="social-badge">🏀 BSC_THAILAND</a>
+                    <a href="https://www.facebook.com/thatahomecourts/" class="social-badge" target="_blank">
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt=""> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
+                    </a>
+                    <a href="https://www.youtube.com/THATASPORT" class="social-badge" target="_blank">
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
+                    </a>
+                    <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">thata_homecourt
+                    </a>
+                    <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
+                    </a>
+                    <a href="javascript:void(0)" onclick="copyPhone(this)" class="social-badge">
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5585/5585856.png" alt="">
+                        <span class="phone-num">081-246-0000</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -1034,7 +1061,7 @@ html { scroll-behavior: smooth; }
             <p class="footer-addr-title" style="margin-bottom:12px;">แผนที่</p>
             <div class="footer-map">
                 <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3876.8455292!2d100.9169!3d13.2875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311d9a3b7e4b45b9%3A0xcb4b7d14c3d944f2!2z4Liz4Liq4Li44Lit4LiB4LiC4LmJ4LiyIOC4hOC4p-C4suC4meC4muC4o-C4o-C4q-C4suC4h-C4iuC4ueC5iA!5e0!3m2!1sth!2sth!4v1712000000000!5m2!1sth!2sth"
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d62113.64127603402!2d100.8897096!3d13.3438947!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311d4bd8ee3abfa9%3A0x49305e14f78f3b2c!2zVEhBVEEgSE9NRUNPVVJUIOKAkyBUSEFUQSBTUE9SVCBIUSAmIEJhc2tldGJhbGwgKENob25idXJpKSDguJfguLLguJfguYjguLIg4Liq4Liz4LiZ4Lix4LiB4LiH4Liy4LiZ4LmD4Lir4LiN4LmIIOC5geC4peC4sOC4quC4meC4suC4oeC4muC4suC4quC5gOC4geC4leC4muC4reC4pSDguIrguKXguJrguLjguKPguLU!5e0!3m2!1sen!2sth!4v1783309229694!5m2!1sen!2sth" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
                     allowfullscreen
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
@@ -1045,9 +1072,9 @@ html { scroll-behavior: smooth; }
     <div class="footer-bottom">
         <p class="footer-copy">© 2026 BCBS Basketball Court Booking System. All Rights Reserved.</p>
         <div class="footer-links">
-            <a href="#">ติดตามเรา</a>
+            <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
             <a href="#">ข้อกำหนดการใช้งาน</a>
-            <a href="#">ติดต่อ</a>
+            <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
         </div>
     </div>
 </footer>
@@ -1203,6 +1230,38 @@ buildCourtHeaders();
 renderCal();
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
+
+function copyPhone(btn) {
+    const phone = '081-246-0000';
+
+    const doFeedback = () => {
+        const label = btn.querySelector('.phone-num');
+        const original = label.textContent;
+        label.textContent = 'คัดลอกแล้ว!';
+        btn.style.background = 'var(--green)';
+        setTimeout(() => {
+            label.textContent = original;
+            btn.style.background = '';
+        }, 1800);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(phone).then(doFeedback).catch(() => fallbackCopy(phone, doFeedback));
+    } else {
+        fallbackCopy(phone, doFeedback);
+    }
+}
+
+function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); cb(); } catch (e) {}
+    document.body.removeChild(ta);
+}
 </script>
 
 </div>

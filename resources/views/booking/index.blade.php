@@ -84,7 +84,7 @@
     {{-- Banner Dynamic --}}
     @php
         $cid = $selectedCourt ? $selectedCourt->id : 1;
-        
+
         // รูปภาพสนามบาสเกตบอลแบบเต็มสนาม (รวบรวมจาก Unsplash หลากหลายมุมมอง)
         $realCourts = [
             'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Close up hoop (Default)
@@ -93,7 +93,7 @@
             'https://images.unsplash.com/photo-1574907060871-4555aa8aca75?q=80&w=2148&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Dark gym with hoop
             'https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=1400&auto=format&fit=crop', // Ball & floor
         ];
-        
+
         // เลือกรูปแบบวนลูปตาม ID ของ Court
         $bannerImg = $realCourts[($cid - 1) % count($realCourts)];
     @endphp
@@ -102,7 +102,7 @@
         <img src="{{ $bannerImg }}"
              onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1400&auto=format&fit=crop'"
              alt="Court Banner" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
-        
+
         {{-- Overlay gradient for text readability and premium look --}}
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         <div class="absolute bottom-6 left-8 text-white">
@@ -124,24 +124,30 @@
 
         {{-- LEFT COLUMN --}}
         <div class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
-            
+
             {{-- BOX 1: เลือกสนาม --}}
-            <div class="border border-gray-300 rounded-lg p-5">
-                <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('courtList').classList.toggle('hidden')">
-                    <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
-                    <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between w-[110px] text-[13px] bg-white">
+            <div class="relative z-50 border border-gray-300 rounded-lg p-5 flex items-center justify-between">
+                <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
+
+                <div class="relative w-[120px]">
+                    <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between cursor-pointer bg-white text-[13px]"
+                         onclick="document.getElementById('courtList').classList.toggle('hidden')">
                         <span class="truncate">{{ $selectedCourt->name ?? 'เลือก' }}</span>
-                        <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
                     </div>
-                </div>
-                {{-- Dropdown Data --}}
-                <div id="courtList" class="hidden mt-4 border-t border-gray-100 pt-3 flex flex-col gap-1">
-                    @foreach($courts as $court)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id, 'date' => $date]) }}" 
-                           class="court-item rounded {{ $selectedCourt?->id == $court->id ? 'active' : '' }}">
-                           {{ $court->name }}
-                        </a>
-                    @endforeach
+
+                    <div id="courtList"
+                         class="hidden absolute top-full mt-1 left-0 left-0 w-full max-h-[380px] overflow-y-auto overflow-x-hidden bg-white border border-gray-200 rounded-md shadow-xl z-50 flex flex-col">
+                        @foreach($courts as $court)
+                            <a href="{{ route('booking.index', ['court_id' => $court->id, 'date' => $date]) }}"
+                               class="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0 truncate {{ $selectedCourt?->id == $court->id ? 'font-bold bg-gray-50 text-[#87D068]' : '' }}">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 {{ ($court->court_status ?? 'open') === 'open' ? 'bg-emerald-500' : 'bg-red-500' }}"></span>
+                                <span class="truncate">{{ $court->name }}</span>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
@@ -154,7 +160,7 @@
             @endphp
             <div class="border border-gray-300 rounded-lg p-5 flex flex-col">
                 <span class="font-bold text-[15px] text-gray-900 mb-5">2. เลือกวันที่</span>
-                
+
                 {{-- Outline Input Date --}}
                 <div class="relative w-full rounded border border-purple-400 p-[1px] mb-2 focus-within:border-purple-600 focus-within:ring-1 focus-within:ring-purple-600">
                     <span class="absolute -top-2.5 left-2 bg-white px-1 text-[10px] font-bold text-purple-600 tracking-wider">Date</span>
@@ -204,7 +210,7 @@
                                 };
                             @endphp
 
-                            <div class="slot-card {{ $sClass }}" 
+                            <div class="slot-card {{ $sClass }}"
                                  {!! $isAvail ? 'onclick="selectTime(\''.substr($slot['start'], 0, 5).'\',\''.substr($slot['end'], 0, 5).'\',\''.$slot['label'].'\', this)"' : '' !!}>
                                 <div class="slot-time">{{ $slot['label'] }}</div>
                                 <div class="slot-btn">{{ $sLabel }}</div>
@@ -217,7 +223,7 @@
             {{-- BOX 4: ยืนยันการจอง --}}
             <div id="confirmBox" class="hidden border border-gray-300 rounded-lg p-6 bg-white">
                 <span class="font-bold text-[15px] text-gray-900 block mb-6">4 .ตรวจสอบรายละเอียดการจอง</span>
-                
+
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div class="flex gap-4 sm:gap-8 text-[14px] text-gray-900 flex-wrap">
                         <p>วันที่ <span class="font-bold">{{ $cDate->day }} {{ $thMonths[$cDate->month] }}. {{ $cDate->year }}</span></p>
@@ -253,12 +259,12 @@
             <div class="w-16 h-16 mx-auto bg-green-50 rounded-full flex items-center justify-center border-4 border-[#87D068] mb-4">
                 <svg class="w-8 h-8 text-[#87D068]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
             </div>
-            
+
             <h2 class="text-2xl font-bold text-[#87D068] mb-6 tracking-wide" style="font-family:'Kanit',sans-serif;">รอแอดมินอนุมัติ</h2>
-            
+
             <div class="text-left border border-gray-200 rounded-lg p-5 mb-6">
                 <p class="font-bold text-gray-900 mb-3 text-[15px]">รายละเอียดการจอง</p>
-                
+
                 <div class="flex justify-between py-2 border-b border-gray-100 text-sm">
                     <span class="text-gray-500">สนาม</span>
                     <span class="text-gray-900 text-right">{{ $sb['court_name'] }}</span>
@@ -321,7 +327,7 @@ function selectTime(start, end, label, el) {
 
     el.classList.add('selected');
     el.querySelector('.slot-btn').innerHTML = `
-        กำลังเลือก 
+        กำลังเลือก
         <svg class="w-3.5 h-3.5 bg-white text-[#87D068] rounded-full p-[1px] ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
     `;
     selEl = el;
@@ -334,7 +340,7 @@ function selectTime(start, end, label, el) {
 
 setInterval(() => {
     let d = new Date();
-    document.getElementById('currentClock').innerText = 
+    document.getElementById('currentClock').innerText =
         String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }, 60000);
 </script>
