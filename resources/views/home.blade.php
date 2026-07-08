@@ -531,7 +531,7 @@ html { scroll-behavior: smooth; }
 .promo-tag { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ore); margin-bottom: 6px; }
 .promo-title { font-size: clamp(40px,6vw,56px); font-weight: 800; color: var(--ink); }
 
-.promo-container { width: 100%; padding: 0 5%; }
+.promo-container { display: block; width: 100%; padding: 0 5%; }
 .promo-card {
     border-radius: 12px; overflow: hidden; height: 400px; position: relative;
     cursor: pointer; width: 100%;
@@ -635,6 +635,10 @@ html { scroll-behavior: smooth; }
 </style>
 
 <div class="home-content">
+@php
+    $imagePlaceholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1e2235" offset="0%"/><stop stop-color="#13162a" offset="100%"/></linearGradient></defs><rect width="800" height="500" fill="url(#g)"/><circle cx="400" cy="210" r="58" fill="#e86c2a" fill-opacity="0.18"/><path d="M260 340h280" stroke="#e86c2a" stroke-width="18" stroke-linecap="round" stroke-opacity="0.35"/><path d="M320 235l40 40 120-120" fill="none" stroke="#f6f5f0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.55"/></svg>');
+    $imageFallback = "onerror=\"this.onerror=null;this.src='" . $imagePlaceholder . "';\"";
+@endphp
 
 
 <div class="mobile-menu" id="mobile-menu">
@@ -705,13 +709,13 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="about-images">
         <div class="about-img main" style="height:200px;">
-            <img src="{{ $site['about_img_1'] }}" alt="court">
+            <img src="{{ $site['about_img_1'] }}" alt="court" {!! $imageFallback !!}>
         </div>
         <div class="about-img" style="height:160px;">
-            <img src="{{ $site['about_img_2'] }}" alt="court">
+            <img src="{{ $site['about_img_2'] }}" alt="court" {!! $imageFallback !!}>
         </div>
         <div class="about-img" style="height:160px;">
-            <img src="{{ $site['about_img_3'] }}" alt="court">
+            <img src="{{ $site['about_img_3'] }}" alt="court" {!! $imageFallback !!}>
         </div>
     </div>
 </section>
@@ -742,7 +746,7 @@ html { scroll-behavior: smooth; }
 
             <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}">
                 <div class="court-thumb">
-                    <img src="{{ $img }}" alt="{{ $court->name }}">
+                    <img src="{{ $img }}" alt="{{ $court->name }}" {!! $imageFallback !!}>
                     <div class="court-thumb-overlay"></div>
                     <div class="court-num">{{ $loop->iteration }}</div>
                 </div>
@@ -834,7 +838,7 @@ html { scroll-behavior: smooth; }
 <section class="community-section" data-aos="fade-up">
     <div class="community-img-wrap" data-aos="zoom-in" data-aos-delay="200">
         <div class="community-img-main">
-            <img src="{{ $site['community_img'] }}" alt="community">
+            <img src="{{ $site['community_img'] }}" alt="community" {!! $imageFallback !!}>
         </div>
         <div class="community-stat">
             <p class="cstat-label">โค้ช DREAM</p>
@@ -858,7 +862,7 @@ html { scroll-behavior: smooth; }
         <h2 class="promo-title">{{ $site['promo_title'] }}</h2>
     </div>
 
-    <div class="promo-container">
+    <a href="{{ route('booking.index') }}" class="promo-container" aria-label="ไปหน้าจองสนาม">
         @php
             $promoImg = $site['promo_image'];
             $promoTitle = $site['promo_card_title'];
@@ -867,7 +871,7 @@ html { scroll-behavior: smooth; }
 
         <div class="promo-card">
             @if($promoImg)
-                <img src="{{ $promoImg }}" alt="promotion">
+                <img src="{{ $promoImg }}" alt="promotion" {!! $imageFallback !!}>
             @else
                 <div style="width:100%; height:100%; background:linear-gradient(135deg, var(--ore) 0%, var(--ore-d) 100%); display:flex; align-items:center; justify-content:center;">
                     <div style="text-align:center; color:#fff;">
@@ -880,7 +884,7 @@ html { scroll-behavior: smooth; }
                 <div class="promo-card-sub">{{ $promoSub }}</div>
             </div>
         </div>
-    </div>
+    </a>
 </section>
 
 {{-- ═══ FOOTER ═══ --}}
@@ -902,7 +906,7 @@ html { scroll-behavior: smooth; }
                 <p class="footer-addr-title" style="margin-bottom:10px;">ติดตามข่าวสาร</p>
                 <div class="footer-social">
                     <a href="https://www.facebook.com/thatahomecourts/" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt=""> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt="" {!! $imageFallback !!}> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
                     </a>
                     <a href="https://www.youtube.com/THATASPORT" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
