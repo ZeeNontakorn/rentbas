@@ -171,10 +171,10 @@
                                     {{ $stLabel }}
                                 </span>
                                 
-                                @if(!$b->isStarted() && $b->status === 'pending')
-                                    <form method="POST" action="{{ route('booking.cancel', $b) }}" onsubmit="return confirm('ยืนยันยกเลิกการจองนี้?');" class="md:ml-auto block">
+                                @if(!$b->isStarted())
+                                    <form method="POST" action="{{ route('booking.cancel', $b) }}" class="cancel-form md:ml-auto block">
                                         @csrf
-                                        <button type="submit" class="btn-cancel w-full md:w-auto text-center">ยกเลิก</button>
+                                        <button type="button" class="btn-cancel w-full md:w-auto text-center btn-cancel-trigger">ยกเลิก</button>
                                     </form>
                                 @endif
                             </div>
@@ -242,4 +242,40 @@
     </div>
 
 </div>
+</div>
+
+{{-- SweetAlert2: layout หลักยังไม่ได้โหลดไว้ จึงต้องโหลดที่นี่ --}}
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-cancel-trigger').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const form = btn.closest('form');
+
+            Swal.fire({
+                title: "ยืนยันยกเลิกการจอง",
+                text: "คุณต้องการยกเลิกการจองใช่หรือไม่",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "ใช่, ยกเลิกเลย",
+                cancelButtonText: "ไม่ใช่"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: "ยกเลิกแล้ว!",
+                        text: "รายการจองของคุณถูกยกเลิกเรียบร้อย",
+                        icon: "success"
+                    }).then(() => {
+                        form.submit();
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
+@endpush
 @endsection

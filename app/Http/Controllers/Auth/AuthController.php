@@ -22,10 +22,23 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:users,name'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'name.required' => 'กรุณากรอกชื่อผู้ใช้',
+            'name.max' => 'ชื่อผู้ใช้ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'name.unique' => 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น',
+            'email.required' => 'กรุณากรอกอีเมล',
+            'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
+            'email.max' => 'อีเมลต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
+            'phone.required' => 'กรุณากรอกเบอร์โทรศัพท์',
+            'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'password.required' => 'กรุณากรอกรหัสผ่าน',
+            'password.min' => 'รหัสผ่านต้องมีความยาวอย่างน้อย :min ตัวอักษร',
+            'password.confirmed' => 'การยืนยันรหัสผ่านไม่ตรงกัน',
         ]);
 
         $user = User::create([
