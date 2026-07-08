@@ -43,7 +43,6 @@ html { scroll-behavior: smooth; }
     font-family: 'Sarabun', sans-serif;
     color: #e0e0e0;
     -webkit-font-smoothing: antialiased;
-    padding-top: 56px;
 }
 .home-content h1, .home-content h2, .home-content h3, .home-content h4, .home-content h5 { font-family: 'Kanit', sans-serif; }
 .home-content a { text-decoration: none; color: inherit; }
@@ -84,7 +83,7 @@ html { scroll-behavior: smooth; }
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 0 24px;
+    padding: 0 24px 78px;
 }
 .hero-eyebrow {
     font-size: 11px;
@@ -559,8 +558,8 @@ html { scroll-behavior: smooth; }
 }
 .promo-card:hover::after { opacity: .8; }
 .promo-card-inner { position: absolute; bottom: 16px; left: 16px; z-index: 1; }
-.promo-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; line-height: 1.1; letter-spacing: .06em; }
-.promo-card-sub { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
+.promo-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: #fff; line-height: 1.1; letter-spacing: .06em; }
+.promo-card-sub { font-size: 33px; color: rgba(255, 238, 0, 0.7); margin-top: 3px; }
 
 
 
@@ -680,7 +679,6 @@ html { scroll-behavior: smooth; }
             @endguest
         </div>
     </div>
-
     <div class="hero-stats">
         <div class="hstat"><div class="hstat-num">{{ $courts->count() }}</div><div class="hstat-label">สนาม</div></div>
         <div class="hstat"><div class="hstat-num">7</div><div class="hstat-label">วันต่อสัปดาห์</div></div>
