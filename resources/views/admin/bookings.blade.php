@@ -90,11 +90,11 @@
                                                 @csrf
                                                 <button type="button"
                                                     onclick="openRejectModal(event, '{{ route('admin.bookings.reject', $b) }}')"
-                                                    class="bg-red-500 text-white text-xs px-3 py-1 rounded cursor-pointer transition duration-200 hover:scale-105 hover:bg-red-600">ยกเลิก
+                                                    class="bg-red-500 text-white text-xs px-3 py-1 rounded cursor-pointer transition duration-200 hover:scale-105 hover:bg-red-600">ปฏิเสธ
                                                 </button>
 
                                                 <button type="submit"
-                                                    class="bg-green-500 text-white text-xs px-3 py-1 rounded cursor-pointer transition duration-200 hover:scale-105 hover:bg-green-600">ยืนยัน
+                                                    class="bg-green-500 text-white text-xs px-3 py-1 rounded cursor-pointer transition duration-200 hover:scale-105 hover:bg-green-600">อนุมัติ
                                                 </button>
                                             </form>
                                         @else
