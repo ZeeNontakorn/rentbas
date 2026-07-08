@@ -1122,6 +1122,13 @@ loadMonthStatus();   // โหลดสถานะจริงของเด�
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 
+// Re-sync AOS after all dynamic blocks and images are ready.
+window.addEventListener('load', () => {
+    if (window.AOS && typeof window.AOS.refreshHard === 'function') {
+        window.AOS.refreshHard();
+    }
+});
+
 function copyPhone(btn) {
     const phone = '081-246-0000';
 
