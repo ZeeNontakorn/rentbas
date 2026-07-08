@@ -15,7 +15,8 @@ class DashboardController extends Controller
             'today_total' => Booking::whereDate('booking_date', $today)->count(),
             'today_pending' => Booking::whereDate('booking_date', $today)->where('status', 'pending')->count(),
             'today_approved' => Booking::whereDate('booking_date', $today)->where('status', 'approved')->count(),
-            'today_cancelled' => Booking::whereDate('booking_date', $today)->whereIn('status', ['rejected', 'cancelled'])->count(),
+            'today_cancelled' => Booking::whereDate('booking_date', $today)->whereIn('status', ['cancelled'])->count(),
+            'today_rejected' => Booking::whereDate('booking_date', $today)->where('status', 'rejected')->count(),
         ];
     }
 
@@ -73,7 +74,7 @@ class DashboardController extends Controller
         $startDate = now()->subDays((int)$range);
 
         $sideStatsQuery = Booking::where('created_at', '>=', $startDate);
-        
+
         $sideStats = [
             'total' => (clone $sideStatsQuery)->count(),
             'pending' => (clone $sideStatsQuery)->where('status', 'pending')->count(),

@@ -17,7 +17,7 @@
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-6 max-w-7xl">
-        
+
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-2xl font-semibold text-gray-800">จัดการการจอง</h1>
@@ -133,7 +133,7 @@
             </div>
 
             <!-- Column 2: Booking Details -->
-            <div class="lg:col-span-5">
+            <div class="lg:col-span-8">
                 @if($selectedBooking)
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 sticky top-4">
                     <!-- Title -->
@@ -230,7 +230,7 @@
                 @endif
             </div>
 
-            <!-- Column 3: Stats sidebar -->
+            {{-- <!-- Column 3: Stats sidebar ยังไม่ใช้ -->
             <div class="lg:col-span-3">
                 <div class="flex bg-white rounded-lg p-1 border border-gray-200 mb-6 text-xs font-medium text-center shadow-sm">
                    <a href="{{ request()->fullUrlWithQuery(['range' => 7]) }}" class="flex-1 rounded-md py-2 transition {{ (!isset($range) || $range == 7) ? 'bg-gray-100 text-gray-700' : 'text-gray-500 hover:bg-gray-50' }}">7 วันที่ผ่านมา</a>
@@ -287,7 +287,7 @@
                     </a>
                 </div>
 
-            </div>
+            </div> --}}
 
         </div>
     </div>
