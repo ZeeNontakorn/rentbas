@@ -110,7 +110,7 @@ html { scroll-behavior: smooth; }
     margin-bottom: 36px;
     line-height: 1.6;
 }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;}
 
 /* hero stats bar */
 .hero-stats {

@@ -1,5 +1,5 @@
 <!-- resources/views/components/navbar.blade.php -->
-<nav class="bg-gray-900 shadow-md text-white">
+<nav class="sticky top-0 z-50 bg-gray-900 shadow-md text-white">
     <div class="container mx-auto flex justify-between items-center py-4 px-10">
         <!-- Logo / ชื่อระบบ -->
         <a href="{{ route('home') }}" class="flex items-center font-bold text-2xl hover:text-gray-300 transition">
@@ -165,7 +165,7 @@
         //JavaScript สำหรับจัดการการแสดง/ซ่อน Dropdown แจ้งเตือน
         const notifBtn = document.getElementById('notifBtn');
         const notifDropdown = document.getElementById('notifDropdown');
-        
+
         // สำหรับ Admin Menu Dropdown
         const adminMenuBtn = document.getElementById('adminMenuBtn');
         const adminMenuDropdown = document.getElementById('adminMenuDropdown');
