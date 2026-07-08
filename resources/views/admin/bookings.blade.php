@@ -17,9 +17,10 @@
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-6 max-w-7xl">
+        
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-gray-800">DashBoard</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">จัดการการจอง</h1>
             <p class="text-sm text-gray-500">ดูสถิติ จัดการสนาม และดูการจองทั้งหมด</p>
         </div>
 
@@ -82,11 +83,11 @@
                                             <form method="POST" action="{{ route('admin.bookings.reject', $b) }}" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="reject_reason" value="Admin rejected from Dashboard">
-                                                <button class="bg-red-500 text-white text-xs px-3 py-1 rounded">ยกเลิก</button>
+                                                <button class="bg-red-500 text-white text-xs px-3 py-1 rounded">ปฏิเสธ</button>
                                             </form>
                                             <form method="POST" action="{{ route('admin.bookings.approve', $b) }}" class="inline">
                                                 @csrf
-                                                <button class="bg-green-500 text-white text-xs px-3 py-1 rounded">ยืนยัน</button>
+                                                <button class="bg-green-500 text-white text-xs px-3 py-1 rounded">อนุมัติ</button>
                                             </form>
                                         </div>
                                     @else
