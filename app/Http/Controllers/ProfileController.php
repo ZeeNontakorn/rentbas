@@ -32,8 +32,22 @@ class ProfileController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . Auth::id(),
             'phone' => 'sometimes|nullable|max:10',
             'current_password' => 'required_with:password|string',
-            'password' => 'nullable|string|min:6|confirmed',
+            'password' => 'nullable|required_with:current_password|string|min:6|confirmed',
             'otp' => 'nullable|string|size:6'
+        ],[
+            'name.string' => 'กรุณากรอกชื่อให้ถูกต้อง',
+            'name.max' => 'ชื่อต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
+            'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
+            'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'current_password.required_with' => 'กรุณากรอกรหัสผ่านเดิมเพื่อเปลี่ยนรหัสผ่านใหม่',
+            'current_password.string' => 'กรุณากรอกรหัสผ่านเดิมให้ถูกต้อง',
+            'password.required_with' => 'กรุณากรอกรหัสผ่านใหม่',
+            'password.string' => 'กรุณากรอกรหัสผ่านใหม่ให้ถูกต้อง',
+            'password.min' => 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย :min ตัวอักษร',
+            'password.confirmed' => 'การยืนยันรหัสผ่านไม่ตรงกัน',
+            'otp.string' => 'กรุณากรอกรหัส OTP ให้ถูกต้อง',
+            'otp.size' => 'รหัส OTP ต้องมีความยาว :size หลัก',
         ]);
 
         $user = Auth::user();
@@ -42,7 +56,7 @@ class ProfileController extends Controller
         $phone = $request->has('phone') ? $request->phone : $user->phone;
         $emailChanged = $user->email !== $email;
 
-        if ($request->filled('password')) {
+        if ($request->filled('current_password')) {
             if (! Hash::check($request->current_password, $user->password)) {
                 return back()->withErrors(['current_password' => 'รหัสผ่านเดิมไม่ถูกต้อง'])->withInput();
             }
@@ -88,6 +102,10 @@ class ProfileController extends Controller
 
         $request->validate([
             'email' => 'required|email|unique:users,email,' . Auth::id()
+        ],[
+            'email.required' => 'กรุณากรอกอีเมล',
+            'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
+            'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
         ]);
 
         $user = Auth::user();
@@ -111,4 +129,3 @@ class ProfileController extends Controller
         return response()->json(['success' => true, 'message' => 'ส่งรหัส OTP ไปยังอีเมลแล้ว']);
     }
 }
-
