@@ -12,20 +12,6 @@
                 <h1 class="text-2xl font-bold text-gray-900">แก้ไขเนื้อหาเว็บไซต์</h1>
                 <p class="text-sm text-gray-500 mt-1">จัดการข้อความโปรโมชั่น รูปภาพ และส่วน About Court</p>
             </div>
-            <div class="flex gap-3 items-center">
-                <a href="{{ route('home') }}" target="_blank"
-                   class="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                    </svg>
-                    ดูหน้าเว็บ
-                </a>
-                <a href="{{ route('admin.dashboard') }}"
-                   class="text-sm text-gray-500 hover:underline">
-                    ← กลับ Dashboard
-                </a>
-            </div>
         </div>
 
         {{-- Flash Messages --}}
@@ -66,11 +52,11 @@
             </div>
         @endif
 
-        <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-            @csrf
+        <div class="space-y-6">
 
             {{-- ─── Section 1: About Court ─── --}}
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                @csrf
                 <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
                 <p class="text-xs text-gray-400 mb-5">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
 
@@ -94,10 +80,25 @@
                                   placeholder="คำอธิบายส่วน About Court">{{ old('about_desc', $settings['about_desc'] ?? '') }}</textarea>
                     </div>
                 </div>
-            </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="reset"
+                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                        ยกเลิก
+                    </button>
+                    <button type="submit"
+                            class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        บันทึก
+                    </button>
+                </div>
+            </form>
 
             {{-- ─── Section 2: Promotion Header ─── --}}
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                @csrf
                 <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
                 <p class="text-xs text-gray-400 mb-5">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
 
@@ -171,10 +172,25 @@
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="reset"
+                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                        ยกเลิก
+                    </button>
+                    <button type="submit"
+                            class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        บันทึก
+                    </button>
+                </div>
+            </form>
 
             {{-- ─── Section 3: Other Images ─── --}}
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                @csrf
                 <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
                 <p class="text-xs text-gray-400 mb-5">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
 
@@ -234,23 +250,23 @@
                     </div>
 
                 </div>
-            </div>
 
-            {{-- Action Buttons --}}
-            <div class="flex justify-end gap-3 pt-2">
-                <a href="{{ route('admin.dashboard') }}"
-                   class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-                    ยกเลิก
-                </a>
-                <button type="submit"
-                        class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    บันทึกการเปลี่ยนแปลง
-                </button>
-            </div>
-        </form>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="reset"
+                            class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                        ยกเลิก
+                    </button>
+                    <button type="submit"
+                            class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        บันทึก
+                    </button>
+                </div>
+            </form>
+
+        </div>
 
     </div>
 </div>

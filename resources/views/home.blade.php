@@ -22,7 +22,6 @@
     --border: rgba(255,255,255,0.08);
     --green: #22c55e;
     --red: #ef4444;
-    --r: 8px;
     --max-w: 1200px;
 }
 
@@ -38,69 +37,6 @@ html { scroll-behavior: smooth; }
 .home-content a { text-decoration: none; color: inherit; }
 .home-content img { display: block; max-width: 100%; }
 
-/* ─── NAVBAR ─── */
-.navbar {
-    background: rgba(13,15,30,0.96);
-    backdrop-filter: blur(12px);
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 max(24px, calc((100% - var(--max-w)) / 2));
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 200;
-    border-bottom: 1px solid var(--border);
-}
-.nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 0.1em;
-    color: #fff;
-}
-.nav-logo-ball {
-    width: 34px; height: 34px;
-    background: var(--ore);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px;
-    flex-shrink: 0;
-}
-.nav-right { display: flex; align-items: center; gap: 4px; }
-.nav-link {
-    padding: 7px 16px;
-    font-family: 'Kanit', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.65);
-    border-radius: 6px;
-    transition: color .2s, background .2s;
-}
-.nav-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
-.nav-btn {
-    padding: 8px 22px;
-    background: var(--ore);
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 6px;
-    transition: background .2s, transform .15s;
-}
-.nav-btn:hover { background: var(--ore-d); transform: translateY(-1px); }
-.nav-hamburger {
-    display: none; flex-direction: column; gap: 5px;
-    cursor: pointer; padding: 4px;
-}
-.nav-hamburger span {
-    display: block; width: 22px; height: 2px;
-    background: #fff; border-radius: 2px; transition: .3s;
-}
 .mobile-menu {
     display: none;
     position: fixed;
@@ -651,7 +587,7 @@ html { scroll-behavior: smooth; }
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
-    .navbar { padding: 0 20px; }
+
     .nav-right { display: none; }
     .nav-hamburger { display: flex; }
     .about-section, .community-section, .footer-grid { grid-template-columns: 1fr; gap: 32px; }
@@ -910,8 +846,7 @@ html { scroll-behavior: smooth; }
             @else
                 <div style="width:100%; height:100%; background:linear-gradient(135deg, var(--ore) 0%, var(--ore-d) 100%); display:flex; align-items:center; justify-content:center;">
                     <div style="text-align:center; color:#fff;">
-                        <div style="font-size:16px; font-weight:600;">Promotion Image Placeholder</div>
-                        <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-top:8px;">Upload image in edit page</div>
+                        <div style="font-size:16px; font-weight:600;">Promotion</div>
                     </div>
                 </div>
             @endif
@@ -952,6 +887,7 @@ html { scroll-behavior: smooth; }
             <div class="footer-map">
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3876.8455292!2d100.9169!3d13.2875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311d9a3b7e4b45b9%3A0xcb4b7d14c3d944f2!2z4Liz4Liq4Li44Lit4LiB4LiC4LmJ4LiyIOC4hOC4p-C4suC4meC4muC4o-C4o-C4q-C4suC4h-C4iuC4ueC5iA!5e0!3m2!1sth!2sth!4v1712000000000!5m2!1sth!2sth"
+                    title="แผนที่ BCBS Arena"
                     allowfullscreen
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
@@ -976,9 +912,6 @@ html { scroll-behavior: smooth; }
 const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
 
 // Slideshow removed - using static hero image
-
-// ─── MOBILE MENU ───
-function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('open'); }
 
 // ─── SCROLL TOP ───
 window.addEventListener('scroll', () => {
