@@ -72,6 +72,12 @@ class SettingController extends Controller
             }
         }
 
-        return back()->with('success', 'บันทึกข้อมูลและรูปภาพหน้าเว็บเรียบร้อยแล้ว');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'บันทึกข้อมูลและรูปภาพหน้าเว็บเรียบร้อยแล้ว',
+            ]);
+        }
+
+        return back();
     }
 }

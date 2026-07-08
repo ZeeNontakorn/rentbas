@@ -14,25 +14,17 @@
             </div>
         </div>
 
-        {{-- Flash Messages --}}
-        @if(session('success'))
-            <div id="flash-success"
-                 class="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-green-800">บันทึกสำเร็จ!</p>
-                        <p class="text-sm text-green-600">{{ session('success') }}</p>
-                    </div>
+        <div id="save-errors" class="hidden mb-6 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </div>
-                <button onclick="document.getElementById('flash-success').remove()"
-                        class="text-green-400 hover:text-green-600 text-xl font-bold">✕</button>
+                <p class="font-semibold text-red-800">เกิดข้อผิดพลาด</p>
             </div>
-        @endif
+            <ul id="save-errors-list" class="list-disc list-inside text-sm text-red-600 space-y-1"></ul>
+        </div>
 
         @if($errors->any())
             <div class="mb-6 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
@@ -55,10 +47,17 @@
         <div class="space-y-6">
 
             {{-- ─── Section 1: About Court ─── --}}
-            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
                 @csrf
-                <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
-                <p class="text-xs text-gray-400 mb-5">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
+                        <p class="text-xs text-gray-400">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
+                    </div>
+                    <div class="js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold border-green-200 bg-green-50 text-green-700" data-saved-label="บันทึกแล้ว" data-dirty-label="ยังไม่บันทึก" data-saved-class="border-green-200 bg-green-50 text-green-700" data-dirty-class="border-yellow-200 bg-yellow-50 text-yellow-700">
+                        บันทึกแล้ว
+                    </div>
+                </div>
 
                 <div class="space-y-4">
                     <div>
@@ -97,10 +96,17 @@
             </form>
 
             {{-- ─── Section 2: Promotion Header ─── --}}
-            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="promo">
                 @csrf
-                <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
-                <p class="text-xs text-gray-400 mb-5">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
+                        <p class="text-xs text-gray-400">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
+                    </div>
+                    <div class="js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold border-green-200 bg-green-50 text-green-700" data-saved-label="บันทึกแล้ว" data-dirty-label="ยังไม่บันทึก" data-saved-class="border-green-200 bg-green-50 text-green-700" data-dirty-class="border-yellow-200 bg-yellow-50 text-yellow-700">
+                        บันทึกแล้ว
+                    </div>
+                </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -190,10 +196,17 @@
             </form>
 
             {{-- ─── Section 3: Other Images ─── --}}
-            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="images">
                 @csrf
-                <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
-                <p class="text-xs text-gray-400 mb-5">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
+                        <p class="text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
+                    </div>
+                    <div class="js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold border-green-200 bg-green-50 text-green-700" data-saved-label="บันทึกแล้ว" data-dirty-label="ยังไม่บันทึก" data-saved-class="border-green-200 bg-green-50 text-green-700" data-dirty-class="border-yellow-200 bg-yellow-50 text-yellow-700">
+                        บันทึกแล้ว
+                    </div>
+                </div>
 
                 <div class="space-y-6">
 
@@ -287,13 +300,125 @@ function previewImg(input, targetId = 'img-preview') {
         reader.readAsDataURL(input.files[0]);
     }
 }
-// Auto-dismiss flash after 5s
-setTimeout(() => {
-    const el = document.getElementById('flash-success');
-    if (el) el.style.transition = 'opacity 0.5s';
-    if (el) el.style.opacity = '0';
-    setTimeout(() => el && el.remove(), 500);
-}, 5000);
+
+function serializeSettingForm(form) {
+    return Array.from(form.elements)
+        .filter(element => element.name && !['submit', 'reset', 'button'].includes(element.type))
+        .map(element => {
+            if (element.type === 'file') {
+                return `${element.name}:${element.files && element.files.length ? '1' : '0'}`;
+            }
+
+            if (element.type === 'checkbox' || element.type === 'radio') {
+                return `${element.name}:${element.checked ? '1' : '0'}`;
+            }
+
+            return `${element.name}:${element.value}`;
+        })
+        .join('|');
+}
+
+function clearFormFileInputs(form) {
+    form.querySelectorAll('input[type="file"]').forEach(input => {
+        input.value = '';
+    });
+}
+
+function showSaveErrors(errors) {
+    const errorBox = document.getElementById('save-errors');
+    const errorList = document.getElementById('save-errors-list');
+
+    if (!errorBox || !errorList) {
+        return;
+    }
+
+    errorList.innerHTML = '';
+    Object.values(errors || {}).flat().forEach(message => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        errorList.appendChild(item);
+    });
+
+    errorBox.classList.remove('hidden');
+}
+
+function hideSaveErrors() {
+    const errorBox = document.getElementById('save-errors');
+    const errorList = document.getElementById('save-errors-list');
+
+    if (errorBox) {
+        errorBox.classList.add('hidden');
+    }
+
+    if (errorList) {
+        errorList.innerHTML = '';
+    }
+}
+
+function setSaveStatus(statusEl, isDirty) {
+    const savedLabel = statusEl.dataset.savedLabel;
+    const dirtyLabel = statusEl.dataset.dirtyLabel;
+    const savedClass = statusEl.dataset.savedClass;
+    const dirtyClass = statusEl.dataset.dirtyClass;
+
+    statusEl.textContent = isDirty ? dirtyLabel : savedLabel;
+    statusEl.className = `js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${isDirty ? dirtyClass : savedClass}`;
+}
+
+document.querySelectorAll('.js-setting-form').forEach(form => {
+    const statusEl = form.querySelector('.js-save-status');
+    let initialState = serializeSettingForm(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    const refreshStatus = () => setSaveStatus(statusEl, serializeSettingForm(form) !== initialState);
+    const setSaving = isSaving => {
+        if (submitButton) {
+            submitButton.disabled = isSaving;
+            submitButton.classList.toggle('opacity-70', isSaving);
+            submitButton.classList.toggle('cursor-not-allowed', isSaving);
+        }
+    };
+
+    form.addEventListener('input', refreshStatus);
+    form.addEventListener('change', refreshStatus);
+    form.addEventListener('reset', () => {
+        requestAnimationFrame(refreshStatus);
+    });
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        hideSaveErrors();
+        setSaving(true);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                showSaveErrors(payload.errors || { general: [payload.message || 'บันทึกไม่สำเร็จ'] });
+                return;
+            }
+
+            clearFormFileInputs(form);
+            initialState = serializeSettingForm(form);
+            refreshStatus();
+        } catch (error) {
+            showSaveErrors({ general: ['ไม่สามารถบันทึกข้อมูลได้ กรุณาลองอีกครั้ง'] });
+        } finally {
+            setSaving(false);
+        }
+    });
+
+    refreshStatus();
+});
 </script>
 @endpush
 @endsection
