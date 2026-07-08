@@ -3,6 +3,23 @@
 @section('title', 'BCBS | Premium Basketball Court Booking')
 
 @section('content')
+@php
+    $site = \App\Models\Setting::values([
+        'hero_img_1',
+        'about_title',
+        'about_desc',
+        'about_img_1',
+        'about_img_2',
+        'about_img_3',
+        'courts_bg',
+        'community_img',
+        'promo_subtitle',
+        'promo_title',
+        'promo_card_title',
+        'promo_card_sub',
+        'promo_image',
+    ]);
+@endphp
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Kanit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -13,12 +30,7 @@
     --ink: #0d0f1e;
     --navy: #1e2235;
     --navy-d: #13162a;
-    --ash: #1a1a1a;
-    --fog: #2a2a2a;
-    --silver: #8a8a8a;
     --cream: #f6f5f0;
-    --white: #ffffff;
-    --gray: #6b7280;
     --border: rgba(255,255,255,0.08);
     --green: #22c55e;
     --red: #ef4444;
@@ -236,7 +248,7 @@ html { scroll-behavior: smooth; }
 .courts-section {
     /* ใส่ Overlay สีดำจางๆ ทับรูปสนามบาส */
     background: linear-gradient(rgba(0, 31, 63, 0.8), rgba(0, 17, 34, 0.8)),
-                url('{{ \App\Models\Setting::getVal('courts_bg', 'https://images.pexels.com/photos/18460191/pexels-photo-18460191.jpeg') }}');
+                url('{{ $site['courts_bg'] }}');
     background-size: cover;      /* ให้รูปขยายเต็มพื้นที่ */
     background-position: center;
     background-attachment: fixed; /* (Optional) ทำเอฟเฟกต์ Parallax ให้รูปนิ่งขณะเลื่อน */
@@ -364,7 +376,6 @@ html { scroll-behavior: smooth; }
 }
 .bk-day:hover { background: #f1f3f5; color: var(--ink); }
 .bk-day.empty { cursor: default; pointer-events: none; }
-.bk-day.other-month { color: #ced4da; }
 .bk-day.today { color: var(--ore); font-weight: 700; }
 .bk-day.today::before {
     content: ''; position: absolute; inset: 0;
@@ -623,7 +634,7 @@ html { scroll-behavior: smooth; }
 </div>
 
 {{-- ═══ HERO ═══ --}}
-<section class="hero" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_1', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2000&auto=format&fit=crop') }}')">
+<section class="hero" style="background-image:url('{{ $site['hero_img_1'] }}')">
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">Bangsaen Basketball Club · BCBS</p>
         <h1 class="hero-title">BCBS<br><span>Thata</span></h1>
@@ -666,9 +677,9 @@ html { scroll-behavior: smooth; }
 <section class="about-section">
     <div>
         <p class="about-label">About Court</p>
-        <h2 class="about-title">{!! nl2br(e(\App\Models\Setting::getVal('about_title', 'สนามที่ได้มาตรฐาน ระบบการจองที่ทันสมัย'))) !!}</h2>
+        <h2 class="about-title">{!! nl2br(e($site['about_title'])) !!}</h2>
         <p class="about-desc">
-            {{ \App\Models\Setting::getVal('about_desc', 'เราจัดหาสนามบาสเกตบอลคุณภาพระดับสากลในพื้นที่บางแสน พร้อมระบบจองออนไลน์ที่สะดวก รวดเร็ว และปลอดภัย รองรับนักกีฬาทุกระดับตั้งแต่มือใหม่จนถึงมืออาชีพ') }}
+            {{ $site['about_desc'] }}
         </p>
         <div class="about-checks">
             <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 4 สนาม</div>
@@ -680,13 +691,13 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="about-images">
         <div class="about-img main" style="height:200px;">
-            <img src="{{ \App\Models\Setting::getVal('about_img_1', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=900&auto=format&fit=crop') }}" alt="court">
+            <img src="{{ $site['about_img_1'] }}" alt="court">
         </div>
         <div class="about-img" style="height:160px;">
-            <img src="{{ \App\Models\Setting::getVal('about_img_2', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop') }}" alt="court">
+            <img src="{{ $site['about_img_2'] }}" alt="court">
         </div>
         <div class="about-img" style="height:160px;">
-            <img src="{{ \App\Models\Setting::getVal('about_img_3', 'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop') }}" alt="court">
+            <img src="{{ $site['about_img_3'] }}" alt="court">
         </div>
     </div>
 </section>
@@ -809,7 +820,7 @@ html { scroll-behavior: smooth; }
 <section class="community-section" data-aos="fade-up">
     <div class="community-img-wrap" data-aos="zoom-in" data-aos-delay="200">
         <div class="community-img-main">
-            <img src="{{ \App\Models\Setting::getVal('community_img', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=900&auto=format&fit=crop') }}" alt="community">
+            <img src="{{ $site['community_img'] }}" alt="community">
         </div>
         <div class="community-stat">
             <p class="cstat-label">โค้ช DREAM</p>
@@ -829,15 +840,15 @@ html { scroll-behavior: smooth; }
 {{-- ═══ PROMOTIONS ═══ --}}
 <section class="promo-section" data-aos="fade-up">
     <div class="promo-header">
-        <p class="promo-tag">{{ \App\Models\Setting::getVal('promo_subtitle', 'รับชมโปรโมชั่นสุดพิเศษ') }}</p>
-        <h2 class="promo-title">{{ \App\Models\Setting::getVal('promo_title', 'Promotion') }}</h2>
+        <p class="promo-tag">{{ $site['promo_subtitle'] }}</p>
+        <h2 class="promo-title">{{ $site['promo_title'] }}</h2>
     </div>
 
     <div class="promo-container">
         @php
-            $promoImg = \App\Models\Setting::getVal('promo_image', null);
-            $promoTitle = \App\Models\Setting::getVal('promo_card_title', 'Special Offer');
-            $promoSub = \App\Models\Setting::getVal('promo_card_sub', 'Book now and enjoy');
+            $promoImg = $site['promo_image'];
+            $promoTitle = $site['promo_card_title'];
+            $promoSub = $site['promo_card_sub'];
         @endphp
 
         <div class="promo-card">
@@ -910,8 +921,6 @@ html { scroll-behavior: smooth; }
 <script>
 // ─── COURTS DATA จาก DB ───
 const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
-
-// Slideshow removed - using static hero image
 
 // ─── SCROLL TOP ───
 window.addEventListener('scroll', () => {

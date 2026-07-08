@@ -146,6 +146,7 @@
                     </div>
 
                     {{-- Image Upload --}}
+                    @php($promoImg = $settings['promo_image'] ?? null)
                     <div class="pt-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             อัปโหลดแบนเนอร์โปรโมชั่น (รูปแรกในแถว)
@@ -163,9 +164,9 @@
                                 <p class="text-xs text-gray-400 mt-1">PNG, JPG, WEBP ขนาดไม่เกิน 2MB</p>
                             </div>
                             {{-- Current image preview --}}
-                            <div id="img-preview-wrap" class="{{ empty($settings['promo_image']) ? 'hidden' : '' }}">
+                            <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
                                 <img id="img-preview"
-                                     src="{{ $settings['promo_image'] ?? '' }}"
+                                     src="{{ $promoImg ?? '' }}"
                                      class="h-20 w-32 rounded-lg object-cover border-2 border-gray-200 shadow-sm">
                                 <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             </div>
