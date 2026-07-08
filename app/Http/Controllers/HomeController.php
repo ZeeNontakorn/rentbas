@@ -38,7 +38,7 @@ class HomeController extends Controller
             ->get(['court_id', 'start_time']);
 
         $slots = []; // [court_id][start_time] => status
-
+        $closures = ''; // [court_id][start_time] => closure_type
         foreach ($courts as $court) {
             $courtBookedTimes = $bookings
                 ->where('court_id', $court->id)
@@ -50,21 +50,26 @@ class HomeController extends Controller
                 $endStr   = sprintf('%02d:00:00', $h + 1);
 
                 $slotStart = \Carbon\Carbon::parse("{$date} {$startStr}");
+
                 $slotEnd   = \Carbon\Carbon::parse("{$date} {$endStr}");
+
+                $closuresType = $court->getClosureType($slotStart, $slotEnd, $date);
 
                 if ($slotEnd->lte($now)) {
                     $status = 'past';
                 } elseif ($court->isClosedAt($slotStart, $slotEnd)) {
-                    $status = 'closed';
+                    $status = $closuresType ?? 'closed';
                 } elseif (in_array($startStr, $courtBookedTimes)) {
                     $status = 'booked';
                 } else {
                     $status = 'available';
                 }
-
-                $slots[$court->id][$startStr] = $status;
+                 $slots[$court->id][$startStr] = $status;
             }
         }
+                $startStr = sprintf('%02d:00:00', 6);
+                $endStr   = sprintf('%02d:00:00', 6 + 1);
+
 
         return response()->json(['slots' => $slots]);
     }

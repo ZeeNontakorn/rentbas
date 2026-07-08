@@ -574,12 +574,22 @@ html { scroll-behavior: smooth; }
     background: #fff4e6; color: #e67700; cursor: default;
     border: 1px solid #ffd8a8;
 }
+.slot-maintenance {
+    background: #f1f3f5; color: #adb5bd; cursor: default;
+    border: 1px solid #dee2e6;
+}
+.slot-unavailable {
+    background: #f1f3f5; color: #adb5bd; cursor: default;
+    border: 1px solid #dee2e6;
+} 
+
 .slot-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .slot-free .slot-dot { background: #2f9e44; }
 .slot-booked .slot-dot { background: #c92a2a; }
 .slot-past .slot-dot { background: #adb5bd; }
 .slot-closed .slot-dot { background: #e67700; }
-
+.slot-maintenance .slot-dot { background: #f29c41; }
+.slot-unavailable .slot-dot { background: #adb5bd; }
 .sch-empty {
     padding: 48px 20px; text-align: center; color: #adb5bd; font-size: 13px;
 }
@@ -1221,7 +1231,11 @@ async function renderSch(ds) {
             } else if (status === 'past') {
                 html += '<td><span class="slot-badge slot-past"><span class="slot-dot"></span>ผ่านมาแล้ว</span></td>';
             } else if (status === 'closed') {
-                html += '<td><span class="slot-badge slot-closed"><span class="slot-dot"></span>ปิดปรับปรุง</span></td>';
+                html += '<td><span class="slot-badge slot-closed"><span class="slot-dot"></span>ปิด</span></td>';
+            } else if (status === 'maintenance') {
+                html += '<td><span class="slot-badge slot-maintenance"><span class="slot-dot"></span>ปิดปรับปรุง</span></td>';
+            } else if (status === 'unavailable') {
+                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';        
             } else {
                 html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${h}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
