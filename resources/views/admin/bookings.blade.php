@@ -149,7 +149,7 @@
                 </div>
 
                 <!-- Column 2: Booking Details -->
-                <div class="lg:col-span-5">
+                <div class="lg:col-span-8">
                     @if($selectedBooking)
                         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 sticky top-4">
                             <!-- Title -->
