@@ -160,9 +160,9 @@
                     <span class="absolute -top-2.5 left-2 bg-white px-1 text-[10px] font-bold text-purple-600 tracking-wider">Date</span>
                     <form id="dateForm" method="GET" action="{{ route('booking.index') }}">
                         <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
-                        <input type="date" name="date" value="{{ $date }}"
+                        <input type="date" name="date" id="dateInput" value="{{ $date }}"
                                min="{{ now()->toDateString() }}" max="{{ now()->addMonth()->toDateString() }}"
-                               onchange="document.getElementById('dateForm').submit()"
+                               onchange="validateAndSubmitDate(this)"
                                class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
                     </form>
                 </div>
@@ -337,6 +337,27 @@ setInterval(() => {
     document.getElementById('currentClock').innerText = 
         String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }, 60000);
+
+function validateAndSubmitDate(input) {
+    const maxDate = new Date("{{ now()->addMonth()->toDateString() }}");
+    const minDate = new Date("{{ now()->toDateString() }}");
+    const selectedDate = new Date(input.value);
+
+    maxDate.setHours(0,0,0,0);
+    minDate.setHours(0,0,0,0);
+    selectedDate.setHours(0,0,0,0);
+
+    if (selectedDate > maxDate) {
+        alert("สามารถจองล่วงหน้าได้สูงสุด 1 เดือนเท่านั้น");
+        input.value = "{{ now()->addMonth()->toDateString() }}";
+    } 
+    else if (selectedDate < minDate) {
+        alert("ไม่สามารถเลือกวันย้อนหลังได้");
+        input.value = "{{ now()->toDateString() }}";
+    }
+
+    document.getElementById('dateForm').submit();
+}
 </script>
 @endpush
 @endsection
