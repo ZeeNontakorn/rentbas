@@ -382,7 +382,46 @@
     <script src="{{ \ArielMejiaDev\LarapexCharts\LarapexChart::cdn() }}"></script>
     {!! $trendChart->script() !!}
     {!! $cancelChart->script() !!}
-    {!! $monthlyChart->script() !!}
+
+    {{-- monthlyChart: built manually instead of ->script() because Larapex's
+         blade template only reads ->horizontal() for plotOptions.bar, so
+         ->setOptions(['plotOptions' => ['bar' => ['distributed' => true]]])
+         in the controller never actually reaches the rendered chart. --}}
+    <script>
+        (function () {
+            var options = {
+                chart: {
+                    id: '{!! $monthlyChart->id() !!}',
+                    type: '{!! $monthlyChart->type() !!}',
+                    height: {!! $monthlyChart->height() !!},
+                    width: '{!! $monthlyChart->width() !!}',
+                    toolbar: {!! $monthlyChart->toolbar() !!},
+                    zoom: {!! $monthlyChart->zoom() !!},
+                    fontFamily: '{!! $monthlyChart->fontFamily() !!}',
+                    foreColor: '{!! $monthlyChart->foreColor() !!}',
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        distributed: true
+                    }
+                },
+                colors: {!! $monthlyChart->colors() !!},
+                series: {!! $monthlyChart->dataset() !!},
+                dataLabels: {!! $monthlyChart->dataLabels() !!},
+                title: {
+                    text: "{!! $monthlyChart->title() !!}"
+                },
+                xaxis: {!! $monthlyChart->xAxis() !!},
+                grid: {!! $monthlyChart->grid() !!},
+                legend: {
+                    show: false
+                }
+            };
+            new ApexCharts(document.querySelector("#{!! $monthlyChart->id() !!}"), options).render();
+        })();
+    </script>
+
     {!! $peakChart->script() !!}
     @foreach($courtCharts as $cc)
         {!! $cc['chart']->script() !!}
