@@ -11,8 +11,6 @@ use App\Models\User;
 use ArielMejiaDev\LarapexCharts\LarapexChart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
@@ -167,15 +165,11 @@ class DashboardController extends Controller
             $now->copy()->subDays(30)->toDateString(), $todayStr,
         ])->whereIn('status', ['cancelled', 'rejected'])->get(['status', 'reject_reason']);
 
-        $cancel = ['Customer Cancel' => 0, 'Payment Timeout' => 0, 'Maintenance' => 0, 'Weather' => 0];
+        $cancel = ['Customer Cancel' => 0, 'Maintenance' => 0];
         foreach ($cancelRows as $r) {
             $reason = mb_strtolower($r->reject_reason ?? '');
             if (str_contains($reason, 'ซ่อม') || str_contains($reason, 'mainten') || str_contains($reason, 'ปิด')) {
                 $cancel['Maintenance']++;
-            } elseif (str_contains($reason, 'ฝน') || str_contains($reason, 'อากาศ') || str_contains($reason, 'weather')) {
-                $cancel['Weather']++;
-            } elseif (str_contains($reason, 'ชำระ') || str_contains($reason, 'จ่าย') || str_contains($reason, 'payment') || str_contains($reason, 'timeout')) {
-                $cancel['Payment Timeout']++;
             } else {
                 // status 'cancelled' or an uncategorised admin rejection
                 $cancel['Customer Cancel']++;
@@ -183,8 +177,8 @@ class DashboardController extends Controller
         }
         $cancelIsMock = array_sum($cancel) === 0;
         if ($cancelIsMock) {
-            // No cancellation data yet — show representative sample from the design.
-            $cancel = ['Customer Cancel' => 42, 'Payment Timeout' => 26, 'Maintenance' => 18, 'Weather' => 14];
+            // No cancellation data yet — show representative sample.
+            $cancel = ['Customer Cancel' => 70, 'Maintenance' => 30];
         }
         $cancelTotal = array_sum($cancel);
 
@@ -406,11 +400,6 @@ class DashboardController extends Controller
         ];
 
         // ---------------------------------------------------------------
-        // Weather — live via Open-Meteo (cached), sample fallback if offline
-        // ---------------------------------------------------------------
-        $weather = $this->fetchWeather();
-
-        // ---------------------------------------------------------------
         // Charts — built with Larapex Charts (data prepared as plain arrays)
         // ---------------------------------------------------------------
         $font = 'Kanit, sans-serif';
@@ -428,9 +417,7 @@ class DashboardController extends Controller
 
         $cancelColorMap = [
             'Customer Cancel' => '#f97316',
-            'Payment Timeout' => '#6366f1',
             'Maintenance' => '#94a3b8',
-            'Weather' => '#3b82f6',
         ];
         $cancelChart = (new LarapexChart)->donutChart()
             ->setFontFamily($font)
@@ -466,7 +453,7 @@ class DashboardController extends Controller
             'peakHours', 'courtUtil',
             'occupancy', 'occupancyHours',
             'todaysSchedule', 'upcoming', 'topCustomers',
-            'recentActivities', 'weather',
+            'recentActivities',
             'memberStats', 'visitStats',
             'trendChart', 'cancelChart', 'monthlyChart', 'peakChart'
         ));
@@ -480,64 +467,6 @@ class DashboardController extends Controller
         }
 
         return round(($current - $previous) / $previous * 100, 1);
-    }
-
-    /**
-     * Live weather for the venue (Bangkok) via Open-Meteo, cached 30 min.
-     * Falls back to a representative sample if the API is unreachable so the
-     * dashboard never hangs or errors when the server is offline.
-     */
-    private function fetchWeather(): array
-    {
-        $fallback = [
-            'temp' => 29, 'feels' => 32, 'condition' => 'Sunny',
-            'humidity' => 58, 'wind' => 11, 'uv' => 'High', 'is_mock' => true,
-        ];
-
-        try {
-            return Cache::remember('dashboard_weather', now()->addMinutes(30), function () use ($fallback) {
-                $res = Http::timeout(4)->get('https://api.open-meteo.com/v1/forecast', [
-                    'latitude' => 13.7563,
-                    'longitude' => 100.5018,
-                    'current' => 'temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,uv_index',
-                    'timezone' => 'Asia/Bangkok',
-                ]);
-
-                $c = $res->ok() ? $res->json('current') : null;
-                if (! $c) {
-                    return $fallback;
-                }
-
-                $uv = $c['uv_index'] ?? 0;
-
-                return [
-                    'temp' => (int) round($c['temperature_2m']),
-                    'feels' => (int) round($c['apparent_temperature'] ?? $c['temperature_2m']),
-                    'condition' => $this->weatherText((int) ($c['weather_code'] ?? 0)),
-                    'humidity' => (int) round($c['relative_humidity_2m'] ?? 0),
-                    'wind' => (int) round($c['wind_speed_10m'] ?? 0),
-                    'uv' => $uv >= 8 ? 'Very High' : ($uv >= 6 ? 'High' : ($uv >= 3 ? 'Moderate' : 'Low')),
-                    'is_mock' => false,
-                ];
-            });
-        } catch (\Throwable $e) {
-            return $fallback;
-        }
-    }
-
-    /** Map a WMO weather code to a short human label. */
-    private function weatherText(int $code): string
-    {
-        return match (true) {
-            $code === 0 => 'Clear',
-            $code <= 3 => 'Partly Cloudy',
-            $code <= 48 => 'Foggy',
-            $code <= 67 => 'Rainy',
-            $code <= 77 => 'Snow',
-            $code <= 82 => 'Rain Showers',
-            $code <= 99 => 'Thunderstorm',
-            default => 'Clear',
-        };
     }
 
     public function bookings(Request $request)

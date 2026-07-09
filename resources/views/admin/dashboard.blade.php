@@ -46,13 +46,6 @@
         'x'        => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
     ];
 
-    $cancelColors = [
-        'Customer Cancel' => '#f97316',
-        'Payment Timeout' => '#6366f1',
-        'Maintenance'     => '#94a3b8',
-        'Weather'         => '#3b82f6',
-    ];
-
     $occColors = ['available' => '#10b981', 'occupied' => '#f97316', 'maintenance' => '#ef4444'];
 @endphp
 
@@ -328,53 +321,27 @@
                 </div>
             </div>
 
-            <!-- Recent Activities + Weather -->
-            <div class="flex flex-col gap-4">
-                <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <div class="mb-4">
-                        <h3 class="font-bold text-gray-800">Recent Activities</h3>
-                        <p class="text-xs text-gray-400">Live activity feed</p>
-                    </div>
-                    @php
-                        $actDot = ['new' => '#3b82f6', 'cancel' => '#ef4444', 'confirm' => '#10b981', 'user' => '#8b5cf6'];
-                    @endphp
-                    <div class="space-y-3">
-                        @forelse($recentActivities as $a)
-                            <div class="flex items-start gap-3">
-                                <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background: {{ $actDot[$a['type']] ?? '#94a3b8' }};"></span>
-                                <div>
-                                    <div class="text-sm text-gray-700">{{ $a['text'] }}</div>
-                                    <div class="text-xs text-gray-400">{{ $a['ago'] }}</div>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีกิจกรรม</p>
-                        @endforelse
-                    </div>
+            <!-- Recent Activities -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Recent Activities</h3>
+                    <p class="text-xs text-gray-400">Live activity feed</p>
                 </div>
-
-                <!-- Weather -->
-                <div class="rounded-2xl p-5 text-white shadow-sm relative overflow-hidden"
-                     style="background-image: linear-gradient(135deg, #38bdf8, #3b82f6);">
-                    @if($weather['is_mock'])
-                        <span class="absolute top-3 right-3 text-[10px] bg-white/25 px-2 py-0.5 rounded-full">ตัวอย่าง</span>
-                    @endif
-                    <div class="text-sm text-white/85">Outdoor Courts Weather</div>
-                    <div class="flex items-end justify-between mt-1">
-                        <div>
-                            <div class="text-4xl font-extrabold">{{ $weather['temp'] }}°C</div>
-                            <div class="text-xs text-white/85">{{ $weather['condition'] }} · Feels like {{ $weather['feels'] }}°C</div>
+                @php
+                    $actDot = ['new' => '#3b82f6', 'cancel' => '#ef4444', 'confirm' => '#10b981', 'user' => '#8b5cf6'];
+                @endphp
+                <div class="space-y-3">
+                    @forelse($recentActivities as $a)
+                        <div class="flex items-start gap-3">
+                            <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background: {{ $actDot[$a['type']] ?? '#94a3b8' }};"></span>
+                            <div>
+                                <div class="text-sm text-gray-700">{{ $a['text'] }}</div>
+                                <div class="text-xs text-gray-400">{{ $a['ago'] }}</div>
+                            </div>
                         </div>
-                        <svg class="w-12 h-12 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="4" stroke-width="2"/>
-                            <path stroke-linecap="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.66-6.66l-1.41 1.41M7.75 16.25l-1.41 1.41m12.32 0l-1.41-1.41M7.75 7.75L6.34 6.34"/>
-                        </svg>
-                    </div>
-                    <div class="flex gap-4 mt-3 text-xs text-white/85">
-                        <span>💧 Humidity {{ $weather['humidity'] }}%</span>
-                        <span>🌬 Wind {{ $weather['wind'] }} km/h</span>
-                        <span>☀ UV {{ $weather['uv'] }}</span>
-                    </div>
+                    @empty
+                        <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีกิจกรรม</p>
+                    @endforelse
                 </div>
             </div>
         </div>
