@@ -126,40 +126,7 @@
                         Total: {{ number_format($trendTotal) }}
                     </span>
                 </div>
-                @php
-                    $vals = array_column($trend, 'count');
-                    $maxV = max(max($vals), 1);
-                    $W = 640; $H = 160;
-                    $stepX = count($vals) > 1 ? $W / (count($vals) - 1) : $W;
-                    $line = ''; $area = '';
-                    foreach ($vals as $i => $v) {
-                        $x = round($i * $stepX, 1);
-                        $y = round($H - ($v / $maxV) * ($H - 12), 1);
-                        $line .= ($i === 0 ? 'M' : ' L') . "$x,$y";
-                    }
-                    $area = $line . " L$W,$H L0,$H Z";
-                @endphp
-                <div class="overflow-x-auto">
-                    <svg viewBox="0 0 {{ $W }} {{ $H }}" preserveAspectRatio="none" class="w-full h-40 min-w-[520px]">
-                        <defs>
-                            <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#f97316" stop-opacity="0.35"/>
-                                <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
-                            </linearGradient>
-                        </defs>
-                        @for($g = 1; $g <= 3; $g++)
-                            <line x1="0" y1="{{ $H * $g / 4 }}" x2="{{ $W }}" y2="{{ $H * $g / 4 }}" stroke="#f1f5f9" stroke-width="1"/>
-                        @endfor
-                        <path d="{{ $area }}" fill="url(#trendFill)"/>
-                        <path d="{{ $line }}" fill="none" stroke="#f97316" stroke-width="2.5"
-                              stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-                    </svg>
-                </div>
-                <div class="flex justify-between text-[10px] text-gray-400 mt-2 px-1">
-                    @foreach([0, 7, 14, 21, 29] as $idx)
-                        <span>{{ $trend[$idx]['label'] ?? '' }}</span>
-                    @endforeach
-                </div>
+                <div id="chart-trend" class="min-h-[220px]"></div>
             </div>
 
             <!-- Cancellation Analysis (donut) -->
@@ -173,34 +140,7 @@
                         <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">ตัวอย่าง</span>
                     @endif
                 </div>
-                @php
-                    $segs = []; $acc = 0;
-                    foreach ($cancel as $label => $count) {
-                        $pct = $cancelTotal > 0 ? $count / $cancelTotal * 100 : 0;
-                        $segs[] = $cancelColors[$label] . ' ' . round($acc, 2) . '% ' . round($acc + $pct, 2) . '%';
-                        $acc += $pct;
-                    }
-                    $conic = 'conic-gradient(' . implode(', ', $segs) . ')';
-                @endphp
-                <div class="flex justify-center my-4">
-                    <div class="relative w-40 h-40 rounded-full" style="background: {{ $conic }};">
-                        <div class="absolute inset-[18%] bg-white rounded-full flex flex-col items-center justify-center">
-                            <span class="text-[10px] text-gray-400">Total</span>
-                            <span class="text-xl font-bold text-gray-800">100%</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    @foreach($cancel as $label => $count)
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="flex items-center gap-2 text-gray-600">
-                                <span class="w-2.5 h-2.5 rounded-full" style="background: {{ $cancelColors[$label] }};"></span>
-                                {{ $label }}
-                            </span>
-                            <span class="font-semibold text-gray-800">{{ $cancelTotal > 0 ? round($count / $cancelTotal * 100) : 0 }}%</span>
-                        </div>
-                    @endforeach
-                </div>
+                <div id="chart-cancel" class="min-h-[300px]"></div>
             </div>
         </div>
 
@@ -218,17 +158,7 @@
                         {{ $yoy >= 0 ? '+' : '' }}{{ $yoy }}% YoY
                     </span>
                 </div>
-                @php $mMax = max(max(array_column($monthly, 'count')), 1); @endphp
-                <div class="flex items-end justify-between gap-1.5 h-44">
-                    @foreach($monthly as $i => $m)
-                        <div class="flex-1 flex flex-col items-center justify-end h-full group">
-                            <span class="text-[10px] font-semibold text-gray-500 mb-1 opacity-0 group-hover:opacity-100 transition">{{ $m['count'] }}</span>
-                            <div class="w-full rounded-t {{ $loop->last ? 'bg-orange-500' : 'bg-slate-800' }} transition-all duration-500 hover:opacity-80"
-                                 style="height: {{ max($m['count'] / $mMax * 100, 2) }}%;"></div>
-                            <span class="text-[9px] text-gray-400 mt-1">{{ $m['label'] }}</span>
-                        </div>
-                    @endforeach
-                </div>
+                <div id="chart-monthly" class="min-h-[260px]"></div>
             </div>
 
             <!-- Peak Booking Hours -->
@@ -237,22 +167,7 @@
                     <h3 class="font-bold text-gray-800">Peak Booking Hours</h3>
                     <p class="text-xs text-gray-400">Utilization by time slot, today</p>
                 </div>
-                <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                    @foreach($peakHours as $slot)
-                        @php
-                            $p = $slot['pct'];
-                            $barColor = $p >= 70 ? '#f97316' : ($p >= 45 ? '#fbbf24' : '#e2e8f0');
-                            $txtColor = $p >= 70 ? 'text-orange-600' : 'text-gray-500';
-                        @endphp
-                        <div class="flex items-center gap-3 text-xs">
-                            <span class="w-10 text-gray-500 font-medium shrink-0">{{ $slot['label'] }}</span>
-                            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all duration-500" style="width: {{ max($p, 2) }}%; background: {{ $barColor }};"></div>
-                            </div>
-                            <span class="w-9 text-right font-semibold {{ $txtColor }} shrink-0">{{ $p }}%</span>
-                        </div>
-                    @endforeach
-                </div>
+                <div id="chart-peak" class="min-h-[340px]"></div>
             </div>
         </div>
 
@@ -505,4 +420,32 @@
 
     </div>
 </div>
+
+@php
+    $dashData = [
+        'trend' => [
+            'labels' => array_column($trend, 'label'),
+            'counts' => array_column($trend, 'count'),
+        ],
+        'cancel' => [
+            'labels' => array_keys($cancel),
+            'series' => array_values($cancel),
+            'colors' => array_map(fn ($l) => $cancelColors[$l] ?? '#94a3b8', array_keys($cancel)),
+        ],
+        'monthly' => [
+            'labels' => array_column($monthly, 'label'),
+            'counts' => array_column($monthly, 'count'),
+        ],
+        'peak' => [
+            'labels' => array_column($peakHours, 'label'),
+            'values' => array_column($peakHours, 'pct'),
+        ],
+    ];
+@endphp
+@push('scripts')
+    <script>
+        window.__dashboardData = @json($dashData);
+    </script>
+    @vite('resources/js/dashboard.js')
+@endpush
 @endsection
