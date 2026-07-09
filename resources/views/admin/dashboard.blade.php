@@ -170,22 +170,12 @@
                 <h3 class="font-bold text-gray-800">Court Utilization</h3>
                 <p class="text-xs text-gray-400">Usage per court, this week</p>
             </div>
-            @if(count($courtUtil))
+            @if(count($courtCharts))
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                @foreach($courtUtil as $c)
-                    @php
-                        $p = $c['pct'];
-                        $ring = $p >= 70 ? '#10b981' : ($p >= 40 ? '#f59e0b' : '#f43f5e');
-                    @endphp
+                @foreach($courtCharts as $cc)
                     <div class="flex flex-col items-center">
-                        <div class="relative w-28 h-28 rounded-full"
-                             style="background: conic-gradient({{ $ring }} 0 {{ $p }}%, #f1f5f9 {{ $p }}% 100%);">
-                            <div class="absolute inset-[14%] bg-white rounded-full flex flex-col items-center justify-center">
-                                <span class="text-xl font-bold text-gray-800">{{ $p }}%</span>
-                                <span class="text-[10px] text-gray-400">{{ $c['hours'] }}h / wk</span>
-                            </div>
-                        </div>
-                        <span class="mt-3 text-sm font-semibold text-gray-700">{{ $c['name'] }}</span>
+                        {!! $cc['chart']->container() !!}
+                        <span class="-mt-3 text-xs text-gray-400">{{ $cc['hours'] }}h / สัปดาห์</span>
                     </div>
                 @endforeach
             </div>
@@ -394,5 +384,8 @@
     {!! $cancelChart->script() !!}
     {!! $monthlyChart->script() !!}
     {!! $peakChart->script() !!}
+    @foreach($courtCharts as $cc)
+        {!! $cc['chart']->script() !!}
+    @endforeach
 @endpush
 @endsection

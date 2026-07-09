@@ -446,6 +446,22 @@ class DashboardController extends Controller
             ])
             ->setXAxis(array_column($peakHours, 'label'));
 
+        // One radial gauge per court (colour by utilization level)
+        $courtCharts = [];
+        foreach ($courtUtil as $c) {
+            $ring = $c['pct'] >= 70 ? '#10b981' : ($c['pct'] >= 40 ? '#f59e0b' : '#f43f5e');
+            $courtCharts[] = [
+                'name' => $c['name'],
+                'hours' => $c['hours'],
+                'chart' => (new LarapexChart)->radialChart()
+                    ->setFontFamily($font)
+                    ->setColors([$ring])
+                    ->setHeight(200)
+                    ->setLabels([$c['name']])
+                    ->addData([$c['pct']]),
+            ];
+        }
+
         return view('admin.dashboard', compact(
             'kpis', 'trend', 'trendTotal',
             'cancel', 'cancelTotal', 'cancelIsMock',
@@ -455,7 +471,7 @@ class DashboardController extends Controller
             'todaysSchedule', 'upcoming', 'topCustomers',
             'recentActivities',
             'memberStats', 'visitStats',
-            'trendChart', 'cancelChart', 'monthlyChart', 'peakChart'
+            'trendChart', 'cancelChart', 'monthlyChart', 'peakChart', 'courtCharts'
         ));
     }
 
