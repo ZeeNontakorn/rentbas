@@ -176,7 +176,7 @@
                                     {{ $stLabel }}
                                 </span>
                                 
-                                @if(!$b->isStarted())
+                                @if(!$b->isStarted() && $b->status === 'pending')
                                     <form method="POST" action="{{ route('booking.cancel', $b) }}" class="cancel-form md:ml-auto block">
                                         @csrf
                                         <button type="button" class="btn-cancel w-full md:w-auto text-center btn-cancel-trigger">ยกเลิก</button>
@@ -275,7 +275,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     Swal.fire({
                         title: "ยกเลิกแล้ว!",
                         text: "รายการจองของคุณถูกยกเลิกเรียบร้อย",
-                        icon: "success"
+                        icon: "success",
+                        confirmButtonColor: "#87D068",
+                        confirmButtonText: "ตกลง",
                     }).then(() => {
                         form.submit();
                     });
