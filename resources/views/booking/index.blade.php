@@ -91,15 +91,15 @@
 
         // รูปภาพสนามบาสเกตบอลแบบเต็มสนาม (รวบรวมจาก Unsplash หลากหลายมุมมอง)
         $realCourts = [
-            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Close up hoop (Default)
-            'https://cloudfront-us-east-1.images.arcpublishing.com/advancelocal/3KSOTN63CVB7XOHBQ3TSYFBJUM.jpg', // Bright gym
-            'https://wallpapers.com/images/hd/empty-basketball-court-arena-night-ulqjxg9elf5v3jja.jpg', // Indoor court side view
-            'https://images.unsplash.com/photo-1574907060871-4555aa8aca75?q=80&w=2148&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Dark gym with hoop
-            'https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=1400&auto=format&fit=crop', // Ball & floor
+            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' // Close up hoop (Default)
+
         ];
 
+        $courtImgSetting = $selectedCourt
+            ? \App\Models\Setting::where('key', 'court_img_' . $selectedCourt->id)->value('value')
+            : null;
         // เลือกรูปแบบวนลูปตาม ID ของ Court
-        $bannerImg = $realCourts[($cid - 1) % count($realCourts)];
+        $bannerImg = $courtImgSetting ?? $realCourts[($cid - 1) % count($realCourts)];
     @endphp
 
     <div class="w-full h-[280px] rounded-[16px] overflow-hidden mb-10 shadow-sm relative group" data-aos="zoom-in" data-aos-delay="100">
@@ -130,12 +130,27 @@
         <div class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
 
             {{-- BOX 1: เลือกสนาม --}}
-            <div class="border border-gray-300 rounded-lg p-5">
-                <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('courtList').classList.toggle('hidden')">
-                    <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
-                    <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between w-[110px] text-[13px] bg-white">
+            <div class="relative z-50 border border-gray-300 rounded-lg p-5 flex items-center justify-between">
+                <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
+
+                <div class="relative w-[120px]">
+                    <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between cursor-pointer bg-white text-[13px]"
+                         onclick="document.getElementById('courtList').classList.toggle('hidden')">
                         <span class="truncate">{{ $selectedCourt->name ?? 'เลือก' }}</span>
-                        <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+
+                    <div id="courtList"
+                         class="hidden absolute top-full mt-1 left-0 left-0 w-full max-h-[380px] overflow-y-auto overflow-x-hidden bg-white border border-gray-200 rounded-md shadow-xl z-50 flex flex-col">
+                        @foreach($courts as $court)
+                            <a href="{{ route('booking.index', ['court_id' => $court->id, 'date' => $date]) }}"
+                               class="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0 truncate {{ $selectedCourt?->id == $court->id ? 'font-bold bg-gray-50 text-[#87D068]' : '' }}">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 {{ ($court->court_status ?? 'open') === 'open' ? 'bg-emerald-500' : 'bg-red-500' }}"></span>
+                                <span class="truncate">{{ $court->name }}</span>
+                            </a>
+                        @endforeach
                     </div>
                 </div>
                 {{-- Dropdown Data --}}
@@ -442,7 +457,7 @@ function validateAndSubmitDate(input) {
     if (selectedDate > maxDate) {
         alert("สามารถจองล่วงหน้าได้สูงสุด 1 เดือนเท่านั้น");
         input.value = "{{ now()->addMonth()->toDateString() }}";
-    } 
+    }
     else if (selectedDate < minDate) {
         alert("ไม่สามารถเลือกวันย้อนหลังได้");
         input.value = "{{ now()->toDateString() }}";

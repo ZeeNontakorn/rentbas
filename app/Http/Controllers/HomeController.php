@@ -14,12 +14,9 @@ class HomeController extends Controller
     public function index()
     {
         // Track unique visit per session
-        if (!session()->has('has_visited')) {
-            SiteVisit::create([]);
-            session()->put('has_visited', true);
-        }
-
-        $courts = Court::orderBy('name')->get();
+        $courts = Court::all()->sortBy(function ($court) {
+            return $court->name;
+        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
         return view('home', compact('courts'));
     }
