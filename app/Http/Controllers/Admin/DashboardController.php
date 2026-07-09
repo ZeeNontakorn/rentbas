@@ -8,10 +8,9 @@ use App\Models\Court;
 use App\Models\CourtClosure;
 use App\Models\SiteVisit;
 use App\Models\User;
+use ArielMejiaDev\LarapexCharts\LarapexChart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
@@ -56,7 +55,7 @@ class DashboardController extends Controller
         $last7 = Booking::where('booking_date', '>=', $now->copy()->subDays(6)->toDateString())
             ->whereIn('status', self::COUNTABLE)
             ->get(['booking_date']);
-        $sparkByDate = $last7->groupBy(fn ($b) => $b->booking_date->toDateString())->map->count();
+        $sparkByDate = $last7->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
 
         $spark = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -73,14 +72,14 @@ class DashboardController extends Controller
         $todayApproved = Booking::whereDate('booking_date', $todayStr)
             ->where('status', 'approved')
             ->get(['start_time', 'end_time', 'court_id']);
-        $todayBookedHours = $todayApproved->sum(fn ($b) => $this->durationHours($b->start_time, $b->end_time));
+        $todayBookedHours = $todayApproved->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time));
         $capacityToday = $courtCount * $hoursPerDay;
         $utilizationRate = $capacityToday > 0 ? round(min($todayBookedHours / $capacityToday * 100, 100)) : 0;
 
         // yesterday utilization for the trend arrow
         $ydayApproved = Booking::whereDate('booking_date', $now->copy()->subDay()->toDateString())
             ->where('status', 'approved')->get(['start_time', 'end_time']);
-        $ydayHours = $ydayApproved->sum(fn ($b) => $this->durationHours($b->start_time, $b->end_time));
+        $ydayHours = $ydayApproved->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time));
         $ydayUtil = $capacityToday > 0 ? min($ydayHours / $capacityToday * 100, 100) : 0;
         $utilizationTrend = $this->pctChange($utilizationRate, $ydayUtil);
 
@@ -92,13 +91,13 @@ class DashboardController extends Controller
         $monthApproved = Booking::whereBetween('booking_date', [$monthStart, $monthEnd])
             ->where('status', 'approved')
             ->get(['start_time', 'end_time', 'booking_date', 'court_id', 'user_id']);
-        $bookedHours = round($monthApproved->sum(fn ($b) => $this->durationHours($b->start_time, $b->end_time)));
+        $bookedHours = round($monthApproved->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time)));
 
         $prevMonthStart = $now->copy()->subMonthNoOverflow()->startOfMonth()->toDateString();
         $prevMonthEnd = $now->copy()->subMonthNoOverflow()->endOfMonth()->toDateString();
         $prevMonthHours = Booking::whereBetween('booking_date', [$prevMonthStart, $prevMonthEnd])
             ->where('status', 'approved')->get(['start_time', 'end_time'])
-            ->sum(fn ($b) => $this->durationHours($b->start_time, $b->end_time));
+            ->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time));
         $bookedHoursTrend = $this->pctChange($bookedHours, $prevMonthHours);
 
         // ---------------------------------------------------------------
@@ -148,7 +147,7 @@ class DashboardController extends Controller
         $last30 = Booking::where('booking_date', '>=', $now->copy()->subDays(29)->toDateString())
             ->whereIn('status', self::COUNTABLE)
             ->get(['booking_date']);
-        $trendByDate = $last30->groupBy(fn ($b) => $b->booking_date->toDateString())->map->count();
+        $trendByDate = $last30->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
 
         $trend = [];
         for ($i = 29; $i >= 0; $i--) {
@@ -164,18 +163,15 @@ class DashboardController extends Controller
         // Cancellation Analysis — categorised (real where possible)
         // ---------------------------------------------------------------
         $cancelRows = Booking::whereBetween('booking_date', [
-            $now->copy()->subDays(30)->toDateString(), $todayStr,
+            $now->copy()->subDays(30)->toDateString(),
+            $todayStr,
         ])->whereIn('status', ['cancelled', 'rejected'])->get(['status', 'reject_reason']);
 
-        $cancel = ['Customer Cancel' => 0, 'Payment Timeout' => 0, 'Maintenance' => 0, 'Weather' => 0];
+        $cancel = ['Customer Cancel' => 0, 'Maintenance' => 0];
         foreach ($cancelRows as $r) {
             $reason = mb_strtolower($r->reject_reason ?? '');
             if (str_contains($reason, 'ซ่อม') || str_contains($reason, 'mainten') || str_contains($reason, 'ปิด')) {
                 $cancel['Maintenance']++;
-            } elseif (str_contains($reason, 'ฝน') || str_contains($reason, 'อากาศ') || str_contains($reason, 'weather')) {
-                $cancel['Weather']++;
-            } elseif (str_contains($reason, 'ชำระ') || str_contains($reason, 'จ่าย') || str_contains($reason, 'payment') || str_contains($reason, 'timeout')) {
-                $cancel['Payment Timeout']++;
             } else {
                 // status 'cancelled' or an uncategorised admin rejection
                 $cancel['Customer Cancel']++;
@@ -183,8 +179,8 @@ class DashboardController extends Controller
         }
         $cancelIsMock = array_sum($cancel) === 0;
         if ($cancelIsMock) {
-            // No cancellation data yet — show representative sample from the design.
-            $cancel = ['Customer Cancel' => 42, 'Payment Timeout' => 26, 'Maintenance' => 18, 'Weather' => 14];
+            // No cancellation data yet — show representative sample.
+            $cancel = ['Customer Cancel' => 70, 'Maintenance' => 30];
         }
         $cancelTotal = array_sum($cancel);
 
@@ -195,7 +191,7 @@ class DashboardController extends Controller
         $monthlyRows = Booking::where('booking_date', '>=', $since->toDateString())
             ->whereIn('status', self::COUNTABLE)
             ->get(['booking_date']);
-        $byMonth = $monthlyRows->groupBy(fn ($b) => $b->booking_date->format('Y-m'))->map->count();
+        $byMonth = $monthlyRows->groupBy(fn($b) => $b->booking_date->format('Y-m'))->map->count();
 
         $monthly = [];
         for ($i = 11; $i >= 0; $i--) {
@@ -221,7 +217,7 @@ class DashboardController extends Controller
             $slotStart = sprintf('%02d:00:00', $h);
             $slotEnd = sprintf('%02d:00:00', $h + 1);
             $busy = $todayApproved->filter(
-                fn ($b) => $b->start_time < $slotEnd && $b->end_time > $slotStart
+                fn($b) => $b->start_time < $slotEnd && $b->end_time > $slotStart
             )->count();
             $peakHours[] = [
                 'label' => sprintf('%02d:00', $h),
@@ -242,7 +238,7 @@ class DashboardController extends Controller
         $courtUtil = [];
         foreach ($courts as $court) {
             $hrs = $weekApproved->where('court_id', $court->id)
-                ->sum(fn ($b) => $this->durationHours($b->start_time, $b->end_time));
+                ->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time));
             $courtUtil[] = [
                 'name' => $court->name,
                 'hours' => round($hrs),
@@ -269,10 +265,10 @@ class DashboardController extends Controller
                 $slotEnd = sprintf('%02d:00:00', $h + 1);
 
                 $isMaint = $fullyClosed || $todayClosures->first(
-                    fn ($c) => $c->court_id === $court->id && $c->start_time < $slotEnd && $c->end_time > $slotStart
+                    fn($c) => $c->court_id === $court->id && $c->start_time < $slotEnd && $c->end_time > $slotStart
                 ) !== null;
                 $isBusy = $todayOccupancy->first(
-                    fn ($b) => $b->court_id === $court->id && $b->start_time < $slotEnd && $b->end_time > $slotStart
+                    fn($b) => $b->court_id === $court->id && $b->start_time < $slotEnd && $b->end_time > $slotStart
                 ) !== null;
 
                 $cells[] = $isMaint ? 'maintenance' : ($isBusy ? 'occupied' : 'available');
@@ -290,8 +286,8 @@ class DashboardController extends Controller
             ->orderBy('start_time')
             ->get()
             ->map(function ($b) use ($now) {
-                $start = Carbon::parse($b->booking_date->toDateString().' '.$b->start_time);
-                $end = Carbon::parse($b->booking_date->toDateString().' '.$b->end_time);
+                $start = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->start_time);
+                $end = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->end_time);
                 $state = $end->lte($now) ? 'completed' : ($start->lte($now) ? 'ongoing' : 'upcoming');
 
                 return [
@@ -320,7 +316,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(function ($b) use ($now) {
-                $start = Carbon::parse($b->booking_date->toDateString().' '.$b->start_time);
+                $start = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->start_time);
 
                 return [
                     'name' => $b->user->name ?? 'ไม่ระบุ',
@@ -335,7 +331,7 @@ class DashboardController extends Controller
         // ---------------------------------------------------------------
         $topCustomers = $monthApproved->groupBy('user_id')->map(function ($rows) {
             return [
-                'hours' => round($rows->sum(fn ($b) => $this->durationHours($b->start_time, $b->end_time))),
+                'hours' => round($rows->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time))),
                 'count' => $rows->count(),
                 'user_id' => $rows->first()->user_id,
             ];
@@ -358,33 +354,33 @@ class DashboardController extends Controller
             $recent->push([
                 'time' => $b->created_at,
                 'type' => 'new',
-                'text' => ($b->user->name ?? 'ลูกค้า').' สร้างการจองใหม่ '.($b->court->name ?? ''),
+                'text' => ($b->user->name ?? 'ลูกค้า') . ' สร้างการจองใหม่ ' . ($b->court->name ?? ''),
             ]);
         }
         foreach (Booking::with(['court'])->whereIn('status', ['cancelled', 'rejected'])->latest('updated_at')->limit(4)->get() as $b) {
             $recent->push([
                 'time' => $b->updated_at,
                 'type' => 'cancel',
-                'text' => 'การจอง #'.$b->id.' ถูกยกเลิก'.($b->court ? ' ('.$b->court->name.')' : ''),
+                'text' => 'การจอง #' . $b->id . ' ถูกยกเลิก' . ($b->court ? ' (' . $b->court->name . ')' : ''),
             ]);
         }
         foreach (Booking::with(['user'])->where('status', 'approved')->latest('updated_at')->limit(4)->get() as $b) {
             $recent->push([
                 'time' => $b->updated_at,
                 'type' => 'confirm',
-                'text' => 'ยืนยันการจองของ '.($b->user->name ?? 'ลูกค้า').' แล้ว',
+                'text' => 'ยืนยันการจองของ ' . ($b->user->name ?? 'ลูกค้า') . ' แล้ว',
             ]);
         }
         foreach (User::latest()->limit(4)->get() as $u) {
             $recent->push([
                 'time' => $u->created_at,
                 'type' => 'user',
-                'text' => $u->name.' สมัครสมาชิกใหม่',
+                'text' => $u->name . ' สมัครสมาชิกใหม่',
             ]);
         }
-        $recentActivities = $recent->filter(fn ($a) => $a['time'] !== null)
+        $recentActivities = $recent->filter(fn($a) => $a['time'] !== null)
             ->sortByDesc('time')->take(6)
-            ->map(fn ($a) => [
+            ->map(fn($a) => [
                 'type' => $a['type'],
                 'text' => $a['text'],
                 'ago' => $a['time']->diffForHumans(),
@@ -406,19 +402,93 @@ class DashboardController extends Controller
         ];
 
         // ---------------------------------------------------------------
-        // Weather — live via Open-Meteo (cached), sample fallback if offline
+        // Charts — built with Larapex Charts (data prepared as plain arrays)
         // ---------------------------------------------------------------
-        $weather = $this->fetchWeather();
+        $font = 'Kanit, sans-serif';
+
+        $trendChart = (new LarapexChart)->areaChart()
+            ->setFontFamily($font)
+            ->setColors(['#f97316'])
+            ->setStroke(3, ['#f97316'], 'smooth')
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'การจอง', 'data' => array_column($trend, 'count')],
+            ])
+            ->setXAxis(array_column($trend, 'label'));
+
+        $cancelColorMap = [
+            'Customer Cancel' => '#f97316',
+            'Maintenance' => '#94a3b8',
+        ];
+        $cancelChart = (new LarapexChart)->donutChart()
+            ->setFontFamily($font)
+            ->setColors(array_map(fn($l) => $cancelColorMap[$l] ?? '#94a3b8', array_keys($cancel)))
+            ->setHeight(320)
+            ->setLabels(array_keys($cancel))
+            ->setDataset(array_values($cancel));
+
+        $monthlyChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors(['#1e293b', '#4a80d7', '#f97316', '#facc15', '#10b981', '#f43f5e', '#f59e0b', '#94a3b8', '#8b5cf6', '#ec4899', '#22d3ee', '#f97316'])
+            ->setHeight(280)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'การจอง', 'data' => array_column($monthly, 'count')],
+            ])
+            ->setXAxis(array_column($monthly, 'label'));
+
+        $peakChart = (new LarapexChart)->horizontalBarChart()
+            ->setFontFamily($font)
+            ->setColors(['#f97316'])
+            ->setHeight(360)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'Utilization %', 'data' => array_column($peakHours, 'pct')],
+            ])
+            ->setXAxis(array_column($peakHours, 'label'));
+
+        // One radial gauge per court (colour by utilization level)
+        $courtCharts = [];
+        foreach ($courtUtil as $c) {
+            $ring = $c['pct'] >= 70 ? '#10b981' : ($c['pct'] >= 40 ? '#f59e0b' : '#f43f5e');
+            $courtCharts[] = [
+                'name' => $c['name'],
+                'hours' => $c['hours'],
+                'chart' => (new LarapexChart)->radialChart()
+                    ->setFontFamily($font)
+                    ->setColors([$ring])
+                    ->setHeight(200)
+                    ->setLabels([$c['name']])
+                    ->addData([$c['pct']]),
+            ];
+        }
 
         return view('admin.dashboard', compact(
-            'kpis', 'trend', 'trendTotal',
-            'cancel', 'cancelTotal', 'cancelIsMock',
-            'monthly', 'yoy', 'last12Sum',
-            'peakHours', 'courtUtil',
-            'occupancy', 'occupancyHours',
-            'todaysSchedule', 'upcoming', 'topCustomers',
-            'recentActivities', 'weather',
-            'memberStats', 'visitStats'
+            'kpis',
+            'trend',
+            'trendTotal',
+            'cancel',
+            'cancelTotal',
+            'cancelIsMock',
+            'monthly',
+            'yoy',
+            'last12Sum',
+            'peakHours',
+            'courtUtil',
+            'occupancy',
+            'occupancyHours',
+            'todaysSchedule',
+            'upcoming',
+            'topCustomers',
+            'recentActivities',
+            'memberStats',
+            'visitStats',
+            'trendChart',
+            'cancelChart',
+            'monthlyChart',
+            'peakChart',
+            'courtCharts'
         ));
     }
 
@@ -430,64 +500,6 @@ class DashboardController extends Controller
         }
 
         return round(($current - $previous) / $previous * 100, 1);
-    }
-
-    /**
-     * Live weather for the venue (Bangkok) via Open-Meteo, cached 30 min.
-     * Falls back to a representative sample if the API is unreachable so the
-     * dashboard never hangs or errors when the server is offline.
-     */
-    private function fetchWeather(): array
-    {
-        $fallback = [
-            'temp' => 29, 'feels' => 32, 'condition' => 'Sunny',
-            'humidity' => 58, 'wind' => 11, 'uv' => 'High', 'is_mock' => true,
-        ];
-
-        try {
-            return Cache::remember('dashboard_weather', now()->addMinutes(30), function () use ($fallback) {
-                $res = Http::timeout(4)->get('https://api.open-meteo.com/v1/forecast', [
-                    'latitude' => 13.7563,
-                    'longitude' => 100.5018,
-                    'current' => 'temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,uv_index',
-                    'timezone' => 'Asia/Bangkok',
-                ]);
-
-                $c = $res->ok() ? $res->json('current') : null;
-                if (! $c) {
-                    return $fallback;
-                }
-
-                $uv = $c['uv_index'] ?? 0;
-
-                return [
-                    'temp' => (int) round($c['temperature_2m']),
-                    'feels' => (int) round($c['apparent_temperature'] ?? $c['temperature_2m']),
-                    'condition' => $this->weatherText((int) ($c['weather_code'] ?? 0)),
-                    'humidity' => (int) round($c['relative_humidity_2m'] ?? 0),
-                    'wind' => (int) round($c['wind_speed_10m'] ?? 0),
-                    'uv' => $uv >= 8 ? 'Very High' : ($uv >= 6 ? 'High' : ($uv >= 3 ? 'Moderate' : 'Low')),
-                    'is_mock' => false,
-                ];
-            });
-        } catch (\Throwable $e) {
-            return $fallback;
-        }
-    }
-
-    /** Map a WMO weather code to a short human label. */
-    private function weatherText(int $code): string
-    {
-        return match (true) {
-            $code === 0 => 'Clear',
-            $code <= 3 => 'Partly Cloudy',
-            $code <= 48 => 'Foggy',
-            $code <= 67 => 'Rainy',
-            $code <= 77 => 'Snow',
-            $code <= 82 => 'Rain Showers',
-            $code <= 99 => 'Thunderstorm',
-            default => 'Clear',
-        };
     }
 
     public function bookings(Request $request)
@@ -503,6 +515,7 @@ class DashboardController extends Controller
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($court_id, fn ($q) => $q->where('court_id', $court_id))
             ->latest()
+            ->orderByDesc('start_time')
             ->paginate(20)
             ->withQueryString();
 

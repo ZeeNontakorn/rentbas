@@ -46,13 +46,6 @@
         'x'        => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
     ];
 
-    $cancelColors = [
-        'Customer Cancel' => '#f97316',
-        'Payment Timeout' => '#6366f1',
-        'Maintenance'     => '#94a3b8',
-        'Weather'         => '#3b82f6',
-    ];
-
     $occColors = ['available' => '#10b981', 'occupied' => '#f97316', 'maintenance' => '#ef4444'];
 @endphp
 
@@ -126,40 +119,7 @@
                         Total: {{ number_format($trendTotal) }}
                     </span>
                 </div>
-                @php
-                    $vals = array_column($trend, 'count');
-                    $maxV = max(max($vals), 1);
-                    $W = 640; $H = 160;
-                    $stepX = count($vals) > 1 ? $W / (count($vals) - 1) : $W;
-                    $line = ''; $area = '';
-                    foreach ($vals as $i => $v) {
-                        $x = round($i * $stepX, 1);
-                        $y = round($H - ($v / $maxV) * ($H - 12), 1);
-                        $line .= ($i === 0 ? 'M' : ' L') . "$x,$y";
-                    }
-                    $area = $line . " L$W,$H L0,$H Z";
-                @endphp
-                <div class="overflow-x-auto">
-                    <svg viewBox="0 0 {{ $W }} {{ $H }}" preserveAspectRatio="none" class="w-full h-40 min-w-[520px]">
-                        <defs>
-                            <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#f97316" stop-opacity="0.35"/>
-                                <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
-                            </linearGradient>
-                        </defs>
-                        @for($g = 1; $g <= 3; $g++)
-                            <line x1="0" y1="{{ $H * $g / 4 }}" x2="{{ $W }}" y2="{{ $H * $g / 4 }}" stroke="#f1f5f9" stroke-width="1"/>
-                        @endfor
-                        <path d="{{ $area }}" fill="url(#trendFill)"/>
-                        <path d="{{ $line }}" fill="none" stroke="#f97316" stroke-width="2.5"
-                              stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-                    </svg>
-                </div>
-                <div class="flex justify-between text-[10px] text-gray-400 mt-2 px-1">
-                    @foreach([0, 7, 14, 21, 29] as $idx)
-                        <span>{{ $trend[$idx]['label'] ?? '' }}</span>
-                    @endforeach
-                </div>
+                {!! $trendChart->container() !!}
             </div>
 
             <!-- Cancellation Analysis (donut) -->
@@ -173,34 +133,7 @@
                         <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">ตัวอย่าง</span>
                     @endif
                 </div>
-                @php
-                    $segs = []; $acc = 0;
-                    foreach ($cancel as $label => $count) {
-                        $pct = $cancelTotal > 0 ? $count / $cancelTotal * 100 : 0;
-                        $segs[] = $cancelColors[$label] . ' ' . round($acc, 2) . '% ' . round($acc + $pct, 2) . '%';
-                        $acc += $pct;
-                    }
-                    $conic = 'conic-gradient(' . implode(', ', $segs) . ')';
-                @endphp
-                <div class="flex justify-center my-4">
-                    <div class="relative w-40 h-40 rounded-full" style="background: {{ $conic }};">
-                        <div class="absolute inset-[18%] bg-white rounded-full flex flex-col items-center justify-center">
-                            <span class="text-[10px] text-gray-400">Total</span>
-                            <span class="text-xl font-bold text-gray-800">100%</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    @foreach($cancel as $label => $count)
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="flex items-center gap-2 text-gray-600">
-                                <span class="w-2.5 h-2.5 rounded-full" style="background: {{ $cancelColors[$label] }};"></span>
-                                {{ $label }}
-                            </span>
-                            <span class="font-semibold text-gray-800">{{ $cancelTotal > 0 ? round($count / $cancelTotal * 100) : 0 }}%</span>
-                        </div>
-                    @endforeach
-                </div>
+                {!! $cancelChart->container() !!}
             </div>
         </div>
 
@@ -218,17 +151,7 @@
                         {{ $yoy >= 0 ? '+' : '' }}{{ $yoy }}% YoY
                     </span>
                 </div>
-                @php $mMax = max(max(array_column($monthly, 'count')), 1); @endphp
-                <div class="flex items-end justify-between gap-1.5 h-44">
-                    @foreach($monthly as $i => $m)
-                        <div class="flex-1 flex flex-col items-center justify-end h-full group">
-                            <span class="text-[10px] font-semibold text-gray-500 mb-1 opacity-0 group-hover:opacity-100 transition">{{ $m['count'] }}</span>
-                            <div class="w-full rounded-t {{ $loop->last ? 'bg-orange-500' : 'bg-slate-800' }} transition-all duration-500 hover:opacity-80"
-                                 style="height: {{ max($m['count'] / $mMax * 100, 2) }}%;"></div>
-                            <span class="text-[9px] text-gray-400 mt-1">{{ $m['label'] }}</span>
-                        </div>
-                    @endforeach
-                </div>
+                {!! $monthlyChart->container() !!}
             </div>
 
             <!-- Peak Booking Hours -->
@@ -237,22 +160,7 @@
                     <h3 class="font-bold text-gray-800">Peak Booking Hours</h3>
                     <p class="text-xs text-gray-400">Utilization by time slot, today</p>
                 </div>
-                <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                    @foreach($peakHours as $slot)
-                        @php
-                            $p = $slot['pct'];
-                            $barColor = $p >= 70 ? '#f97316' : ($p >= 45 ? '#fbbf24' : '#e2e8f0');
-                            $txtColor = $p >= 70 ? 'text-orange-600' : 'text-gray-500';
-                        @endphp
-                        <div class="flex items-center gap-3 text-xs">
-                            <span class="w-10 text-gray-500 font-medium shrink-0">{{ $slot['label'] }}</span>
-                            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all duration-500" style="width: {{ max($p, 2) }}%; background: {{ $barColor }};"></div>
-                            </div>
-                            <span class="w-9 text-right font-semibold {{ $txtColor }} shrink-0">{{ $p }}%</span>
-                        </div>
-                    @endforeach
-                </div>
+                {!! $peakChart->container() !!}
             </div>
         </div>
 
@@ -262,22 +170,12 @@
                 <h3 class="font-bold text-gray-800">Court Utilization</h3>
                 <p class="text-xs text-gray-400">Usage per court, this week</p>
             </div>
-            @if(count($courtUtil))
+            @if(count($courtCharts))
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                @foreach($courtUtil as $c)
-                    @php
-                        $p = $c['pct'];
-                        $ring = $p >= 70 ? '#10b981' : ($p >= 40 ? '#f59e0b' : '#f43f5e');
-                    @endphp
+                @foreach($courtCharts as $cc)
                     <div class="flex flex-col items-center">
-                        <div class="relative w-28 h-28 rounded-full"
-                             style="background: conic-gradient({{ $ring }} 0 {{ $p }}%, #f1f5f9 {{ $p }}% 100%);">
-                            <div class="absolute inset-[14%] bg-white rounded-full flex flex-col items-center justify-center">
-                                <span class="text-xl font-bold text-gray-800">{{ $p }}%</span>
-                                <span class="text-[10px] text-gray-400">{{ $c['hours'] }}h / wk</span>
-                            </div>
-                        </div>
-                        <span class="mt-3 text-sm font-semibold text-gray-700">{{ $c['name'] }}</span>
+                        {!! $cc['chart']->container() !!}
+                        <span class="-mt-3 text-xs text-gray-400">{{ $cc['hours'] }}h / สัปดาห์</span>
                     </div>
                 @endforeach
             </div>
@@ -413,53 +311,27 @@
                 </div>
             </div>
 
-            <!-- Recent Activities + Weather -->
-            <div class="flex flex-col gap-4">
-                <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <div class="mb-4">
-                        <h3 class="font-bold text-gray-800">Recent Activities</h3>
-                        <p class="text-xs text-gray-400">Live activity feed</p>
-                    </div>
-                    @php
-                        $actDot = ['new' => '#3b82f6', 'cancel' => '#ef4444', 'confirm' => '#10b981', 'user' => '#8b5cf6'];
-                    @endphp
-                    <div class="space-y-3">
-                        @forelse($recentActivities as $a)
-                            <div class="flex items-start gap-3">
-                                <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background: {{ $actDot[$a['type']] ?? '#94a3b8' }};"></span>
-                                <div>
-                                    <div class="text-sm text-gray-700">{{ $a['text'] }}</div>
-                                    <div class="text-xs text-gray-400">{{ $a['ago'] }}</div>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีกิจกรรม</p>
-                        @endforelse
-                    </div>
+            <!-- Recent Activities -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Recent Activities</h3>
+                    <p class="text-xs text-gray-400">Live activity feed</p>
                 </div>
-
-                <!-- Weather -->
-                <div class="rounded-2xl p-5 text-white shadow-sm relative overflow-hidden"
-                     style="background-image: linear-gradient(135deg, #38bdf8, #3b82f6);">
-                    @if($weather['is_mock'])
-                        <span class="absolute top-3 right-3 text-[10px] bg-white/25 px-2 py-0.5 rounded-full">ตัวอย่าง</span>
-                    @endif
-                    <div class="text-sm text-white/85">Outdoor Courts Weather</div>
-                    <div class="flex items-end justify-between mt-1">
-                        <div>
-                            <div class="text-4xl font-extrabold">{{ $weather['temp'] }}°C</div>
-                            <div class="text-xs text-white/85">{{ $weather['condition'] }} · Feels like {{ $weather['feels'] }}°C</div>
+                @php
+                    $actDot = ['new' => '#3b82f6', 'cancel' => '#ef4444', 'confirm' => '#10b981', 'user' => '#8b5cf6'];
+                @endphp
+                <div class="space-y-3">
+                    @forelse($recentActivities as $a)
+                        <div class="flex items-start gap-3">
+                            <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background: {{ $actDot[$a['type']] ?? '#94a3b8' }};"></span>
+                            <div>
+                                <div class="text-sm text-gray-700">{{ $a['text'] }}</div>
+                                <div class="text-xs text-gray-400">{{ $a['ago'] }}</div>
+                            </div>
                         </div>
-                        <svg class="w-12 h-12 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="4" stroke-width="2"/>
-                            <path stroke-linecap="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.66-6.66l-1.41 1.41M7.75 16.25l-1.41 1.41m12.32 0l-1.41-1.41M7.75 7.75L6.34 6.34"/>
-                        </svg>
-                    </div>
-                    <div class="flex gap-4 mt-3 text-xs text-white/85">
-                        <span>💧 Humidity {{ $weather['humidity'] }}%</span>
-                        <span>🌬 Wind {{ $weather['wind'] }} km/h</span>
-                        <span>☀ UV {{ $weather['uv'] }}</span>
-                    </div>
+                    @empty
+                        <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีกิจกรรม</p>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -505,4 +377,54 @@
 
     </div>
 </div>
+
+@push('scripts')
+    <script src="{{ \ArielMejiaDev\LarapexCharts\LarapexChart::cdn() }}"></script>
+    {!! $trendChart->script() !!}
+    {!! $cancelChart->script() !!}
+
+    {{-- monthlyChart: built manually instead of ->script() because Larapex's
+         blade template only reads ->horizontal() for plotOptions.bar, so
+         ->setOptions(['plotOptions' => ['bar' => ['distributed' => true]]])
+         in the controller never actually reaches the rendered chart. --}}
+    <script>
+        (function () {
+            var options = {
+                chart: {
+                    id: '{!! $monthlyChart->id() !!}',
+                    type: '{!! $monthlyChart->type() !!}',
+                    height: {!! $monthlyChart->height() !!},
+                    width: '{!! $monthlyChart->width() !!}',
+                    toolbar: {!! $monthlyChart->toolbar() !!},
+                    zoom: {!! $monthlyChart->zoom() !!},
+                    fontFamily: '{!! $monthlyChart->fontFamily() !!}',
+                    foreColor: '{!! $monthlyChart->foreColor() !!}',
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        distributed: true
+                    }
+                },
+                colors: {!! $monthlyChart->colors() !!},
+                series: {!! $monthlyChart->dataset() !!},
+                dataLabels: {!! $monthlyChart->dataLabels() !!},
+                title: {
+                    text: "{!! $monthlyChart->title() !!}"
+                },
+                xaxis: {!! $monthlyChart->xAxis() !!},
+                grid: {!! $monthlyChart->grid() !!},
+                legend: {
+                    show: false
+                }
+            };
+            new ApexCharts(document.querySelector("#{!! $monthlyChart->id() !!}"), options).render();
+        })();
+    </script>
+
+    {!! $peakChart->script() !!}
+    @foreach($courtCharts as $cc)
+        {!! $cc['chart']->script() !!}
+    @endforeach
+@endpush
 @endsection
