@@ -665,6 +665,46 @@ html { scroll-behavior: smooth; }
     vertical-align: middle;
     margin-right: 5px;
 }
+
+/* ─── HERO / NAV BUTTONS ─── */
+.home-content .btn-primary,
+.home-content .btn-white,
+.home-content .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 13px 28px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: background .2s, border-color .2s, transform .15s;
+    white-space: nowrap;
+}
+
+/* ปุ่มส้ม (จองสนาม / สมัครสมาชิก) */
+.home-content .btn-primary {
+    background: var(--ore);
+    color: #fff;
+    border: 1px solid var(--ore);
+}
+.home-content .btn-primary:hover {
+    background: var(--ore-d);
+    border-color: var(--ore-d);
+    transform: translateY(-1px);
+}
+
+/* ปุ่มขอบขาว โปร่งใส (เข้าสู่ระบบ) */
+.home-content .btn-white {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.35);
+}
+.home-content .btn-white:hover {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.6);
+}
 </style>
 
 <div class="home-content">
