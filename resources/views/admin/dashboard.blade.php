@@ -126,7 +126,7 @@
                         Total: {{ number_format($trendTotal) }}
                     </span>
                 </div>
-                <div id="chart-trend" class="min-h-[220px]"></div>
+                {!! $trendChart->container() !!}
             </div>
 
             <!-- Cancellation Analysis (donut) -->
@@ -140,7 +140,7 @@
                         <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">ตัวอย่าง</span>
                     @endif
                 </div>
-                <div id="chart-cancel" class="min-h-[300px]"></div>
+                {!! $cancelChart->container() !!}
             </div>
         </div>
 
@@ -158,7 +158,7 @@
                         {{ $yoy >= 0 ? '+' : '' }}{{ $yoy }}% YoY
                     </span>
                 </div>
-                <div id="chart-monthly" class="min-h-[260px]"></div>
+                {!! $monthlyChart->container() !!}
             </div>
 
             <!-- Peak Booking Hours -->
@@ -167,7 +167,7 @@
                     <h3 class="font-bold text-gray-800">Peak Booking Hours</h3>
                     <p class="text-xs text-gray-400">Utilization by time slot, today</p>
                 </div>
-                <div id="chart-peak" class="min-h-[340px]"></div>
+                {!! $peakChart->container() !!}
             </div>
         </div>
 
@@ -421,31 +421,11 @@
     </div>
 </div>
 
-@php
-    $dashData = [
-        'trend' => [
-            'labels' => array_column($trend, 'label'),
-            'counts' => array_column($trend, 'count'),
-        ],
-        'cancel' => [
-            'labels' => array_keys($cancel),
-            'series' => array_values($cancel),
-            'colors' => array_map(fn ($l) => $cancelColors[$l] ?? '#94a3b8', array_keys($cancel)),
-        ],
-        'monthly' => [
-            'labels' => array_column($monthly, 'label'),
-            'counts' => array_column($monthly, 'count'),
-        ],
-        'peak' => [
-            'labels' => array_column($peakHours, 'label'),
-            'values' => array_column($peakHours, 'pct'),
-        ],
-    ];
-@endphp
 @push('scripts')
-    <script>
-        window.__dashboardData = @json($dashData);
-    </script>
-    @vite('resources/js/dashboard.js')
+    <script src="{{ \ArielMejiaDev\LarapexCharts\LarapexChart::cdn() }}"></script>
+    {!! $trendChart->script() !!}
+    {!! $cancelChart->script() !!}
+    {!! $monthlyChart->script() !!}
+    {!! $peakChart->script() !!}
 @endpush
 @endsection

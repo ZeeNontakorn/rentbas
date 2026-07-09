@@ -8,6 +8,7 @@ use App\Models\Court;
 use App\Models\CourtClosure;
 use App\Models\SiteVisit;
 use App\Models\User;
+use ArielMejiaDev\LarapexCharts\LarapexChart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -409,6 +410,55 @@ class DashboardController extends Controller
         // ---------------------------------------------------------------
         $weather = $this->fetchWeather();
 
+        // ---------------------------------------------------------------
+        // Charts — built with Larapex Charts (data prepared as plain arrays)
+        // ---------------------------------------------------------------
+        $font = 'Kanit, sans-serif';
+
+        $trendChart = (new LarapexChart)->areaChart()
+            ->setFontFamily($font)
+            ->setColors(['#f97316'])
+            ->setStroke(3, ['#f97316'], 'smooth')
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'การจอง', 'data' => array_column($trend, 'count')],
+            ])
+            ->setXAxis(array_column($trend, 'label'));
+
+        $cancelColorMap = [
+            'Customer Cancel' => '#f97316',
+            'Payment Timeout' => '#6366f1',
+            'Maintenance' => '#94a3b8',
+            'Weather' => '#3b82f6',
+        ];
+        $cancelChart = (new LarapexChart)->donutChart()
+            ->setFontFamily($font)
+            ->setColors(array_map(fn ($l) => $cancelColorMap[$l] ?? '#94a3b8', array_keys($cancel)))
+            ->setHeight(320)
+            ->setLabels(array_keys($cancel))
+            ->setDataset(array_values($cancel));
+
+        $monthlyChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors(['#1e293b'])
+            ->setHeight(280)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'การจอง', 'data' => array_column($monthly, 'count')],
+            ])
+            ->setXAxis(array_column($monthly, 'label'));
+
+        $peakChart = (new LarapexChart)->horizontalBarChart()
+            ->setFontFamily($font)
+            ->setColors(['#f97316'])
+            ->setHeight(360)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'Utilization %', 'data' => array_column($peakHours, 'pct')],
+            ])
+            ->setXAxis(array_column($peakHours, 'label'));
+
         return view('admin.dashboard', compact(
             'kpis', 'trend', 'trendTotal',
             'cancel', 'cancelTotal', 'cancelIsMock',
@@ -417,7 +467,8 @@ class DashboardController extends Controller
             'occupancy', 'occupancyHours',
             'todaysSchedule', 'upcoming', 'topCustomers',
             'recentActivities', 'weather',
-            'memberStats', 'visitStats'
+            'memberStats', 'visitStats',
+            'trendChart', 'cancelChart', 'monthlyChart', 'peakChart'
         ));
     }
 
