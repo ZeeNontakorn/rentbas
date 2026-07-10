@@ -751,12 +751,12 @@ html { scroll-behavior: smooth; }
 {{-- ═══ TICKER ═══ --}}
 <div class="ticker">
     <div class="ticker-track">
-        <span>BCBS BASKETBALL ARENA</span><span>·</span>
+        <span>THATA HOMECOURT</span><span>·</span>
         <span>PREMIUM COURTS AVAILABLE</span><span>·</span>
         <span>BOOK YOUR SLOT TODAY</span><span>·</span>
         <span>PROFESSIONAL STANDARD</span><span>·</span>
         <span>BANGSAEN BASKETBALL CLUB</span><span>·</span>
-        <span>BCBS BASKETBALL ARENA</span><span>·</span>
+        <span>THATA HOMECOURT</span><span>·</span>
         <span>PREMIUM COURTS AVAILABLE</span><span>·</span>
         <span>BOOK YOUR SLOT TODAY</span><span>·</span>
         <span>PROFESSIONAL STANDARD</span><span>·</span>
