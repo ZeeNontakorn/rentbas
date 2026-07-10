@@ -375,6 +375,8 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
     const statusEl = form.querySelector('.js-save-status');
     let initialState = serializeSettingForm(form);
     const submitButton = form.querySelector('button[type="submit"]');
+    const defaultSubmitButtonHtml = submitButton ? submitButton.innerHTML : '';
+    let submitSuccessTimeoutId;
 
     const refreshStatus = () => setSaveStatus(statusEl, serializeSettingForm(form) !== initialState);
     const setSaving = isSaving => {
@@ -383,6 +385,26 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
             submitButton.classList.toggle('opacity-70', isSaving);
             submitButton.classList.toggle('cursor-not-allowed', isSaving);
         }
+    };
+
+    const showSubmitSuccess = () => {
+        if (!submitButton) {
+            return;
+        }
+
+        if (submitSuccessTimeoutId) {
+            clearTimeout(submitSuccessTimeoutId);
+        }
+
+        submitButton.innerHTML = 'บันทึกสำเร็จ';
+        submitButton.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+        submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+
+        submitSuccessTimeoutId = setTimeout(() => {
+            submitButton.innerHTML = defaultSubmitButtonHtml;
+            submitButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+            submitButton.classList.add('bg-orange-500', 'hover:bg-orange-600');
+        }, 1800);
     };
 
     form.addEventListener('input', refreshStatus);
@@ -416,6 +438,7 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
             clearFormFileInputs(form);
             initialState = serializeSettingForm(form);
             refreshStatus();
+            showSubmitSuccess();
         } catch (error) {
             showSaveErrors({ general: ['ไม่สามารถบันทึกข้อมูลได้ กรุณาลองอีกครั้ง'] });
         } finally {
