@@ -803,10 +803,7 @@ html { scroll-behavior: smooth; }
     <div class="courts-grid">
         @php
         $courtImgs = [
-            'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=600&auto=format&fit=crop', // Changed image to fix broken url
+            'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop'
         ];
         @endphp
         @foreach($courts as $court)
@@ -814,7 +811,8 @@ html { scroll-behavior: smooth; }
                 $isOpen = $court->court_status === 'open' &&
                     !($court->closed_from && $court->closed_until &&
                       now()->between($court->closed_from, $court->closed_until));
-                $img = $courtImgs[$loop->index % count($courtImgs)];
+                $uploadedImg = \App\Models\Setting::getVal('court_img_' . $court->id);
+                $img = $uploadedImg ?: $courtImgs[$loop->index % count($courtImgs)];
             @endphp
 
             <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}">
