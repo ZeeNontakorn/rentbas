@@ -803,10 +803,7 @@ html { scroll-behavior: smooth; }
     <div class="courts-grid">
         @php
         $courtImgs = [
-            'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=600&auto=format&fit=crop', // Changed image to fix broken url
+            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
         ];
         @endphp
         @foreach($courts as $court)
@@ -814,7 +811,8 @@ html { scroll-behavior: smooth; }
                 $isOpen = $court->court_status === 'open' &&
                     !($court->closed_from && $court->closed_until &&
                       now()->between($court->closed_from, $court->closed_until));
-                $img = $courtImgs[$loop->index % count($courtImgs)];
+                $uploadedImg = \App\Models\Setting::getVal('court_img_' . $court->id);
+                $img = $uploadedImg ?: $courtImgs[$loop->index % count($courtImgs)];
             @endphp
 
             <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}">
@@ -1209,7 +1207,8 @@ function calNext() {
 }
 
 const now2 = new Date();
-calYear = now2.getFullYear(); calMonth = now2.getMonth();
+calYear = now2.getFullYear();
+calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
 loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
