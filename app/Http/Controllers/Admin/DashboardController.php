@@ -489,6 +489,30 @@ class DashboardController extends Controller
             );
         }
 
+        // Members & Visits — column chart, this week (blue) vs this month (green).
+        // Distributed per-bar colours are applied in the blade (same technique
+        // as monthlyChart) because Larapex's template drops plotOptions.bar.
+        $statLabels = ['สัปดาห์นี้', 'เดือนนี้'];
+        $statColors = ['#60a5fa', '#4ade80'];
+        $memberChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors($statColors)
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'ผู้สมัครสมาชิก', 'data' => [$memberStats['week'], $memberStats['month']]],
+            ])
+            ->setXAxis($statLabels);
+        $visitChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors($statColors)
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'ผู้เข้าชม', 'data' => [$visitStats['week'], $visitStats['month']]],
+            ])
+            ->setXAxis($statLabels);
+
         return view('admin.dashboard', compact(
             'kpis',
             'trend',
@@ -514,7 +538,9 @@ class DashboardController extends Controller
             'monthlyChart',
             'peakChart',
             'courtCharts',
-            'occChart'
+            'occChart',
+            'memberChart',
+            'visitChart'
         ));
     }
 
