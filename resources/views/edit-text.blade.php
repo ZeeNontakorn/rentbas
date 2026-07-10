@@ -158,9 +158,15 @@
                     @php($promoImg = $settings['promo_image'] ?? null)
                     <div class="pt-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            อัปโหลดแบนเนอร์โปรโมชั่น
+                            แบนเนอร์โปรโมชั่น
                         </label>
-                        <div class="flex items-start gap-4">
+                            {{-- Current image preview --}}
+                            <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
+                                <img id="img-preview"
+                                     src="{{ $promoImg ?? '' }}"
+                                     class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
+                                <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
+                                <div class="flex items-start gap-4">
                             <div class="flex-1">
                                 <input type="file" name="promo_image_file" accept="image/*"
                                        class="block w-full text-sm text-gray-500
@@ -170,14 +176,7 @@
                                               file:bg-orange-50 file:text-orange-600
                                               hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this)">
-                                <p class="text-xs text-gray-400 mt-1">PNG, JPG, WEBP ขนาดไม่เกิน 2MB</p>
                             </div>
-                            {{-- Current image preview --}}
-                            <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
-                                <img id="img-preview"
-                                     src="{{ $promoImg ?? '' }}"
-                                     class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
-                                <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             </div>
                         </div>
                     </div>
