@@ -31,6 +31,9 @@
                     <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
                     </a>
+                    <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ดูประวัติการจอง
+                    </a>
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard
                     </a>
@@ -222,6 +225,9 @@
                     </a>
                     <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
+                    </a>
+                    <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ดูประวัติการจอง
                     </a>
                     <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard

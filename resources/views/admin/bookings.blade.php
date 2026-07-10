@@ -35,7 +35,7 @@
                     <form method="GET" action="{{ route('admin.bookings') }}" class="flex gap-4">
                         <input type="hidden" name="status" value="{{ $status }}">
                         <div class="flex-1">
-                            <label class="text-xs text-blue-500 font-medium ml-2">Date</label>
+                            <label class="text-xs text-blue-500 font-medium ml-2">Booking Date</label>
                             <input type="date" name="date" value="{{ $date }}" onchange="this.form.submit()"
                                 class="w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:border-blue-500 outline-none bg-white">
                             <div class="text-[10px] text-gray-400 mt-1 ml-2">MM/DD/YYYY</div>
@@ -66,7 +66,6 @@
                             @else
                                 รายการจองทั้งหมด
                             @endif
-                            {{ $court_id ? ('สนาม ' . $court_id) : '' }}
                         </h3>
                         <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                             @forelse($bookings as $b)
