@@ -274,7 +274,7 @@ class BookingController extends Controller
         Notification::create([
             'user_id'=>$booking->user_id,
             'title'=>'การจองได้รับการอนุมัติ',
-            'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
+            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
         ]);
 
         if ($booking->user?->email) {
