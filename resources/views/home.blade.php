@@ -1209,7 +1209,8 @@ function calNext() {
 }
 
 const now2 = new Date();
-calYear = now2.getFullYear(); calMonth = now2.getMonth();
+calYear = now2.getFullYear();
+calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
 loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
