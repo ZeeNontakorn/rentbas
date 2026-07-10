@@ -1011,7 +1011,6 @@ html { scroll-behavior: smooth; }
         <p class="footer-copy">© 2026 THATA HOMECOURT – THATA SPORT HQ & Basketball (Chonburi).</p>
         <div class="footer-links">
             <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
-            <a href="#">ข้อกำหนดการใช้งาน</a>
             <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
         </div>
     </div>
