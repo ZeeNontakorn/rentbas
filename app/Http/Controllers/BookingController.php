@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\BookingApprovedMail;
+use App\Mail\BookingCancelledByAdminMail;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\Notification;
@@ -274,7 +275,7 @@ class BookingController extends Controller
         Notification::create([
             'user_id'=>$booking->user_id,
             'title'=>'การจองได้รับการอนุมัติ',
-            'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
+            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
         ]);
 
         if ($booking->user?->email) {
@@ -309,6 +310,10 @@ class BookingController extends Controller
             'title'=>'การจองถูกปฏิเสธ',
             'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
         ]);
+         if ($booking->user?->email) {
+            Mail::to($booking->user->email)
+                ->send(new BookingCancelledByAdminMail($booking, $data['reject_reason']));
+        }
 
         return back()->with('success','ปฏิเสธการจองเรียบร้อย');
     }

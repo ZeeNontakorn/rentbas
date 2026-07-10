@@ -118,3 +118,4 @@ Route::get('/storage/{path}', function ($path) {
 
 Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
     ->name('admin.courts.images.update');
+
