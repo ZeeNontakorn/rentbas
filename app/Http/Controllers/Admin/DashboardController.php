@@ -27,10 +27,10 @@ class DashboardController extends Controller
 
         return [
             'today_total' => Booking::whereDate('booking_date', $today)->count(),
-            'today_pending' => Booking::whereDate('booking_date', $today)->where('status', 'pending')->count(),
-            'today_approved' => Booking::whereDate('booking_date', $today)->where('status', 'approved')->count(),
+            'today_pending' => Booking::whereDate('booking_date', '>=', $today)->where('status', 'pending')->count(),
+            'today_approved' => Booking::where('status', 'approved')->count(),
             'today_cancelled' => Booking::whereDate('booking_date', $today)->whereIn('status', ['cancelled'])->count(),
-            'today_rejected' => Booking::whereDate('booking_date', $today)->where('status', 'rejected')->count(),
+            'today_rejected' => Booking::where('status', 'rejected')->count(),
         ];
     }
 
@@ -533,21 +533,38 @@ class DashboardController extends Controller
     {
         $stats = $this->getCommonStats();
 
-        $status = $request->query('status');
+        $status = $request->query('status', 'pending');
         $court_id = $request->query('court_id');
         $date = $request->query('date');
 
-        $bookings = Booking::with(['user', 'court'])
-        // ->whereDate('booking_date', $date)
-        // ->when($status, fn ($q) => $q->where('status', $status))
+        // $bookings = Booking::with(['user', 'court'])
+        // // ->whereDate('booking_date', $date)
+        // // ->when($status, fn ($q) => $q->where('status', $status))
 
-            // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
+        //     // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
+        //     ->when($date, fn($q) => $q->whereDate('booking_date', $date))
+        //     ->whereDate('booking_date', '>=', now()->toDateString())
+        //     ->where('status', 'pending')
+        //     ->when($court_id, fn($q) => $q->where('court_id', $court_id))
+        //     ->orderBy('created_at')
+        //     ->latest()
+        //     ->paginate(20)
+        //     ->withQueryString();
+
+        $bookings = Booking::with(['user', 'court'])
+            //วันที่
             ->when($date, fn($q) => $q->whereDate('booking_date', $date))
-            ->whereDate('booking_date', '>=', now()->toDateString())
-            ->where('status', 'pending')
+
+            //สถานะ
+            ->when($status === 'pending', fn($q) => $q->whereDate('booking_date', '>=', now()->toDateString()))
+            ->where('status', $status ? $status : 'pending')
+
+            //สนาม
             ->when($court_id, fn($q) => $q->where('court_id', $court_id))
-            ->orderBy('created_at')
-            ->latest()
+
+            //เรียงจากคนที่ส่งมาก่อน
+            ->orderBy('created_at', 'asc')
+
             ->paginate(20)
             ->withQueryString();
 
