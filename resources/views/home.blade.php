@@ -803,7 +803,7 @@ html { scroll-behavior: smooth; }
     <div class="courts-grid">
         @php
         $courtImgs = [
-            'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop'
+            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
         ];
         @endphp
         @foreach($courts as $court)
