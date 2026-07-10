@@ -438,13 +438,25 @@ class DashboardController extends Controller
             ])
             ->setXAxis(array_column($monthly, 'label'));
 
+        // Peak Hours — colour each bar by its value: busiest = red,
+        // >= half of the busiest = yellow, below that = green.
+        $peakVals = array_column($peakHours, 'pct');
+        $peakMax = max($peakVals) ?: 1;
+        $peakColors = array_map(function ($v) use ($peakMax) {
+            if ($v >= $peakMax) {
+                return '#ef4444'; // red — busiest hour
+            }
+
+            return $v >= $peakMax / 2 ? '#facc15' : '#22c55e'; // yellow / green
+        }, $peakVals);
+
         $peakChart = (new LarapexChart)->horizontalBarChart()
             ->setFontFamily($font)
-            ->setColors(['#f97316'])
+            ->setColors($peakColors)
             ->setHeight(360)
             ->setGrid()
             ->setDataset([
-                ['name' => 'Utilization %', 'data' => array_column($peakHours, 'pct')],
+                ['name' => 'Utilization %', 'data' => $peakVals],
             ])
             ->setXAxis(array_column($peakHours, 'label'));
 
@@ -462,6 +474,20 @@ class DashboardController extends Controller
                     ->setLabels([$c['name']])
                     ->addData([$c['pct']]),
             ];
+        }
+
+        // Occupancy Timeline — heatmap (0=available, 1=occupied, 2=maintenance).
+        // The 3-colour scale is injected via the published Larapex script view.
+        $occStateVal = ['available' => 0, 'occupied' => 1, 'maintenance' => 2];
+        $occChart = (new LarapexChart)->heatMapChart()
+            ->setFontFamily($font)
+            ->setHeight(max(160, count($occupancy) * 60))
+            ->setXAxis(array_map(fn ($h) => sprintf('%02d:00', $h), $occupancyHours));
+        foreach ($occupancy as $row) {
+            $occChart->addData(
+                array_map(fn ($cell) => $occStateVal[$cell] ?? 0, $row['cells']),
+                $row['name']
+            );
         }
 
         return view('admin.dashboard', compact(
@@ -488,7 +514,8 @@ class DashboardController extends Controller
             'cancelChart',
             'monthlyChart',
             'peakChart',
-            'courtCharts'
+            'courtCharts',
+            'occChart'
         ));
     }
 
@@ -508,14 +535,19 @@ class DashboardController extends Controller
 
         $status = $request->query('status');
         $court_id = $request->query('court_id');
-        $date = $request->query('date', now()->toDateString()); // Default today
+        $date = $request->query('date');
 
         $bookings = Booking::with(['user', 'court'])
-            ->whereDate('booking_date', $date)
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->when($court_id, fn ($q) => $q->where('court_id', $court_id))
+        // ->whereDate('booking_date', $date)
+        // ->when($status, fn ($q) => $q->where('status', $status))
+
+            // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
+            ->when($date, fn($q) => $q->whereDate('booking_date', $date))
+            ->whereDate('booking_date', '>=', now()->toDateString())
+            ->where('status', 'pending')
+            ->when($court_id, fn($q) => $q->where('court_id', $court_id))
+            ->orderBy('created_at')
             ->latest()
-            ->orderByDesc('start_time')
             ->paginate(20)
             ->withQueryString();
 
