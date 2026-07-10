@@ -438,13 +438,25 @@ class DashboardController extends Controller
             ])
             ->setXAxis(array_column($monthly, 'label'));
 
+        // Peak Hours — colour each bar by its value: busiest = red,
+        // >= half of the busiest = yellow, below that = green.
+        $peakVals = array_column($peakHours, 'pct');
+        $peakMax = max($peakVals) ?: 1;
+        $peakColors = array_map(function ($v) use ($peakMax) {
+            if ($v >= $peakMax) {
+                return '#ef4444'; // red — busiest hour
+            }
+
+            return $v >= $peakMax / 2 ? '#facc15' : '#22c55e'; // yellow / green
+        }, $peakVals);
+
         $peakChart = (new LarapexChart)->horizontalBarChart()
             ->setFontFamily($font)
-            ->setColors(['#f97316'])
+            ->setColors($peakColors)
             ->setHeight(360)
             ->setGrid()
             ->setDataset([
-                ['name' => 'Utilization %', 'data' => array_column($peakHours, 'pct')],
+                ['name' => 'Utilization %', 'data' => $peakVals],
             ])
             ->setXAxis(array_column($peakHours, 'label'));
 
@@ -462,6 +474,20 @@ class DashboardController extends Controller
                     ->setLabels([$c['name']])
                     ->addData([$c['pct']]),
             ];
+        }
+
+        // Occupancy Timeline — heatmap (0=available, 1=occupied, 2=maintenance).
+        // The 3-colour scale is injected via the published Larapex script view.
+        $occStateVal = ['available' => 0, 'occupied' => 1, 'maintenance' => 2];
+        $occChart = (new LarapexChart)->heatMapChart()
+            ->setFontFamily($font)
+            ->setHeight(max(160, count($occupancy) * 60))
+            ->setXAxis(array_map(fn ($h) => sprintf('%02d:00', $h), $occupancyHours));
+        foreach ($occupancy as $row) {
+            $occChart->addData(
+                array_map(fn ($cell) => $occStateVal[$cell] ?? 0, $row['cells']),
+                $row['name']
+            );
         }
 
         return view('admin.dashboard', compact(
@@ -488,7 +514,8 @@ class DashboardController extends Controller
             'cancelChart',
             'monthlyChart',
             'peakChart',
-            'courtCharts'
+            'courtCharts',
+            'occChart'
         ));
     }
 

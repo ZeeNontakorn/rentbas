@@ -45,8 +45,6 @@
         'alert'    => 'M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.74-3L13.74 4a2 2 0 00-3.48 0L3.33 16a2 2 0 001.74 3z',
         'x'        => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
     ];
-
-    $occColors = ['available' => '#10b981', 'occupied' => '#f97316', 'maintenance' => '#ef4444'];
 @endphp
 
 @section('content')
@@ -191,33 +189,9 @@
                     <h3 class="font-bold text-gray-800">Occupancy Timeline</h3>
                     <p class="text-xs text-gray-400">Live status across courts, today {{ sprintf('%02d:00', $occupancyHours[0] ?? 8) }}–22:00</p>
                 </div>
-                <div class="flex items-center gap-4 text-xs text-gray-500">
-                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:{{ $occColors['available'] }}"></span>Available</span>
-                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:{{ $occColors['occupied'] }}"></span>Occupied</span>
-                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:{{ $occColors['maintenance'] }}"></span>Maintenance</span>
-                </div>
             </div>
             @if(count($occupancy))
-            <div class="overflow-x-auto">
-                <div class="min-w-[640px]">
-                    <!-- hour axis -->
-                    <div class="flex items-center mb-1 pl-16">
-                        @foreach($occupancyHours as $h)
-                            <div class="flex-1 text-center text-[9px] text-gray-400">{{ sprintf('%02d', $h) }}</div>
-                        @endforeach
-                    </div>
-                    @foreach($occupancy as $row)
-                        <div class="flex items-center gap-1 mb-1">
-                            <span class="w-16 text-xs font-medium text-gray-600 shrink-0 truncate">{{ $row['name'] }}</span>
-                            @foreach($row['cells'] as $cell)
-                                <div class="flex-1 h-6 rounded-sm transition hover:opacity-75"
-                                     style="background: {{ $occColors[$cell] }};"
-                                     title="{{ ucfirst($cell) }}"></div>
-                            @endforeach
-                        </div>
-                    @endforeach
-                </div>
-            </div>
+                <div class="overflow-x-auto">{!! $occChart->container() !!}</div>
             @else
                 <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีข้อมูลสนาม</p>
             @endif
@@ -426,5 +400,6 @@
     @foreach($courtCharts as $cc)
         {!! $cc['chart']->script() !!}
     @endforeach
+    {!! $occChart->script() !!}
 @endpush
 @endsection
