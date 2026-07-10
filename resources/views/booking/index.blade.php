@@ -270,8 +270,8 @@
         // รองรับทั้งกรณี array เดี่ยว (จองรายการเดียว) และ array ของหลายรายการ (จองหลายเวลาพร้อมกัน)
         $sbList = isset($sbList['court_name']) ? [$sbList] : $sbList;
     @endphp
-    <div class="modal-bg">
-        <div class="modal-content relative">
+    <div class="modal-bg" id="successModalBg" onclick="closeSuccessModal(event)">
+        <div class="modal-content relative" onclick="event.stopPropagation()">
             <div class="w-16 h-16 mx-auto bg-green-50 rounded-full flex items-center justify-center border-4 border-[#87D068] mb-4">
                 <svg class="w-8 h-8 text-[#87D068]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
             </div>
@@ -464,6 +464,14 @@ function validateAndSubmitDate(input) {
     }
 
     document.getElementById('dateForm').submit();
+}
+
+// ปิด success modal เมื่อคลิกที่พื้นหลัง (นอกกล่องขาว)
+function closeSuccessModal(event) {
+    const bg = document.getElementById('successModalBg');
+    if (event.target === bg) {
+        bg.remove();
+    }
 }
 </script>
 @endpush
