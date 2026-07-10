@@ -11,9 +11,6 @@
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
 
-            .bk-main {
-                font-family: 'Sarabun', 'Kanit', sans-serif;
-            }
 
             .bk-main h1,
             .bk-main h2,
