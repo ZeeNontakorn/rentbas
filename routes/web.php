@@ -17,6 +17,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Public schedule API (used by home calendar to show real booking status)
 Route::get('/schedule', [HomeController::class, 'schedule'])->name('schedule');
 
+// Per-day availability for the calendar dots (whole month)
+Route::get('/month-availability', [HomeController::class, 'monthAvailability'])->name('month.availability');
+
 
 
 // 2. Guest Routes — เฉพาะคนที่ยังไม่ Login (หน้า Login/Register)
@@ -40,16 +43,13 @@ Route::controller(AuthController::class)->group(function () {
 
 
 // 4. Authenticated User Routes — ต้อง Login (auth) และยืนยันรหัส (verified_otp) แล้วเท่านั้น
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth','verified_otp'])->group(function () {
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/request-otp-email', [ProfileController::class, 'requestOtpForEmailChange'])->name('profile.request-otp-email');
-
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Booking System
     Route::prefix('booking')->name('booking.')->group(function () {
@@ -65,7 +65,11 @@ Route::middleware(['auth'])->group(function () {
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 });
+
+ // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
 
@@ -75,7 +79,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+    Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
+    Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
+    Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
+    Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
     Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
     // ระบบจัดการผู้ใช้ (User Management)
@@ -102,3 +110,11 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/reset-password',  'resetPassword')->name('password.reset');
 });
 
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    abort_unless(file_exists($fullPath), 404);
+    return response()->file($fullPath);
+})->where('path', '.*');
+
+Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
+    ->name('admin.courts.images.update');

@@ -1,15 +1,25 @@
 <!-- resources/views/components/navbar.blade.php -->
-<nav class="bg-gray-900 shadow-md text-white">
-    <div class="container mx-auto flex justify-between items-center py-4 px-10">
+<nav class="sticky top-0 z-50 bg-gray-900 shadow-md text-white">
+    <div class="container mx-auto flex justify-between items-center py-4 px-4 md:px-10">
         <!-- Logo / ชื่อระบบ -->
-        <a href="{{ route('home') }}" class="flex items-center font-bold text-2xl hover:text-gray-300 transition">
-           <span class="text-3xl mr-2">🏀</span>
+        <a href="{{ route('home') }}" class="flex items-center font-bold text-xl md:text-2xl hover:text-gray-300 transition">
+           <span class="text-2xl md:text-3xl mr-2">🏀</span>
             <!-- System Name -->
-            <span class="font-bold text-2xl">Basketball Court Booking System</span>
+            <span class="font-bold text-lg md:text-2xl leading-tight">Basketball Court Booking System</span>
         </a>
 
-        <!-- เมนูหลัก -->
-        <div class="flex items-center gap-4 md:gap-6">
+        <!-- ปุ่มเปิด/ปิดเมนู สำหรับจอมือถือ -->
+        <button id="mobileMenuBtn" class="md:hidden flex items-center focus:outline-none hover:text-orange-500 transition" aria-label="เปิดเมนู">
+            <svg id="mobileMenuIconOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+            <svg id="mobileMenuIconClose" class="w-7 h-7 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- เมนูหลัก (Desktop) -->
+        <div class="hidden md:flex items-center gap-4 md:gap-6">
             @auth
                 @if(auth()->user()->role === 'admin')
                     <!-- เมนูสำหรับ Admin -->
@@ -61,15 +71,55 @@
 
                     {{-- Dropdown สำหรับแสดงรายการแจ้งเตือน --}}
                     <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto max-h-96 z-50">
+                        @if($notifications->isNotEmpty())
+                            <div class="flex justify-between items-center px-3 py-2 border-b border-gray-700 sticky top-0 bg-gray-800 z-10">
+                                <span class="text-xs text-gray-400 font-medium">แจ้งเตือนล่าสุด</span>
+                                <form method="POST" action="{{ route('notifications.readAll') }}">
+                                    @csrf
+                                    <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านทั้งหมด</button>
+                                </form>
+                            </div>
+                        @endif
                         @if($notifications->isEmpty())
                         {{-- ถ้าไม่มีแจ้งเตือน --}}
                             <div class="p-4 text-center text-gray-400">ไม่มีการแจ้งเตือนใหม่</div>
                         @else
+                @php
+                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน -> จัดการการจอง
+                    $defaultNotifTarget = auth()->user()->role === 'admin' ? route('admin.bookings') : route('history');
+                    // แต่ถ้าเป็นแจ้งเตือนผลการจอง (อนุมัติ/ปฏิเสธ) ให้ไปหน้าประวัติการจองเสมอ ไม่ว่าจะ role ไหน
+                    $historyOnlyTitles = ['การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ'];
+                @endphp
                             @foreach($notifications as $n)
-                            {{-- แต่ละรายการแจ้งเตือน --}}
-                                <div class="p-3 border-b border-gray-700 hover:bg-gray-700 flex justify-between items-start">
+                            {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
+                                @php
+                                    $notifTarget = in_array($n->title, $historyOnlyTitles) ? route('history') : $defaultNotifTarget;
+
+                                    // สีประจำประเภทแจ้งเตือน ให้แยกอนุมัติ/ปฏิเสธออกจากกันชัดเจน
+                                    $accentBorder = 'border-gray-700';
+                                    $accentText = 'text-orange-400';
+                                    $accentIcon = null;
+                                    if ($n->title === 'การจองได้รับการอนุมัติ') {
+                                        $accentBorder = 'border-l-4 border-l-green-500';
+                                        $accentText = 'text-green-400';
+                                        $accentIcon = ['bg' => 'bg-green-500/15', 'color' => 'text-green-400', 'path' => 'M5 13l4 4L19 7'];
+                                    } elseif ($n->title === 'การจองถูกปฏิเสธ') {
+                                        $accentBorder = 'border-l-4 border-l-red-500';
+                                        $accentText = 'text-red-400';
+                                        $accentIcon = ['bg' => 'bg-red-500/15', 'color' => 'text-red-400', 'path' => 'M6 18L18 6M6 6l12 12'];
+                                    }
+                                @endphp
+                                <div class="p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start cursor-pointer"
+                                     onclick="window.location.href='{{ $notifTarget }}'">
                                     <div class="flex-1 pr-2">
-                                        <div class="font-semibold text-[15px] truncate">{{ $n->title ?? 'การจอง' }}</div>
+                                        <div class="flex items-center gap-2">
+                                            @if($accentIcon)
+                                                <span class="w-5 h-5 rounded-full {{ $accentIcon['bg'] }} {{ $accentIcon['color'] }} flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="{{ $accentIcon['path'] }}"></path></svg>
+                                                </span>
+                                            @endif
+                                            <div class="font-semibold text-[15px] truncate">{{ $n->title ?? 'การจอง' }}</div>
+                                        </div>
                                         <div class="text-[13px] text-gray-300 mt-1 leading-tight">
                                             @php
                                             // แยกข้อความโดยใช้ '|' เป็นตัวแบ่ง
@@ -79,16 +129,16 @@
                                             {{-- แสดงส่วนแรกของข้อความ (หลัก) --}}
                                             {{ $msgParts[0] }}
 
-                                            {{-- แสดงส่วนที่สองของข้อความ (ถ้ามี) --}}
+                                            {{-- แสดงส่วนที่สองของข้อความ (ถ้ามี) — แปลง \n เป็นขึ้นบรรทัดใหม่จริง --}}
                                             @if(isset($msgParts[1]) && trim($msgParts[1]) !== '')
-                                                <div class="mt-1 font-medium text-orange-400">{{ $msgParts[1] }}</div>
+                                                <div class="mt-1 font-medium {{ $accentText }}">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
                                             @endif
                                         </div>
                                         {{-- แสดงวันที่สร้างแจ้งเตือน --}}
                                         <div class="text-[11px] text-gray-400 mt-2">{{ $n->created_at->format('d M Y H:i') }}</div>
                                     </div>
-                                    {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) --}}
-                                    <form method="POST" action="{{ route('notifications.read', $n) }}">
+                                    {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) — กันไม่ให้คลิกทะลุไปเปิดหน้าปลายทางด้วย --}}
+                                    <form method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
                                         @csrf
                                         <button type="submit" class="text-[11px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition whitespace-nowrap">อ่านแล้ว</button>
                                     </form>
@@ -160,15 +210,115 @@
         </div>
     </div>
 
-    <!-- Scripts สำหรับ Notification & Admin Dropdown -->
+    <!-- เมนู (Mobile, แบบเลื่อนลง) -->
+    <div id="mobileMenu" class="hidden md:hidden border-t border-gray-800 bg-gray-900 px-4 pb-4">
+        @auth
+            @if(auth()->user()->role === 'admin')
+                <div class="flex flex-col py-2">
+                    <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        หน้าแรก
+                    </a>
+                    <a href="{{ route('admin.courts') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        จัดการสนาม
+                    </a>
+                    <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        จัดการการจอง
+                    </a>
+                    <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        Dashboard
+                    </a>
+                </div>
+            @else
+                <div class="flex flex-col py-2">
+                    <a href="{{ route('booking.index') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        จองสนาม
+                    </a>
+                    <a href="{{ route('history') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ประวัติการจอง
+                    </a>
+                </div>
+            @endif
+
+            @php
+                $mUser = auth()->user();
+                $mUnreadCount = $mUser->unreadNotifications()->count();
+            @endphp
+
+            {{-- ปุ่มแจ้งเตือน (มือถือ ลิงก์ไปหน้ารายละเอียด หรือ toggle เดียวกันกับด้านบนก็ได้) --}}
+            <button id="notifBtnMobile" class="w-full flex items-center justify-between py-2 text-sm text-gray-300 hover:text-orange-500 transition border-t border-gray-800">
+                <span class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    การแจ้งเตือน
+                </span>
+                @if($mUnreadCount)
+                    <span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ $mUnreadCount > 99 ? '99+' : $mUnreadCount }}</span>
+                @endif
+            </button>
+            {{-- ใช้ dropdown เดียวกับ desktop โดยอ้างอิงผ่าน id เดิม --}}
+            <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto max-h-80"></div>
+
+            @if(auth()->user()->role === 'admin')
+                <div class="border-t border-gray-800 pt-2 mt-1">
+                    <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
+                    <div class="font-bold text-orange-500 mb-2">{{ auth()->user()->name }}</div>
+                    <div class="flex flex-col">
+                        <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
+                        <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
+                        <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
+                    </div>
+                </div>
+            @else
+                <a href="{{ route('profile') }}" class="block py-2 text-gray-300 font-medium hover:text-orange-500 transition border-t border-gray-800 mt-1">
+                    {{ auth()->user()->name }}
+                </a>
+            @endif
+
+            <form method="POST" action="{{ route('logout') }}" class="mt-2">
+                @csrf
+                <button type="submit" class="w-full border border-gray-500 text-gray-300 px-4 py-2 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition">
+                    ออกจากระบบ
+                </button>
+            </form>
+        @endauth
+
+        @guest
+            <div class="flex flex-col py-2">
+                <a href="{{ route('login') }}" class="py-2 flex items-center text-gray-300 hover:text-orange-500 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Login
+                </a>
+                <a href="{{ route('register') }}" class="py-2 flex items-center text-gray-300 hover:text-orange-500 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 21v-2c0-2.21 3.58-4 6-4s6 1.79 6 4v2H6z"></path>
+                    </svg>
+                    Register
+                </a>
+            </div>
+        @endguest
+    </div>
+
+    <!-- Scripts สำหรับ Notification & Admin Dropdown & Mobile Menu -->
     <script>
         //JavaScript สำหรับจัดการการแสดง/ซ่อน Dropdown แจ้งเตือน
         const notifBtn = document.getElementById('notifBtn');
         const notifDropdown = document.getElementById('notifDropdown');
-        
+
         // สำหรับ Admin Menu Dropdown
         const adminMenuBtn = document.getElementById('adminMenuBtn');
         const adminMenuDropdown = document.getElementById('adminMenuDropdown');
+
+        // สำหรับเมนูมือถือ
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuIconOpen = document.getElementById('mobileMenuIconOpen');
+        const mobileMenuIconClose = document.getElementById('mobileMenuIconClose');
 
         // เมื่อคลิกที่ปุ่มแจ้งเตือน ให้สลับการแสดงผลของ Dropdown
         notifBtn?.addEventListener('click', () => {
@@ -182,6 +332,13 @@
             notifDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
         });
 
+        // เมื่อคลิกปุ่มเมนูมือถือ ให้เปิด/ปิดเมนูและสลับไอคอน
+        mobileMenuBtn?.addEventListener('click', () => {
+            mobileMenu?.classList.toggle('hidden');
+            mobileMenuIconOpen?.classList.toggle('hidden');
+            mobileMenuIconClose?.classList.toggle('hidden');
+        });
+
         // เมื่อคลิกที่พื้นที่นอก Dropdown ให้ซ่อน Dropdown
         window.addEventListener('click', (e) => {
             if (!notifBtn?.contains(e.target) && !notifDropdown?.contains(e.target)) {
@@ -190,6 +347,16 @@
             if (!adminMenuBtn?.contains(e.target) && !adminMenuDropdown?.contains(e.target)) {
                 adminMenuDropdown?.classList.add('hidden');
             }
+        });
+
+        // ปุ่มแจ้งเตือนในเมนูมือถือ: แสดงเนื้อหาเดียวกับ dropdown บน desktop
+        const notifBtnMobile = document.getElementById('notifBtnMobile');
+        const notifDropdownMobile = document.getElementById('notifDropdownMobile');
+        notifBtnMobile?.addEventListener('click', () => {
+            if (notifDropdown && notifDropdownMobile) {
+                notifDropdownMobile.innerHTML = notifDropdown.innerHTML;
+            }
+            notifDropdownMobile?.classList.toggle('hidden');
         });
     </script>
 </nav>

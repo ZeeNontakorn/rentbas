@@ -154,7 +154,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-gray-400"></span>
-                    <h2 class="font-medium text-gray-700 text-sm">ประวัติการจอง (อดีต / ยกเลิก / ปฏิเสธ)</h2>
+                    <h2 class="font-medium text-gray-700 text-sm">ประวัติการปฏิเสธการจอง</h2>
                     <span class="ml-auto text-xs bg-gray-50 text-gray-600 border border-gray-200 px-2.5 py-0.5 rounded-full font-medium">
                         {{ $pastBookings->count() }} รายการ
                     </span>
@@ -167,7 +167,7 @@
                                 <th class="px-6 py-3 font-medium">เวลา</th>
                                 <th class="px-6 py-3 font-medium">สนาม</th>
                                 <th class="px-6 py-3 font-medium">สถานะ</th>
-                                <th class="px-6 py-3 font-medium">เหตุผล (ถ้ามี)</th>
+                                <th class="px-6 py-3 font-medium">เหตุผล</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">

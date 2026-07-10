@@ -168,39 +168,6 @@
     text-align: center;
 }
 .btn-submit:hover { background: #222; transform: translateY(-1px); }
-
-/* Notice box */
-.auth-notice {
-    margin-top: 20px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: 10px;
-    padding: 14px 16px;
-}
-.auth-notice-title {
-    font-family: 'Kanit', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1d4ed8;
-    margin-bottom: 6px;
-}
-.auth-notice ul {
-    padding-left: 16px;
-    font-size: 12.5px;
-    color: #1d4ed8;
-    line-height: 1.7;
-}
-.auth-notice-link {
-    display: block;
-    text-align: center;
-    margin-top: 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #2563eb;
-    text-decoration: none;
-}
-.auth-notice-link:hover { text-decoration: underline; }
-
 /* Error */
 .auth-error {
     background: #fef2f2;
@@ -277,14 +244,7 @@
             <button type="submit" class="btn-submit">เข้าสู่ระบบ</button>
         </form>
 
-        <div class="auth-notice">
-            <p class="auth-notice-title">ข้อควรทราบ</p>
-            <ul>
-                <li>โปรดอ่านข้อกำหนดในการเก็บข้อมูลส่วนบุคคล</li>
-                <li>กรุณาตรวจสอบอีเมลก่อนเข้าสู่ระบบ</li>
-            </ul>
-            <a href="#" class="auth-notice-link">อ่านข้อกำหนด</a>
-        </div>
+        
     </div>
 
 </div>
