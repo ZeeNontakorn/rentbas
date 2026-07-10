@@ -109,3 +109,13 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/reset-password',   'showResetPasswordForm')->name('password.reset.form');
     Route::post('/reset-password',  'resetPassword')->name('password.reset');
 });
+
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    abort_unless(file_exists($fullPath), 404);
+    return response()->file($fullPath);
+})->where('path', '.*');
+
+Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
+    ->name('admin.courts.images.update');
+

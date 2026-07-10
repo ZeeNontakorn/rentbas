@@ -13,9 +13,12 @@ class SettingController extends Controller
      */
     public function edit()
     {
-        $settings = Setting::values();
+        $courts = \App\Models\Court::all();
 
-        return view('edit-text', compact('settings'));
+        $courtKeys = $courts->map(fn($c) => 'court_img_' . $c->id)->all();
+        $settings = Setting::values(array_merge(array_keys(Setting::DEFAULTS), $courtKeys));
+
+        return view('edit-text', compact('settings', 'courts'));
     }
 
     /**

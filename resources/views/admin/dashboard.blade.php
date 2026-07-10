@@ -1,222 +1,430 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard')
+@section('title', 'Dashboard')
+
+@php
+    // ---- KPI card presentation config (matches the Ref design) ----
+    $trendChip = function ($t) {
+        if ($t === null) return null;
+        $up = $t >= 0;
+        return [
+            'up' => $up,
+            'text' => ($up ? '↗ +' : '↘ ') . abs($t) . '%',
+        ];
+    };
+
+    // Build an SVG polyline path from a list of values, fitted to w×h.
+    $sparkPath = function (array $vals, $w, $h) {
+        $n = count($vals);
+        if ($n < 2) return '';
+        $max = max($vals); $min = min($vals);
+        $range = max($max - $min, 1);
+        $pts = [];
+        foreach (array_values($vals) as $i => $v) {
+            $x = round($i / ($n - 1) * $w, 1);
+            $y = round($h - (($v - $min) / $range) * $h, 1);
+            $pts[] = "$x,$y";
+        }
+        return 'M' . implode(' L', $pts);
+    };
+
+    $kpiCards = [
+        ['key' => 'today_bookings',   'label' => "Today's Bookings",     'grad' => ['#fb923c', '#f97316'], 'icon' => 'calendar', 'spark' => true],
+        ['key' => 'utilization',      'label' => 'Court Utilization Rate','grad' => ['#34d399', '#10b981'], 'icon' => 'check',    'suffix' => '%'],
+        ['key' => 'booked_hours',     'label' => 'Booked Hours',          'grad' => ['#818cf8', '#6366f1'], 'icon' => 'clock',    'suffix' => 'h'],
+        ['key' => 'active_customers', 'label' => 'Active Customers',      'grad' => ['#38bdf8', '#0ea5e9'], 'icon' => 'users'],
+        ['key' => 'pending',          'label' => 'Pending Bookings',      'grad' => ['#fbbf24', '#f59e0b'], 'icon' => 'alert'],
+        ['key' => 'cancellation_rate','label' => 'Cancellation Rate',     'grad' => ['#fb7185', '#e11d48'], 'icon' => 'x',        'suffix' => '%', 'invert' => true],
+    ];
+
+    $icons = [
+        'calendar' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+        'check'    => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+        'clock'    => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        'users'    => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4 0m8 0a4 4 0 10-3-7.75',
+        'alert'    => 'M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.74-3L13.74 4a2 2 0 00-3.48 0L3.33 16a2 2 0 001.74 3z',
+        'x'        => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+    ];
+
+    $occColors = ['available' => '#10b981', 'occupied' => '#f97316', 'maintenance' => '#ef4444'];
+@endphp
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-7xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-gray-800">DashBoard</h1>
-            <p class="text-sm text-gray-500">ดูสถิติ จัดการสนาม และดูการจองทั้งหมด</p>
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-2">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+                <p class="text-sm text-gray-500">ภาพรวมสุขภาพธุรกิจสนามบาส · {{ now()->translatedFormat('l d F Y') }}</p>
+            </div>
+            <span class="text-xs text-gray-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                อัปเดตล่าสุด {{ now()->format('H:i') }}
+            </span>
         </div>
 
-        <!-- Summary Cards -->
-        @include('admin.partials.summary_cards')
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <!-- Left Column: Manage Courts -->
-            <div class="lg:col-span-2">
-                <h2 class="text-lg font-bold mb-4">จัดการสนาม และ การจอง</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($courts as $court)
-                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative">
-
-                        <!-- Court name + status badge -->
-                        <div class="flex justify-between items-center mb-4">
-                            <div class="px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 bg-white">
-                                {{ $court->name }}
-                            </div>
-                            @if($court->court_status === 'open' && !$court->isClosedAt(now(), now()->addMinute()))
-                                <div class="px-2 py-1 text-xs text-orange-500 border border-orange-200 rounded flex items-center bg-white">
-                                    <div class="w-2 h-2 rounded-full bg-orange-500 mr-1.5"></div>
-                                    พร้อมให้บริการ
-                                </div>
-                            @else
-                                <div class="px-2 py-1 text-xs text-red-500 border border-red-200 rounded flex items-center bg-white">
-                                    <div class="w-2 h-2 rounded-full bg-red-500 mr-1.5"></div>
-                                    ปิดให้บริการ
-                                </div>
-                            @endif
+        <!-- ============ KPI CARDS ============ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            @foreach($kpiCards as $card)
+                @php
+                    $k = $kpis[$card['key']];
+                    $chip = $trendChip($k['trend'] ?? null);
+                    // For cancellation, a rising number is bad — flip the chip colour.
+                    $good = $chip ? ($chip['up'] xor ($card['invert'] ?? false)) : true;
+                @endphp
+                <div class="relative overflow-hidden rounded-2xl p-5 text-white shadow-lg"
+                     style="background-image: linear-gradient(135deg, {{ $card['grad'][0] }}, {{ $card['grad'][1] }});">
+                    <div class="flex items-start justify-between">
+                        <div class="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center backdrop-blur-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icons[$card['icon']] }}"/>
+                            </svg>
                         </div>
-
-                        <!-- Court status row -->
-                        <div class="mb-3">
-                            <label class="text-xs text-gray-500 block mb-1">สถานะสนาม</label>
-                            <form action="{{ route('admin.courts.status', $court) }}" method="POST">
-                                @csrf
-                                <select name="court_status" onchange="this.form.submit()" 
-                                        class="w-full border border-gray-200 rounded p-2 text-sm text-gray-600 flex items-center bg-white cursor-pointer focus:border-orange-500 outline-none transition">
-                                    <option value="open" @selected($court->court_status === 'open')>พร้อมให้บริการ</option>
-                                    <option value="closed" @selected($court->court_status === 'closed')>ปิดให้บริการ (Closed)</option>
-                                </select>
-                            </form>
-                        </div>
-
-                        <!-- Booking stats -->
-                        <div class="mb-4">
-                            <label class="text-xs text-gray-500 block mb-1">จัดการการจอง</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <a href="{{ route('admin.bookings', ['court_id' => $court->id, 'date' => now()->toDateString()]) }}"
-                                   class="border border-gray-200 rounded p-2 flex justify-between items-center bg-white hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer">
-                                    <span class="text-xs text-gray-600 flex items-center">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5"></span>
-                                        รายการจองทั้งหมด
-                                    </span>
-                                    <span class="text-xs text-blue-500 font-medium">{{ $court->total_today ?? 0 }}</span>
-                                </a>
-                                <a href="{{ route('admin.bookings', ['court_id' => $court->id, 'status' => 'approved', 'date' => now()->toDateString()]) }}"
-                                   class="border border-gray-200 rounded p-2 flex justify-between items-center bg-white hover:border-green-300 hover:bg-green-50 transition cursor-pointer">
-                                    <span class="text-xs text-gray-600 flex items-center">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
-                                        ใช้งานอยู่
-                                    </span>
-                                    <span class="text-xs text-green-500 font-medium">{{ $court->active_now ?? 0 }}</span>
-                                </a>
-                                <a href="{{ route('admin.bookings', ['court_id' => $court->id, 'status' => 'pending', 'date' => now()->toDateString()]) }}"
-                                   class="border border-gray-200 rounded p-2 flex justify-between items-center bg-white hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer">
-                                    <span class="text-xs text-gray-600 flex items-center">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5"></span>
-                                        คำขอจอง
-                                    </span>
-                                    <span class="text-xs text-orange-500 font-medium">{{ $court->pending_count ?? 0 }}</span>
-                                </a>
-                                <a href="{{ route('admin.bookings', ['court_id' => $court->id, 'status' => 'cancelled', 'date' => now()->toDateString()]) }}"
-                                   class="border border-gray-200 rounded p-2 flex justify-between items-center bg-white hover:border-red-300 hover:bg-red-50 transition cursor-pointer">
-                                    <span class="text-xs text-gray-600 flex items-center">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
-                                        ถูกยกเลิก
-                                    </span>
-                                    <span class="text-xs text-red-500 font-medium">{{ $court->cancelled_count ?? 0 }}</span>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Court detail link -->
-                        <div>
-                            <label class="text-xs text-gray-500 block mb-1">จัดการสถานะรายชั่วโมง</label>
-                            <a href="{{ route('admin.courts', ['court_id' => $court->id]) }}"
-                               class="block w-full text-center border border-orange-200 bg-orange-50 rounded py-2 text-xs text-orange-600 hover:bg-orange-100 transition font-bold">
-                                จัดการสถานะช่วงเวลา
-                            </a>
-                        </div>
-
+                        @if($chip)
+                            <span class="text-xs font-semibold px-2 py-1 rounded-full {{ $good ? 'bg-white/25' : 'bg-black/20' }}">
+                                {{ $chip['text'] }}
+                            </span>
+                        @endif
                     </div>
+                    <div class="mt-4 text-sm font-medium text-white/85">{{ $card['label'] }}</div>
+                    <div class="text-3xl font-extrabold tracking-tight">
+                        {{ number_format($k['value'], ($card['key'] === 'cancellation_rate') ? 1 : 0) }}{{ $card['suffix'] ?? '' }}
+                    </div>
+
+                    @if(($card['spark'] ?? false) && !empty($k['spark']))
+                        <svg viewBox="0 0 120 32" preserveAspectRatio="none" class="w-full h-8 mt-2 opacity-90">
+                            <path d="{{ $sparkPath($k['spark'], 120, 30) }}" fill="none" stroke="white" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                        </svg>
+                    @else
+                        <div class="h-8 mt-2"></div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+
+        <!-- ============ BOOKING TREND + CANCELLATION ============ -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+            <!-- Booking Trend (area) -->
+            <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Booking Trend</h3>
+                        <p class="text-xs text-gray-400">Daily bookings — last 30 days</p>
+                    </div>
+                    <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
+                        Total: {{ number_format($trendTotal) }}
+                    </span>
+                </div>
+                {!! $trendChart->container() !!}
+            </div>
+
+            <!-- Cancellation Analysis (donut) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="flex items-start justify-between mb-2">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Cancellation Analysis</h3>
+                        <p class="text-xs text-gray-400">Reasons this month</p>
+                    </div>
+                    @if($cancelIsMock)
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">ตัวอย่าง</span>
+                    @endif
+                </div>
+                {!! $cancelChart->container() !!}
+            </div>
+        </div>
+
+        <!-- ============ MONTHLY VOLUME + PEAK HOURS ============ -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+            <!-- Monthly Booking Volume (bars) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Monthly Booking Volume</h3>
+                        <p class="text-xs text-gray-400">Last 12 months</p>
+                    </div>
+                    <span class="text-xs font-semibold {{ $yoy >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50' }} px-2.5 py-1 rounded-full">
+                        {{ $yoy >= 0 ? '+' : '' }}{{ $yoy }}% YoY
+                    </span>
+                </div>
+                {!! $monthlyChart->container() !!}
+            </div>
+
+            <!-- Peak Booking Hours -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Peak Booking Hours</h3>
+                    <p class="text-xs text-gray-400">Utilization by time slot, today</p>
+                </div>
+                {!! $peakChart->container() !!}
+            </div>
+        </div>
+
+        <!-- ============ COURT UTILIZATION (rings) ============ -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+            <div class="mb-5">
+                <h3 class="font-bold text-gray-800">Court Utilization</h3>
+                <p class="text-xs text-gray-400">Usage per court, this week</p>
+            </div>
+            @if(count($courtCharts))
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach($courtCharts as $cc)
+                    <div class="flex flex-col items-center">
+                        {!! $cc['chart']->container() !!}
+                        <span class="-mt-3 text-xs text-gray-400">{{ $cc['hours'] }}h / สัปดาห์</span>
+                    </div>
+                @endforeach
+            </div>
+            @else
+                <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีข้อมูลสนาม</p>
+            @endif
+        </div>
+
+        <!-- ============ OCCUPANCY TIMELINE ============ -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+            <div class="flex flex-wrap items-start justify-between gap-2 mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">Occupancy Timeline</h3>
+                    <p class="text-xs text-gray-400">Live status across courts, today {{ sprintf('%02d:00', $occupancyHours[0] ?? 8) }}–22:00</p>
+                </div>
+                <div class="flex items-center gap-4 text-xs text-gray-500">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:{{ $occColors['available'] }}"></span>Available</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:{{ $occColors['occupied'] }}"></span>Occupied</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:{{ $occColors['maintenance'] }}"></span>Maintenance</span>
+                </div>
+            </div>
+            @if(count($occupancy))
+            <div class="overflow-x-auto">
+                <div class="min-w-[640px]">
+                    <!-- hour axis -->
+                    <div class="flex items-center mb-1 pl-16">
+                        @foreach($occupancyHours as $h)
+                            <div class="flex-1 text-center text-[9px] text-gray-400">{{ sprintf('%02d', $h) }}</div>
+                        @endforeach
+                    </div>
+                    @foreach($occupancy as $row)
+                        <div class="flex items-center gap-1 mb-1">
+                            <span class="w-16 text-xs font-medium text-gray-600 shrink-0 truncate">{{ $row['name'] }}</span>
+                            @foreach($row['cells'] as $cell)
+                                <div class="flex-1 h-6 rounded-sm transition hover:opacity-75"
+                                     style="background: {{ $occColors[$cell] }};"
+                                     title="{{ ucfirst($cell) }}"></div>
+                            @endforeach
+                        </div>
                     @endforeach
                 </div>
             </div>
-
-            <!-- Right Column: Charts -->
-            <div class="lg:col-span-1 flex flex-col gap-6">
-
-                <!-- Bar Chart 1: Members -->
-                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">สถิติผู้สมัครสมาชิก (Users)</h3>
-                    <p class="text-xs text-gray-400 mb-6">เปรียบเทียบสัปดาห์นี้ กับ ยอดรวมเดือนนี้</p>
-
-                    @php
-                        $mMax     = max($usersMonth, 1);
-                        $mMonthPct = min(($usersMonth / $mMax) * 100, 100);
-                        $mWeekPct  = min(($usersWeek  / $mMax) * 100, 100);
-                    @endphp
-
-                    <div class="flex items-end justify-around h-32 border-b border-gray-100 pb-2">
-                        <div class="w-16 flex flex-col items-center justify-end h-full group">
-                            <span class="text-xs font-bold text-blue-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">{{ number_format($usersWeek) }}</span>
-                            <div class="w-full bg-blue-400/80 hover:bg-blue-500 rounded-t-sm transition-all duration-700" style="height: {{ max($mWeekPct, 10) }}%;"></div>
-                        </div>
-                        <div class="w-16 flex flex-col items-center justify-end h-full group">
-                            <span class="text-xs font-bold text-green-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">{{ number_format($usersMonth) }}</span>
-                            <div class="w-full bg-green-400/80 hover:bg-green-500 rounded-t-sm transition-all duration-700" style="height: {{ max($mMonthPct, 10) }}%;"></div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-around mt-2">
-                        <div class="text-center">
-                            <span class="block text-[10px] text-gray-500">สัปดาห์นี้</span>
-                            <span class="block text-sm font-medium text-gray-700">{{ number_format($usersWeek) }}</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="block text-[10px] text-gray-500">เดือนนี้</span>
-                            <span class="block text-sm font-bold text-gray-800">{{ number_format($usersMonth) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bar Chart 2: Visitors -->
-                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">สถิติผู้เข้าชมเว็บไซต์ (Visits)</h3>
-                    <p class="text-xs text-gray-400 mb-6">เปรียบเทียบสัปดาห์นี้ กับ ยอดรวมเดือนนี้</p>
-
-                    @php
-                        $vMax      = max($visitsMonth, 1);
-                        $vMonthPct = min(($visitsMonth / $vMax) * 100, 100);
-                        $vWeekPct  = min(($visitsWeek  / $vMax) * 100, 100);
-                    @endphp
-
-                    <div class="flex items-end justify-around h-32 border-b border-gray-100 pb-2">
-                        <div class="w-16 flex flex-col items-center justify-end h-full group">
-                            <span class="text-xs font-bold text-blue-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">{{ number_format($visitsWeek) }}</span>
-                            <div class="w-full bg-blue-400/80 hover:bg-blue-500 rounded-t-sm transition-all duration-700" style="height: {{ max($vWeekPct, 10) }}%;"></div>
-                        </div>
-                        <div class="w-16 flex flex-col items-center justify-end h-full group">
-                            <span class="text-xs font-bold text-green-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">{{ number_format($visitsMonth) }}</span>
-                            <div class="w-full bg-green-400/80 hover:bg-green-500 rounded-t-sm transition-all duration-700" style="height: {{ max($vMonthPct, 10) }}%;"></div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-around mt-2">
-                        <div class="text-center">
-                            <span class="block text-[10px] text-gray-500">สัปดาห์นี้</span>
-                            <span class="block text-sm font-bold text-gray-800">{{ number_format($visitsWeek) }}</span>
-                        </div>
-                        <div class="text-center">
-                            <span class="block text-[10px] text-gray-500">เดือนนี้</span>
-                            <span class="block text-sm font-bold text-gray-800">{{ number_format($visitsMonth) }}</span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+            @else
+                <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีข้อมูลสนาม</p>
+            @endif
         </div>
 
-        <!-- Notifications: pending booking requests -->
-        <div class="mt-8">
-            <h2 class="text-base font-semibold text-gray-700 mb-4 flex items-center">
-                แจ้งเตือน รายการคำขอการจอง
-                <svg class="w-5 h-5 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-            </h2>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div class="space-y-3">
-                    @forelse(auth()->user()->notifications()->latest()->take(3)->get() as $n)
-                    <div class="border border-red-200 rounded-lg p-3 text-sm flex items-center justify-between text-gray-700">
-                        <div class="flex items-center">
-                            <div class="text-green-500 mr-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                </svg>
+        <!-- ============ TODAY'S SCHEDULE + UPCOMING ============ -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+            <!-- Today's Schedule -->
+            <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Today's Schedule</h3>
+                    <p class="text-xs text-gray-400">All confirmed sessions for today</p>
+                </div>
+                @php
+                    $stateBadge = [
+                        'completed' => ['bg-gray-100 text-gray-500', 'เสร็จแล้ว', '#9ca3af'],
+                        'ongoing'   => ['bg-emerald-100 text-emerald-600', 'กำลังใช้งาน', '#10b981'],
+                        'upcoming'  => ['bg-blue-100 text-blue-600', 'กำลังจะถึง', '#3b82f6'],
+                    ];
+                @endphp
+                <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                    @forelse($todaysSchedule as $s)
+                        @php $b = $stateBadge[$s['state']]; @endphp
+                        <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-slate-50 transition">
+                            <div class="flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full shrink-0" style="background: {{ $b[2] }};"></span>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-800">{{ $s['name'] }}</div>
+                                    <div class="text-xs text-gray-400">{{ $s['time'] }} · {{ $s['court'] }} · {{ rtrim(rtrim(number_format($s['hours'], 1), '0'), '.') }}h</div>
+                                </div>
                             </div>
-                            <span class="mr-4"><strong>{{ $n->title }}</strong>: {{ explode('|', $n->message)[0] ?? '' }}</span>
+                            <span class="text-xs font-medium px-2.5 py-1 rounded-full {{ $b[0] }}">{{ $b[1] }}</span>
                         </div>
-                        <div class="text-gray-500 flex gap-8">
-                            <span>วันที่ทำรายการ: {{ $n->created_at->translatedFormat('d F Y') }}</span>
-                            <span>เวลา: {{ $n->created_at->format('H:i') }}</span>
-                            <span>{{ explode('|', $n->message)[1] ?? '' }}</span>
-                        </div>
-                    </div>
                     @empty
-                        <div class="text-gray-500 text-center py-4">ไม่มีแจ้งเตือนใหม่</div>
+                        <p class="text-sm text-gray-400 text-center py-8">วันนี้ยังไม่มีการจองที่ยืนยันแล้ว</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Upcoming Bookings -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Upcoming Bookings</h3>
+                    <p class="text-xs text-gray-400">Starting soon</p>
+                </div>
+                <div class="space-y-2">
+                    @forelse($upcoming as $u)
+                        <div class="flex items-center justify-between p-3 rounded-xl border-l-4 border-orange-400 bg-orange-50/50">
+                            <div>
+                                <div class="text-sm font-semibold text-gray-800">{{ $u['name'] }}</div>
+                                <div class="text-xs text-gray-400">{{ $u['court'] }} · {{ $u['time'] }}</div>
+                            </div>
+                            <span class="text-xs font-semibold text-orange-600 whitespace-nowrap">in {{ $u['in'] }}</span>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-400 text-center py-8">ไม่มีคิวที่กำลังจะถึง</p>
                     @endforelse
                 </div>
             </div>
         </div>
 
+        <!-- ============ TOP CUSTOMERS + RECENT ACTIVITIES ============ -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+            <!-- Top Customers -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Top Customers</h3>
+                    <p class="text-xs text-gray-400">By total hours booked, this month</p>
+                </div>
+                @php $avatarGrad = [['#fb923c','#f97316'],['#818cf8','#6366f1'],['#34d399','#10b981'],['#f472b6','#ec4899'],['#38bdf8','#0ea5e9']]; @endphp
+                <div class="space-y-2">
+                    @forelse($topCustomers as $i => $c)
+                        <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                     style="background-image: linear-gradient(135deg, {{ $avatarGrad[$i % 5][0] }}, {{ $avatarGrad[$i % 5][1] }});">
+                                    {{ $c['initials'] }}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-800">{{ $c['name'] }}</div>
+                                    <div class="text-xs text-gray-400">{{ $c['count'] }} bookings</div>
+                                </div>
+                            </div>
+                            <span class="text-sm font-bold text-gray-700">{{ $c['hours'] }}h</span>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-400 text-center py-8">ยังไม่มีข้อมูลลูกค้าเดือนนี้</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Recent Activities</h3>
+                    <p class="text-xs text-gray-400">Live activity feed</p>
+                </div>
+                @php
+                    $actDot = ['new' => '#3b82f6', 'cancel' => '#ef4444', 'confirm' => '#10b981', 'user' => '#8b5cf6'];
+                @endphp
+                <div class="space-y-3">
+                    @forelse($recentActivities as $a)
+                        <div class="flex items-start gap-3">
+                            <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background: {{ $actDot[$a['type']] ?? '#94a3b8' }};"></span>
+                            <div>
+                                <div class="text-sm text-gray-700">{{ $a['text'] }}</div>
+                                <div class="text-xs text-gray-400">{{ $a['ago'] }}</div>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-400 text-center py-6">ยังไม่มีกิจกรรม</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ MEMBERSHIP + VISIT STATS (team lead request) ============ -->
+        @php
+            $statCards = [
+                ['title' => 'สถิติผู้สมัครสมาชิก (Users)', 'week' => $memberStats['week'], 'month' => $memberStats['month']],
+                ['title' => 'สถิติผู้เข้าชมเว็บไซต์ (Visits)', 'week' => $visitStats['week'], 'month' => $visitStats['month']],
+            ];
+        @endphp
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            @foreach($statCards as $sc)
+                @php $scMax = max($sc['week'], $sc['month'], 1); @endphp
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800">{{ $sc['title'] }}</h3>
+                    <p class="text-xs text-gray-400 mb-6">เปรียบเทียบสัปดาห์นี้ กับ ยอดรวมเดือนนี้</p>
+
+                    <div class="flex items-end justify-around gap-6 h-48">
+                        <div class="flex justify-center items-end h-full w-24">
+                            <div class="w-full rounded-lg transition-all duration-700"
+                                 style="height: {{ max($sc['week'] / $scMax * 100, 3) }}%; background: #60a5fa;"></div>
+                        </div>
+                        <div class="flex justify-center items-end h-full w-24">
+                            <div class="w-full rounded-lg transition-all duration-700"
+                                 style="height: {{ max($sc['month'] / $scMax * 100, 3) }}%; background: #4ade80;"></div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 mt-1 pt-3 flex justify-around text-center">
+                        <div class="w-24">
+                            <div class="text-sm text-gray-500">สัปดาห์นี้</div>
+                            <div class="text-xl font-bold text-gray-800">{{ number_format($sc['week']) }}</div>
+                        </div>
+                        <div class="w-24">
+                            <div class="text-sm text-gray-500">เดือนนี้</div>
+                            <div class="text-xl font-bold text-gray-800">{{ number_format($sc['month']) }}</div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
     </div>
 </div>
+
+@push('scripts')
+    <script src="{{ \ArielMejiaDev\LarapexCharts\LarapexChart::cdn() }}"></script>
+    {!! $trendChart->script() !!}
+    {!! $cancelChart->script() !!}
+
+    {{-- monthlyChart: built manually instead of ->script() because Larapex's
+         blade template only reads ->horizontal() for plotOptions.bar, so
+         ->setOptions(['plotOptions' => ['bar' => ['distributed' => true]]])
+         in the controller never actually reaches the rendered chart. --}}
+    <script>
+        (function () {
+            var options = {
+                chart: {
+                    id: '{!! $monthlyChart->id() !!}',
+                    type: '{!! $monthlyChart->type() !!}',
+                    height: {!! $monthlyChart->height() !!},
+                    width: '{!! $monthlyChart->width() !!}',
+                    toolbar: {!! $monthlyChart->toolbar() !!},
+                    zoom: {!! $monthlyChart->zoom() !!},
+                    fontFamily: '{!! $monthlyChart->fontFamily() !!}',
+                    foreColor: '{!! $monthlyChart->foreColor() !!}',
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        distributed: true
+                    }
+                },
+                colors: {!! $monthlyChart->colors() !!},
+                series: {!! $monthlyChart->dataset() !!},
+                dataLabels: {!! $monthlyChart->dataLabels() !!},
+                title: {
+                    text: "{!! $monthlyChart->title() !!}"
+                },
+                xaxis: {!! $monthlyChart->xAxis() !!},
+                grid: {!! $monthlyChart->grid() !!},
+                legend: {
+                    show: false
+                }
+            };
+            new ApexCharts(document.querySelector("#{!! $monthlyChart->id() !!}"), options).render();
+        })();
+    </script>
+
+    {!! $peakChart->script() !!}
+    @foreach($courtCharts as $cc)
+        {!! $cc['chart']->script() !!}
+    @endforeach
+@endpush
 @endsection

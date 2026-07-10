@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtClosure;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -185,5 +186,39 @@ class CourtController extends Controller
         }
 
         return back()->with('success', 'อัปเดตสถานะช่วงเวลาเรียบร้อยแล้ว');
+    }
+
+    public function updateImages(Request $request)
+    {
+        $request->validate([
+            'court_images' => ['nullable', 'array'],
+            'court_images.*' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        foreach ($request->file('court_images', []) as $courtId => $file) {
+            if (!$file) {
+                continue;
+            }
+
+            $court = Court::find($courtId);
+            if (!$court) {
+                continue;
+            }
+
+            $path = $file->store('site', 'public');
+
+            Setting::updateOrCreate(
+                ['key' => 'court_img_' . $court->id],
+                ['value' => 'storage/' . $path]
+            );
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'บันทึกรูปสนามเรียบร้อยแล้ว',
+            ]);
+        }
+
+        return back();
     }
 }

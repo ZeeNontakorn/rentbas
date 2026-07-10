@@ -247,6 +247,45 @@
                 </div>
             </form>
 
+            {{-- ─── Section 4: รูปภาพประจำสนาม (Court Booking) ─── --}}
+            <form action="{{ route('admin.courts.images.update') }}" method="POST"
+                  enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form"
+                  data-section="court-images">
+                @csrf
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">4. แก้ไขรูปภาพประจำสนาม</h3>
+                        <p class="text-xs text-gray-400">รูปแบนเนอร์ที่จะแสดงในหน้า Court Booking ของแต่ละสนาม</p>
+                    </div>
+                    <x-save-status />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @foreach($courts as $court)
+                    @php($courtImg = $settings['court_img_' . $court->id] ?? null)
+                    @php($courtImgSrc = $courtImg ?: 'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="font-semibold text-sm text-gray-800 mb-3">{{ $court->name }}</p>
+
+                        <img id="preview-court-{{ $court->id }}"
+                             src="{{ $courtImgSrc }}"
+                             class="h-32 w-full object-cover rounded-lg border border-gray-200 mb-3">
+
+                        <input type="file" name="court_images[{{ $court->id }}]" accept="image/*"
+                               class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg
+                                      file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600
+                                      hover:file:bg-orange-100 cursor-pointer"
+                               onchange="previewImg(this, 'preview-court-{{ $court->id }}')">
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                </div>
+            </form>
+
         </div>
 
     </div>
