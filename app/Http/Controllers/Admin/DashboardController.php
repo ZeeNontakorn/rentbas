@@ -544,7 +544,7 @@ class DashboardController extends Controller
             // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
             ->when($date, fn($q) => $q->whereDate('booking_date', $date))
             ->whereDate('booking_date', '>=', now()->toDateString())
-            ->where('status', 'pending')
+            ->where('status', $status ?? 'pending')
             ->when($court_id, fn($q) => $q->where('court_id', $court_id))
             ->orderBy('created_at')
             ->latest()

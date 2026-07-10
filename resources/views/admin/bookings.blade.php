@@ -19,7 +19,7 @@
         <div class="container mx-auto px-6 max-w-7xl">
             <!-- Header -->
             <div class="mb-8">
-                <h1 class="text-2xl font-semibold text-gray-800">DashBoard</h1>
+                <h1 class="text-2xl font-semibold text-gray-800">จัดการการจอง</h1>
                 <p class="text-sm text-gray-500">ดูสถิติ จัดการสนาม และดูการจองทั้งหมด</p>
             </div>
 

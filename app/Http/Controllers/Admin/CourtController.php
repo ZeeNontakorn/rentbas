@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\BookingCancelledByAdminMail;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtClosure;
 use App\Models\Setting;
+use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
@@ -137,7 +140,7 @@ class CourtController extends Controller
                     'label' => sprintf('%02d:00 - %02d:00', $h, $h + 1),
                     'start' => $start,
                     'end'   => $end,
-                    'status'=> $status,
+                    'status' => $status,
                 ];
             }
         }
@@ -168,6 +171,20 @@ class CourtController extends Controller
             'status' => ['required', 'in:available,unavailable,maintenance'],
         ]);
 
+        $statusLabel = match ($data['status']) {
+            'unavailable' => 'ไม่ว่าง',
+            'maintenance' => 'ปิดปรับปรุง',
+            default => 'ว่าง',
+        };
+
+        // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved)
+        $overlappingBookings = Booking::where('court_id', $data['court_id'])
+            ->whereDate('booking_date', $data['date'])
+            ->whereIn('status', ['pending', 'approved'])
+            ->where('start_time', '<', $data['end_time'])
+            ->where('end_time', '>', $data['start_time'])
+            ->get();
+
         // Delete existing closure if any
         CourtClosure::where('court_id', $data['court_id'])
             ->where('date', $data['date'])
@@ -185,7 +202,34 @@ class CourtController extends Controller
             ]);
         }
 
-        return back()->with('success', 'อัปเดตสถานะช่วงเวลาเรียบร้อยแล้ว');
+        foreach ($overlappingBookings as $booking) {
+            $reason = "ช่วงเวลานี้ถูกตั้งเป็น '{$statusLabel}' โดยผู้ดูแลระบบ";
+                $booking->update([
+                    'status' => 'rejected',
+                    'rejection_reason' => $reason,
+                ]);
+
+
+            Notification::create([
+                'user_id' => $booking->user_id,
+                'title' => 'การจองถูกยกเลิกโดยระบบ',
+                'message' => "การจอง {$booking->court->name} วันที่ {$data['date']} เวลา "
+                    . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5)
+                    . " ถูกยกเลิก เนื่องจาก{$reason}",
+            ]);
+
+            if ($booking->user?->email) {
+                Mail::to($booking->user->email)
+                    ->send(new BookingCancelledByAdminMail($booking, $reason));
+            }
+        }
+
+        $message = 'อัปเดตสถานะช่วงเวลาเรียบร้อยแล้ว';
+        if ($overlappingBookings->isNotEmpty()) {
+            $message .= " (ยกเลิกการจองลูกค้า {$overlappingBookings->count()} รายการ และแจ้งเตือนแล้ว)";
+        }
+
+        return back()->with('success', $message);
     }
 
     public function updateImages(Request $request)

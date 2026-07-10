@@ -3,9 +3,8 @@
     <div class="container mx-auto flex justify-between items-center py-4 px-4 md:px-10">
         <!-- Logo / ชื่อระบบ -->
         <a href="{{ route('home') }}" class="flex items-center font-bold text-xl md:text-2xl hover:text-gray-300 transition">
-           <span class="text-2xl md:text-3xl mr-2">🏀</span>
             <!-- System Name -->
-            <span class="font-bold text-lg md:text-2xl leading-tight">Basketball Court Booking System</span>
+            <span class="font-bold text-lg md:text-2xl leading-tight">Court Booking System</span>
         </a>
 
         <!-- ปุ่มเปิด/ปิดเมนู สำหรับจอมือถือ -->
