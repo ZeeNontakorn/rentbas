@@ -535,14 +535,19 @@ class DashboardController extends Controller
 
         $status = $request->query('status');
         $court_id = $request->query('court_id');
-        $date = $request->query('date', now()->toDateString()); // Default today
+        $date = $request->query('date');
 
         $bookings = Booking::with(['user', 'court'])
-            ->whereDate('booking_date', $date)
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->when($court_id, fn ($q) => $q->where('court_id', $court_id))
+        // ->whereDate('booking_date', $date)
+        // ->when($status, fn ($q) => $q->where('status', $status))
+
+            // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
+            ->when($date, fn($q) => $q->whereDate('booking_date', $date))
+            ->whereDate('booking_date', '>=', now()->toDateString())
+            ->where('status', 'pending')
+            ->when($court_id, fn($q) => $q->where('court_id', $court_id))
+            ->orderBy('created_at')
             ->latest()
-            ->orderByDesc('start_time')
             ->paginate(20)
             ->withQueryString();
 
