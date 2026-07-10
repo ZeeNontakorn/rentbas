@@ -470,6 +470,7 @@ class DashboardController extends Controller
                     ->setFontFamily($font)
                     ->setColors([$ring])
                     ->setHeight(200)
+                    ->setShowLegend(false)
                     ->setLabels([$c['name']])
                     ->addData([$c['pct']]),
             ];
