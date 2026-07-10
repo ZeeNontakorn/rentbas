@@ -42,6 +42,7 @@
 .badge-approved { background: #ecfdf5; color: #047857; }
 .badge-rejected { background: #fef2f2; color: #b91c1c; }
 .badge-cancelled { background: #f3f4f6; color: #4b5563; }
+.badge-expired { background: #e5e7eb; color: #4b5563; }
 
 /* ─── CANCEL BUTTON ─── */
 .btn-cancel {
@@ -79,6 +80,7 @@
             'approved' => ['st-approved', 'badge-approved', 'อนุมัติแล้ว', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'],
             'rejected' => ['st-rejected', 'badge-rejected', 'ถูกปฏิเสธ', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />'],
             'cancelled' => ['st-cancelled', 'badge-cancelled', 'ยกเลิก', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />'],
+            'expired' => ['st-expired', 'badge-expired', 'เลยกำหนด', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'],
             default => ['st-cancelled', 'badge-cancelled', $status, ''],
         };
     }
@@ -140,8 +142,11 @@
             @else
                 <div class="space-y-4">
                     @foreach($current as $b)
-                        @php 
-                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($b->status); 
+                        @php
+                            $bookingEndTime = \Carbon\Carbon::parse($b->booking_date)->setTimeFromTimeString($b->end_time);
+                            $currentStatus = ($b->status === 'pending' && $bookingEndTime->isPast()) ? 'expired' : $b->status;
+                        
+                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($currentStatus); 
                             $bDate = \Carbon\Carbon::parse($b->booking_date);
                         @endphp
                         
@@ -171,7 +176,7 @@
                                     {{ $stLabel }}
                                 </span>
                                 
-                                @if(!$b->isStarted())
+                                @if(!$b->isStarted() && $b->status === 'pending')
                                     <form method="POST" action="{{ route('booking.cancel', $b) }}" class="cancel-form md:ml-auto block">
                                         @csrf
                                         <button type="button" class="btn-cancel w-full md:w-auto text-center btn-cancel-trigger">ยกเลิก</button>
@@ -197,7 +202,10 @@
                 <div class="space-y-4">
                     @foreach($past as $b)
                         @php 
-                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($b->status);
+                            $bookingEndTime = \Carbon\Carbon::parse($b->booking_date)->setTimeFromTimeString($b->end_time);
+                            $currentStatus = ($b->status === 'pending' && $bookingEndTime->isPast()) ? 'expired' : $b->status;
+                        
+                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($currentStatus); 
                             $bDate = \Carbon\Carbon::parse($b->booking_date);
                         @endphp
                         
@@ -267,7 +275,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     Swal.fire({
                         title: "ยกเลิกแล้ว!",
                         text: "รายการจองของคุณถูกยกเลิกเรียบร้อย",
-                        icon: "success"
+                        icon: "success",
+                        confirmButtonColor: "#87D068",
+                        confirmButtonText: "ตกลง",
                     }).then(() => {
                         form.submit();
                     });

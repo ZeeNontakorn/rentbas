@@ -91,15 +91,15 @@
 
         // รูปภาพสนามบาสเกตบอลแบบเต็มสนาม (รวบรวมจาก Unsplash หลากหลายมุมมอง)
         $realCourts = [
-            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Close up hoop (Default)
-            'https://cloudfront-us-east-1.images.arcpublishing.com/advancelocal/3KSOTN63CVB7XOHBQ3TSYFBJUM.jpg', // Bright gym
-            'https://wallpapers.com/images/hd/empty-basketball-court-arena-night-ulqjxg9elf5v3jja.jpg', // Indoor court side view
-            'https://images.unsplash.com/photo-1574907060871-4555aa8aca75?q=80&w=2148&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', // Dark gym with hoop
-            'https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=1400&auto=format&fit=crop', // Ball & floor
+            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' // Close up hoop (Default)
+
         ];
 
+        $courtImgSetting = $selectedCourt
+            ? \App\Models\Setting::where('key', 'court_img_' . $selectedCourt->id)->value('value')
+            : null;
         // เลือกรูปแบบวนลูปตาม ID ของ Court
-        $bannerImg = $realCourts[($cid - 1) % count($realCourts)];
+        $bannerImg = $courtImgSetting ?? $realCourts[($cid - 1) % count($realCourts)];
     @endphp
 
     <div class="w-full h-[280px] rounded-[16px] overflow-hidden mb-10 shadow-sm relative group" data-aos="zoom-in" data-aos-delay="100">
@@ -457,7 +457,7 @@ function validateAndSubmitDate(input) {
     if (selectedDate > maxDate) {
         alert("สามารถจองล่วงหน้าได้สูงสุด 1 เดือนเท่านั้น");
         input.value = "{{ now()->addMonth()->toDateString() }}";
-    } 
+    }
     else if (selectedDate < minDate) {
         alert("ไม่สามารถเลือกวันย้อนหลังได้");
         input.value = "{{ now()->toDateString() }}";

@@ -539,8 +539,9 @@ class DashboardController extends Controller
 
         $bookings = Booking::with(['user', 'court'])
             ->whereDate('booking_date', $date)
-            ->when($status, fn($q) => $q->where('status', $status))
-            ->when($court_id, fn($q) => $q->where('court_id', $court_id))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($court_id, fn ($q) => $q->where('court_id', $court_id))
+            ->latest()
             ->orderByDesc('start_time')
             ->paginate(20)
             ->withQueryString();

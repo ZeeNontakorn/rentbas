@@ -19,8 +19,9 @@ class BookingController extends Controller
      */
     public function index(Request $request)
     {
-        $courts = Court::orderBy('name')->get();
-
+        $courts = Court::all()->sortBy(function ($court) {
+            return $court->name;
+        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
         $dateParam = $request->query('date', now()->toDateString());
 
         try {

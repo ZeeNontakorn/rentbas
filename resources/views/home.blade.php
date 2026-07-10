@@ -3,6 +3,33 @@
 @section('title', 'BCBS | Premium Basketball Court Booking')
 
 @section('content')
+@php
+    $site = \App\Models\Setting::values([
+        'hero_img_1',
+        'hero_img_2',
+        'hero_img_3',
+        'about_title',
+        'about_desc',
+        'about_img_1',
+        'about_img_2',
+        'about_img_3',
+        'courts_bg',
+        'community_img',
+        'promo_subtitle',
+        'promo_title',
+        'promo_card_title',
+        'promo_card_sub',
+        'promo_image',
+    ]);
+@endphp
+
+@php
+    $heroSlides = array_values(array_filter([
+        $site['hero_img_1'] ?? null,
+        $site['hero_img_2'] ?? null,
+        $site['hero_img_3'] ?? null,
+    ]));
+@endphp
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Kanit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -13,16 +40,10 @@
     --ink: #0d0f1e;
     --navy: #1e2235;
     --navy-d: #13162a;
-    --ash: #1a1a1a;
-    --fog: #2a2a2a;
-    --silver: #8a8a8a;
     --cream: #f6f5f0;
-    --white: #ffffff;
-    --gray: #6b7280;
     --border: rgba(255,255,255,0.08);
     --green: #22c55e;
     --red: #ef4444;
-    --r: 8px;
     --max-w: 1200px;
 }
 
@@ -37,67 +58,6 @@ html { scroll-behavior: smooth; }
 .home-content a { text-decoration: none; color: inherit; }
 .home-content img { display: block; max-width: 100%; }
 
-/* ─── NAVBAR ─── */
-.navbar {
-    background: rgba(13,15,30,0.96);
-    backdrop-filter: blur(12px);
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 max(24px, calc((100% - var(--max-w)) / 2));
-    position: sticky;
-    top: 0;
-    z-index: 200;
-    border-bottom: 1px solid var(--border);
-}
-.nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 0.1em;
-    color: #fff;
-}
-.nav-logo-ball {
-    width: 34px; height: 34px;
-    background: var(--ore);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px;
-    flex-shrink: 0;
-}
-.nav-right { display: flex; align-items: center; gap: 4px; }
-.nav-link {
-    padding: 7px 16px;
-    font-family: 'Kanit', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.65);
-    border-radius: 6px;
-    transition: color .2s, background .2s;
-}
-.nav-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
-.nav-btn {
-    padding: 8px 22px;
-    background: var(--ore);
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 6px;
-    transition: background .2s, transform .15s;
-}
-.nav-btn:hover { background: var(--ore-d); transform: translateY(-1px); }
-.nav-hamburger {
-    display: none; flex-direction: column; gap: 5px;
-    cursor: pointer; padding: 4px;
-}
-.nav-hamburger span {
-    display: block; width: 22px; height: 2px;
-    background: #fff; border-radius: 2px; transition: .3s;
-}
 .mobile-menu {
     display: none;
     position: fixed;
@@ -117,19 +77,24 @@ html { scroll-behavior: smooth; }
     position: relative;
     height: 68vh;
     min-height: 440px;
-    overflow: hidden;
-}
-.hero-slide {
-    position: absolute; inset: 0;
     background-size: cover;
     background-position: center;
-    opacity: 0;
-    transition: opacity 1.4s ease;
+    background-attachment: fixed;
+    overflow: hidden;
 }
-.hero-slide.active { opacity: 1; }
-.hero-slide::after {
+.hero-bg-fader {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    opacity: 0;
+    transition: opacity .9s ease;
+}
+.hero::before {
     content: '';
-    position: absolute; inset: 0;
+    position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(160deg, rgba(13,15,30,.82) 0%, rgba(13,15,30,.45) 60%, rgba(0,0,0,.2) 100%);
 }
 .hero-content {
@@ -139,7 +104,7 @@ html { scroll-behavior: smooth; }
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 0 24px;
+    padding: 0 24px 80px;
 }
 .hero-eyebrow {
     font-size: 11px;
@@ -165,47 +130,11 @@ html { scroll-behavior: smooth; }
     margin-bottom: 36px;
     line-height: 1.6;
 }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.btn-white {
-    padding: 12px 30px;
-    border: 1.5px solid rgba(255,255,255,.5);
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all .2s;
-}
-.btn-white:hover { border-color: #fff; background: rgba(255,255,255,.1); }
-.btn-primary {
-    padding: 12px 30px;
-    background: var(--ore);
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: background .2s, transform .15s;
-}
-.btn-primary:hover { background: var(--ore-d); transform: translateY(-1px); }
-.hero-dots {
-    position: absolute; bottom: 22px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    display: flex; gap: 6px;
-}
-.hdot {
-    width: 6px; height: 6px; border-radius: 3px;
-    background: rgba(255,255,255,.3);
-    cursor: pointer;
-    transition: width .3s, background .3s;
-}
-.hdot.active { width: 22px; background: var(--ore); }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;}
 
 /* hero stats bar */
 .hero-stats {
     position: absolute; bottom: 0; left: 0; right: 0;
-    z-index: 3;
     display: flex;
     background: rgba(13,15,30,.85);
     backdrop-filter: blur(8px);
@@ -338,7 +267,7 @@ html { scroll-behavior: smooth; }
 .courts-section {
     /* ใส่ Overlay สีดำจางๆ ทับรูปสนามบาส */
     background: linear-gradient(rgba(0, 31, 63, 0.8), rgba(0, 17, 34, 0.8)),
-                url('{{ \App\Models\Setting::getVal('courts_bg', 'https://images.pexels.com/photos/18460191/pexels-photo-18460191.jpeg') }}');
+                url('{{ $site['courts_bg'] }}');
     background-size: cover;      /* ให้รูปขยายเต็มพื้นที่ */
     background-position: center;
     background-attachment: fixed; /* (Optional) ทำเอฟเฟกต์ Parallax ให้รูปนิ่งขณะเลื่อน */
@@ -466,7 +395,6 @@ html { scroll-behavior: smooth; }
 }
 .bk-day:hover { background: #f1f3f5; color: var(--ink); }
 .bk-day.empty { cursor: default; pointer-events: none; }
-.bk-day.other-month { color: #ced4da; }
 .bk-day.today { color: var(--ore); font-weight: 700; }
 .bk-day.today::before {
     content: ''; position: absolute; inset: 0;
@@ -581,7 +509,7 @@ html { scroll-behavior: smooth; }
 .slot-unavailable {
     background: #f1f3f5; color: #adb5bd; cursor: default;
     border: 1px solid #dee2e6;
-} 
+}
 
 .slot-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .slot-free .slot-dot { background: #2f9e44; }
@@ -636,17 +564,10 @@ html { scroll-behavior: smooth; }
 .promo-tag { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--ore); margin-bottom: 6px; }
 .promo-title { font-size: clamp(40px,6vw,56px); font-weight: 800; color: var(--ink); }
 
-.promo-container { width: 100%; position: relative; }
-.promo-track {
-    display: flex; width: max-content;
-    animation: promoScroll 45s linear infinite;
-}
-.promo-slide {
-    display: flex; gap: 16px; padding-right: 16px;
-}
+.promo-container { display: block; width: 100%; padding: 0 5%; }
 .promo-card {
-    border-radius: 10px; overflow: hidden; height: 200px; position: relative;
-    cursor: pointer; flex-shrink: 0; width: min(85vw, 360px);
+    border-radius: 12px; overflow: hidden; height: 400px; position: relative;
+    cursor: pointer; width: 100%;
 }
 .promo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
 .promo-card:hover img { transform: scale(1.06); }
@@ -657,13 +578,10 @@ html { scroll-behavior: smooth; }
 }
 .promo-card:hover::after { opacity: .8; }
 .promo-card-inner { position: absolute; bottom: 16px; left: 16px; z-index: 1; }
-.promo-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #fff; line-height: 1.1; letter-spacing: .06em; }
-.promo-card-sub { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
+.promo-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: #fff; line-height: 1.1; letter-spacing: .06em; }
+.promo-card-sub { font-size: 33px; color: rgba(255, 238, 0, 0.7); margin-top: 3px; }
 
-@keyframes promoScroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-25%); }
-}
+
 
 /* ─── FOOTER ─── */
 .footer {
@@ -720,7 +638,7 @@ html { scroll-behavior: smooth; }
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
-    .navbar { padding: 0 20px; }
+
     .nav-right { display: none; }
     .nav-hamburger { display: flex; }
     .about-section, .community-section, .footer-grid { grid-template-columns: 1fr; gap: 32px; }
@@ -747,9 +665,53 @@ html { scroll-behavior: smooth; }
     vertical-align: middle;
     margin-right: 5px;
 }
+
+/* ─── HERO / NAV BUTTONS ─── */
+.home-content .btn-primary,
+.home-content .btn-white,
+.home-content .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 13px 28px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: background .2s, border-color .2s, transform .15s;
+    white-space: nowrap;
+}
+
+/* ปุ่มส้ม (จองสนาม / สมัครสมาชิก) */
+.home-content .btn-primary {
+    background: var(--ore);
+    color: #fff;
+    border: 1px solid var(--ore);
+}
+.home-content .btn-primary:hover {
+    background: var(--ore-d);
+    border-color: var(--ore-d);
+    transform: translateY(-1px);
+}
+
+/* ปุ่มขอบขาว โปร่งใส (เข้าสู่ระบบ) */
+.home-content .btn-white {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.35);
+}
+.home-content .btn-white:hover {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.6);
+}
 </style>
 
 <div class="home-content">
+@php
+    $imagePlaceholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1e2235" offset="0%"/><stop stop-color="#13162a" offset="100%"/></linearGradient></defs><rect width="800" height="500" fill="url(#g)"/><circle cx="400" cy="210" r="58" fill="#e86c2a" fill-opacity="0.18"/><path d="M260 340h280" stroke="#e86c2a" stroke-width="18" stroke-linecap="round" stroke-opacity="0.35"/><path d="M320 235l40 40 120-120" fill="none" stroke="#f6f5f0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.55"/></svg>');
+    $imageFallback = "onerror=\"this.onerror=null;this.src='" . $imagePlaceholder . "';\"";
+@endphp
 
 
 <div class="mobile-menu" id="mobile-menu">
@@ -763,11 +725,8 @@ html { scroll-behavior: smooth; }
 </div>
 
 {{-- ═══ HERO ═══ --}}
-<section class="hero">
-    <div class="hero-slide active" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_1', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2000&auto=format&fit=crop') }}')"></div>
-    <div class="hero-slide" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_2', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000&auto=format&fit=crop') }}')"></div>
-    <div class="hero-slide" style="background-image:url('{{ \App\Models\Setting::getVal('hero_img_3', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=2000&auto=format&fit=crop') }}')"></div>
-
+<section id="hero-section" class="hero" style="background-image:url('{{ $heroSlides[0] ?? ($site['hero_img_1'] ?? '') }}')">
+    <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">Bangsaen Basketball Club · BCBS</p>
         <h1 class="hero-title">BCBS<br><span>Thata</span></h1>
@@ -781,13 +740,6 @@ html { scroll-behavior: smooth; }
             @endguest
         </div>
     </div>
-
-    <div class="hero-dots" id="hero-dots">
-        <div class="hdot active" onclick="goSlide(0)"></div>
-        <div class="hdot" onclick="goSlide(1)"></div>
-        <div class="hdot" onclick="goSlide(2)"></div>
-    </div>
-
     <div class="hero-stats">
         <div class="hstat"><div class="hstat-num">{{ $courts->count() }}</div><div class="hstat-label">สนาม</div></div>
         <div class="hstat"><div class="hstat-num">7</div><div class="hstat-label">วันต่อสัปดาห์</div></div>
@@ -816,9 +768,9 @@ html { scroll-behavior: smooth; }
 <section class="about-section">
     <div>
         <p class="about-label">About Court</p>
-        <h2 class="about-title">{!! nl2br(e(\App\Models\Setting::getVal('about_title', 'สนามที่ได้มาตรฐาน ระบบการจองที่ทันสมัย'))) !!}</h2>
+        <h2 class="about-title">{!! nl2br(e($site['about_title'])) !!}</h2>
         <p class="about-desc">
-            {{ \App\Models\Setting::getVal('about_desc', 'เราจัดหาสนามบาสเกตบอลคุณภาพระดับสากลในพื้นที่บางแสน พร้อมระบบจองออนไลน์ที่สะดวก รวดเร็ว และปลอดภัย รองรับนักกีฬาทุกระดับตั้งแต่มือใหม่จนถึงมืออาชีพ') }}
+            {{ $site['about_desc'] }}
         </p>
         <div class="about-checks">
             <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 4 สนาม</div>
@@ -830,13 +782,13 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="about-images">
         <div class="about-img main" style="height:200px;">
-            <img src="{{ \App\Models\Setting::getVal('about_img_1', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=900&auto=format&fit=crop') }}" alt="court">
+            <img src="{{ $site['about_img_1'] }}" alt="court" {!! $imageFallback !!}>
         </div>
         <div class="about-img" style="height:160px;">
-            <img src="{{ \App\Models\Setting::getVal('about_img_2', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop') }}" alt="court">
+            <img src="{{ $site['about_img_2'] }}" alt="court" {!! $imageFallback !!}>
         </div>
         <div class="about-img" style="height:160px;">
-            <img src="{{ \App\Models\Setting::getVal('about_img_3', 'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop') }}" alt="court">
+            <img src="{{ $site['about_img_3'] }}" alt="court" {!! $imageFallback !!}>
         </div>
     </div>
 </section>
@@ -867,7 +819,7 @@ html { scroll-behavior: smooth; }
 
             <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}">
                 <div class="court-thumb">
-                    <img src="{{ $img }}" alt="{{ $court->name }}">
+                    <img src="{{ $img }}" alt="{{ $court->name }}" {!! $imageFallback !!}>
                     <div class="court-thumb-overlay"></div>
                     <div class="court-num">{{ $loop->iteration }}</div>
                 </div>
@@ -884,7 +836,7 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">พร้อมจอง</a>
+                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง</a>
                     @else
                         <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
                     @endif
@@ -959,7 +911,7 @@ html { scroll-behavior: smooth; }
 <section class="community-section" data-aos="fade-up">
     <div class="community-img-wrap" data-aos="zoom-in" data-aos-delay="200">
         <div class="community-img-main">
-            <img src="{{ \App\Models\Setting::getVal('community_img', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=900&auto=format&fit=crop') }}" alt="community">
+            <img src="{{ $site['community_img'] }}" alt="community" {!! $imageFallback !!}>
         </div>
         <div class="community-stat">
             <p class="cstat-label">โค้ช DREAM</p>
@@ -969,9 +921,9 @@ html { scroll-behavior: smooth; }
     </div>
     <div class="community-text" data-aos="fade-up" data-aos-delay="400">
         <p class="community-tag">The Community</p>
-        <h2 class="community-title">มาร่วมสร้างประสบการณ์ดีๆ<br>กับเรา</h2>
+        <h2 class="community-title">มาร่วมสร้างประสบการณ์ดีๆกับเรา</h2>
         <p class="community-desc">
-            เข้าร่วมเครือข่ายนักบาสเกตบอลคุณภาพ<br>พบปะผู้เล่นระดับสูงและโค้ชมืออาชีพในพื้นที่บางแสน
+            เข้าร่วมเครือข่ายนักบาสเกตบอลคุณภาพพบปะผู้เล่นระดับสูงและโค้ชมืออาชีพในพื้นที่บางแสน
         </p>
     </div>
 </section>
@@ -979,59 +931,33 @@ html { scroll-behavior: smooth; }
 {{-- ═══ PROMOTIONS ═══ --}}
 <section class="promo-section" data-aos="fade-up">
     <div class="promo-header">
-        <p class="promo-tag">{{ \App\Models\Setting::getVal('promo_subtitle', 'รับชมโปรโมชั่นสุดพิเศษ') }}</p>
-        <h2 class="promo-title">{{ \App\Models\Setting::getVal('promo_title', 'Preview Promotion') }}</h2>
+        <p class="promo-tag">{{ $site['promo_subtitle'] }}</p>
+        <h2 class="promo-title">{{ $site['promo_title'] }}</h2>
     </div>
-    <div class="promo-container" data-aos="fade-up" data-aos-delay="100">
-        <div class="promo-track">
-            @for ($i = 0; $i < 4; $i++)
-            <div class="promo-slide">
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">{{ \App\Models\Setting::getVal('promo_card_title', 'BASKETBALL') }}</p>
-                        <p class="promo-card-sub">{{ \App\Models\Setting::getVal('promo_card_sub', 'โปรโมชั่นพิเศษ') }}</p>
+
+    <a href="{{ route('booking.index') }}" class="promo-container" aria-label="ไปหน้าจองสนาม">
+        @php
+            $promoImg = $site['promo_image'];
+            $promoTitle = $site['promo_card_title'];
+            $promoSub = $site['promo_card_sub'];
+        @endphp
+
+        <div class="promo-card">
+            @if($promoImg)
+                <img src="{{ $promoImg }}" alt="promotion" {!! $imageFallback !!}>
+            @else
+                <div style="width:100%; height:100%; background:linear-gradient(135deg, var(--ore) 0%, var(--ore-d) 100%); display:flex; align-items:center; justify-content:center;">
+                    <div style="text-align:center; color:#fff;">
+                        <div style="font-size:16px; font-weight:600;">Promotion</div>
                     </div>
                 </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">MEMBERS ONLY</p>
-                        <p class="promo-card-sub">ส่วนลดพิเศษสมาชิก</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">NEW MEMBER</p>
-                        <p class="promo-card-sub">สมาชิกใหม่รับสิทธิ์พิเศษ</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">VIP LOUNGE</p>
-                        <p class="promo-card-sub">บริการพิเศษสำหรับ VIP</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://library.sportingnews.com/styles/twitter_card_120x120/s3/2023-11/United%20Center%20Court%20110323.jpg?itok=lP4n8TXX" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">TOURNAMENT</p>
-                        <p class="promo-card-sub">ทัวร์นาเมนต์ชิงชัย</p>
-                    </div>
-                </div>
-                <div class="promo-card">
-                    <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=800&auto=format&fit=crop" alt="promo">
-                    <div class="promo-card-inner">
-                        <p class="promo-card-title">CLINIC TRAINING</p>
-                        <p class="promo-card-sub">ฝึกทักษะกับโค้ชมืออาชีพ</p>
-                    </div>
-                </div>
+            @endif
+            <div class="promo-card-inner">
+                <div class="promo-card-title">{{ $promoTitle }}</div>
+                <div class="promo-card-sub">{{ $promoSub }}</div>
             </div>
-            @endfor
         </div>
-    </div>
+    </a>
 </section>
 
 {{-- ═══ FOOTER ═══ --}}
@@ -1053,7 +979,7 @@ html { scroll-behavior: smooth; }
                 <p class="footer-addr-title" style="margin-bottom:10px;">ติดตามข่าวสาร</p>
                 <div class="footer-social">
                     <a href="https://www.facebook.com/thatahomecourts/" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt=""> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt="" {!! $imageFallback !!}> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
                     </a>
                     <a href="https://www.youtube.com/THATASPORT" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
@@ -1096,24 +1022,43 @@ html { scroll-behavior: smooth; }
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
+const HERO_SLIDES = @json($heroSlides);
+
 // ─── COURTS DATA จาก DB ───
 const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
 
 // ─── HERO SLIDESHOW ───
-const slides = document.querySelectorAll('.hero-slide');
-const dots   = document.querySelectorAll('.hdot');
-let cur = 0, timer;
-function goSlide(n) {
-    slides[cur].classList.remove('active'); dots[cur].classList.remove('active');
-    cur = n;
-    slides[cur].classList.add('active'); dots[cur].classList.add('active');
-    clearInterval(timer); timer = setInterval(nextSlide, 5000);
-}
-function nextSlide() { goSlide((cur + 1) % slides.length); }
-timer = setInterval(nextSlide, 5000);
+function initHeroSlideshow() {
+    const hero = document.getElementById('hero-section');
+    const fader = document.getElementById('hero-bg-fader');
+    if (!hero || !Array.isArray(HERO_SLIDES) || HERO_SLIDES.length <= 1) return;
 
-// ─── MOBILE MENU ───
-function toggleMenu() { document.getElementById('mobile-menu').classList.toggle('open'); }
+    let idx = 0;
+    const uniqueSlides = [...new Set(HERO_SLIDES.filter(Boolean))];
+    if (uniqueSlides.length <= 1) return;
+
+    const rotationMs = 5000;
+    const fadeMs = 900;
+
+    setInterval(() => {
+        const nextIdx = (idx + 1) % uniqueSlides.length;
+        const nextImage = uniqueSlides[nextIdx];
+        if (!fader) {
+            idx = nextIdx;
+            hero.style.backgroundImage = `url('${nextImage}')`;
+            return;
+        }
+
+        fader.style.backgroundImage = `url('${nextImage}')`;
+        fader.style.opacity = '1';
+
+        setTimeout(() => {
+            hero.style.backgroundImage = `url('${nextImage}')`;
+            fader.style.opacity = '0';
+            idx = nextIdx;
+        }, fadeMs);
+    }, rotationMs);
+}
 
 // ─── SCROLL TOP ───
 window.addEventListener('scroll', () => {
@@ -1235,7 +1180,7 @@ async function renderSch(ds) {
             } else if (status === 'maintenance') {
                 html += '<td><span class="slot-badge slot-maintenance"><span class="slot-dot"></span>ปิดปรับปรุง</span></td>';
             } else if (status === 'unavailable') {
-                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';        
+                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
             } else {
                 html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${h}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
@@ -1270,6 +1215,7 @@ renderCal();
 loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
+initHeroSlideshow();
 
 function copyPhone(btn) {
     const phone = '081-246-0000';

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -14,25 +13,12 @@ class SettingController extends Controller
      */
     public function edit()
     {
-        $settings = [
-            'about_title'      => Setting::getVal('about_title',      'สนามที่ได้มาตรฐาน ระบบการจองที่ทันสมัย'),
-            'about_desc'       => Setting::getVal('about_desc',        'BCBS Arena คือสนามบาสเก็ตบอลมาตรฐานสากล ทีมงานพร้อมดูแลตลอด 24 ชั่วโมง'),
-            'promo_subtitle'   => Setting::getVal('promo_subtitle',    'อัปเดตโปรโมชั่นสุดพิเศษ'),
-            'promo_title'      => Setting::getVal('promo_title',       'Preview Promotion'),
-            'promo_card_title' => Setting::getVal('promo_card_title',  'BASKETBALL'),
-            'promo_card_sub'   => Setting::getVal('promo_card_sub',    'โปรโมชั่นพิเศษ'),
-            'promo_image'      => Setting::getVal('promo_image',       'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop'),
-            'hero_img_1'       => Setting::getVal('hero_img_1', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2000&auto=format&fit=crop'),
-            'hero_img_2'       => Setting::getVal('hero_img_2', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=2000&auto=format&fit=crop'),
-            'hero_img_3'       => Setting::getVal('hero_img_3', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=2000&auto=format&fit=crop'),
-            'about_img_1'      => Setting::getVal('about_img_1', 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=900&auto=format&fit=crop'),
-            'about_img_2'      => Setting::getVal('about_img_2', 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop'),
-            'about_img_3'      => Setting::getVal('about_img_3', 'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop'),
-            'courts_bg'        => Setting::getVal('courts_bg', 'https://images.pexels.com/photos/18460191/pexels-photo-18460191.jpeg'),
-            'community_img'    => Setting::getVal('community_img', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=900&auto=format&fit=crop')
-        ];
+        $courts = \App\Models\Court::all();
 
-        return view('edit-text', compact('settings'));
+        $courtKeys = $courts->map(fn($c) => 'court_img_' . $c->id)->all();
+        $settings = Setting::values(array_merge(array_keys(Setting::DEFAULTS), $courtKeys));
+
+        return view('edit-text', compact('settings', 'courts'));
     }
 
     /**
@@ -89,6 +75,12 @@ class SettingController extends Controller
             }
         }
 
-        return back()->with('success', 'บันทึกข้อมูลและรูปภาพหน้าเว็บเรียบร้อยแล้ว');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'บันทึกข้อมูลและรูปภาพหน้าเว็บเรียบร้อยแล้ว',
+            ]);
+        }
+
+        return back();
     }
 }

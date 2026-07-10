@@ -3,7 +3,7 @@
 @section('title', 'แก้ไขเนื้อหาและโปรโมชั่น')
 
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8">
+<div class="bg-slate-50 text-gray-900 min-h-screen min-w-screen py-8">
     <div class="container mx-auto px-6 max-w-4xl">
 
         {{-- Header --}}
@@ -12,41 +12,19 @@
                 <h1 class="text-2xl font-bold text-gray-900">แก้ไขเนื้อหาเว็บไซต์</h1>
                 <p class="text-sm text-gray-500 mt-1">จัดการข้อความโปรโมชั่น รูปภาพ และส่วน About Court</p>
             </div>
-            <div class="flex gap-3 items-center">
-                <a href="{{ route('home') }}" target="_blank"
-                   class="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                    </svg>
-                    ดูหน้าเว็บ
-                </a>
-                <a href="{{ route('admin.dashboard') }}"
-                   class="text-sm text-gray-500 hover:underline">
-                    ← กลับ Dashboard
-                </a>
-            </div>
         </div>
 
-        {{-- Flash Messages --}}
-        @if(session('success'))
-            <div id="flash-success"
-                 class="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-green-800">บันทึกสำเร็จ!</p>
-                        <p class="text-sm text-green-600">{{ session('success') }}</p>
-                    </div>
+        <div id="save-errors" class="hidden mb-6 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </div>
-                <button onclick="document.getElementById('flash-success').remove()"
-                        class="text-green-400 hover:text-green-600 text-xl font-bold">✕</button>
+                <p class="font-semibold text-red-800">เกิดข้อผิดพลาด</p>
             </div>
-        @endif
+            <ul id="save-errors-list" class="list-disc list-inside text-sm text-red-600 space-y-1"></ul>
+        </div>
 
         @if($errors->any())
             <div class="mb-6 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
@@ -66,13 +44,18 @@
             </div>
         @endif
 
-        <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-            @csrf
+        <div class="space-y-6">
 
             {{-- ─── Section 1: About Court ─── --}}
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
-                <p class="text-xs text-gray-400 mb-5">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
+                @csrf
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
+                        <p class="text-xs text-gray-400">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
+                    </div>
+                    <x-save-status />
+                </div>
 
                 <div class="space-y-4">
                     <div>
@@ -94,12 +77,23 @@
                                   placeholder="คำอธิบายส่วน About Court">{{ old('about_desc', $settings['about_desc'] ?? '') }}</textarea>
                     </div>
                 </div>
-            </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                </div>
+            </form>
 
             {{-- ─── Section 2: Promotion Header ─── --}}
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
-                <p class="text-xs text-gray-400 mb-5">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="promo">
+                @csrf
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
+                        <p class="text-xs text-gray-400">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
+                    </div>
+                    <x-save-status />
+                </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -145,6 +139,7 @@
                     </div>
 
                     {{-- Image Upload --}}
+                    @php($promoImg = $settings['promo_image'] ?? null)
                     <div class="pt-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             อัปโหลดแบนเนอร์โปรโมชั่น (รูปแรกในแถว)
@@ -162,21 +157,32 @@
                                 <p class="text-xs text-gray-400 mt-1">PNG, JPG, WEBP ขนาดไม่เกิน 2MB</p>
                             </div>
                             {{-- Current image preview --}}
-                            <div id="img-preview-wrap" class="{{ empty($settings['promo_image']) ? 'hidden' : '' }}">
+                            <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
                                 <img id="img-preview"
-                                     src="{{ $settings['promo_image'] ?? '' }}"
+                                     src="{{ $promoImg ?? '' }}"
                                      class="h-20 w-32 rounded-lg object-cover border-2 border-gray-200 shadow-sm">
                                 <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                </div>
+            </form>
 
             {{-- ─── Section 3: Other Images ─── --}}
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
-                <p class="text-xs text-gray-400 mb-5">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="images">
+                @csrf
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
+                        <p class="text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
+                    </div>
+                    <x-save-status />
+                </div>
 
                 <div class="space-y-6">
 
@@ -187,10 +193,10 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพที่ {{ $i }}</label>
+                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="hero_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-hero-{{ $i }}')">
-                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             @endforeach
                         </div>
@@ -203,10 +209,10 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพส่วน About ที่ {{ $i }}</label>
+                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="about_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-about-{{ $i }}')">
-                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             @endforeach
                         </div>
@@ -218,39 +224,69 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">พื้นหลังส่วนสนาม (Courts Background)</label>
+                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="courts_bg_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-courts')">
-                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพส่วน Community</label>
+                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="community_img_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-community')">
-                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-20 w-full object-cover rounded-lg border border-gray-200">
                             </div>
                         </div>
                     </div>
 
                 </div>
-            </div>
 
-            {{-- Action Buttons --}}
-            <div class="flex justify-end gap-3 pt-2">
-                <a href="{{ route('admin.dashboard') }}"
-                   class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-                    ยกเลิก
-                </a>
-                <button type="submit"
-                        class="px-8 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition shadow-sm font-semibold text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    บันทึกการเปลี่ยนแปลง
-                </button>
-            </div>
-        </form>
+                <div class="flex justify-end gap-3 pt-4">
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                </div>
+            </form>
+
+            {{-- ─── Section 4: รูปภาพประจำสนาม (Court Booking) ─── --}}
+            <form action="{{ route('admin.courts.images.update') }}" method="POST"
+                  enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form"
+                  data-section="court-images">
+                @csrf
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">4. แก้ไขรูปภาพประจำสนาม</h3>
+                        <p class="text-xs text-gray-400">รูปแบนเนอร์ที่จะแสดงในหน้า Court Booking ของแต่ละสนาม</p>
+                    </div>
+                    <x-save-status />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @foreach($courts as $court)
+                    @php($courtImg = $settings['court_img_' . $court->id] ?? null)
+                    @php($courtImgSrc = $courtImg ?: 'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <p class="font-semibold text-sm text-gray-800 mb-3">{{ $court->name }}</p>
+
+                        <img id="preview-court-{{ $court->id }}"
+                             src="{{ $courtImgSrc }}"
+                             class="h-32 w-full object-cover rounded-lg border border-gray-200 mb-3">
+
+                        <input type="file" name="court_images[{{ $court->id }}]" accept="image/*"
+                               class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg
+                                      file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600
+                                      hover:file:bg-orange-100 cursor-pointer"
+                               onchange="previewImg(this, 'preview-court-{{ $court->id }}')">
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                </div>
+            </form>
+
+        </div>
 
     </div>
 </div>
@@ -270,13 +306,125 @@ function previewImg(input, targetId = 'img-preview') {
         reader.readAsDataURL(input.files[0]);
     }
 }
-// Auto-dismiss flash after 5s
-setTimeout(() => {
-    const el = document.getElementById('flash-success');
-    if (el) el.style.transition = 'opacity 0.5s';
-    if (el) el.style.opacity = '0';
-    setTimeout(() => el && el.remove(), 500);
-}, 5000);
+
+function serializeSettingForm(form) {
+    return Array.from(form.elements)
+        .filter(element => element.name && !['submit', 'reset', 'button'].includes(element.type))
+        .map(element => {
+            if (element.type === 'file') {
+                return `${element.name}:${element.files && element.files.length ? '1' : '0'}`;
+            }
+
+            if (element.type === 'checkbox' || element.type === 'radio') {
+                return `${element.name}:${element.checked ? '1' : '0'}`;
+            }
+
+            return `${element.name}:${element.value}`;
+        })
+        .join('|');
+}
+
+function clearFormFileInputs(form) {
+    form.querySelectorAll('input[type="file"]').forEach(input => {
+        input.value = '';
+    });
+}
+
+function showSaveErrors(errors) {
+    const errorBox = document.getElementById('save-errors');
+    const errorList = document.getElementById('save-errors-list');
+
+    if (!errorBox || !errorList) {
+        return;
+    }
+
+    errorList.innerHTML = '';
+    Object.values(errors || {}).flat().forEach(message => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        errorList.appendChild(item);
+    });
+
+    errorBox.classList.remove('hidden');
+}
+
+function hideSaveErrors() {
+    const errorBox = document.getElementById('save-errors');
+    const errorList = document.getElementById('save-errors-list');
+
+    if (errorBox) {
+        errorBox.classList.add('hidden');
+    }
+
+    if (errorList) {
+        errorList.innerHTML = '';
+    }
+}
+
+function setSaveStatus(statusEl, isDirty) {
+    const savedLabel = statusEl.dataset.savedLabel;
+    const dirtyLabel = statusEl.dataset.dirtyLabel;
+    const savedClass = statusEl.dataset.savedClass;
+    const dirtyClass = statusEl.dataset.dirtyClass;
+
+    statusEl.textContent = isDirty ? dirtyLabel : savedLabel;
+    statusEl.className = `js-save-status inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${isDirty ? dirtyClass : savedClass}`;
+}
+
+document.querySelectorAll('.js-setting-form').forEach(form => {
+    const statusEl = form.querySelector('.js-save-status');
+    let initialState = serializeSettingForm(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    const refreshStatus = () => setSaveStatus(statusEl, serializeSettingForm(form) !== initialState);
+    const setSaving = isSaving => {
+        if (submitButton) {
+            submitButton.disabled = isSaving;
+            submitButton.classList.toggle('opacity-70', isSaving);
+            submitButton.classList.toggle('cursor-not-allowed', isSaving);
+        }
+    };
+
+    form.addEventListener('input', refreshStatus);
+    form.addEventListener('change', refreshStatus);
+    form.addEventListener('reset', () => {
+        requestAnimationFrame(refreshStatus);
+    });
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        hideSaveErrors();
+        setSaving(true);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                showSaveErrors(payload.errors || { general: [payload.message || 'บันทึกไม่สำเร็จ'] });
+                return;
+            }
+
+            clearFormFileInputs(form);
+            initialState = serializeSettingForm(form);
+            refreshStatus();
+        } catch (error) {
+            showSaveErrors({ general: ['ไม่สามารถบันทึกข้อมูลได้ กรุณาลองอีกครั้ง'] });
+        } finally {
+            setSaving(false);
+        }
+    });
+
+    refreshStatus();
+});
 </script>
 @endpush
 @endsection
