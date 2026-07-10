@@ -158,7 +158,7 @@
                     @php($promoImg = $settings['promo_image'] ?? null)
                     <div class="pt-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            อัปโหลดแบนเนอร์โปรโมชั่น (รูปแรกในแถว)
+                            อัปโหลดแบนเนอร์โปรโมชั่น
                         </label>
                         <div class="flex items-start gap-4">
                             <div class="flex-1">
@@ -176,7 +176,7 @@
                             <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
                                 <img id="img-preview"
                                      src="{{ $promoImg ?? '' }}"
-                                     class="h-20 w-32 rounded-lg object-cover border-2 border-gray-200 shadow-sm">
+                                     class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
                                 <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             </div>
                         </div>
@@ -195,7 +195,7 @@
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
-                        <p class="text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, About, พื้นหลัง, Community)</p>
+                        <p class="text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, พื้นหลัง, Community)</p>
                     </div>
                     <x-save-status />
                 </div>
