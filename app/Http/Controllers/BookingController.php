@@ -256,7 +256,7 @@ class BookingController extends Controller
     }
 
     /**
-     * Booking history (current/past)
+     * Booking history (current/past)t
      */
     public function history(Request $request)
     {
