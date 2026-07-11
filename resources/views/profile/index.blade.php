@@ -21,7 +21,7 @@
     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4">
         <div>
             <h1 class="text-[26px] font-semibold text-gray-800 tracking-tight">บัญชีของฉัน</h1>
-            <p class="text-gray-500 text-[14px] mt-0.5">ข้อมูลสมาชิก BCBS Basketball Court Booking</p>
+            <p class="text-gray-500 text-[14px] mt-0.5">ข้อมูลสมาชิก Thata Homecourt</p>
         </div>
         <a href="{{ route('profile.edit') }}"
            class="inline-flex items-center gap-2 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-medium px-4 py-2 rounded-lg transition text-sm">
