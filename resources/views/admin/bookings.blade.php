@@ -71,9 +71,11 @@
                         {{-- ===================== Bulk Action Toolbar ===================== --}}
                         @php $hasPendingInList = $bookings->contains('status', 'pending'); @endphp
                         @if($hasPendingInList)
-                            <div class="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-2 mb-3">
+                            <div
+                                class="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-2 mb-3">
                                 <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
-                                    <input type="checkbox" id="selectAllPending" class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400">
+                                    <input type="checkbox" id="selectAllPending"
+                                        class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400">
                                     เลือกทั้งหมด
                                     <span id="selectedCount" class="text-gray-400">(0)</span>
                                 </label>
@@ -94,18 +96,16 @@
                             @forelse($bookings as $b)
                                 @php $sInfo = $statusMap[$b->status] ?? $statusMap['pending']; @endphp
                                 <a href="{{ request()->fullUrlWithQuery(['selected_booking_id' => $b->id]) }}"
-                                    class="block bg-white border {{ $selectedBooking?->id === $b->id ? 'border-orange-500 shadow-md' : 'border-gray-200' }} rounded-xl p-4 hover:border-orange-300 transition relative">
+                                    class="block bg-white border {{ $selectedBooking?->id === $b->id ? 'border-orange-500 shadow-md' : 'border-gray-200' }} rounded-xl p-4 hover:border-orange-300 transition">
 
-                                    @if($b->status === 'pending')
-                                        {{-- checkbox สำหรับเลือกทำรายการแบบกลุ่ม --}}
-                                        <input type="checkbox" class="booking-checkbox absolute top-3 left-3 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400 z-10"
-                                            value="{{ $b->id }}"
-                                            onclick="event.stopPropagation()"
-                                            onchange="updateBulkToolbar()">
-                                    @endif
-
-                                    <div class="flex justify-between items-start mb-2 {{ $b->status === 'pending' ? 'pl-6' : '' }}">
-                                        <div class="flex gap-2">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div class="flex items-center gap-2">
+                                            @if($b->status === 'pending')
+                                                <input type="checkbox"
+                                                    class="booking-checkbox w-4 h-4 rounded-md border-gray-300 text-orange-500 focus:ring-orange-400 focus:ring-2 cursor-pointer"
+                                                    value="{{ $b->id }}" onclick="event.stopPropagation()"
+                                                    onchange="updateBulkToolbar()">
+                                            @endif
                                             <span
                                                 class="text-xs px-2 py-0.5 border border-gray-300 rounded">{{ $b->court->name }}</span>
                                             <span
