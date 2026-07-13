@@ -66,7 +66,14 @@
         states: {!! json_encode($chart->states()['states']) !!}
     }
 
-    var chart = new ApexCharts(document.querySelector("#{!! $chart->id() !!}"), options);
-    chart.render();
+    var chartElement = document.querySelector("#{!! $chart->id() !!}");
+    var chart = new ApexCharts(chartElement, options);
+    chart.render().then(function () {
+        if (!options.legend.show) {
+            chartElement.querySelectorAll('.apexcharts-legend').forEach(function (legend) {
+                legend.remove();
+            });
+        }
+    });
 
 </script>

@@ -311,42 +311,17 @@
         </div>
 
         <!-- ============ MEMBERSHIP + VISIT STATS (team lead request) ============ -->
-        @php
-            $statCards = [
-                ['title' => 'สถิติผู้สมัครสมาชิก (Users)', 'week' => $memberStats['week'], 'month' => $memberStats['month']],
-                ['title' => 'สถิติผู้เข้าชมเว็บไซต์ (Visits)', 'week' => $visitStats['week'], 'month' => $visitStats['month']],
-            ];
-        @endphp
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            @foreach($statCards as $sc)
-                @php $scMax = max($sc['week'], $sc['month'], 1); @endphp
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                    <h3 class="font-bold text-gray-800">{{ $sc['title'] }}</h3>
-                    <p class="text-xs text-gray-400 mb-6">เปรียบเทียบสัปดาห์นี้ กับ ยอดรวมเดือนนี้</p>
-
-                    <div class="flex items-end justify-around gap-6 h-48">
-                        <div class="flex justify-center items-end h-full w-24">
-                            <div class="w-full rounded-lg transition-all duration-700"
-                                 style="height: {{ max($sc['week'] / $scMax * 100, 3) }}%; background: #60a5fa;"></div>
-                        </div>
-                        <div class="flex justify-center items-end h-full w-24">
-                            <div class="w-full rounded-lg transition-all duration-700"
-                                 style="height: {{ max($sc['month'] / $scMax * 100, 3) }}%; background: #4ade80;"></div>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 mt-1 pt-3 flex justify-around text-center">
-                        <div class="w-24">
-                            <div class="text-sm text-gray-500">สัปดาห์นี้</div>
-                            <div class="text-xl font-bold text-gray-800">{{ number_format($sc['week']) }}</div>
-                        </div>
-                        <div class="w-24">
-                            <div class="text-sm text-gray-500">เดือนนี้</div>
-                            <div class="text-xl font-bold text-gray-800">{{ number_format($sc['month']) }}</div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-800">สถิติผู้สมัครสมาชิก (Users)</h3>
+                <p class="text-xs text-gray-400 mb-2">เปรียบเทียบสัปดาห์นี้ กับ ยอดรวมเดือนนี้</p>
+                {!! $memberChart->container() !!}
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-800">สถิติผู้เข้าชมเว็บไซต์ (Visits)</h3>
+                <p class="text-xs text-gray-400 mb-2">เปรียบเทียบสัปดาห์นี้ กับ ยอดรวมเดือนนี้</p>
+                {!! $visitChart->container() !!}
+            </div>
         </div>
 
     </div>
@@ -401,5 +376,41 @@
         {!! $cc['chart']->script() !!}
     @endforeach
     {!! $occChart->script() !!}
+
+    {{-- member/visit charts: manual render for distributed per-bar colours,
+         same reason as monthlyChart above (Larapex drops plotOptions.bar). --}}
+    @foreach([$memberChart, $visitChart] as $statChart)
+        <script>
+            (function () {
+                var options = {
+                    chart: {
+                        id: '{!! $statChart->id() !!}',
+                        type: '{!! $statChart->type() !!}',
+                        height: {!! $statChart->height() !!},
+                        width: '{!! $statChart->width() !!}',
+                        toolbar: {!! $statChart->toolbar() !!},
+                        zoom: {!! $statChart->zoom() !!},
+                        fontFamily: '{!! $statChart->fontFamily() !!}',
+                        foreColor: '{!! $statChart->foreColor() !!}',
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            distributed: true,
+                            borderRadius: 6,
+                            columnWidth: '45%'
+                        }
+                    },
+                    colors: {!! $statChart->colors() !!},
+                    series: {!! $statChart->dataset() !!},
+                    dataLabels: {!! $statChart->dataLabels() !!},
+                    xaxis: {!! $statChart->xAxis() !!},
+                    grid: {!! $statChart->grid() !!},
+                    legend: { show: false }
+                };
+                new ApexCharts(document.querySelector("#{!! $statChart->id() !!}"), options).render();
+            })();
+        </script>
+    @endforeach
 @endpush
 @endsection
