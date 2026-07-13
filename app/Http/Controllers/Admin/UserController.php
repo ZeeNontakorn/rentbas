@@ -15,11 +15,12 @@ class UserController extends Controller
         $search = $request->query('search');
 
         // ค้นหาผู้ใช้จากชื่อ (ถ้ามีการค้นหา) และดึงเฉพาะ role 'user'
-        $users = User::where('role', 'user')
+         $users = User::whereIn('role', ['admin','user'])
+            ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(15)
             ->withQueryString();
 
