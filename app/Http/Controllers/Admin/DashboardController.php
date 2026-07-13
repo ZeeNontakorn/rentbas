@@ -167,11 +167,11 @@ class DashboardController extends Controller
             $todayStr,
         ])->whereIn('status', ['cancelled', 'rejected'])->get(['status', 'reject_reason']);
 
-        $cancel = ['Customer Cancel' => 0, 'Maintenance' => 0];
+        $cancel = ['Customer Cancel' => 0, 'Admin Cancel' => 0];
         foreach ($cancelRows as $r) {
             $reason = mb_strtolower($r->reject_reason ?? '');
             if (str_contains($reason, 'ซ่อม') || str_contains($reason, 'mainten') || str_contains($reason, 'ปิด')) {
-                $cancel['Maintenance']++;
+                $cancel['Admin Cancel']++;
             } else {
                 // status 'cancelled' or an uncategorised admin rejection
                 $cancel['Customer Cancel']++;
