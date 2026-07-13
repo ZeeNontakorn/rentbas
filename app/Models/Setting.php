@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Storage;
 
 class Setting extends Model
 {
@@ -43,7 +44,8 @@ class Setting extends Model
         $val = $setting ? $setting->value : $default;
 
         if (is_string($val) && (str_starts_with($val, 'storage/') || str_starts_with($val, '/storage/'))) {
-            return asset(ltrim($val, '/'));
+            $storagePath = preg_replace('/^\/?storage\//', '', $val);
+            return Storage::disk('public')->url($storagePath);
         }
 
         return $val;
@@ -67,7 +69,8 @@ class Setting extends Model
             $val = $stored[$key] ?? ($defaults[$key] ?? null);
 
             if (is_string($val) && (str_starts_with($val, 'storage/') || str_starts_with($val, '/storage/'))) {
-                $val = asset(ltrim($val, '/'));
+                $storagePath = preg_replace('/^\/?storage\//', '', $val);
+                $val = Storage::disk('public')->url($storagePath);
             }
 
             $resolved[$key] = $val;
