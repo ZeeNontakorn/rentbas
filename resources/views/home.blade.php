@@ -1161,14 +1161,28 @@ async function renderSch(ds) {
         return;
     }
 
+    const now = new Date();
+    const todayDs = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    const currentHour = now.getHours(); // ดึงชั่วโมงปัจจุบัน (เช่น 10)
+
     tb.innerHTML = '';
     HOURS.forEach(h => {
-        const startTime = h + ':00'; // e.g. '08:00:00'
-        const hEnd = String(parseInt(h) + 1).padStart(2,'0') + ':00'; // '07:00' → '08:00'
+        const startTime = h + ':00'; // e.g. '10:00:00'
+        const hEnd = String(parseInt(h) + 1).padStart(2,'0') + ':00'; // '10:00' → '11:00'
         const tr = document.createElement('tr');
         let html = '<td><span class="hour-chip">' + h + ' - ' + hEnd + '</span></td>';
+        
+        // เช็กว่ารอบนี้เป็นรอบที่ผ่านมาแล้วหรือยัง (สำหรับเคสที่เป็นวันนี้)
+        const isTimePast = (ds === todayDs) && (currentHour >= parseInt(h));
+
         COURTS.forEach(c => {
-            const status = (slots[c.id] && slots[c.id][startTime]) || 'available';
+            let status = (slots[c.id] && slots[c.id][startTime]) || 'available';
+
+            // ถ้าเวลาปัจจุบันเลยเวลาเริ่มรอบมาแล้ว ให้บังคับเป็นสถานะ 'past' ทันที
+            if (isTimePast) {
+                status = 'past';
+            }
+
             if (status === 'booked') {
                 html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>จอง</span></td>';
             } else if (status === 'past') {
