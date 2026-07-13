@@ -63,7 +63,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             หัวข้อหลัก (About Title)
                         </label>
-                        <input type="text" name="about_title"
+                        <input type="text" id="" name="about_title"
                                class="w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 outline-none transition text-sm"
                                value="{{ old('about_title', $settings['about_title'] ?? '') }}"
                                placeholder="เช่น สนามที่ได้มาตรฐาน ระบบการจองที่ทันสมัย">
@@ -73,7 +73,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             รายละเอียด (About Description)
                         </label>
-                        <textarea name="about_desc" rows="3"
+                        <textarea name="about_desc" id="" rows="3"
                                   class="w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 outline-none transition text-sm"
                                   placeholder="คำอธิบายส่วน About Court">{{ old('about_desc', $settings['about_desc'] ?? '') }}</textarea>
                     </div>
@@ -85,7 +85,7 @@
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ About {{ $i }}</label>
                                 <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" name="about_img_{{ $i }}_file" accept="image/*"
+                                <input type="file" id="" name="about_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-about-{{ $i }}')">
                             </div>
@@ -117,7 +117,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 ข้อความด้านบนโปรโมชั่น (Subtitle)
                             </label>
-                            <input type="text" name="promo_subtitle"
+                            <input type="text" id="" name="promo_subtitle"
                                    class="w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 outline-none transition text-sm"
                                    value="{{ old('promo_subtitle', $settings['promo_subtitle'] ?? '') }}"
                                    placeholder="เช่น อัปเดตโปรโมชั่นสุดพิเศษ">
@@ -126,7 +126,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 หัวข้อโปรโมชั่น (Title)
                             </label>
-                            <input type="text" name="promo_title"
+                            <input type="text" id="" name="promo_title"
                                    class="w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 outline-none transition text-sm"
                                    value="{{ old('promo_title', $settings['promo_title'] ?? '') }}"
                                    placeholder="เช่น Preview Promotion">
@@ -138,7 +138,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 ชื่อบนการ์ดโปรโมชั่น (Card Title)
                             </label>
-                            <input type="text" name="promo_card_title"
+                            <input type="text" id="" name="promo_card_title"
                                    class="w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 outline-none transition text-sm"
                                    value="{{ old('promo_card_title', $settings['promo_card_title'] ?? '') }}"
                                    placeholder="เช่น BASKETBALL">
@@ -147,7 +147,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 คำอธิบายบนการ์ดโปรโมชั่น (Card Subtitle)
                             </label>
-                            <input type="text" name="promo_card_sub"
+                            <input type="text" id="" name="promo_card_sub"
                                    class="w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 outline-none transition text-sm"
                                    value="{{ old('promo_card_sub', $settings['promo_card_sub'] ?? '') }}"
                                    placeholder="เช่น โปรโมชั่นพิเศษ">
@@ -161,22 +161,17 @@
                             แบนเนอร์โปรโมชั่น
                         </label>
                             {{-- Current image preview --}}
-                            <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
-                                <img id="img-preview"
-                                     src="{{ $promoImg ?? '' }}"
-                                     class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
-                                <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
-                                <div class="flex items-start gap-4">
-                            <div class="flex-1">
-                                <input type="file" name="promo_image_file" accept="image/*"
-                                       class="block w-full text-sm text-gray-500
-                                              file:mr-4 file:py-2 file:px-4
-                                              file:rounded-lg file:border-0
-                                              file:text-sm file:font-semibold
-                                              file:bg-orange-50 file:text-orange-600
-                                              hover:file:bg-orange-100 cursor-pointer"
-                                       onchange="previewImg(this)">
-                            </div>
+                        <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
+                            <img id="img-preview"
+                                src="{{ $promoImg ?? '' }}"
+                                class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
+                            <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
+                            <div class="flex items-start gap-4">
+                                <div class="flex-1">
+                                    <input type="file" id="" name="promo_image_file" accept="image/*"
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
+                                        onchange="previewImg(this)">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -224,14 +219,14 @@
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">พื้นหลังสนาม</label>
                                 <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" name="courts_bg_file" accept="image/*"
+                                <input type="file" id="" name="courts_bg_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-courts')">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Community</label>
                                 <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" name="community_img_file" accept="image/*"
+                                <input type="file" id="" name="community_img_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-community')">
                             </div>
@@ -270,7 +265,7 @@
                              src="{{ $courtImgSrc }}"
                              class="h-32 w-full object-cover rounded-lg border border-gray-200 mb-3">
 
-                        <input type="file" name="court_images[{{ $court->id }}]" accept="image/*"
+                        <input type="file" id="" name="court_images[{{ $court->id }}]" accept="image/*"
                                class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg
                                       file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600
                                       hover:file:bg-orange-100 cursor-pointer"
