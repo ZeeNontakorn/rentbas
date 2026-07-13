@@ -63,29 +63,24 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
-                        @if($unreadCount)
-                        {{-- แสดงจำนวนแจ้งเตือนที่ยังไม่ได้อ่าน --}}
-                            <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
-                                {{ $unreadCount > 99 ? '99+' : $unreadCount }}
-                            </span>
-                        @endif
+                        <span id="notifBadge" class="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1 rounded-full {{ $unreadCount ? '' : 'hidden' }}">
+                            {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                        </span>
                     </button>
 
                     {{-- Dropdown สำหรับแสดงรายการแจ้งเตือน --}}
                     <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto max-h-96 z-50">
-                        @if($notifications->isNotEmpty())
-                            <div class="flex justify-between items-center px-3 py-2 border-b border-gray-700 sticky top-0 bg-gray-800 z-10">
-                                <span class="text-xs text-gray-400 font-medium">แจ้งเตือนล่าสุด</span>
-                                <form method="POST" action="{{ route('notifications.readAll') }}">
-                                    @csrf
-                                    <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านทั้งหมด</button>
-                                </form>
-                            </div>
-                        @endif
-                        @if($notifications->isEmpty())
-                        {{-- ถ้าไม่มีแจ้งเตือน --}}
-                            <div class="p-4 text-center text-gray-400">ไม่มีการแจ้งเตือนใหม่</div>
-                        @else
+                        <div id="notifDropdownHeader" class="flex justify-between items-center px-3 py-2 border-b border-gray-700 sticky top-0 bg-gray-800 z-10 {{ $notifications->isEmpty() ? 'hidden' : '' }}">
+                            <span class="text-xs text-gray-400 font-medium">แจ้งเตือนล่าสุด</span>
+                            <form class="mark-all-read-form" method="POST" action="{{ route('notifications.readAll') }}">
+                                @csrf
+                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านทั้งหมด</button>
+                            </form>
+                        </div>
+
+                        <div id="notifEmptyMsg" class="p-4 text-center text-gray-400 {{ $notifications->isEmpty() ? '' : 'hidden' }}">ไม่มีการแจ้งเตือนใหม่</div>
+
+                        <div id="notifItemsWrap">
                 @php
                     // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน -> จัดการการจอง
                     $defaultNotifTarget = auth()->user()->role === 'admin' ? route('admin.bookings') : route('history');
@@ -111,7 +106,8 @@
                                         $accentIcon = ['bg' => 'bg-red-500/15', 'color' => 'text-red-400', 'path' => 'M6 18L18 6M6 6l12 12'];
                                     }
                                 @endphp
-                                <div class="p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start cursor-pointer"
+                                <div class="notif-item p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start cursor-pointer"
+                                     data-notif-id="{{ $n->id }}"
                                      onclick="window.location.href='{{ $notifTarget }}'">
                                     <div class="flex-1 pr-2">
                                         <div class="flex items-center gap-2">
@@ -140,13 +136,13 @@
                                         <div class="text-[11px] text-gray-400 mt-2">{{ $n->created_at->format('d M Y H:i') }}</div>
                                     </div>
                                     {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) — กันไม่ให้คลิกทะลุไปเปิดหน้าปลายทางด้วย --}}
-                                    <form method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
+                                    <form class="mark-read-form" method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
                                         @csrf
                                         <button type="submit" class="text-[11px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition whitespace-nowrap">อ่านแล้ว</button>
                                     </form>
                                 </div>
                             @endforeach
-                        @endif
+                        </div>
                     </div>
                 </div>
 
@@ -258,9 +254,7 @@
                     </svg>
                     การแจ้งเตือน
                 </span>
-                @if($mUnreadCount)
-                    <span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ $mUnreadCount > 99 ? '99+' : $mUnreadCount }}</span>
-                @endif
+                <span id="notifBadgeMobile" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full {{ $mUnreadCount ? '' : 'hidden' }}">{{ $mUnreadCount > 99 ? '99+' : $mUnreadCount }}</span>
             </button>
             {{-- ใช้ dropdown เดียวกับ desktop โดยอ้างอิงผ่าน id เดิม --}}
             <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto max-h-80"></div>
@@ -363,5 +357,108 @@
             }
             notifDropdownMobile?.classList.toggle('hidden');
         });
+
+       // ===================== อ่านแจ้งเตือนแบบไม่ reload หน้า =====================
+
+let readCount = 0; // นับจำนวนครั้งที่กด "อ่านแล้ว" สำเร็จ
+
+// ลดตัวเลข badge ทั้ง desktop และ mobile ทีละ 1 (หรือรับค่าที่ต้องการหักลบ)
+function decreaseBadge(amount) {
+    [document.getElementById('notifBadge'), document.getElementById('notifBadgeMobile')]
+        .forEach(function (badge) {
+            if (!badge) return;
+            let current = parseInt(badge.textContent.replace('+', ''), 10) || 0;
+            let next = Math.max(current - amount, 0);
+            if (next <= 0) {
+                badge.classList.add('hidden');
+                badge.textContent = '0';
+            } else {
+                badge.textContent = next > 99 ? '99+' : next;
+            }
+        });
+}
+
+// ล้าง badge ทั้งหมด (ใช้ตอนกด "อ่านทั้งหมด")
+function clearBadge() {
+    [document.getElementById('notifBadge'), document.getElementById('notifBadgeMobile')]
+        .forEach(function (badge) {
+            if (!badge) return;
+            badge.classList.add('hidden');
+            badge.textContent = '0';
+        });
+}
+
+// เมื่อรายการแจ้งเตือนถูกลบจนหมด ให้โชว์ข้อความว่าง + ซ่อน header "อ่านทั้งหมด"
+function checkEmptyState() {
+    const remaining = document.querySelectorAll('#notifItemsWrap .notif-item').length;
+    if (remaining === 0) {
+        document.getElementById('notifEmptyMsg')?.classList.remove('hidden');
+        document.getElementById('notifDropdownHeader')?.classList.add('hidden');
+    }
+}
+
+document.addEventListener('submit', function (e) {
+    const form = e.target;
+
+    // --- กดอ่านแล้ว ทีละรายการ ---
+    if (form.classList.contains('mark-read-form')) {
+        e.preventDefault();
+
+        const url = form.getAttribute('action');
+        const token = form.querySelector('input[name="_token"]').value;
+        const item = form.closest('.notif-item');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+        }).then(function (res) {
+            if (!res.ok) throw new Error('failed');
+
+            const notifId = item?.getAttribute('data-notif-id');
+            document.querySelectorAll('.notif-item[data-notif-id="' + notifId + '"]')
+                .forEach(function (el) { el.remove(); });
+
+            decreaseBadge(1);
+            checkEmptyState();
+
+            // นับจำนวนครั้งที่กดอ่านสำเร็จ ถ้าครบ 10 ให้ reload หน้า
+            readCount++;
+            if (readCount >= 10) {
+                window.location.reload();
+            }
+        }).catch(function (err) {
+            console.error(err);
+        });
+
+        return;
+    }
+
+    // --- กดอ่านทั้งหมด ---
+    if (form.classList.contains('mark-all-read-form')) {
+        e.preventDefault();
+
+        const url = form.getAttribute('action');
+        const token = form.querySelector('input[name="_token"]').value;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+        }).then(function (res) {
+            if (!res.ok) throw new Error('failed');
+            // อ่านทั้งหมดแปลว่าครบแล้วแน่นอน ให้ reload หน้าเลย
+            window.location.reload();
+        }).catch(function (err) {
+            console.error(err);
+        });
+    }
+});
     </script>
 </nav>
