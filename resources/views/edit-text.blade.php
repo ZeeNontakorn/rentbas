@@ -396,13 +396,13 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
         }
 
         submitButton.innerHTML = 'บันทึกสำเร็จ';
-        submitButton.classList.remove('bg-orange-500', 'hover:bg-orange-600');
-        submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+        submitButton.style.backgroundColor = '#16a34a';
+        submitButton.onmouseenter = () => submitButton.style.backgroundColor = '#15803d';
 
         submitSuccessTimeoutId = setTimeout(() => {
             submitButton.innerHTML = defaultSubmitButtonHtml;
-            submitButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-            submitButton.classList.add('bg-orange-500', 'hover:bg-orange-600');
+            submitButton.style.backgroundColor = '';
+            submitButton.onmouseenter = null;
         }, 1800);
     };
 
