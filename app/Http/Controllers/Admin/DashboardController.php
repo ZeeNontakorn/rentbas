@@ -167,11 +167,11 @@ class DashboardController extends Controller
             $todayStr,
         ])->whereIn('status', ['cancelled', 'rejected'])->get(['status', 'reject_reason']);
 
-        $cancel = ['Customer Cancel' => 0, 'Maintenance' => 0];
+        $cancel = ['Customer Cancel' => 0, 'Admin Cancel' => 0];
         foreach ($cancelRows as $r) {
             $reason = mb_strtolower($r->reject_reason ?? '');
             if (str_contains($reason, 'ซ่อม') || str_contains($reason, 'mainten') || str_contains($reason, 'ปิด')) {
-                $cancel['Maintenance']++;
+                $cancel['Admin Cancel']++;
             } else {
                 // status 'cancelled' or an uncategorised admin rejection
                 $cancel['Customer Cancel']++;
@@ -471,6 +471,7 @@ class DashboardController extends Controller
                     ->setFontFamily($font)
                     ->setColors([$ring])
                     ->setHeight(200)
+                    ->setShowLegend(false)
                     ->setLabels([$c['name']])
                     ->addData([$c['pct']]),
             ];
@@ -489,6 +490,30 @@ class DashboardController extends Controller
                 $row['name']
             );
         }
+
+        // Members & Visits — column chart, this week (blue) vs this month (green).
+        // Distributed per-bar colours are applied in the blade (same technique
+        // as monthlyChart) because Larapex's template drops plotOptions.bar.
+        $statLabels = ['สัปดาห์นี้', 'เดือนนี้'];
+        $statColors = ['#60a5fa', '#4ade80'];
+        $memberChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors($statColors)
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'ผู้สมัครสมาชิก', 'data' => [$memberStats['week'], $memberStats['month']]],
+            ])
+            ->setXAxis($statLabels);
+        $visitChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors($statColors)
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'ผู้เข้าชม', 'data' => [$visitStats['week'], $visitStats['month']]],
+            ])
+            ->setXAxis($statLabels);
 
         return view('admin.dashboard', compact(
             'kpis',
@@ -515,7 +540,9 @@ class DashboardController extends Controller
             'monthlyChart',
             'peakChart',
             'courtCharts',
-            'occChart'
+            'occChart',
+            'memberChart',
+            'visitChart'
         ));
     }
 

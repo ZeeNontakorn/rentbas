@@ -63,13 +63,17 @@
                         </div>
                     </div>
 
-                    <button type="submit"
-                        class="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium rounded-xl text-sm transition-all duration-200 shadow-md hover:shadow-orange-200 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="submit" id="submitBtn"
+                        class="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-medium rounded-xl text-sm transition-all duration-200 shadow-md hover:shadow-orange-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                        <svg id="submitIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
-                        ส่งรหัส OTP ไปยังอีเมล
+                        <svg id="submitSpinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span id="submitText">ส่งรหัส OTP ไปยังอีเมล</span>
                     </button>
                 </form>
 
@@ -101,4 +105,32 @@
 
     </div>
 </div>
+
+<script>
+    document.querySelector('form[action="{{ route('password.email') }}"]').addEventListener('submit', function (e) {
+        const emailInput = document.getElementById('email');
+        const btn = document.getElementById('submitBtn');
+
+        // ถ้าช่องอีเมลว่างเปล่า ปล่อยให้ browser validate ตามปกติ (required) ไม่ต้อง disable ปุ่ม
+        if (!emailInput.value.trim()) {
+            return;
+        }
+
+        // กันกด submit ซ้ำ (spam) ระหว่างรอโหลด
+        btn.disabled = true;
+        document.getElementById('submitIcon').classList.add('hidden');
+        document.getElementById('submitSpinner').classList.remove('hidden');
+        document.getElementById('submitText').innerText = 'กำลังส่งรหัส OTP...';
+    });
+
+    // เผื่อ user กด back มาที่หน้านี้ (bfcache) ปุ่มจะได้ไม่ค้าง disabled จากรอบก่อน
+    window.addEventListener('pageshow', function (event) {
+        const btn = document.getElementById('submitBtn');
+        if (!btn) return;
+        btn.disabled = false;
+        document.getElementById('submitIcon').classList.remove('hidden');
+        document.getElementById('submitSpinner').classList.add('hidden');
+        document.getElementById('submitText').innerText = 'ส่งรหัส OTP ไปยังอีเมล';
+    });
+</script>
 @endsection

@@ -4,7 +4,7 @@
         <!-- Logo / ชื่อระบบ -->
         <a href="{{ route('home') }}" class="flex items-center font-bold text-xl md:text-2xl hover:text-gray-300 transition">
             <!-- System Name -->
-            <span class="font-bold text-lg md:text-2xl leading-tight">Court Booking System</span>
+            <span class="font-bold text-lg md:text-2xl leading-tight">THATA HOMECOURT</span>
         </a>
 
         <!-- ปุ่มเปิด/ปิดเมนู สำหรับจอมือถือ -->

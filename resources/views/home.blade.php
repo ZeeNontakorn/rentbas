@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'BCBS | Premium Basketball Court Booking')
+@section('title', 'THATA Homecourt - THATA SPORT HQ & Basketball Chonburi ')
 
 @section('content')
 @php
@@ -728,8 +728,8 @@ html { scroll-behavior: smooth; }
 <section id="hero-section" class="hero" style="background-image:url('{{ $heroSlides[0] ?? ($site['hero_img_1'] ?? '') }}')">
     <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
-        <p class="hero-eyebrow">Bangsaen Basketball Club · BCBS</p>
-        <h1 class="hero-title">BCBS<br><span>Thata</span></h1>
+        <p class="hero-eyebrow">THATA SPORT HQ & Basketball Chonburi</p>
+        <h1 class="hero-title">THATA<br><span>Homecourt</span></h1>
         <p class="hero-sub">ระบบจองสนามบาสเกตบอลมาตรฐานสากล<br>พร้อมให้บริการ 7 วัน 365 วัน</p>
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="400">
             @guest
@@ -751,12 +751,12 @@ html { scroll-behavior: smooth; }
 {{-- ═══ TICKER ═══ --}}
 <div class="ticker">
     <div class="ticker-track">
-        <span>BCBS BASKETBALL ARENA</span><span>·</span>
+        <span>THATA HOMECOURT</span><span>·</span>
         <span>PREMIUM COURTS AVAILABLE</span><span>·</span>
         <span>BOOK YOUR SLOT TODAY</span><span>·</span>
         <span>PROFESSIONAL STANDARD</span><span>·</span>
         <span>BANGSAEN BASKETBALL CLUB</span><span>·</span>
-        <span>BCBS BASKETBALL ARENA</span><span>·</span>
+        <span>THATA HOMECOURT</span><span>·</span>
         <span>PREMIUM COURTS AVAILABLE</span><span>·</span>
         <span>BOOK YOUR SLOT TODAY</span><span>·</span>
         <span>PROFESSIONAL STANDARD</span><span>·</span>
@@ -962,15 +962,15 @@ html { scroll-behavior: smooth; }
 <footer class="footer" data-aos="fade-in">
     <div class="footer-grid">
         <div>
-            <p class="footer-brand">BCBS Arena</p>
-            <p class="footer-brand-sub">Basketball Court Booking System · บางแสน</p>
+            <p class="footer-brand">THATA Homecourt</p>
+            <p class="footer-brand-sub"> - THATA SPORT HQ & Basketball Chonburi</p>
             <div class="footer-addr">
                 <p class="footer-addr-title">สถานที่</p>
                 <p>
-                    บางแสน (Main Court)<br>
-                    สนามบาส บางแสนคลับ<br>
-                    169 ถ.ลงหาดบางแสน ต.แสนสุข<br>
-                    อ.เมืองชลบุรี จ.ชลบุรี 20130
+                    บริษัท ทาท่า สปอร์ต จำกัด (สำนักงานใหญ่)<br>
+                    17/87 ซอยนพรัตน์ ถ.พระยาสัจจา<br>
+                    ต.บางปลาสร้อย อ.เมืองชลบุรี<br>
+                    จ.ชลบุรี 20000
                 </p>
             </div>
             <div style="margin-top:20px;">
@@ -1008,10 +1008,9 @@ html { scroll-behavior: smooth; }
         </div>
     </div>
     <div class="footer-bottom">
-        <p class="footer-copy">© 2026 BCBS Basketball Court Booking System. All Rights Reserved.</p>
+        <p class="footer-copy">© 2026 THATA HOMECOURT – THATA SPORT HQ & Basketball (Chonburi).</p>
         <div class="footer-links">
             <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
-            <a href="#">ข้อกำหนดการใช้งาน</a>
             <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
         </div>
     </div>

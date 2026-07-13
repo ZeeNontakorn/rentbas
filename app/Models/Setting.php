@@ -11,7 +11,7 @@ class Setting extends Model
 
     public const DEFAULTS = [
         'about_title' => 'สนามที่ได้มาตรฐาน ระบบการจองที่ทันสมัย',
-        'about_desc' => 'BCBS Arena คือสนามบาสเก็ตบอลมาตรฐานสากล ทีมงานพร้อมดูแลตลอด 24 ชั่วโมง',
+        'about_desc' => 'THATA HOMECOURT คือสนามบาสเก็ตบอลมาตรฐานสากล ทีมงานพร้อมดูแลตลอด 24 ชั่วโมง',
         'promo_subtitle' => 'อัปเดตโปรโมชั่นสุดพิเศษ',
         'promo_title' => 'Preview Promotion',
         'promo_card_title' => 'BASKETBALL',
