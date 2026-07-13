@@ -13,7 +13,12 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Track unique visit per session
+        // Insert a visit record once per browser session.
+        if (! session()->has('site_visit_recorded')) {
+            SiteVisit::create();
+            session()->put('site_visit_recorded', true);
+        }
+
         $courts = Court::all()->sortBy(function ($court) {
             return $court->name;
         }, SORT_NATURAL | SORT_FLAG_CASE)->values();
