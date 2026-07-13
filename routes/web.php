@@ -75,6 +75,7 @@ Route::middleware(['auth','verified_otp'])->group(function () {
 
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
