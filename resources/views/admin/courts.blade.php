@@ -210,7 +210,7 @@
                             <form id="dateForm" method="GET" action="{{ route('admin.courts') }}">
                                 <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
                                 <input type="date" name="date" value="{{ $date }}"
-                                    onchange="document.getElementById('dateForm').submit()"
+                                    id="dateInput"
                                     class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
                             </form>
                         </div>
@@ -666,6 +666,34 @@
                             '0');
                     }
                 }, 60000);
+
+                const dateInput = document.getElementById('dateInput');
+                if (dateInput) {
+                    let isTyping = false;
+
+                    // ตรวจจับว่าผู้ใช้กำลังพิมพ์ด้วยคีย์บอร์ดอยู่ (ไม่ใช่คลิกเลือกจาก popup)
+                    dateInput.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            document.getElementById('dateForm').submit();
+                            return;
+                        }
+                        isTyping = true;
+                    });
+
+                    // 'change' จะยิงทั้งตอนคลิกเลือกจาก popup และตอน blur หลังพิมพ์
+                    dateInput.addEventListener('change', function () {
+                        if (isTyping) {
+                            // ผู้ใช้พิมพ์เอง ไม่ auto-submit ให้รอ Enter เท่านั้น
+                            isTyping = false;
+                            return;
+                        }
+                        // ไม่ได้พิมพ์ (คลิกเลือกจาก popup calendar) → submit ทันที
+                        if (dateInput.value && dateInput.checkValidity()) {
+                            document.getElementById('dateForm').submit();
+                        }
+                    });
+                }
             </script>
         @endpush
     @endsection
