@@ -541,6 +541,6 @@
                     title: @js($errors->first())
                 });
             @endif
-            });
+        });
     </script>
 @endsection

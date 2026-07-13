@@ -253,7 +253,7 @@ class CourtController extends Controller
 
             Setting::updateOrCreate(
                 ['key' => 'court_img_' . $court->id],
-                ['value' => 'storage/' . $path]
+                ['value' => 'media/' . $path]
             );
         }
 
@@ -264,5 +264,32 @@ class CourtController extends Controller
         }
 
         return back();
+    }
+    
+    public function destroy(Court $court)
+    {
+        // ตรวจสอบว่าสนามนี้มีการจองในระบบหรือไม่
+        $hasBookings = Booking::where('court_id', $court->id)->exists();
+
+        if ($hasBookings) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ไม่สามารถลบได้ เนื่องจากสนามนี้มีประวัติการจองในระบบแล้ว'
+            ], 403);
+        }
+
+        // ลบข้อมูลที่เกี่ยวข้อง (เช่น ข้อมูลการปิดปรับปรุงของสนามนี้)
+        CourtClosure::where('court_id', $court->id)->delete();
+
+        // ลบรูปภาพที่ตั้งค่าไว้ (ถ้ามี)
+        Setting::where('key', 'court_img_' . $court->id)->delete();
+
+        // ลบข้อมูลสนาม
+        $court->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'ลบสนามเรียบร้อยแล้ว'
+        ], 200);
     }
 }
