@@ -226,7 +226,7 @@
                             <form id="dateForm" method="GET" action="{{ route('admin.courts') }}">
                                 <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
                                 <input type="date" name="date" value="{{ $date }}"
-                                    onchange="document.getElementById('dateForm').submit()"
+                                    id="dateInput"
                                     class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
                             </form>
                         </div>

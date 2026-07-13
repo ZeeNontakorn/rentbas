@@ -253,7 +253,7 @@ class CourtController extends Controller
 
             Setting::updateOrCreate(
                 ['key' => 'court_img_' . $court->id],
-                ['value' => 'storage/' . $path]
+                ['value' => 'media/' . $path]
             );
         }
 

@@ -17,6 +17,19 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Public schedule API (used by home calendar to show real booking status)
 Route::get('/schedule', [HomeController::class, 'schedule'])->name('schedule');
 
+Route::get('/media/{path}', function (string $path) {
+    $base = realpath(storage_path('app/public'));
+    $full = realpath(storage_path('app/public/' . $path));
+
+    if (! $full || ! str_starts_with($full, $base)) {
+        abort(404);
+    }
+
+    return response()->file($full, [
+        'Cache-Control' => 'public, max-age=604800',
+    ]);
+})->where('path', '.*')->name('storage.local');
+
 // Per-day availability for the calendar dots (whole month)
 Route::get('/month-availability', [HomeController::class, 'monthAvailability'])->name('month.availability');
 
@@ -111,11 +124,6 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/reset-password',  'resetPassword')->name('password.reset');
 });
 
-Route::get('/storage/{path}', function ($path) {
-    $fullPath = storage_path('app/public/' . $path);
-    abort_unless(file_exists($fullPath), 404);
-    return response()->file($fullPath);
-})->where('path', '.*');
 
 Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
     ->name('admin.courts.images.update');
