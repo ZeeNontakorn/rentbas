@@ -422,6 +422,20 @@
                             title: @js($errors->first())
                         });
                     @endif
+
+                    const dateInput = document.getElementById('dateInput');
+                    const dateForm = document.getElementById('dateForm');
+                    if (dateInput && dateForm) {
+                        dateInput.addEventListener('change', function () {
+                            document.getElementById('statusBox')?.classList.add('hidden');
+                            if (selEl) {
+                                selEl.classList.remove('selected');
+                                selEl = null;
+                            }
+                            dateForm.submit();
+                        });
+                    }
+
                                 });
 
                 function openCourtModal(mode = 'create', courtId = null, courtName = '', courtStatus = 'open') {
