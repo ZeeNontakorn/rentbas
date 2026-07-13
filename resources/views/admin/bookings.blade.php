@@ -67,12 +67,44 @@
                                 รายการจองทั้งหมด
                             @endif
                         </h3>
+
+                        {{-- ===================== Bulk Action Toolbar ===================== --}}
+                        @php $hasPendingInList = $bookings->contains('status', 'pending'); @endphp
+                        @if($hasPendingInList)
+                            <div class="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-2 mb-3">
+                                <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
+                                    <input type="checkbox" id="selectAllPending" class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400">
+                                    เลือกทั้งหมด
+                                    <span id="selectedCount" class="text-gray-400">(0)</span>
+                                </label>
+                                <div id="bulkActionButtons" class="hidden gap-2">
+                                    <button type="button" onclick="bulkReject()"
+                                        class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded transition">
+                                        ปฏิเสธที่เลือก
+                                    </button>
+                                    <button type="button" onclick="bulkApprove()"
+                                        class="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded transition">
+                                        อนุมัติที่เลือก
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                             @forelse($bookings as $b)
                                 @php $sInfo = $statusMap[$b->status] ?? $statusMap['pending']; @endphp
                                 <a href="{{ request()->fullUrlWithQuery(['selected_booking_id' => $b->id]) }}"
-                                    class="block bg-white border {{ $selectedBooking?->id === $b->id ? 'border-orange-500 shadow-md' : 'border-gray-200' }} rounded-xl p-4 hover:border-orange-300 transition">
-                                    <div class="flex justify-between items-start mb-2">
+                                    class="block bg-white border {{ $selectedBooking?->id === $b->id ? 'border-orange-500 shadow-md' : 'border-gray-200' }} rounded-xl p-4 hover:border-orange-300 transition relative">
+
+                                    @if($b->status === 'pending')
+                                        {{-- checkbox สำหรับเลือกทำรายการแบบกลุ่ม --}}
+                                        <input type="checkbox" class="booking-checkbox absolute top-3 left-3 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400 z-10"
+                                            value="{{ $b->id }}"
+                                            onclick="event.stopPropagation()"
+                                            onchange="updateBulkToolbar()">
+                                    @endif
+
+                                    <div class="flex justify-between items-start mb-2 {{ $b->status === 'pending' ? 'pl-6' : '' }}">
                                         <div class="flex gap-2">
                                             <span
                                                 class="text-xs px-2 py-0.5 border border-gray-300 rounded">{{ $b->court->name }}</span>
@@ -268,83 +300,11 @@
                     @endif
                 </div>
 
-            {{-- <!-- Column 3: Stats sidebar ยังไม่ใช้ -->
-            <div class="lg:col-span-3">
-                <div class="flex bg-white rounded-lg p-1 border border-gray-200 mb-6 text-xs font-medium text-center shadow-sm">
-                   <a href="{{ request()->fullUrlWithQuery(['range' => 7]) }}" class="flex-1 rounded-md py-2 transition {{ (!isset($range) || $range == 7) ? 'bg-gray-100 text-gray-700' : 'text-gray-500 hover:bg-gray-50' }}">7 วันที่ผ่านมา</a>
-                   <a href="{{ request()->fullUrlWithQuery(['range' => 30]) }}" class="flex-1 rounded-md py-2 transition {{ (isset($range) && $range == 30) ? 'bg-gray-100 text-gray-700' : 'text-gray-500 hover:bg-gray-50' }}">30 วันที่ผ่านมา</a>
-                </div>
-
-                    <div class="space-y-4">
-                        <!-- Total -->
-                        <a href="{{ route('admin.bookings', ['date' => request('date'), 'court_id' => request('court_id')]) }}"
-                            class="bg-white rounded-xl p-4 shadow-sm border {{ !$status ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300' }} flex justify-between items-center transition block">
-                            <div>
-                                <div class="text-xs text-gray-500 mb-1 font-medium">รายการทั้งหมด</div>
-                                <div class="text-xl font-semibold text-gray-800">{{ $sideStats['total'] }}</div>
-                            </div>
-                            <div class="w-10 h-10 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2v-5H3v5a2 2 0 002 2z"></path>
-                                </svg>
-                            </div>
-                        </a>
-
-                        <!-- Pending -->
-                        <a href="{{ route('admin.bookings', ['status' => 'pending', 'date' => request('date'), 'court_id' => request('court_id')]) }}"
-                            class="bg-white rounded-xl p-4 shadow-sm border {{ $status === 'pending' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300' }} flex justify-between items-center transition block">
-                            <div>
-                                <div class="text-xs text-gray-500 mb-1 font-medium">การจองที่รออนุมัติ</div>
-                                <div class="text-xl font-semibold text-gray-800">{{ $sideStats['pending'] }}</div>
-                            </div>
-                            <div class="w-10 h-10 bg-green-50 text-green-500 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                        </a>
-
-                        <!-- Approved -->
-                        <a href="{{ route('admin.bookings', ['status' => 'approved', 'date' => request('date'), 'court_id' => request('court_id')]) }}"
-                            class="bg-white rounded-xl p-4 shadow-sm border {{ $status === 'approved' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300' }} flex justify-between items-center transition block">
-                            <div>
-                                <div class="text-xs text-gray-500 mb-1 font-medium">การจองที่อนุมัติ</div>
-                                <div class="text-xl font-semibold text-gray-800">{{ $sideStats['approved'] }}</div>
-                            </div>
-                            <div
-                                class="w-10 h-10 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                        </a>
-
-                        <!-- Cancelled/Rejected -->
-                        <a href="{{ route('admin.bookings', ['status' => 'rejected', 'date' => request('date'), 'court_id' => request('court_id')]) }}"
-                            class="bg-white rounded-xl p-4 shadow-sm border {{ $status === 'rejected' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300' }} flex justify-between items-center transition block">
-                            <div>
-                                <div class="text-xs text-gray-500 mb-1 font-medium">การจองที่ยกเลิก</div>
-                                <div class="text-xl font-semibold text-gray-800">{{ $sideStats['cancelled'] }}</div>
-                            </div>
-                            <div class="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                        </a>
-                    </div>
-
-                </div>
-
-            </div> --}}
-
+            </div>
         </div>
     </div>
 
+    {{-- ===================== Modal: ปฏิเสธรายการเดียว (เดิม) ===================== --}}
     <div id="rejectModal"
         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 mx-4 transform transition-all">
@@ -368,6 +328,32 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {{-- ===================== Modal: ปฏิเสธหลายรายการพร้อมกัน (ใหม่) ===================== --}}
+    <div id="bulkRejectModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6 mx-4 transform transition-all">
+            <h2 class="text-lg font-bold text-gray-800 mb-2">ปฏิเสธรายการที่เลือก
+                <span id="bulkRejectCount" class="text-red-500"></span> รายการ
+            </h2>
+            <p class="text-xs text-gray-500 mb-4">ข้อความนี้จะถูกบันทึกและแสดงให้ผู้จองทุกคนที่เลือกเห็นเหมือนกัน</p>
+
+            <textarea id="bulkRejectReasonInput" rows="3"
+                class="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-900 bg-gray-50"
+                placeholder="เช่น สนามปิดปรับปรุง, รายละเอียดไม่ครบถ้วน..." required></textarea>
+
+            <div class="flex justify-end gap-3 mt-5">
+                <button type="button" onclick="closeBulkRejectModal()"
+                    class="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer">
+                    ยกเลิก
+                </button>
+                <button type="button" onclick="submitBulkReject()"
+                    class="px-4 py-2.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition shadow-sm shadow-red-200 cursor-pointer">
+                    ยืนยันปฏิเสธทั้งหมด
+                </button>
+            </div>
         </div>
     </div>
 
@@ -395,7 +381,7 @@
             });
         }
 
-        // 3. ฟังก์ชัน Modal ปฏิเสธ
+        // 3. ฟังก์ชัน Modal ปฏิเสธ (รายการเดียว)
         function openRejectModal(event, actionUrl) {
             if (event) {
                 event.preventDefault();
@@ -411,7 +397,116 @@
             document.getElementById('rejectModal').classList.add('hidden');
         }
 
-        // 4. ดักจับ Flash Session เมื่อโหลดหน้าเว็บเสร็จ
+        // ===================== 4. Bulk Actions (อนุมัติ/ปฏิเสธหลายรายการ) =====================
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+            || '{{ csrf_token() }}';
+
+        function getSelectedIds() {
+            return Array.from(document.querySelectorAll('.booking-checkbox:checked'))
+                .map(cb => cb.value);
+        }
+
+        // อัปเดตสถานะแถบ toolbar (จำนวนที่เลือก / โชว์-ซ่อนปุ่ม)
+        function updateBulkToolbar() {
+            const ids = getSelectedIds();
+            const countEl = document.getElementById('selectedCount');
+            const buttonsEl = document.getElementById('bulkActionButtons');
+            if (countEl) countEl.textContent = `(${ids.length})`;
+            if (buttonsEl) buttonsEl.classList.toggle('hidden', ids.length === 0);
+            buttonsEl?.classList.toggle('flex', ids.length > 0);
+
+            // sync checkbox "เลือกทั้งหมด"
+            const all = document.querySelectorAll('.booking-checkbox');
+            const selectAll = document.getElementById('selectAllPending');
+            if (selectAll) selectAll.checked = all.length > 0 && ids.length === all.length;
+        }
+
+        document.getElementById('selectAllPending')?.addEventListener('change', function () {
+            document.querySelectorAll('.booking-checkbox').forEach(cb => cb.checked = this.checked);
+            updateBulkToolbar();
+        });
+
+        // --- อนุมัติที่เลือกทั้งหมด ---
+        function bulkApprove() {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+
+            Swal.fire({
+                title: `ยืนยันอนุมัติ ${ids.length} รายการ?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'อนุมัติทั้งหมด',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#22c55e',
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                showProcessingToast();
+
+                fetch('{{ route('admin.bookings.bulkApprove') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ booking_ids: ids }),
+                }).then(res => {
+                    if (!res.ok) throw new Error('failed');
+                    window.location.reload();
+                }).catch(() => {
+                    Toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด กรุณาลองใหม่' });
+                });
+            });
+        }
+
+        // --- ปฏิเสธที่เลือกทั้งหมด: เปิด modal ให้กรอกเหตุผล ---
+        function bulkReject() {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+
+            document.getElementById('bulkRejectCount').textContent = ids.length;
+            document.getElementById('bulkRejectReasonInput').value = '';
+            document.getElementById('bulkRejectModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('bulkRejectReasonInput').focus(), 100);
+        }
+
+        function closeBulkRejectModal() {
+            document.getElementById('bulkRejectModal').classList.add('hidden');
+        }
+
+        function submitBulkReject() {
+            const ids = getSelectedIds();
+            const reason = document.getElementById('bulkRejectReasonInput').value.trim();
+
+            if (!reason) {
+                document.getElementById('bulkRejectReasonInput').focus();
+                return;
+            }
+
+            closeBulkRejectModal();
+            showProcessingToast();
+
+            fetch('{{ route('admin.bookings.bulkReject') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ booking_ids: ids, reject_reason: reason }),
+            }).then(res => {
+                if (!res.ok) throw new Error('failed');
+                window.location.reload();
+            }).catch(() => {
+                Toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด กรุณาลองใหม่' });
+            });
+        }
+
+        // 5. ดักจับ Flash Session เมื่อโหลดหน้าเว็บเสร็จ
         document.addEventListener('DOMContentLoaded', function () {
 
             // จัดการ Pending Toast (ถ้ามี)
@@ -446,6 +541,6 @@
                     title: @js($errors->first())
                 });
             @endif
-            });
+        });
     </script>
 @endsection
