@@ -27,12 +27,59 @@ class Setting extends Model
         'community_img' => 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=900&auto=format&fit=crop',
     ];
 
+    /**
+     * รายชื่อ key ที่เป็น "รูปภาพ" เท่านั้น — ใช้กรองว่า key ไหนควรถูกแปลงเป็น media URL
+     * key อื่นๆ ที่ไม่อยู่ในลิสต์นี้ (เช่น about_title, about_desc) จะไม่ถูกแตะเลย
+     */
+    public const IMAGE_KEYS = [
+        'promo_image',
+        'hero_img_1',
+        'hero_img_2',
+        'hero_img_3',
+        'about_img_1',
+        'about_img_2',
+        'about_img_3',
+        'courts_bg',
+        'community_img',
+    ];
+
     protected $primaryKey = 'key';
     protected $keyType    = 'string';
     public $incrementing  = false;
     public $timestamps    = false;
 
     protected $fillable = ['key', 'value'];
+
+    /**
+     * แปลง path รูปที่เก็บใน DB (ไม่ว่าจะเป็น path เก่า storage/... , storage/app/...
+     * หรือ path ใหม่ media/...) ให้กลายเป็น URL เต็มผ่าน route /media เสมอ
+     * ถ้าเป็น URL เต็มอยู่แล้ว (http/https เช่นรูป default จาก unsplash) จะคืนค่าเดิมไว้เฉยๆ
+     */
+    protected static function resolveImageUrl(?string $val): ?string
+    {
+        if (empty($val)) {
+            return $val;
+        }
+
+        // เป็น absolute URL อยู่แล้ว (เช่นรูป default จาก unsplash/pexels) ไม่ต้องแตะ
+        if (preg_match('#^https?://#i', $val)) {
+            return $val;
+        }
+
+        // ตัด prefix เก่าทุกแบบทิ้งให้เหลือแค่ relative path จริงๆ เช่น "site/xxx.jpg"
+        $clean = preg_replace('#^/?(storage/app/public/|storage/app/|storage/|media/)#i', '', $val);
+
+        return asset('media/' . ltrim($clean, '/'));
+    }
+
+    /**
+     * เช็คว่า key นี้เป็นรูปภาพหรือไม่ (รวมทั้ง court_img_xx ที่สร้าง dynamic ต่อสนาม)
+     */
+    protected static function isImageKey(string $key): bool
+    {
+        return in_array($key, self::IMAGE_KEYS, true)
+            || str_starts_with($key, 'court_img_');
+    }
 
     /**
      * Helper to get a setting value quickly by key.
@@ -42,8 +89,8 @@ class Setting extends Model
         $setting = self::where('key', $key)->first();
         $val = $setting ? $setting->value : $default;
 
-        if (is_string($val) && (str_starts_with($val, 'storage/') || str_starts_with($val, '/storage/'))) {
-            return asset(ltrim($val, '/'));
+        if (is_string($val) && self::isImageKey($key)) {
+            return self::resolveImageUrl($val);
         }
 
         return $val;
@@ -66,8 +113,8 @@ class Setting extends Model
         foreach ($keys as $key) {
             $val = $stored[$key] ?? ($defaults[$key] ?? null);
 
-            if (is_string($val) && (str_starts_with($val, 'storage/') || str_starts_with($val, '/storage/'))) {
-                $val = asset(ltrim($val, '/'));
+            if (is_string($val) && self::isImageKey($key)) {
+                $val = self::resolveImageUrl($val);
             }
 
             $resolved[$key] = $val;

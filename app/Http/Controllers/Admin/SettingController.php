@@ -60,7 +60,7 @@ class SettingController extends Controller
             if ($request->hasFile($fileInput)) {
                 $path = $request->file($fileInput)->store('site', 'public');
                 // Store the path that can be used with asset() or Storage::url()
-                $data[$settingKey] = 'storage/' . $path;
+                $data[$settingKey] = 'media/' . $path;
             }
             unset($data[$fileInput]);
         }
