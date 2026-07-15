@@ -5,8 +5,10 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+
 
 
 
@@ -51,5 +53,21 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * ดึงข้อมูลโปรไฟล์เฉพาะของ Coach/Staff
+     */
+    public function staffProfile(): HasOne
+    {
+        return $this->hasOne(StaffProfile::class, 'user_id');
+    }
+
+    /**
+     * ดึงประวัติตารางเวลาทั้งหมด
+     */
+    public function availabilities(): HasMany
+    {
+        return $this->hasMany(Availability::class, 'user_id');
     }
 }
