@@ -56,6 +56,7 @@
                             <th class="px-6 py-3 font-medium">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium">อีเมล</th>
                             <th class="px-6 py-3 font-medium">สถานะยืนยัน (OTP)</th>
+                            <th class="px-6 py-3 font-medium">ประเภทสมาชิก</th>
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
@@ -78,6 +79,39 @@
                                         </span>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4">
+                                    @if($u->role === 'admin')
+    {{-- แอดมิน: ตัวหนังสือหนาสีเทาเฉยๆ ไม่มีกรอบ แต่จัดตำแหน่งให้ตรงกับกล่อง dropdown ของแถวอื่น --}}
+    <span class="inline-flex items-center h-[34px] px-3 text-xs font-bold text-gray-500">แอดมิน</span>
+@else
+                                        {{-- Custom Dropdown แทนที่ <select> ของเบราว์เซอร์ --}}
+                                        <div class="relative membership-dropdown" data-user-id="{{ $u->id }}">
+                                            <button type="button"
+                                                    class="membership-dropdown-btn inline-flex items-center justify-between gap-2 w-32 border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:border-orange-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400">
+                                                <span class="membership-dropdown-label">{{ $u->membershipTypeLabel() }}</span>
+                                                <svg class="w-3.5 h-3.5 text-gray-400 transition-transform membership-dropdown-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>
+
+                                            <div class="membership-dropdown-panel hidden absolute left-0 mt-1.5 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden py-1">
+                                                @foreach(\App\Models\User::MEMBERSHIP_TYPES as $value => $label)
+                                                    <button type="button"
+                                                            class="membership-option w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-orange-50 transition {{ $u->membership_type === $value ? 'text-orange-600 font-semibold bg-orange-50/60' : 'text-gray-700' }}"
+                                                            data-value="{{ $value }}"
+                                                            data-url="{{ route('admin.users.updateMembershipType', $u) }}">
+                                                        {{ $label }}
+                                                        @if($u->membership_type === $value)
+                                                            <svg class="w-3.5 h-3.5 text-orange-500 membership-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                        @endif
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-center">
                                     <a href="{{ route('admin.users.show', $u) }}"
                                        class="inline-flex items-center gap-1.5 bg-gray-800 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm">
@@ -91,7 +125,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-16 text-center">
+                                <td colspan="6" class="px-6 py-16 text-center">
                                     <div class="text-gray-400">
                                         <svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -119,4 +153,101 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // เปิด/ปิด dropdown เมื่อกดปุ่ม
+    document.querySelectorAll('.membership-dropdown-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const wrapper = btn.closest('.membership-dropdown');
+            const panel = wrapper.querySelector('.membership-dropdown-panel');
+            const chevron = btn.querySelector('.membership-dropdown-chevron');
+
+            // ปิด dropdown อื่นๆ ที่เปิดอยู่ทั้งหมดก่อน
+            document.querySelectorAll('.membership-dropdown-panel').forEach(function (p) {
+                if (p !== panel) p.classList.add('hidden');
+            });
+            document.querySelectorAll('.membership-dropdown-chevron').forEach(function (c) {
+                if (c !== chevron) c.classList.remove('rotate-180');
+            });
+
+            panel.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        });
+    });
+
+    // ปิด dropdown เมื่อคลิกนอกพื้นที่
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.membership-dropdown-panel').forEach(function (p) {
+            p.classList.add('hidden');
+        });
+        document.querySelectorAll('.membership-dropdown-chevron').forEach(function (c) {
+            c.classList.remove('rotate-180');
+        });
+    });
+
+    // กดเลือกตัวเลือกใน dropdown
+    document.querySelectorAll('.membership-option').forEach(function (option) {
+        option.addEventListener('click', function (e) {
+            e.stopPropagation();
+
+            const url = option.getAttribute('data-url');
+            const newValue = option.getAttribute('data-value');
+            const newLabel = option.textContent.trim();
+            const wrapper = option.closest('.membership-dropdown');
+            const labelEl = wrapper.querySelector('.membership-dropdown-label');
+            const panel = wrapper.querySelector('.membership-dropdown-panel');
+            const originalLabel = labelEl.textContent;
+
+            fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ membership_type: newValue }),
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error('failed');
+                return res.json();
+            })
+            .then(function () {
+                // อัปเดตหน้าตา dropdown ให้ตรงกับค่าที่เลือก
+                labelEl.textContent = newLabel;
+                panel.classList.add('hidden');
+
+                // อัปเดตเครื่องหมายถูก + สีตัวเลือกที่ถูกเลือกใหม่ในลิสต์
+                panel.querySelectorAll('.membership-option').forEach(function (opt) {
+                    const check = opt.querySelector('.membership-check-icon');
+                    if (opt === option) {
+                        opt.classList.add('text-orange-600', 'font-semibold', 'bg-orange-50/60');
+                        opt.classList.remove('text-gray-700');
+                        if (!check) {
+                            opt.insertAdjacentHTML('beforeend', `
+                                <svg class="w-3.5 h-3.5 text-orange-500 membership-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            `);
+                        }
+                    } else {
+                        opt.classList.remove('text-orange-600', 'font-semibold', 'bg-orange-50/60');
+                        opt.classList.add('text-gray-700');
+                        if (check) check.remove();
+                    }
+                });
+            })
+            .catch(function () {
+                labelEl.textContent = originalLabel; // revert กลับถ้า error
+                alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+            });
+        });
+    });
+});
+</script>
+@endpush
 @endsection
