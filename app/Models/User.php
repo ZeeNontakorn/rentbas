@@ -16,8 +16,15 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
-    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified'];
+    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified', 'membership_type'];
     protected $hidden = ['password', 'remember_token'];
+
+    // ประเภทสมาชิก: ลูกค้าทั่วไป / ผู้สนับสนุน / นักเรียนบาส
+    const MEMBERSHIP_TYPES = [
+        'customer' => 'ลูกค้า',
+        'sponsor'  => 'ผู้สนับสนุน',
+        'student'  => 'นักเรียนบาส',
+    ];
 
     protected function casts(): array
     {
@@ -51,5 +58,10 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function membershipTypeLabel(): string
+    {
+        return self::MEMBERSHIP_TYPES[$this->membership_type] ?? '-';
     }
 }

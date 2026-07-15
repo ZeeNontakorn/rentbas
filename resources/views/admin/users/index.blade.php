@@ -64,6 +64,7 @@
                             <th class="px-6 py-3 font-medium">อีเมล</th>
                             <th class="px-6 py-3 font-medium">Role</th>
                             <th class="px-6 py-3 font-medium">สถานะยืนยัน (OTP)</th>
+                            <th class="px-6 py-3 font-medium">ประเภทสมาชิก</th>
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
@@ -108,6 +109,39 @@
                                             <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                                             ยังไม่ยืนยัน
                                         </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($u->role === 'admin')
+    {{-- แอดมิน: ตัวหนังสือหนาสีเทาเฉยๆ ไม่มีกรอบ แต่จัดตำแหน่งให้ตรงกับกล่อง dropdown ของแถวอื่น --}}
+    <span class="inline-flex items-center h-[34px] px-3 text-xs font-bold text-gray-500">แอดมิน</span>
+@else
+                                        {{-- Custom Dropdown แทนที่ <select> ของเบราว์เซอร์ --}}
+                                        <div class="relative membership-dropdown" data-user-id="{{ $u->id }}">
+                                            <button type="button"
+                                                    class="membership-dropdown-btn inline-flex items-center justify-between gap-2 w-32 border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:border-orange-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400">
+                                                <span class="membership-dropdown-label">{{ $u->membershipTypeLabel() }}</span>
+                                                <svg class="w-3.5 h-3.5 text-gray-400 transition-transform membership-dropdown-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>
+
+                                            <div class="membership-dropdown-panel hidden absolute left-0 mt-1.5 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden py-1">
+                                                @foreach(\App\Models\User::MEMBERSHIP_TYPES as $value => $label)
+                                                    <button type="button"
+                                                            class="membership-option w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-orange-50 transition {{ $u->membership_type === $value ? 'text-orange-600 font-semibold bg-orange-50/60' : 'text-gray-700' }}"
+                                                            data-value="{{ $value }}"
+                                                            data-url="{{ route('admin.users.updateMembershipType', $u) }}">
+                                                        {{ $label }}
+                                                        @if($u->membership_type === $value)
+                                                            <svg class="w-3.5 h-3.5 text-orange-500 membership-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                        @endif
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">

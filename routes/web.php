@@ -88,6 +88,7 @@ Route::middleware(['auth','verified_otp'])->group(function () {
 
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
@@ -102,6 +103,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
+    Route::patch('/users/{user}/membership-type', [\App\Http\Controllers\Admin\UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
