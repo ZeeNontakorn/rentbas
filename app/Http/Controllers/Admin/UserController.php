@@ -55,25 +55,21 @@ class UserController extends Controller
         return view('admin.users.show', compact('user', 'currentBookings', 'pastBookings'));
     }
 
-    // แก้ไขประเภทสมาชิก (ลูกค้า / ผู้สนับสนุน / นักเรียนบาส)
-    public function updateMembershipType(Request $request, User $user)
+    public function updateRole(Request $request, User $user)
     {
-        $data = $request->validate([
-            'membership_type' => ['required', 'in:customer,sponsor,student'],
+        $request->validate([
+            'role' => ['required', 'in:user,staff,admin'],
+        ], [
+            'role.in' => 'Role ไม่ถูกต้อง',
         ]);
 
-        // กันไม่ให้แก้ไขประเภทสมาชิกของแอดมิน (แอดมินไม่มีแนวคิดเรื่อง membership type)
-        abort_if($user->role === 'admin', 403, 'ไม่สามารถแก้ไขประเภทสมาชิกของแอดมินได้');
-
-        $user->update(['membership_type' => $data['membership_type']]);
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'membership_type' => $user->membership_type,
-            ]);
+        // กันเหนียว ไม่ให้แก้ role ของ superadmin (id = 0) ผ่านช่องทางนี้
+        if ($user->id === 0) {
+            abort(403, 'ไม่สามารถแก้ไข role ของ superadmin ได้');
         }
 
-        return back()->with('success', "อัปเดตประเภทสมาชิกของ {$user->name} เรียบร้อย");
+        $user->update(['role' => $request->role]);
+
+        return back()->with('success', "เปลี่ยน role ของ {$user->name} เป็น {$request->role} เรียบร้อยแล้ว");
     }
 }
