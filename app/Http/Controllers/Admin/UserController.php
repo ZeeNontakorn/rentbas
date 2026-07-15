@@ -15,7 +15,7 @@ class UserController extends Controller
         $search = $request->query('search');
 
         // ค้นหาผู้ใช้จากชื่อ (ถ้ามีการค้นหา) และดึงเฉพาะ role 'user'
-         $users = User::whereIn('role', ['admin','user'])
+         $users = User::whereIn('role', ['admin','user', 'staff'])
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
