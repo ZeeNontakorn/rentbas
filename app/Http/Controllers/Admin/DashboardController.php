@@ -27,10 +27,10 @@ class DashboardController extends Controller
 
         return [
             'today_total' => Booking::whereDate('booking_date', $today)->count(),
-            'today_pending' => Booking::whereDate('booking_date', $today)->where('status', 'pending')->count(),
-            'today_approved' => Booking::whereDate('booking_date', $today)->where('status', 'approved')->count(),
+            'today_pending' => Booking::whereDate('booking_date', '>=', $today)->where('status', 'pending')->count(),
+            'today_approved' => Booking::where('status', 'approved')->count(),
             'today_cancelled' => Booking::whereDate('booking_date', $today)->whereIn('status', ['cancelled'])->count(),
-            'today_rejected' => Booking::whereDate('booking_date', $today)->where('status', 'rejected')->count(),
+            'today_rejected' => Booking::where('status', 'rejected')->count(),
         ];
     }
 
@@ -167,11 +167,11 @@ class DashboardController extends Controller
             $todayStr,
         ])->whereIn('status', ['cancelled', 'rejected'])->get(['status', 'reject_reason']);
 
-        $cancel = ['Customer Cancel' => 0, 'Maintenance' => 0];
+        $cancel = ['Customer Cancel' => 0, 'Admin Cancel' => 0];
         foreach ($cancelRows as $r) {
             $reason = mb_strtolower($r->reject_reason ?? '');
             if (str_contains($reason, 'ซ่อม') || str_contains($reason, 'mainten') || str_contains($reason, 'ปิด')) {
-                $cancel['Maintenance']++;
+                $cancel['Admin Cancel']++;
             } else {
                 // status 'cancelled' or an uncategorised admin rejection
                 $cancel['Customer Cancel']++;
@@ -471,6 +471,7 @@ class DashboardController extends Controller
                     ->setFontFamily($font)
                     ->setColors([$ring])
                     ->setHeight(200)
+                    ->setShowLegend(false)
                     ->setLabels([$c['name']])
                     ->addData([$c['pct']]),
             ];
@@ -489,6 +490,30 @@ class DashboardController extends Controller
                 $row['name']
             );
         }
+
+        // Members & Visits — column chart, this week (blue) vs this month (green).
+        // Distributed per-bar colours are applied in the blade (same technique
+        // as monthlyChart) because Larapex's template drops plotOptions.bar.
+        $statLabels = ['สัปดาห์นี้', 'เดือนนี้'];
+        $statColors = ['#60a5fa', '#4ade80'];
+        $memberChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors($statColors)
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'ผู้สมัครสมาชิก', 'data' => [$memberStats['week'], $memberStats['month']]],
+            ])
+            ->setXAxis($statLabels);
+        $visitChart = (new LarapexChart)->barChart()
+            ->setFontFamily($font)
+            ->setColors($statColors)
+            ->setHeight(240)
+            ->setGrid()
+            ->setDataset([
+                ['name' => 'ผู้เข้าชม', 'data' => [$visitStats['week'], $visitStats['month']]],
+            ])
+            ->setXAxis($statLabels);
 
         return view('admin.dashboard', compact(
             'kpis',
@@ -515,7 +540,9 @@ class DashboardController extends Controller
             'monthlyChart',
             'peakChart',
             'courtCharts',
-            'occChart'
+            'occChart',
+            'memberChart',
+            'visitChart'
         ));
     }
 
@@ -533,21 +560,38 @@ class DashboardController extends Controller
     {
         $stats = $this->getCommonStats();
 
-        $status = $request->query('status');
+        $status = $request->query('status', 'pending');
         $court_id = $request->query('court_id');
         $date = $request->query('date');
 
-        $bookings = Booking::with(['user', 'court'])
-        // ->whereDate('booking_date', $date)
-        // ->when($status, fn ($q) => $q->where('status', $status))
+        // $bookings = Booking::with(['user', 'court'])
+        // // ->whereDate('booking_date', $date)
+        // // ->when($status, fn ($q) => $q->where('status', $status))
 
-            // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
+        //     // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
+        //     ->when($date, fn($q) => $q->whereDate('booking_date', $date))
+        //     ->whereDate('booking_date', '>=', now()->toDateString())
+        //     ->where('status', 'pending')
+        //     ->when($court_id, fn($q) => $q->where('court_id', $court_id))
+        //     ->orderBy('created_at')
+        //     ->latest()
+        //     ->paginate(20)
+        //     ->withQueryString();
+
+        $bookings = Booking::with(['user', 'court'])
+            //วันที่
             ->when($date, fn($q) => $q->whereDate('booking_date', $date))
-            ->whereDate('booking_date', '>=', now()->toDateString())
-            ->where('status', 'pending')
+
+            //สถานะ
+            ->when($status === 'pending', fn($q) => $q->whereDate('booking_date', '>=', now()->toDateString()))
+            ->where('status', $status ? $status : 'pending')
+
+            //สนาม
             ->when($court_id, fn($q) => $q->where('court_id', $court_id))
-            ->orderBy('created_at')
-            ->latest()
+
+            //เรียงจากคนที่ส่งมาก่อน
+            ->orderBy('created_at', 'asc')
+
             ->paginate(20)
             ->withQueryString();
 

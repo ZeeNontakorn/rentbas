@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\BookingApprovedMail;
+use App\Mail\BookingCancelledByAdminMail;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\Notification;
@@ -274,7 +275,7 @@ class BookingController extends Controller
         Notification::create([
             'user_id'=>$booking->user_id,
             'title'=>'การจองได้รับการอนุมัติ',
-            'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
+            'message'=>"การจอง {$booking->court->name} วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
         ]);
 
         if ($booking->user?->email) {
@@ -309,6 +310,10 @@ class BookingController extends Controller
             'title'=>'การจองถูกปฏิเสธ',
             'message'=>"การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
         ]);
+         if ($booking->user?->email) {
+            Mail::to($booking->user->email)
+                ->send(new BookingCancelledByAdminMail($booking, $data['reject_reason']));
+        }
 
         return back()->with('success','ปฏิเสธการจองเรียบร้อย');
     }
@@ -341,5 +346,129 @@ class BookingController extends Controller
             ->get();
 
         return view('booking.history', compact('current', 'past'));
+    }
+    /**
+     * Approve multiple bookings at once (admin)
+     */
+    public function bulkApprove(Request $request)
+    {
+        $data = $request->validate([
+            'booking_ids' => ['required', 'array', 'min:1'],
+            'booking_ids.*' => ['integer', 'exists:bookings,id'],
+        ]);
+
+        $approvedCount = 0;
+        $failed = [];
+
+        foreach ($data['booking_ids'] as $id) {
+            $booking = Booking::find($id);
+
+            if (!$booking || $booking->status !== 'pending') {
+                continue; // ข้ามรายการที่ถูกดำเนินการไปแล้วหรือหาไม่เจอ
+            }
+
+            $bDate = Carbon::parse($booking->booking_date)->toDateString();
+            $startAt = Carbon::parse("{$bDate} {$booking->start_time}");
+            $endAt = Carbon::parse("{$bDate} {$booking->end_time}");
+
+            if ($booking->court->isClosedAt($startAt, $endAt)) {
+                $failed[] = "{$booking->court->name} ({$bDate}): สนามปิดให้บริการ";
+                continue;
+            }
+
+            $overlap = Booking::where('court_id', $booking->court_id)
+                ->whereDate('booking_date', $bDate)
+                ->where('status', 'approved')
+                ->where('id', '!=', $booking->id)
+                ->where(function ($q) use ($booking) {
+                    $q->where('start_time', '<', $booking->end_time)
+                        ->where('end_time', '>', $booking->start_time);
+                })
+                ->exists();
+
+            if ($overlap) {
+                $failed[] = "{$booking->court->name} ({$bDate} " . substr($booking->start_time, 0, 5) . "): มีรายการทับซ้อน";
+                continue;
+            }
+
+            $booking->update(['status' => 'approved']);
+
+            Notification::create([
+                'user_id' => $booking->user_id,
+                'title' => 'การจองได้รับการอนุมัติ',
+                'message' => "การจอง {$booking->court->name} วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
+            ]);
+
+            if ($booking->user?->email) {
+                Mail::to($booking->user->email)
+                    ->send(new BookingApprovedMail($booking));
+            }
+
+            $approvedCount++;
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'approved' => $approvedCount,
+                'failed' => $failed,
+            ]);
+        }
+
+        $response = back()->with('success', "อนุมัติสำเร็จ {$approvedCount} รายการ");
+        if (!empty($failed)) {
+            $response->withErrors(['bookings' => 'บางรายการอนุมัติไม่สำเร็จ: ' . implode(', ', $failed)]);
+        }
+        return $response;
+    }
+
+    /**
+     * Reject multiple bookings at once with the same reason (admin)
+     */
+    public function bulkReject(Request $request)
+    {
+        $data = $request->validate([
+            'booking_ids' => ['required', 'array', 'min:1'],
+            'booking_ids.*' => ['integer', 'exists:bookings,id'],
+            'reject_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $rejectedCount = 0;
+
+        foreach ($data['booking_ids'] as $id) {
+            $booking = Booking::find($id);
+
+            if (!$booking || $booking->status !== 'pending') {
+                continue; // ข้ามรายการที่ถูกดำเนินการไปแล้วหรือหาไม่เจอ
+            }
+
+            $booking->update([
+                'status' => 'rejected',
+                'reject_reason' => $data['reject_reason'],
+            ]);
+
+            $bDate = Carbon::parse($booking->booking_date)->toDateString();
+            Notification::create([
+                'user_id' => $booking->user_id,
+                'title' => 'การจองถูกปฏิเสธ',
+                'message' => "การจอง {$booking->court->name} |วันที่ {$bDate}\nเวลา " . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
+            ]);
+
+            if ($booking->user?->email) {
+                Mail::to($booking->user->email)
+                    ->send(new BookingCancelledByAdminMail($booking, $data['reject_reason']));
+            }
+
+            $rejectedCount++;
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'rejected' => $rejectedCount,
+            ]);
+        }
+
+        return back()->with('success', "ปฏิเสธสำเร็จ {$rejectedCount} รายการ");
     }
 }

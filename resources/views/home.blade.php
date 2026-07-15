@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'BCBS | Premium Basketball Court Booking')
+@section('title', 'THATA Homecourt - THATA SPORT HQ & Basketball Chonburi ')
 
 @section('content')
 @php
@@ -728,8 +728,8 @@ html { scroll-behavior: smooth; }
 <section id="hero-section" class="hero" style="background-image:url('{{ $heroSlides[0] ?? ($site['hero_img_1'] ?? '') }}')">
     <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
-        <p class="hero-eyebrow">Bangsaen Basketball Club · BCBS</p>
-        <h1 class="hero-title">BCBS<br><span>Thata</span></h1>
+        <p class="hero-eyebrow">THATA SPORT HQ & Basketball Chonburi</p>
+        <h1 class="hero-title">THATA<br><span>Homecourt</span></h1>
         <p class="hero-sub">ระบบจองสนามบาสเกตบอลมาตรฐานสากล<br>พร้อมให้บริการ 7 วัน 365 วัน</p>
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="400">
             @guest
@@ -751,12 +751,12 @@ html { scroll-behavior: smooth; }
 {{-- ═══ TICKER ═══ --}}
 <div class="ticker">
     <div class="ticker-track">
-        <span>BCBS BASKETBALL ARENA</span><span>·</span>
+        <span>THATA HOMECOURT</span><span>·</span>
         <span>PREMIUM COURTS AVAILABLE</span><span>·</span>
         <span>BOOK YOUR SLOT TODAY</span><span>·</span>
         <span>PROFESSIONAL STANDARD</span><span>·</span>
         <span>BANGSAEN BASKETBALL CLUB</span><span>·</span>
-        <span>BCBS BASKETBALL ARENA</span><span>·</span>
+        <span>THATA HOMECOURT</span><span>·</span>
         <span>PREMIUM COURTS AVAILABLE</span><span>·</span>
         <span>BOOK YOUR SLOT TODAY</span><span>·</span>
         <span>PROFESSIONAL STANDARD</span><span>·</span>
@@ -803,10 +803,7 @@ html { scroll-behavior: smooth; }
     <div class="courts-grid">
         @php
         $courtImgs = [
-            'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1574623452334-1e0ac2b3ccb4?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=600&auto=format&fit=crop', // Changed image to fix broken url
+            'https://images.unsplash.com/photo-1577416412292-747c6607f055?q=80&w=2340&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
         ];
         @endphp
         @foreach($courts as $court)
@@ -814,7 +811,8 @@ html { scroll-behavior: smooth; }
                 $isOpen = $court->court_status === 'open' &&
                     !($court->closed_from && $court->closed_until &&
                       now()->between($court->closed_from, $court->closed_until));
-                $img = $courtImgs[$loop->index % count($courtImgs)];
+                $uploadedImg = \App\Models\Setting::getVal('court_img_' . $court->id);
+                $img = $uploadedImg ?: $courtImgs[$loop->index % count($courtImgs)];
             @endphp
 
             <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}">
@@ -964,15 +962,15 @@ html { scroll-behavior: smooth; }
 <footer class="footer" data-aos="fade-in">
     <div class="footer-grid">
         <div>
-            <p class="footer-brand">BCBS Arena</p>
-            <p class="footer-brand-sub">Basketball Court Booking System · บางแสน</p>
+            <p class="footer-brand">THATA Homecourt</p>
+            <p class="footer-brand-sub"> - THATA SPORT HQ & Basketball Chonburi</p>
             <div class="footer-addr">
                 <p class="footer-addr-title">สถานที่</p>
                 <p>
-                    บางแสน (Main Court)<br>
-                    สนามบาส บางแสนคลับ<br>
-                    169 ถ.ลงหาดบางแสน ต.แสนสุข<br>
-                    อ.เมืองชลบุรี จ.ชลบุรี 20130
+                    บริษัท ทาท่า สปอร์ต จำกัด (สำนักงานใหญ่)<br>
+                    17/87 ซอยนพรัตน์ ถ.พระยาสัจจา<br>
+                    ต.บางปลาสร้อย อ.เมืองชลบุรี<br>
+                    จ.ชลบุรี 20000
                 </p>
             </div>
             <div style="margin-top:20px;">
@@ -1010,10 +1008,9 @@ html { scroll-behavior: smooth; }
         </div>
     </div>
     <div class="footer-bottom">
-        <p class="footer-copy">© 2026 BCBS Basketball Court Booking System. All Rights Reserved.</p>
+        <p class="footer-copy">© 2026 THATA HOMECOURT – THATA SPORT HQ & Basketball (Chonburi).</p>
         <div class="footer-links">
             <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
-            <a href="#">ข้อกำหนดการใช้งาน</a>
             <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
         </div>
     </div>
@@ -1163,14 +1160,28 @@ async function renderSch(ds) {
         return;
     }
 
+    const now = new Date();
+    const todayDs = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    const currentHour = now.getHours(); // ดึงชั่วโมงปัจจุบัน (เช่น 10)
+
     tb.innerHTML = '';
     HOURS.forEach(h => {
-        const startTime = h + ':00'; // e.g. '08:00:00'
-        const hEnd = String(parseInt(h) + 1).padStart(2,'0') + ':00'; // '07:00' → '08:00'
+        const startTime = h + ':00'; // e.g. '10:00:00'
+        const hEnd = String(parseInt(h) + 1).padStart(2,'0') + ':00'; // '10:00' → '11:00'
         const tr = document.createElement('tr');
         let html = '<td><span class="hour-chip">' + h + ' - ' + hEnd + '</span></td>';
+        
+        // เช็กว่ารอบนี้เป็นรอบที่ผ่านมาแล้วหรือยัง (สำหรับเคสที่เป็นวันนี้)
+        const isTimePast = (ds === todayDs) && (currentHour >= parseInt(h));
+
         COURTS.forEach(c => {
-            const status = (slots[c.id] && slots[c.id][startTime]) || 'available';
+            let status = (slots[c.id] && slots[c.id][startTime]) || 'available';
+
+            // ถ้าเวลาปัจจุบันเลยเวลาเริ่มรอบมาแล้ว ให้บังคับเป็นสถานะ 'past' ทันที
+            if (isTimePast) {
+                status = 'past';
+            }
+
             if (status === 'booked') {
                 html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>จอง</span></td>';
             } else if (status === 'past') {
@@ -1209,7 +1220,8 @@ function calNext() {
 }
 
 const now2 = new Date();
-calYear = now2.getFullYear(); calMonth = now2.getMonth();
+calYear = now2.getFullYear();
+calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
 loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
