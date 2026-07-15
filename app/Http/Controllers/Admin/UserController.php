@@ -14,8 +14,8 @@ class UserController extends Controller
     {
         $search = $request->query('search');
 
-        // ค้นหาผู้ใช้จากชื่อ (ถ้ามีการค้นหา) และดึงเฉพาะ role 'user'
-        $users = User::where('role', 'user')
+        // ค้นหาผู้ใช้จากชื่อ (ถ้ามีการค้นหา) และดึง role 'user', 'staff', 'admin'
+        $users = User::where('id', '!=', '0')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
@@ -52,5 +52,23 @@ class UserController extends Controller
             ->get();
 
         return view('admin.users.show', compact('user', 'currentBookings', 'pastBookings'));
+    }
+
+    public function updateRole(Request $request, User $user)
+    {
+        $request->validate([
+            'role' => ['required', 'in:user,staff,admin'],
+        ], [
+            'role.in' => 'Role ไม่ถูกต้อง',
+        ]);
+
+        // กันเหนียว ไม่ให้แก้ role ของ superadmin (id = 0) ผ่านช่องทางนี้
+        if ($user->id === 0) {
+            abort(403, 'ไม่สามารถแก้ไข role ของ superadmin ได้');
+        }
+
+        $user->update(['role' => $request->role]);
+
+        return back()->with('success', "เปลี่ยน role ของ {$user->name} เป็น {$request->role} เรียบร้อยแล้ว");
     }
 }

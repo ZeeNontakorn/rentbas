@@ -127,3 +127,6 @@ Route::controller(AuthController::class)->group(function () {
 Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
     ->name('admin.courts.images.update');
 
+// routes/web.php (ในกลุ่ม admin routes)
+Route::patch('/admin/users/{user}/role', [App\Http\Controllers\Admin\UserController::class, 'updateRole'])
+    ->name('admin.users.updateRole');

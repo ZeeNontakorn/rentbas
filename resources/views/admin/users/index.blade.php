@@ -6,6 +6,13 @@
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-6 max-w-7xl">
 
+        {{-- Flash message --}}
+        @if(session('success'))
+            <div class="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">
+                {{ session('success') }}
+            </div>
+        @endif
+
         {{-- Header --}}
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -55,16 +62,41 @@
                             <th class="px-6 py-3 font-medium">รหัส</th>
                             <th class="px-6 py-3 font-medium">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium">อีเมล</th>
+                            <th class="px-6 py-3 font-medium">Role</th>
                             <th class="px-6 py-3 font-medium">สถานะยืนยัน (OTP)</th>
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($users as $u)
+                            @continue($u->id === 0)
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $u->id }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">{{ $u->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $u->email }}</td>
+                                <td class="px-6 py-4">
+                                    @php
+                                        $roleColors = [
+                                            'admin' => 'bg-purple-100 text-purple-700',
+                                            'staff' => 'bg-blue-100 text-blue-700',
+                                            'user'  => 'bg-gray-100 text-gray-600',
+                                        ];
+                                        $roleClass = $roleColors[$u->role] ?? 'bg-gray-100 text-gray-600';
+                                    @endphp
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center justify-center w-16 px-2.5 py-1 text-xs rounded-full font-medium {{ $roleClass }}">
+                                            {{ ucfirst($u->role) }}
+                                        </span>
+                                        <button type="button"
+                                                onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                class="text-gray-400 hover:text-orange-500 transition p-1" title="แก้ไข Role">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4">
                                     @if($u->is_verified)
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
@@ -91,7 +123,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-16 text-center">
+                                <td colspan="6" class="px-6 py-16 text-center">
                                     <div class="text-gray-400">
                                         <svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -119,4 +151,88 @@
 
     </div>
 </div>
+{{-- Modal แก้ไข Role --}}
+<div id="roleModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 px-4">
+    <div class="bg-white rounded-xl shadow-lg p-6 overflow-hidden" style="width: 100%; max-width: 360px;">
+        <h3 class="text-base font-semibold text-gray-800 mb-1">แก้ไข Role</h3>
+        <p class="text-sm text-gray-500 mb-4">ผู้ใช้: <span id="roleModalUserName" class="font-medium text-gray-700"></span></p>
+
+        <form id="roleModalForm" method="POST">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="role" id="roleModalInput" value="user">
+
+            <label class="block text-xs font-medium text-gray-500 mb-2">เลือก Role ใหม่</label>
+            <div class="grid grid-cols-3 gap-2 mb-5">
+                <button type="button" data-role="user" onclick="selectRole(this)"
+                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    User
+                </button>
+                <button type="button" data-role="staff" onclick="selectRole(this)"
+                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    Staff
+                </button>
+                <button type="button" data-role="admin" onclick="selectRole(this)"
+                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    Admin
+                </button>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeRoleModal()"
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                    ยกเลิก
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition">
+                    บันทึก
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function selectRole(btn) {
+        document.getElementById('roleModalInput').value = btn.dataset.role;
+
+        document.querySelectorAll('.role-option').forEach(b => {
+            b.classList.remove('bg-orange-500', 'text-white', 'border-orange-500');
+            b.classList.add('border-gray-300', 'text-gray-600');
+        });
+
+        btn.classList.remove('border-gray-300', 'text-gray-600');
+        btn.classList.add('bg-orange-500', 'text-white', 'border-orange-500');
+    }
+
+    function openRoleModal(id, name, currentRole, actionUrl) {
+        document.getElementById('roleModalUserName').textContent = name;
+        document.getElementById('roleModalInput').value = currentRole;
+        document.getElementById('roleModalForm').action = actionUrl;
+
+        // ไฮไลต์ปุ่มที่ตรงกับ role ปัจจุบัน
+        document.querySelectorAll('.role-option').forEach(b => {
+            b.classList.remove('bg-orange-500', 'text-white', 'border-orange-500');
+            b.classList.add('border-gray-300', 'text-gray-600');
+            if (b.dataset.role === currentRole) {
+                b.classList.remove('border-gray-300', 'text-gray-600');
+                b.classList.add('bg-orange-500', 'text-white', 'border-orange-500');
+            }
+        });
+
+        const modal = document.getElementById('roleModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeRoleModal() {
+        const modal = document.getElementById('roleModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.getElementById('roleModal').addEventListener('click', function (e) {
+        if (e.target === this) closeRoleModal();
+    });
+</script>
 @endsection
