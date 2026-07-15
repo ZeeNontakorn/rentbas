@@ -268,5 +268,97 @@
     document.getElementById('roleModal').addEventListener('click', function (e) {
         if (e.target === this) closeRoleModal();
     });
+
+    // ===================== Dropdown ประเภทสมาชิก =====================
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // เปิด/ปิด dropdown เมื่อกดปุ่ม
+        document.querySelectorAll('.membership-dropdown-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const wrapper = btn.closest('.membership-dropdown');
+                const panel = wrapper.querySelector('.membership-dropdown-panel');
+                const chevron = btn.querySelector('.membership-dropdown-chevron');
+
+                // ปิด dropdown อื่นๆ ที่เปิดอยู่ทั้งหมดก่อน
+                document.querySelectorAll('.membership-dropdown-panel').forEach(function (p) {
+                    if (p !== panel) p.classList.add('hidden');
+                });
+                document.querySelectorAll('.membership-dropdown-chevron').forEach(function (c) {
+                    if (c !== chevron) c.classList.remove('rotate-180');
+                });
+
+                panel.classList.toggle('hidden');
+                chevron.classList.toggle('rotate-180');
+            });
+        });
+
+        // ปิด dropdown เมื่อคลิกนอกพื้นที่
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.membership-dropdown-panel').forEach(function (p) {
+                p.classList.add('hidden');
+            });
+            document.querySelectorAll('.membership-dropdown-chevron').forEach(function (c) {
+                c.classList.remove('rotate-180');
+            });
+        });
+
+        // กดเลือกตัวเลือกใน dropdown
+        document.querySelectorAll('.membership-option').forEach(function (option) {
+            option.addEventListener('click', function (e) {
+                e.stopPropagation();
+
+                const url = option.getAttribute('data-url');
+                const newValue = option.getAttribute('data-value');
+                const newLabel = option.textContent.trim();
+                const wrapper = option.closest('.membership-dropdown');
+                const labelEl = wrapper.querySelector('.membership-dropdown-label');
+                const panel = wrapper.querySelector('.membership-dropdown-panel');
+                const originalLabel = labelEl.textContent;
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ membership_type: newValue }),
+                })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('failed');
+                    return res.json();
+                })
+                .then(function () {
+                    labelEl.textContent = newLabel;
+                    panel.classList.add('hidden');
+
+                    panel.querySelectorAll('.membership-option').forEach(function (opt) {
+                        const check = opt.querySelector('.membership-check-icon');
+                        if (opt === option) {
+                            opt.classList.add('text-orange-600', 'font-semibold', 'bg-orange-50/60');
+                            opt.classList.remove('text-gray-700');
+                            if (!check) {
+                                opt.insertAdjacentHTML('beforeend', `
+                                    <svg class="w-3.5 h-3.5 text-orange-500 membership-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                `);
+                            }
+                        } else {
+                            opt.classList.remove('text-orange-600', 'font-semibold', 'bg-orange-50/60');
+                            opt.classList.add('text-gray-700');
+                            if (check) check.remove();
+                        }
+                    });
+                })
+                .catch(function () {
+                    labelEl.textContent = originalLabel;
+                    alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+                });
+            });
+        });
+    });
 </script>
 @endsection

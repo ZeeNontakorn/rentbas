@@ -104,6 +104,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{user}/membership-type', [\App\Http\Controllers\Admin\UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
+    Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.updateRole');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
@@ -128,7 +129,3 @@ Route::controller(AuthController::class)->group(function () {
 
 Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
     ->name('admin.courts.images.update');
-
-// routes/web.php (ในกลุ่ม admin routes)
-Route::patch('/admin/users/{user}/role', [App\Http\Controllers\Admin\UserController::class, 'updateRole'])
-    ->name('admin.users.updateRole');
