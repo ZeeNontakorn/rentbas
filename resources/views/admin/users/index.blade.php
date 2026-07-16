@@ -55,6 +55,21 @@
                 @endif
             </div>
 
+            @php
+                // สีพื้นหลังของแต่ละประเภทสมาชิก (วนใช้จากพาเลตให้อัตโนมัติตามลำดับที่นิยามใน MEMBERSHIP_TYPES)
+                $membershipPalette = [
+                    'bg-emerald-100 text-emerald-700',
+                    'bg-sky-100 text-sky-700',
+                    'bg-amber-100 text-amber-700',
+                    'bg-pink-100 text-pink-700',
+                    'bg-indigo-100 text-indigo-700',
+                    'bg-teal-100 text-teal-700',
+                ];
+                $membershipColorMap = [];
+                foreach (array_keys(\App\Models\User::MEMBERSHIP_TYPES) as $i => $typeKey) {
+                    $membershipColorMap[$typeKey] = $membershipPalette[$i % count($membershipPalette)];
+                }
+            @endphp
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
@@ -84,13 +99,13 @@
                                         ];
                                         $roleClass = $roleColors[$u->role] ?? 'bg-gray-100 text-gray-600';
                                     @endphp
-                                    <div class="flex items-center gap-2">
-                                        <span class="inline-flex items-center justify-center w-16 px-2.5 py-1 text-xs rounded-full font-medium {{ $roleClass }}">
+                                    <div class="flex items-center gap-2 w-[136px]">
+                                        <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
                                             {{ ucfirst($u->role) }}
                                         </span>
                                         <button type="button"
                                                 onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                class="text-gray-400 hover:text-orange-500 transition p-1" title="แก้ไข Role">
+                                                class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -113,34 +128,27 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($u->role === 'admin')
-    {{-- แอดมิน: ตัวหนังสือหนาสีเทาเฉยๆ ไม่มีกรอบ แต่จัดตำแหน่งให้ตรงกับกล่อง dropdown ของแถวอื่น --}}
-    <span class="inline-flex items-center h-[34px] px-3 text-xs font-bold text-gray-500">แอดมิน</span>
-@else
-                                        {{-- Custom Dropdown แทนที่ <select> ของเบราว์เซอร์ --}}
-                                        <div class="relative membership-dropdown" data-user-id="{{ $u->id }}">
+                                        {{-- แอดมิน: ป้ายพื้นหลังสีเทา มีกรอบ เหมือนป้ายประเภทสมาชิกอื่นๆ --}}
+                                        <div class="flex items-center gap-2 w-[107px]">
+                                            <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
+                                        </div>
+                                    @else
+                                        {{-- ประเภทสมาชิก: ป้ายสถานะ (มีสีตามประเภท) + ปุ่มแก้ไขเปิดโมดัล (สไตล์เดียวกับ Role) --}}
+                                        @php
+                                            $membershipClass = $membershipColorMap[$u->membership_type] ?? 'bg-gray-100 text-gray-600';
+                                        @endphp
+                                        <div class="flex items-center gap-2 w-[136px] membership-cell" data-user-id="{{ $u->id }}">
+                                            <span class="membership-label inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }}">
+                                                {{ $u->membershipTypeLabel() }}
+                                            </span>
                                             <button type="button"
-                                                    class="membership-dropdown-btn inline-flex items-center justify-between gap-2 w-32 border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:border-orange-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400">
-                                                <span class="membership-dropdown-label">{{ $u->membershipTypeLabel() }}</span>
-                                                <svg class="w-3.5 h-3.5 text-gray-400 transition-transform membership-dropdown-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    onclick="openMembershipModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->membership_type }}', '{{ route('admin.users.updateMembershipType', $u) }}')"
+                                                    class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไขประเภทสมาชิก">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
                                             </button>
-
-                                            <div class="membership-dropdown-panel hidden absolute left-0 mt-1.5 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden py-1">
-                                                @foreach(\App\Models\User::MEMBERSHIP_TYPES as $value => $label)
-                                                    <button type="button"
-                                                            class="membership-option w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-orange-50 transition {{ $u->membership_type === $value ? 'text-orange-600 font-semibold bg-orange-50/60' : 'text-gray-700' }}"
-                                                            data-value="{{ $value }}"
-                                                            data-url="{{ route('admin.users.updateMembershipType', $u) }}">
-                                                        {{ $label }}
-                                                        @if($u->membership_type === $value)
-                                                            <svg class="w-3.5 h-3.5 text-orange-500 membership-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                                                            </svg>
-                                                        @endif
-                                                    </button>
-                                                @endforeach
-                                            </div>
                                         </div>
                                     @endif
                                 </td>
@@ -226,6 +234,50 @@
     </div>
 </div>
 
+{{-- Modal แก้ไขประเภทสมาชิก (สไตล์เดียวกับ Modal แก้ไข Role) --}}
+<div id="membershipModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 px-4">
+    <div class="bg-white rounded-xl shadow-lg p-6 overflow-hidden" style="width: 100%; max-width: 360px;">
+        <h3 class="text-base font-semibold text-gray-800 mb-1">แก้ไขประเภทสมาชิก</h3>
+        <p class="text-sm text-gray-500 mb-4">ผู้ใช้: <span id="membershipModalUserName" class="font-medium text-gray-700"></span></p>
+
+        <form id="membershipModalForm">
+            <input type="hidden" name="membership_type" id="membershipModalInput" value="">
+
+            <label class="block text-xs font-medium text-gray-500 mb-2">เลือกประเภทสมาชิกใหม่</label>
+            <div class="grid grid-cols-3 gap-2 mb-5">
+                @php
+                    $dotPalette = [
+                        'bg-emerald-500',
+                        'bg-sky-500',
+                        'bg-amber-500',
+                        'bg-pink-500',
+                        'bg-indigo-500',
+                        'bg-teal-500',
+                    ];
+                @endphp
+                @foreach(\App\Models\User::MEMBERSHIP_TYPES as $value => $label)
+                    <button type="button" data-value="{{ $value }}" onclick="selectMembership(this)"
+                            class="membership-option-btn flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {{ $dotPalette[$loop->index % count($dotPalette)] }}"></span>
+                        {{ $label }}
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeMembershipModal()"
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                    ยกเลิก
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition">
+                    บันทึก
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     function selectRole(btn) {
         document.getElementById('roleModalInput').value = btn.dataset.role;
@@ -269,95 +321,88 @@
         if (e.target === this) closeRoleModal();
     });
 
-    // ===================== Dropdown ประเภทสมาชิก =====================
-    document.addEventListener('DOMContentLoaded', function () {
+    // ===================== Modal แก้ไขประเภทสมาชิก =====================
+    const membershipColorMap = {!! json_encode($membershipColorMap) !!};
+    let membershipModalUrl = '';
+    let membershipModalUserId = '';
 
-        // เปิด/ปิด dropdown เมื่อกดปุ่ม
-        document.querySelectorAll('.membership-dropdown-btn').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const wrapper = btn.closest('.membership-dropdown');
-                const panel = wrapper.querySelector('.membership-dropdown-panel');
-                const chevron = btn.querySelector('.membership-dropdown-chevron');
+    function selectMembership(btn) {
+        document.getElementById('membershipModalInput').value = btn.dataset.value;
 
-                // ปิด dropdown อื่นๆ ที่เปิดอยู่ทั้งหมดก่อน
-                document.querySelectorAll('.membership-dropdown-panel').forEach(function (p) {
-                    if (p !== panel) p.classList.add('hidden');
-                });
-                document.querySelectorAll('.membership-dropdown-chevron').forEach(function (c) {
-                    if (c !== chevron) c.classList.remove('rotate-180');
-                });
-
-                panel.classList.toggle('hidden');
-                chevron.classList.toggle('rotate-180');
-            });
+        document.querySelectorAll('.membership-option-btn').forEach(b => {
+            b.classList.remove('bg-orange-500', 'text-white', 'border-orange-500');
+            b.classList.add('border-gray-300', 'text-gray-600');
         });
 
-        // ปิด dropdown เมื่อคลิกนอกพื้นที่
-        document.addEventListener('click', function () {
-            document.querySelectorAll('.membership-dropdown-panel').forEach(function (p) {
-                p.classList.add('hidden');
-            });
-            document.querySelectorAll('.membership-dropdown-chevron').forEach(function (c) {
-                c.classList.remove('rotate-180');
-            });
+        btn.classList.remove('border-gray-300', 'text-gray-600');
+        btn.classList.add('bg-orange-500', 'text-white', 'border-orange-500');
+    }
+
+    function openMembershipModal(id, name, currentValue, actionUrl) {
+        membershipModalUrl = actionUrl;
+        membershipModalUserId = id;
+
+        document.getElementById('membershipModalUserName').textContent = name;
+        document.getElementById('membershipModalInput').value = currentValue;
+
+        // ไฮไลต์ปุ่มที่ตรงกับประเภทสมาชิกปัจจุบัน
+        document.querySelectorAll('.membership-option-btn').forEach(b => {
+            b.classList.remove('bg-orange-500', 'text-white', 'border-orange-500');
+            b.classList.add('border-gray-300', 'text-gray-600');
+            if (b.dataset.value === currentValue) {
+                b.classList.remove('border-gray-300', 'text-gray-600');
+                b.classList.add('bg-orange-500', 'text-white', 'border-orange-500');
+            }
         });
 
-        // กดเลือกตัวเลือกใน dropdown
-        document.querySelectorAll('.membership-option').forEach(function (option) {
-            option.addEventListener('click', function (e) {
-                e.stopPropagation();
+        const modal = document.getElementById('membershipModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 
-                const url = option.getAttribute('data-url');
-                const newValue = option.getAttribute('data-value');
-                const newLabel = option.textContent.trim();
-                const wrapper = option.closest('.membership-dropdown');
-                const labelEl = wrapper.querySelector('.membership-dropdown-label');
-                const panel = wrapper.querySelector('.membership-dropdown-panel');
-                const originalLabel = labelEl.textContent;
+    function closeMembershipModal() {
+        const modal = document.getElementById('membershipModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ membership_type: newValue }),
-                })
-                .then(function (res) {
-                    if (!res.ok) throw new Error('failed');
-                    return res.json();
-                })
-                .then(function () {
-                    labelEl.textContent = newLabel;
-                    panel.classList.add('hidden');
+    document.getElementById('membershipModal').addEventListener('click', function (e) {
+        if (e.target === this) closeMembershipModal();
+    });
 
-                    panel.querySelectorAll('.membership-option').forEach(function (opt) {
-                        const check = opt.querySelector('.membership-check-icon');
-                        if (opt === option) {
-                            opt.classList.add('text-orange-600', 'font-semibold', 'bg-orange-50/60');
-                            opt.classList.remove('text-gray-700');
-                            if (!check) {
-                                opt.insertAdjacentHTML('beforeend', `
-                                    <svg class="w-3.5 h-3.5 text-orange-500 membership-check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                `);
-                            }
-                        } else {
-                            opt.classList.remove('text-orange-600', 'font-semibold', 'bg-orange-50/60');
-                            opt.classList.add('text-gray-700');
-                            if (check) check.remove();
-                        }
-                    });
-                })
-                .catch(function () {
-                    labelEl.textContent = originalLabel;
-                    alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
-                });
-            });
+    document.getElementById('membershipModalForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const newValue = document.getElementById('membershipModalInput').value;
+        const selectedBtn = document.querySelector('.membership-option-btn[data-value="' + newValue + '"]');
+        const newLabel = selectedBtn ? selectedBtn.textContent.trim() : newValue;
+
+        fetch(membershipModalUrl, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ membership_type: newValue }),
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('failed');
+            return res.json();
+        })
+        .then(function () {
+            const cell = document.querySelector('.membership-cell[data-user-id="' + membershipModalUserId + '"]');
+            if (cell) {
+                const badge = cell.querySelector('.membership-label');
+                badge.textContent = newLabel;
+                const colorClass = membershipColorMap[newValue] || 'bg-gray-100 text-gray-600';
+                badge.className = 'membership-label inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate ' + colorClass;
+            }
+            closeMembershipModal();
+        })
+        .catch(function () {
+            alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
         });
     });
 </script>

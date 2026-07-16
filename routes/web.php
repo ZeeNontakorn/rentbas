@@ -90,11 +90,6 @@ Route::middleware(['auth','verified_otp'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
-    Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
-    Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
-    Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
-    Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
     Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
     Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
@@ -109,6 +104,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
     Route::post('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('edit.text.update');
+});
+
+// 5b. Admin/Staff Routes — จัดการการจอง (Booking Management) เข้าได้ทั้ง admin และ staff
+Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
+    Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
+    Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+    Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
+    Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
 });
 
 

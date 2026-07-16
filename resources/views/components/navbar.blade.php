@@ -47,6 +47,13 @@
                     <a href="{{ route('history') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
+
+                    @if(auth()->user()->role === 'staff')
+                        <!-- จัดการการจอง สำหรับ Staff -->
+                        <a href="{{ route('admin.bookings') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            จัดการการจอง
+                        </a>
+                    @endif
                 @endif
 
                 <!-- Notification -->
@@ -82,8 +89,8 @@
 
                         <div id="notifItemsWrap">
                 @php
-                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน -> จัดการการจอง
-                    $defaultNotifTarget = auth()->user()->role === 'admin' ? route('admin.bookings') : route('history');
+                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน/สตาฟ -> จัดการการจอง
+                    $defaultNotifTarget = in_array(auth()->user()->role, ['admin', 'staff']) ? route('admin.bookings') : route('history');
                     // แต่ถ้าเป็นแจ้งเตือนผลการจอง (อนุมัติ/ปฏิเสธ) ให้ไปหน้าประวัติการจองเสมอ ไม่ว่าจะ role ไหน
                     $historyOnlyTitles = ['การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ'];
                 @endphp
@@ -237,6 +244,11 @@
                     <a href="{{ route('history') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
+                    @if(auth()->user()->role === 'staff')
+                        <a href="{{ route('admin.bookings') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            จัดการการจอง
+                        </a>
+                    @endif
                 </div>
             @endif
 
