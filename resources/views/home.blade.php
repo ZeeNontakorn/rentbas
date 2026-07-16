@@ -1162,17 +1162,38 @@ async function renderSch(ds) {
 
     const now = new Date();
     const todayDs = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-    const currentHour = now.getHours(); // ดึงชั่วโมงปัจจุบัน (เช่น 10)
+
+    // แปลงเวลาปัจจุบันเป็นนาทีรวม (เช่น 10:30 = 10*60 + 30 = 630 นาที)
+    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
     tb.innerHTML = '';
-    HOURS.forEach(h => {
-        const startTime = h + ':00'; // e.g. '10:00:00'
-        const hEnd = String(parseInt(h) + 1).padStart(2,'0') + ':00'; // '10:00' → '11:00'
+
+    // กำหนดเวลาเปิด-ปิดสนาม (สมมติว่าเริ่ม 06:00 ถึง 22:00)
+    // ถ้าเวลาเปิดปิดของคุณต่างไปจากนี้ สามารถแก้ตัวเลข 6 และ 22 ได้เลยครับ
+    const startDayMinutes = 6 * 60;
+    const endDayMinutes = 22 * 60;
+
+    // วนลูปทีละ 30 นาที
+    for (let m = startDayMinutes; m < endDayMinutes; m += 30) {
+        // คำนวณเวลาเริ่ม
+        const startH = Math.floor(m / 60);
+        const startM = m % 60;
+        // คำนวณเวลาจบ (+30 นาที)
+        const endH = Math.floor((m + 30) / 60);
+        const endM = (m + 30) % 60;
+
+        // แปลงเป็นสตริง HH:MM (เช่น 06:30)
+        const startStr = String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
+        const endStr = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
+
+        // รูปแบบเวลาสำหรับเช็ค key ในฐานข้อมูล/API (เช่น 06:30:00)
+        const startTime = startStr + ':00';
+
         const tr = document.createElement('tr');
-        let html = '<td><span class="hour-chip">' + h + ' - ' + hEnd + '</span></td>';
-        
-        // เช็กว่ารอบนี้เป็นรอบที่ผ่านมาแล้วหรือยัง (สำหรับเคสที่เป็นวันนี้)
-        const isTimePast = (ds === todayDs) && (currentHour >= parseInt(h));
+        let html = `<td><span class="hour-chip">${startStr} - ${endStr}</span></td>`;
+
+        // เช็กว่ารอบนี้เป็นรอบที่ผ่านมาแล้วหรือยัง (เช็คแบบละเอียดถึงระดับนาที)
+        const isTimePast = (ds === todayDs) && (currentTotalMinutes >= m);
 
         COURTS.forEach(c => {
             let status = (slots[c.id] && slots[c.id][startTime]) || 'available';
@@ -1193,12 +1214,12 @@ async function renderSch(ds) {
             } else if (status === 'unavailable') {
                 html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
             } else {
-                html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${h}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
+                html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
         });
         tr.innerHTML = html;
         tb.appendChild(tr);
-    });
+    }
 }
 
 function bookSlot(h, courtId, ds) {

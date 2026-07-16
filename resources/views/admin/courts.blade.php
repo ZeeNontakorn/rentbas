@@ -139,7 +139,7 @@
             <div class="flex flex-col lg:flex-row gap-6 mt-8">
 
                 {{-- LEFT COLUMN --}}
-                <div class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
+                <div class="w-full lg:w-[420px] flex-shrink-0 flex flex-col gap-6">
 
                     {{-- BOX 1: เลือกสนาม --}}
                     <div
@@ -233,6 +233,89 @@
                         <!-- Note: Native datepicker popup forms the pseudo-calendar seen in mockups -->
                     </div>
 
+                    {{-- BOX 4: จัดการส่วนของสนาม (ครึ่ง A/B) --}}
+                    <div class="border border-gray-200 bg-white rounded-lg p-4 shadow-sm">
+                        <span class="font-bold text-[15px] sm:text-[16px] text-gray-900 block mb-1">4. จัดการส่วนของสนาม (ครึ่งสนาม)</span>
+                        <p class="text-sm text-gray-500 mb-5">แบ่งสนามนี้เป็นครึ่ง A/B เพื่อให้ลูกค้าจองครึ่งสนามได้ ระบบจะกันไม่ให้จองซ้อนกับเต็มสนามให้อัตโนมัติ</p>
+
+                        @if (!$selectedCourt)
+                            <div class="text-center py-6 text-gray-400 text-sm">กรุณาเลือกสนาม</div>
+                        @else
+                            @php
+                                $fullSec = $sections->firstWhere('code', 'full');
+                                $aSec = $sections->firstWhere('code', 'a');
+                                $bSec = $sections->firstWhere('code', 'b');
+                                $isSplit = $aSec && $aSec->is_active && $bSec && $bSec->is_active;
+                            @endphp
+
+                            {{-- รายการ section ปัจจุบัน --}}
+                            <div class="flex flex-col gap-3 mb-6">
+                                @foreach ($sections as $sec)
+                                    <form method="POST" action="{{ route('admin.court-sections.update', $sec->id) }}"
+                                        class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 flex-wrap sm:flex-nowrap">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="return_date" value="{{ $date }}">
+                                        <span class="text-xs font-bold px-2 py-1 rounded {{ $sec->code === 'full' ? 'bg-gray-900 text-white' : 'bg-[#eef2ff] text-[#5271ff]' }}">
+                                            {{ strtoupper($sec->code) }}
+                                        </span>
+                                        <input type="text" name="name" value="{{ $sec->name }}" maxlength="100"
+                                            class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+
+                                        @if ($sec->code === 'full')
+                                            <span class="text-[12px] text-gray-400 px-2">เปิดใช้งานเสมอ</span>
+                                        @else
+                                            <label class="inline-flex items-center gap-2 text-sm text-gray-600 px-1">
+                                                <input type="checkbox" name="is_active" value="1" @checked($sec->is_active)
+                                                    class="rounded border-gray-300 text-[#5271ff] focus:ring-[#5271ff]">
+                                                เปิดใช้งาน
+                                            </label>
+                                        @endif
+
+                                        <button type="submit"
+                                            class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-3 py-1.5 transition">
+                                            บันทึก
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
+
+                            @if ($isSplit)
+                                {{-- ยกเลิกการแบ่งครึ่ง --}}
+                                <form method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}"
+                                    onsubmit="return confirm('ยกเลิกการแบ่งครึ่งสนาม {{ $selectedCourt->name }}? (ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)');">
+                                    @csrf
+                                    <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <button type="submit"
+                                        class="text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition">
+                                        ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
+                                    </button>
+                                </form>
+                            @else
+                                {{-- แบ่งครึ่งสนาม --}}
+                                <form method="POST" action="{{ route('admin.courts.sections.split', $selectedCourt->id) }}"
+                                    class="border-t border-gray-100 pt-4 flex flex-col sm:flex-row items-end gap-3">
+                                    @csrf
+                                    <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อครึ่ง A</label>
+                                        <input type="text" name="name_a" value="{{ $aSec->name ?? 'ครึ่ง A' }}" maxlength="100"
+                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                    </div>
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อครึ่ง B</label>
+                                        <input type="text" name="name_b" value="{{ $bSec->name ?? 'ครึ่ง B' }}" maxlength="100"
+                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                    </div>
+                                    <button type="submit"
+                                        class="text-[13px] font-medium text-white bg-[#87D068] hover:bg-[#76bc5a] rounded-lg px-4 py-2 transition whitespace-nowrap">
+                                        แบ่งครึ่งสนาม
+                                    </button>
+                                </form>
+                            @endif
+                        @endif
+                    </div>
+
                 </div>
 
                 {{-- RIGHT COLUMN --}}
@@ -274,6 +357,49 @@
                             </div>
                         @endif
                     </div>
+
+
+
+                    {{-- BOX 5: ความละเอียดของเวลา --}}
+                    {{-- <div class="border border-gray-200 bg-white rounded-lg p-6 shadow-sm">
+                        <span class="font-bold text-[16px] text-gray-900 block mb-1">5. ตั้งค่าความละเอียดของเวลา</span>
+                        <p class="text-[13px] text-gray-500 mb-5">กำหนดว่าลูกค้าเลือกเวลาเริ่ม/จบได้ทีละกี่นาที และต้องจองต่อเนื่องอย่างน้อยกี่นาที (ต่อสนามนี้)</p>
+
+                        @if (!$selectedCourt)
+                            <div class="text-center py-6 text-gray-400 text-sm">กรุณาเลือกสนาม</div>
+                        @else
+                            <form method="POST" action="{{ route('admin.courts.slot-settings', $selectedCourt->id) }}"
+                                class="flex flex-col sm:flex-row items-end gap-3">
+                                @csrf
+                                <input type="hidden" name="return_date" value="{{ $date }}">
+                                <div class="flex-1 w-full">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">เลือกเวลาได้ทีละ (นาที)</label>
+                                    <select name="slot_interval_minutes"
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        @foreach ([15, 30, 60] as $opt)
+                                            <option value="{{ $opt }}" @selected($selectedCourt->slot_interval_minutes == $opt)>{{ $opt }} นาที</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">จองต่อเนื่องขั้นต่ำ (นาที)</label>
+                                    <select name="min_booking_minutes"
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        @foreach ([30, 60, 90, 120] as $opt)
+                                            <option value="{{ $opt }}" @selected($selectedCourt->min_booking_minutes == $opt)>{{ $opt }} นาที</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit"
+                                    class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-5 py-2 transition whitespace-nowrap">
+                                    บันทึก
+                                </button>
+                            </form>
+                            @error('min_booking_minutes')
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </div> --}}
 
                     {{-- Action Box (Fixed bottom or static) --}}
                     <div id="statusBox"
