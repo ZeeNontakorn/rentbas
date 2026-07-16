@@ -11,9 +11,6 @@
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
 
-            .bk-main {
-                font-family: 'Sarabun', 'Kanit', sans-serif;
-            }
 
             .bk-main h1,
             .bk-main h2,
@@ -132,7 +129,9 @@
                 </div>
                 <button type="button" onclick="openCourtModal()"
                     class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2">
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M12 5v14m7-7H5"/></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M12 5v14m7-7H5" />
+                    </svg>
                     เพิ่มสนาม
                 </button>
             </div>
@@ -140,7 +139,7 @@
             <div class="flex flex-col lg:flex-row gap-6 mt-8">
 
                 {{-- LEFT COLUMN --}}
-                <div class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
+                <div class="w-full lg:w-[420px] flex-shrink-0 flex flex-col gap-6">
 
                     {{-- BOX 1: เลือกสนาม --}}
                     <div
@@ -169,16 +168,30 @@
                                                 <span>{{ $court->name }}</span>
                                             </span>
                                         </a>
-                                        <button type="button"
-                                            class="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 text-gray-500 hover:bg-white hover:text-gray-900 transition"
-                                            onclick="event.preventDefault(); event.stopPropagation(); openCourtModal('edit', {{ $court->id }}, @js($court->name), '{{ $court->court_status }}')"
-                                            title="แก้ไขสนาม">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path
-                                                    d="M22.94,1.061c-1.368-1.367-3.76-1.365-5.124,0L1.611,17.265c-1.039,1.04-1.611,2.421-1.611,3.89v2.346c0,.276,.224,.5,.5,.5H2.846c1.47,0,2.851-.572,3.889-1.611L22.86,6.265c.579-.581,.953-1.262,1.08-1.972,.216-1.202-.148-2.381-1-3.232ZM6.028,21.682c-.85,.851-1.979,1.318-3.182,1.318H1v-1.846c0-1.202,.468-2.332,1.318-3.183L15.292,4.999l3.709,3.709L6.028,21.682ZM22.956,4.116c-.115,.642-.5,1.138-.803,1.441l-2.444,2.444-3.709-3.709,2.525-2.525c.986-.988,2.718-.99,3.709,0,.617,.617,.88,1.473,.723,2.349Z" />
-                                            </svg>
-                                        </button>
+                                        <!-- ปุ่ม Action -->
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <!-- ปุ่มแก้ไข -->
+                                            <button type="button"
+                                                class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 text-gray-500 hover:bg-white hover:text-gray-900 transition"
+                                                onclick="event.preventDefault(); event.stopPropagation(); openCourtModal('edit', {{ $court->id }}, @js($court->name), '{{ $court->court_status }}')"
+                                                title="แก้ไขสนาม">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        d="M22.94,1.061c-1.368-1.367-3.76-1.365-5.124,0L1.611,17.265c-1.039,1.04-1.611,2.421-1.611,3.89v2.346c0,.276,.224,.5,.5,.5H2.846c1.47,0,2.851-.572,3.889-1.611L22.86,6.265c.579-.581,.953-1.262,1.08-1.972,.216-1.202-.148-2.381-1-3.232ZM6.028,21.682c-.85,.851-1.979,1.318-3.182,1.318H1v-1.846c0-1.202,.468-2.332,1.318-3.183L15.292,4.999l3.709,3.709L6.028,21.682ZM22.956,4.116c-.115,.642-.5,1.138-.803,1.441l-2.444,2.444-3.709-3.709,2.525-2.525c.986-.988,2.718-.99,3.709,0,.617,.617,.88,1.473,.723,2.349Z" />
+                                                </svg>
+                                            </button>
+
+                                            <!-- ปุ่มลบ -->
+                                            <button type="button"
+                                                class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 text-gray-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+                                                onclick="event.preventDefault(); event.stopPropagation(); deleteCourt({{ $court->id }}, @js($court->name))"
+                                                title="ลบสนาม">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -213,11 +226,94 @@
                             <form id="dateForm" method="GET" action="{{ route('admin.courts') }}">
                                 <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
                                 <input type="date" name="date" value="{{ $date }}"
-                                    onchange="document.getElementById('dateForm').submit()"
+                                    id="dateInput"
                                     class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
                             </form>
                         </div>
                         <!-- Note: Native datepicker popup forms the pseudo-calendar seen in mockups -->
+                    </div>
+
+                    {{-- BOX 4: จัดการส่วนของสนาม (ครึ่ง A/B) --}}
+                    <div class="border border-gray-200 bg-white rounded-lg p-4 shadow-sm">
+                        <span class="font-bold text-[15px] sm:text-[16px] text-gray-900 block mb-1">4. จัดการส่วนของสนาม (ครึ่งสนาม)</span>
+                        <p class="text-sm text-gray-500 mb-5">แบ่งสนามนี้เป็นครึ่ง A/B เพื่อให้ลูกค้าจองครึ่งสนามได้ ระบบจะกันไม่ให้จองซ้อนกับเต็มสนามให้อัตโนมัติ</p>
+
+                        @if (!$selectedCourt)
+                            <div class="text-center py-6 text-gray-400 text-sm">กรุณาเลือกสนาม</div>
+                        @else
+                            @php
+                                $fullSec = $sections->firstWhere('code', 'full');
+                                $aSec = $sections->firstWhere('code', 'a');
+                                $bSec = $sections->firstWhere('code', 'b');
+                                $isSplit = $aSec && $aSec->is_active && $bSec && $bSec->is_active;
+                            @endphp
+
+                            {{-- รายการ section ปัจจุบัน --}}
+                            <div class="flex flex-col gap-3 mb-6">
+                                @foreach ($sections as $sec)
+                                    <form method="POST" action="{{ route('admin.court-sections.update', $sec->id) }}"
+                                        class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 flex-wrap sm:flex-nowrap">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="return_date" value="{{ $date }}">
+                                        <span class="text-xs font-bold px-2 py-1 rounded {{ $sec->code === 'full' ? 'bg-gray-900 text-white' : 'bg-[#eef2ff] text-[#5271ff]' }}">
+                                            {{ strtoupper($sec->code) }}
+                                        </span>
+                                        <input type="text" name="name" value="{{ $sec->name }}" maxlength="100"
+                                            class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+
+                                        @if ($sec->code === 'full')
+                                            <span class="text-[12px] text-gray-400 px-2">เปิดใช้งานเสมอ</span>
+                                        @else
+                                            <label class="inline-flex items-center gap-2 text-sm text-gray-600 px-1">
+                                                <input type="checkbox" name="is_active" value="1" @checked($sec->is_active)
+                                                    class="rounded border-gray-300 text-[#5271ff] focus:ring-[#5271ff]">
+                                                เปิดใช้งาน
+                                            </label>
+                                        @endif
+
+                                        <button type="submit"
+                                            class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-3 py-1.5 transition">
+                                            บันทึก
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
+
+                            @if ($isSplit)
+                                {{-- ยกเลิกการแบ่งครึ่ง --}}
+                                <form method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}"
+                                    onsubmit="return confirm('ยกเลิกการแบ่งครึ่งสนาม {{ $selectedCourt->name }}? (ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)');">
+                                    @csrf
+                                    <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <button type="submit"
+                                        class="text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition">
+                                        ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
+                                    </button>
+                                </form>
+                            @else
+                                {{-- แบ่งครึ่งสนาม --}}
+                                <form method="POST" action="{{ route('admin.courts.sections.split', $selectedCourt->id) }}"
+                                    class="border-t border-gray-100 pt-4 flex flex-col sm:flex-row items-end gap-3">
+                                    @csrf
+                                    <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อครึ่ง A</label>
+                                        <input type="text" name="name_a" value="{{ $aSec->name ?? 'ครึ่ง A' }}" maxlength="100"
+                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                    </div>
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อครึ่ง B</label>
+                                        <input type="text" name="name_b" value="{{ $bSec->name ?? 'ครึ่ง B' }}" maxlength="100"
+                                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                    </div>
+                                    <button type="submit"
+                                        class="text-[13px] font-medium text-white bg-[#87D068] hover:bg-[#76bc5a] rounded-lg px-4 py-2 transition whitespace-nowrap">
+                                        แบ่งครึ่งสนาม
+                                    </button>
+                                </form>
+                            @endif
+                        @endif
                     </div>
 
                 </div>
@@ -261,6 +357,49 @@
                             </div>
                         @endif
                     </div>
+
+
+
+                    {{-- BOX 5: ความละเอียดของเวลา --}}
+                    {{-- <div class="border border-gray-200 bg-white rounded-lg p-6 shadow-sm">
+                        <span class="font-bold text-[16px] text-gray-900 block mb-1">5. ตั้งค่าความละเอียดของเวลา</span>
+                        <p class="text-[13px] text-gray-500 mb-5">กำหนดว่าลูกค้าเลือกเวลาเริ่ม/จบได้ทีละกี่นาที และต้องจองต่อเนื่องอย่างน้อยกี่นาที (ต่อสนามนี้)</p>
+
+                        @if (!$selectedCourt)
+                            <div class="text-center py-6 text-gray-400 text-sm">กรุณาเลือกสนาม</div>
+                        @else
+                            <form method="POST" action="{{ route('admin.courts.slot-settings', $selectedCourt->id) }}"
+                                class="flex flex-col sm:flex-row items-end gap-3">
+                                @csrf
+                                <input type="hidden" name="return_date" value="{{ $date }}">
+                                <div class="flex-1 w-full">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">เลือกเวลาได้ทีละ (นาที)</label>
+                                    <select name="slot_interval_minutes"
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        @foreach ([15, 30, 60] as $opt)
+                                            <option value="{{ $opt }}" @selected($selectedCourt->slot_interval_minutes == $opt)>{{ $opt }} นาที</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">จองต่อเนื่องขั้นต่ำ (นาที)</label>
+                                    <select name="min_booking_minutes"
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        @foreach ([30, 60, 90, 120] as $opt)
+                                            <option value="{{ $opt }}" @selected($selectedCourt->min_booking_minutes == $opt)>{{ $opt }} นาที</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit"
+                                    class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-5 py-2 transition whitespace-nowrap">
+                                    บันทึก
+                                </button>
+                            </form>
+                            @error('min_booking_minutes')
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </div> --}}
 
                     {{-- Action Box (Fixed bottom or static) --}}
                     <div id="statusBox"
@@ -316,8 +455,8 @@
                     <button type="button" onclick="closeCourtModal()"
                         class="inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                            </path>
                         </svg>
                     </button>
                 </div>
@@ -331,8 +470,7 @@
                     <input type="hidden" name="return_court_id" value="{{ $selectedCourt?->id }}">
                     <div>
                         <label for="court_name" class="block text-sm font-medium text-gray-700 mb-1">ชื่อสนาม</label>
-                        <input id="court_name" name="name" type="text" required maxlength="255"
-                            value="{{ old('name') }}"
+                        <input id="court_name" name="name" type="text" required maxlength="255" value="{{ old('name') }}"
                             class="w-full rounded-lg border px-4 py-2.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 outline-none {{ $errors->has('name') ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:border-[#5271ff]' }}"
                             placeholder="เช่น สนาม 1">
                         @error('name')
@@ -372,7 +510,7 @@
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,
-                    timer: 3000,
+                    timer: 2000,
                     timerProgressBar: true,
                     didOpen: (toast) => {
                         toast.onmouseenter = Swal.stopTimer;
@@ -380,7 +518,7 @@
                     }
                 });
 
-                document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function () {
                     // Toast ที่ถูกฝากไว้ก่อนเปลี่ยนหน้า (จากฟอร์ม AJAX เช่น สร้าง/แก้ไขสนาม)
                     try {
                         const pending = sessionStorage.getItem('pendingToast');
@@ -388,7 +526,7 @@
                             sessionStorage.removeItem('pendingToast');
                             Toast.fire(JSON.parse(pending));
                         }
-                    } catch (e) {}
+                    } catch (e) { }
 
                     @if (session('success'))
                         Toast.fire({
@@ -410,7 +548,21 @@
                             title: @js($errors->first())
                         });
                     @endif
-                });
+
+                    const dateInput = document.getElementById('dateInput');
+                    const dateForm = document.getElementById('dateForm');
+                    if (dateInput && dateForm) {
+                        dateInput.addEventListener('change', function () {
+                            document.getElementById('statusBox')?.classList.add('hidden');
+                            if (selEl) {
+                                selEl.classList.remove('selected');
+                                selEl = null;
+                            }
+                            dateForm.submit();
+                        });
+                    }
+
+                                });
 
                 function openCourtModal(mode = 'create', courtId = null, courtName = '', courtStatus = 'open') {
                     const modal = document.getElementById('courtModal');
@@ -510,7 +662,7 @@
                     modal.classList.remove('flex');
                 }
 
-                document.getElementById('courtModal')?.addEventListener('click', function(event) {
+                document.getElementById('courtModal')?.addEventListener('click', function (event) {
                     if (event.target === this) {
                         closeCourtModal();
                     }
@@ -552,7 +704,7 @@
                 }
 
                 // ----- AJAX submit (ไม่ปิด modal / ไม่ reload หน้าเวลา validate ไม่ผ่าน) -----
-                document.getElementById('courtForm')?.addEventListener('submit', async function(e) {
+                document.getElementById('courtForm')?.addEventListener('submit', async function (e) {
                     e.preventDefault();
 
                     const form = this;
@@ -604,7 +756,7 @@
                                 icon: 'success',
                                 title: data.message || 'บันทึกข้อมูลเรียบร้อยแล้ว'
                             }));
-                        } catch (e) {}
+                        } catch (e) { }
                         // สำเร็จ ค่อยพาไปหน้าที่อัปเดตแล้ว (modal จะปิดเพราะเปลี่ยนหน้า)
                         window.location.href = data.redirect || window.location.href;
                     } catch (err) {
@@ -669,6 +821,65 @@
                             '0');
                     }
                 }, 60000);
+
+                function deleteCourt(courtId, courtName) {
+                    Swal.fire({
+                        title: 'ยืนยันการลบสนาม?',
+                        html: `คุณต้องการลบ <b>${courtName}</b> ใช่หรือไม่?<br><span class="text-sm text-red-500">(สามารถลบได้เฉพาะสนามที่ยังไม่มีการจองเท่านั้น)</span>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'ใช่, ลบสนาม',
+                        cancelButtonText: 'ยกเลิก',
+                        reverseButtons: true
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            try {
+                                // ส่ง Request แบบ DELETE ไปยัง Route สำหรับลบ
+                                const res = await fetch(`{{ url('/admin/courts') }}/${courtId}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+
+                                const data = await res.json();
+
+                                if (!res.ok) {
+                                    // หาก Backend ตอบกลับว่าลบไม่ได้ (เช่น ติดการจอง)
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'ไม่สามารถลบได้!',
+                                        text: data.message || 'สนามนี้มีการจองเกิดขึ้นแล้ว หรือมีข้อผิดพลาด'
+                                    });
+                                    return;
+                                }
+
+                                // กรณีลบสำเร็จ
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'ลบสำเร็จ!',
+                                    text: data.message || 'ลบข้อมูลสนามเรียบร้อยแล้ว',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    // รีโหลดหน้า หรือส่งผู้ใช้กลับไปหน้าหลักของคอร์ท
+                                    window.location.href = '{{ route("admin.courts") }}';
+                                });
+
+                            } catch (err) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'ข้อผิดพลาด!',
+                                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
+                                });
+                            }
+                        }
+                    });
+                }
             </script>
         @endpush
-    @endsection
+@endsection

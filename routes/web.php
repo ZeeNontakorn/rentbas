@@ -17,6 +17,19 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Public schedule API (used by home calendar to show real booking status)
 Route::get('/schedule', [HomeController::class, 'schedule'])->name('schedule');
 
+Route::get('/media/{path}', function (string $path) {
+    $base = realpath(storage_path('app/public'));
+    $full = realpath(storage_path('app/public/' . $path));
+
+    if (! $full || ! str_starts_with($full, $base)) {
+        abort(404);
+    }
+
+    return response()->file($full, [
+        'Cache-Control' => 'public, max-age=604800',
+    ]);
+})->where('path', '.*')->name('storage.local');
+
 // Per-day availability for the calendar dots (whole month)
 Route::get('/month-availability', [HomeController::class, 'monthAvailability'])->name('month.availability');
 
@@ -54,6 +67,7 @@ Route::middleware(['auth','verified_otp'])->group(function () {
     // Booking System
     Route::prefix('booking')->name('booking.')->group(function () {
         Route::get('/', [BookingController::class, 'index'])->name('index');
+        Route::get('/calendar', [BookingController::class, 'calendar'])->name('calendar');
         Route::get('/court/{court}', [BookingController::class, 'show'])->name('show');
         Route::post('/', [BookingController::class, 'store'])->name('store');
         Route::post('/{booking}/cancel', [BookingController::class, 'cancel'])->name('cancel');
@@ -75,6 +89,7 @@ Route::middleware(['auth','verified_otp'])->group(function () {
 
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
@@ -86,6 +101,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
     Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
+    Route::post('/courts/{court}/sections/split', [AdminCourtController::class, 'splitSection'])->name('courts.sections.split');
+    Route::post('/courts/{court}/sections/merge', [AdminCourtController::class, 'mergeSections'])->name('courts.sections.merge');
+    Route::put('/court-sections/{courtSection}', [AdminCourtController::class, 'updateSection'])->name('court-sections.update');
+    Route::post('/courts/{court}/slot-settings', [AdminCourtController::class, 'updateSlotSettings'])->name('courts.slot-settings');
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
@@ -110,11 +129,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/reset-password',  'resetPassword')->name('password.reset');
 });
 
-Route::get('/storage/{path}', function ($path) {
-    $fullPath = storage_path('app/public/' . $path);
-    abort_unless(file_exists($fullPath), 404);
-    return response()->file($fullPath);
-})->where('path', '.*');
 
 Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
     ->name('admin.courts.images.update');
+

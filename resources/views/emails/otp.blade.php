@@ -24,7 +24,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏀 Basketball Court Booking</h1>
+            <h1>THATA HOMECOURT</h1>
             <p>ระบบจองสนามบาสเกตบอล</p>
         </div>
         <div class="body">
@@ -43,7 +43,7 @@
             <p>หากมีข้อสงสัย สามารถติดต่อเราได้ทาง {{ config('mail.from.address') }}</p>
         </div>
         <div class="footer">
-            <p>© {{ date('Y') }} Basketball Court Booking System — ส่งอัตโนมัติ กรุณาอย่าตอบกลับอีเมลนี้</p>
+            <p>© {{ date('Y') }} THATA HOMECOURT — ส่งอัตโนมัติ กรุณาอย่าตอบกลับอีเมลนี้</p>
         </div>
     </div>
 </body>
