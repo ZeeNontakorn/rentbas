@@ -146,7 +146,9 @@
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-select" id="timeline-container">
                 <div class="mb-4">
-                    <h3 class="font-bold text-gray-800 text-lg">Staff Availability Timeline</h3>
+                    <h3 class="font-bold text-gray-800 text-lg">
+                        {{ $staff->role === 'coach' ? 'Coach' : 'Staff' }} Availability Timeline
+                    </h3>
                     <p class="text-xs text-gray-400 mt-0.5">ตารางงานของ {{ $staff->name }} วันนี้ (08:00–22:00 น.)</p>
                 </div>
 
@@ -266,23 +268,59 @@
             class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-gray-800">แก้ไขข้อมูลโปรไฟล์</h3>
-                <button type="button" onclick="closeStaffProfileModal()"
-                    class="text-gray-400 hover:text-gray-600 transition text-xl font-bold leading-none">&times;</button>
             </div>
+
             <form action="{{ route('admin.staffs.profile.update', $staff->id) }}" method="POST"
                 class="p-6 space-y-4 bg-white">
                 @csrf @method('PUT')
+
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ชื่อ-นามสกุล <span
                             class="text-red-500">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $staff->name) }}" required
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span
+                            class="text-red-500">*</span></label>
+                    <select name="role" required
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        <option value="staff" {{ old('role', $staff->role) === 'staff' ? 'selected' : '' }}>ผู้ช่วยสนาม
+                            (Staff)</option>
+                        <option value="coach" {{ old('role', $staff->role) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">อีเมล <span
+                            class="text-red-500">*</span></label>
+                    <input type="email" name="email" value="{{ old('email', $staff->email) }}" required
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
+                </div>
+
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">เบอร์โทรศัพท์</label>
-                    <input type="text" name="phone" value="{{ old('phone', $staff->phone ?? '') }}"
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" name="phone" value="{{ old('phone', $staff->phone ?? '') }}" maxlength="10"
+                        pattern="[0-9]{10}" title="กรุณากรอกเบอร์โทรศัพท์ตัวเลข 10 หลัก"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ความเชี่ยวชาญ</label>
+                    <input type="text" name="specialty" value="{{ old('specialty', $staffProfile->specialty ?? '') }}"
+                        placeholder="เช่น ผู้ช่วยฝึกสอนเบสิค"
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">แนะนำตัว (Bio)</label>
+                    <textarea name="bio" rows="3" placeholder="เขียนคำแนะนำตัว..."
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-gray-700">{{ old('bio', $staffProfile->bio ?? '') }}</textarea>
+                </div>
+
                 <div class="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
                     <button type="button" onclick="closeStaffProfileModal()"
                         class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">ยกเลิก</button>
@@ -301,7 +339,7 @@
         function closeStaffProfileModal() {
             document.getElementById('staffProfileModal').classList.replace('flex', 'hidden');
         }
-            @if($errors->any()) openStaffProfileModal(); @endif
+                            @if($errors->any()) openStaffProfileModal(); @endif
 
         // Drag & Select Timeline System
         let isDragging = false;
@@ -454,6 +492,6 @@
             @if ($errors->any())
                 Toast.fire({ icon: 'error', title: @js($errors->first()) });
             @endif
-            });
+        });
     </script>
 @endsection

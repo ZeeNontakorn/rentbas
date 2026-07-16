@@ -7,6 +7,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\StaffController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -107,10 +108,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
 
     // จัดการโค้ช และผู้ช่วย
-    Route::get('/staffs', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('staffs.index');
-    Route::get('/staffs/{staff}', [\App\Http\Controllers\Admin\StaffController::class, 'show'])->name('staffs.show');
-    Route::put('/staffs/{staff}/profile', [\App\Http\Controllers\Admin\StaffController::class, 'updateProfile'])->name('staffs.profile.update');
-    Route::post('/staffs/{staff}/availabilities', [\App\Http\Controllers\Admin\StaffController::class, 'storeAvailability'])->name('staffs.availabilities.store');
+    Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
+    Route::get('/staffs/{staff}', [StaffController::class, 'show'])->name('staffs.show');
+    Route::put('/staffs/{staff}/profile', [StaffController::class, 'updateProfile'])->name('staffs.profile.update');
+    Route::post('/staffs/{staff}/availabilities', [StaffController::class, 'storeAvailability'])->name('staffs.availabilities.store');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
