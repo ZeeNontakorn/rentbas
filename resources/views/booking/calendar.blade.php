@@ -62,6 +62,10 @@
 .cal-block.st-pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .cal-block.st-closed { background: repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 6px,#e5e7eb 6px,#e5e7eb 12px); color: #9ca3af; border: 1px solid #e5e7eb; }
 .cal-block.st-past { background: #f9fafb; color: #d1d5db; border: 1px solid #f1f3f5; }
+.cal-block.st-crossblocked {
+    background: #f3f4f6; color: #9ca3af; border: 1px dashed #d1d5db;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+}
 
 .cal-drag {
     position: absolute; left: 2px; right: 2px; border-radius: 6px;
@@ -277,6 +281,8 @@ const MIN_MINUTES = {{ $matrix['minBookingMinutes'] }};
 const ROWS = @json($mappedRows);
 const TODAY_STR = '{{ now()->toDateString() }}';
 const PAGE_DATE = '{{ $date }}';
+// รหัส section (full / a / b ...) ต่อ id — ใช้เช็คว่า section ไหนเป็น "เต็มสนาม"
+const SECTION_CODES = @json(collect($matrix['sections'])->pluck('code', 'id'));
 
 function timeToMin(t) {
     const [h, m] = t.split(':').map(Number);
@@ -290,18 +296,41 @@ function statusAt(sectionId, minute) {
     const row = ROWS.find(r => timeToMin(r.start) <= minute && minute < timeToMin(r.end));
     return row ? row.sections[sectionId] : 'closed';
 }
-function isRangeAvailable(sectionId, startMin, endMin) {
-    for (let m = startMin; m < endMin; m += INTERVAL) {
-        if (statusAt(sectionId, m) !== 'available') return false;
-    }
-    return true;
-}
 // หาขอบเขตช่วงว่างต่อเนื่องที่ครอบ anchorMin อยู่ (ใช้ clamp ตอนลาก)
 function availableRunBounds(sectionId, anchorMin) {
     let lo = anchorMin, hi = anchorMin + INTERVAL;
-    while (lo - INTERVAL >= OPEN && statusAt(sectionId, lo - INTERVAL) === 'available') lo -= INTERVAL;
-    while (hi < CLOSE && statusAt(sectionId, hi) === 'available') hi += INTERVAL;
+    while (lo - INTERVAL >= OPEN && effectiveStatusAt(sectionId, lo - INTERVAL) === 'available') lo -= INTERVAL;
+    while (hi < CLOSE && effectiveStatusAt(sectionId, hi) === 'available') hi += INTERVAL;
     return { lo, hi };
+}
+
+// ช่วงเวลา (นาที) ที่ section นี้ถูก "บล็อกชั่วคราว" เพราะมีการเลือก (ยังไม่ยืนยัน) อยู่ใน
+// section ที่ตัดกันอยู่ — เต็มสนามบล็อกครึ่งสนามทุกอัน และครึ่งสนามก็บล็อกเต็มสนามกลับ
+// (ครึ่ง A กับครึ่ง B ไม่บล็อกกันเอง เหมือน logic ฝั่ง backend)
+function crossBlockingRanges(sectionId) {
+    const iAmFull = SECTION_CODES[sectionId] === 'full';
+    return selections
+        .filter(s => {
+            const selIsFull = SECTION_CODES[s.sectionId] === 'full';
+            return iAmFull ? !selIsFull : selIsFull;
+        })
+        .map(s => [timeToMin(s.start), timeToMin(s.end)]);
+}
+
+// เหมือน statusAt() แต่รวมผลของการเลือกค้างอยู่ (cross full/half) เข้าไปด้วย
+// ใช้แทน statusAt() ทุกจุดที่ตัดสินใจว่าลากได้/ไม่ได้ เพื่อกันไม่ให้เลือกทับข้ามฝั่งได้ก่อน submit
+function effectiveStatusAt(sectionId, minute) {
+    const base = statusAt(sectionId, minute);
+    if (base !== 'available') return base;
+    const blocked = crossBlockingRanges(sectionId).some(([s, e]) => minute >= s && minute < e);
+    return blocked ? 'crossblocked' : 'available';
+}
+
+function isRangeAvailable(sectionId, startMin, endMin) {
+    for (let m = startMin; m < endMin; m += INTERVAL) {
+        if (effectiveStatusAt(sectionId, m) !== 'available') return false;
+    }
+    return true;
 }
 
 let selections = []; // {sectionId, sectionName, start, end, label, blockEl}
@@ -376,7 +405,7 @@ function setupDrag(lane, sectionId) {
         if (e.target !== lane) return; // อย่าเริ่มลากถ้ากดโดนบล็อกที่จองไว้แล้ว/selected block
         const rawMin = yToMinutes(lane, e.clientY);
         const startCandidate = snapDown(rawMin);
-        if (statusAt(sectionId, startCandidate) !== 'available') return;
+        if (effectiveStatusAt(sectionId, startCandidate) !== 'available') return;
 
         dragging = true;
         moved = false;
@@ -441,6 +470,27 @@ function setupDrag(lane, sectionId) {
 }
 
 function addSelection(sectionId, sectionName, start, end, lane) {
+    // ถ้าช่วงที่เพิ่งลากทับซ้อน (หรือชนต่อกันพอดี) กับรายการที่เลือกไว้แล้วใน section
+    // เดียวกัน ให้ "รวม" เป็นช่วงเดียวแทนที่จะสร้างเป็นรายการที่ซ้อนกัน 2 รายการ
+    // (วนซ้ำเผื่อรวมแล้วไปทับกับรายการอื่นต่อเป็นทอดๆ เช่น เดิมมี 2 ช่วง แล้วลากช่วงใหม่คาบทั้งคู่)
+    let merged = true;
+    while (merged) {
+        merged = false;
+        for (let i = selections.length - 1; i >= 0; i--) {
+            const s = selections[i];
+            if (s.sectionId !== sectionId) continue;
+
+            const sStart = timeToMin(s.start), sEnd = timeToMin(s.end);
+            if (sStart <= end && sEnd >= start) {
+                start = Math.min(start, sStart);
+                end = Math.max(end, sEnd);
+                s.blockEl.remove();
+                selections.splice(i, 1);
+                merged = true;
+            }
+        }
+    }
+
     const block = document.createElement('div');
     block.className = 'cal-selected';
     block.style.top = ((start - OPEN) * PX_PER_MIN) + 'px';
@@ -467,6 +517,7 @@ function addSelection(sectionId, sectionName, start, end, lane) {
 }
 
 function updateConfirmBox() {
+    renderCrossBlocks();
     const box = document.getElementById('confirmBox');
     const list = document.getElementById('confirmList');
     if (selections.length === 0) { box.classList.add('hidden'); list.innerHTML = ''; return; }
@@ -476,6 +527,24 @@ function updateConfirmBox() {
             <span class="text-gray-500"><span class="text-gray-400">(${s.sectionName})</span> เวลา <span class="font-bold text-gray-900">${s.label} น.</span></span>
             <button type="button" onclick="removeSelectionByIndex(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
         </div>`).join('');
+}
+
+// วาด/ล้าง overlay สีเทาทับฝั่งตรงข้าม (เต็มสนาม <-> ครึ่งสนาม) ตามที่กำลังเลือกอยู่ตอนนี้
+// เรียกทุกครั้งที่ selections เปลี่ยน (เพิ่ม/ลบ) ให้ผลลัพธ์ตรงกับ effectiveStatusAt() เสมอ
+function renderCrossBlocks() {
+    document.querySelectorAll('.cal-lane').forEach(lane => {
+        lane.querySelectorAll('.cal-block.st-crossblocked').forEach(el => el.remove());
+
+        const sectionId = lane.dataset.sectionId;
+        crossBlockingRanges(sectionId).forEach(([s, e]) => {
+            const div = document.createElement('div');
+            div.className = 'cal-block st-crossblocked';
+            div.style.top = ((s - OPEN) * PX_PER_MIN) + 'px';
+            div.style.height = Math.max((e - s) * PX_PER_MIN, 16) + 'px';
+            if ((e - s) * PX_PER_MIN >= 22) div.textContent = 'ไม่ว่าง';
+            lane.appendChild(div);
+        });
+    });
 }
 function removeSelectionByIndex(idx) {
     const s = selections[idx];
