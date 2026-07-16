@@ -108,34 +108,38 @@ class CourtController extends Controller
 
         $slots = [];
         if ($selectedCourt) {
-            $dateCarbon = Carbon::parse($date);
+            $now = now();
 
             // Check if court is globally closed
             $isGloballyClosed = ($selectedCourt->court_status === 'closed');
+
+            $fullSection = $selectedCourt->defaultSection();
+            $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
+
+            // ดึงการจองของวันนี้ทั้งหมดมาครั้งเดียว แล้วเช็ค overlap เอง (แทนการ query แบบ exact-match ต่อชั่วโมง
+            // ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง และไม่รู้จัก court_section conflict)
+            $dayBookings = Booking::where('court_id', $selectedCourt->id)
+                ->whereDate('booking_date', $date)
+                ->whereIn('status', ['pending', 'approved'])
+                ->get(['court_section_id', 'start_time', 'end_time', 'status']);
 
             for ($h = 6; $h < 22; $h++) {
                 $start = sprintf('%02d:00:00', $h);
                 $end = sprintf('%02d:00:00', $h + 1);
 
-                $booking = Booking::where('court_id', $selectedCourt->id)
-                    ->whereDate('booking_date', $date)
-                    ->whereIn('status', ['pending', 'approved'])
-                    ->where('start_time', $start)
-                    ->where('end_time', $end)
-                    ->first();
+                $booking = $dayBookings->first(function ($b) use ($conflictIds, $start, $end) {
+                    return in_array($b->court_section_id, $conflictIds, true)
+                        && $b->start_time < $end && $b->end_time > $start;
+                });
 
-                $closure = CourtClosure::where('court_id', $selectedCourt->id)
-                    ->whereDate('date', $date)
-                    ->where('start_time', '<', $end)
-                    ->where('end_time', '>', $start)
-                    ->first();
+                $closureType = $selectedCourt->getClosureType($start, $end, $date, $fullSection);
 
                 $status = 'available';
 
                 if ($isGloballyClosed) {
                     $status = 'unavailable'; // Or a specific 'closed' status
-                } elseif ($closure) {
-                    $status = $closure->type; // 'maintenance' or 'unavailable'
+                } elseif ($closureType) {
+                    $status = $closureType; // 'maintenance' or 'unavailable'
                 } elseif ($booking) {
                     $status = 'booking_' . $booking->status; // 'booking_pending' or 'booking_approved'
                 }
