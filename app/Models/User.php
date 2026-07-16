@@ -19,11 +19,18 @@ class User extends Authenticatable
     protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified', 'membership_type'];
     protected $hidden = ['password', 'remember_token'];
 
-    // ประเภทสมาชิก: ลูกค้าทั่วไป / ผู้สนับสนุน / นักเรียนบาส
+    // ประเภทสมาชิกสำหรับ role 'user' — ลูกค้าทั่วไป / ผู้สนับสนุน / นักเรียนบาส
     const MEMBERSHIP_TYPES = [
         'customer' => 'ลูกค้า',
         'sponsor'  => 'ผู้สนับสนุน',
         'student'  => 'นักเรียนบาส',
+    ];
+
+    // ประเภทสมาชิกสำหรับ role 'staff' — พนักงานประจำ / พนักงานชั่วคราว / นักศึกษาฝึกงาน
+    const STAFF_TYPES = [
+        'permanent' => 'พนักงานประจำ',
+        'temporary' => 'พนักงานชั่วคราว',
+        'intern'    => 'นักศึกษาฝึกงาน',
     ];
 
     protected function casts(): array
@@ -60,8 +67,14 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    // คืนชุดตัวเลือกประเภทสมาชิกที่ถูกต้องตาม role ปัจจุบันของ user คนนี้
+    public function membershipTypeOptions(): array
+    {
+        return $this->role === 'staff' ? self::STAFF_TYPES : self::MEMBERSHIP_TYPES;
+    }
+
     public function membershipTypeLabel(): string
     {
-        return self::MEMBERSHIP_TYPES[$this->membership_type] ?? '-';
+        return $this->membershipTypeOptions()[$this->membership_type] ?? '-';
     }
 }

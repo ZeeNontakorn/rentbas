@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Booking;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -14,8 +15,7 @@ class UserController extends Controller
     {
         $search = $request->query('search');
 
-        // ค้นหาผู้ใช้จากชื่อ (ถ้ามีการค้นหา) และดึงเฉพาะ role 'user'
-         $users = User::whereIn('role', ['admin','user', 'staff'])
+        $users = User::whereIn('role', ['admin','user','staff'])
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
@@ -32,7 +32,6 @@ class UserController extends Controller
     {
         $today = now()->toDateString();
 
-        // 1. คำขอจองปัจจุบัน (รอดำเนินการ หรือ อนุมัติแล้ว และวันที่ยังไม่ผ่านไป)
         $currentBookings = Booking::with('court')
             ->where('user_id', $user->id)
             ->whereIn('status', ['pending', 'approved'])
@@ -41,7 +40,6 @@ class UserController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        // 2. ประวัติการจอง (ถูกปฏิเสธ, ยกเลิก หรือ วันที่ผ่านไปแล้ว)
         $pastBookings = Booking::with('court')
             ->where('user_id', $user->id)
             ->where(function($q) use ($today) {
@@ -55,7 +53,7 @@ class UserController extends Controller
         return view('admin.users.show', compact('user', 'currentBookings', 'pastBookings'));
     }
 
-    // แก้ไข role (user / staff / admin) — ของเพื่อน
+    // แก้ไข role (user / staff / admin)
     public function updateRole(Request $request, User $user)
     {
         $request->validate([
@@ -64,25 +62,39 @@ class UserController extends Controller
             'role.in' => 'Role ไม่ถูกต้อง',
         ]);
 
-        // กันเหนียว ไม่ให้แก้ role ของ superadmin (id = 0) ผ่านช่องทางนี้
         if ($user->id === 0) {
             abort(403, 'ไม่สามารถแก้ไข role ของ superadmin ได้');
         }
 
-        $user->update(['role' => $request->role]);
+        $newRole = $request->role;
+        $updates = ['role' => $newRole];
 
-        return back()->with('success', "เปลี่ยน role ของ {$user->name} เป็น {$request->role} เรียบร้อยแล้ว");
+        // ถ้าเปลี่ยน role แล้วประเภทสมาชิกเดิมใช้ไม่ได้กับ role ใหม่ ให้รีเซ็ตเป็นค่าเริ่มต้นที่เหมาะสม
+        $validTypesForNewRole = $newRole === 'staff'
+            ? array_keys(User::STAFF_TYPES)
+            : array_keys(User::MEMBERSHIP_TYPES);
+
+        if (!in_array($user->membership_type, $validTypesForNewRole, true)) {
+            $updates['membership_type'] = $newRole === 'staff' ? 'permanent' : 'customer';
+        }
+
+        $user->update($updates);
+
+        return back()->with('success', "เปลี่ยน role ของ {$user->name} เป็น {$newRole} เรียบร้อยแล้ว");
     }
 
-    // แก้ไขประเภทสมาชิก (ลูกค้า / ผู้สนับสนุน / นักเรียนบาส)
+    // แก้ไขประเภทสมาชิก (ชุดตัวเลือกจะต่างกันตาม role ของ user คนนั้น)
     public function updateMembershipType(Request $request, User $user)
     {
-        $data = $request->validate([
-            'membership_type' => ['required', 'in:customer,sponsor,student'],
-        ]);
-
-        // กันไม่ให้แก้ไขประเภทสมาชิกของแอดมิน (แอดมินไม่มีแนวคิดเรื่อง membership type)
         abort_if($user->role === 'admin', 403, 'ไม่สามารถแก้ไขประเภทสมาชิกของแอดมินได้');
+
+        $allowedValues = $user->role === 'staff'
+            ? array_keys(User::STAFF_TYPES)
+            : array_keys(User::MEMBERSHIP_TYPES);
+
+        $data = $request->validate([
+            'membership_type' => ['required', Rule::in($allowedValues)],
+        ]);
 
         $user->update(['membership_type' => $data['membership_type']]);
 
@@ -90,6 +102,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'membership_type' => $user->membership_type,
+                'label' => $user->membershipTypeLabel(),
             ]);
         }
 

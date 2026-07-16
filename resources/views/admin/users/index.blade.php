@@ -56,7 +56,7 @@
             </div>
 
             @php
-                // สีพื้นหลังของแต่ละประเภทสมาชิก (วนใช้จากพาเลตให้อัตโนมัติตามลำดับที่นิยามใน MEMBERSHIP_TYPES)
+                // สีพื้นหลังของแต่ละประเภทสมาชิก (รวมทั้งชุด user และชุด staff ให้ได้สีไม่ซ้ำกันครบทั้ง 6 ประเภท)
                 $membershipPalette = [
                     'bg-emerald-100 text-emerald-700',
                     'bg-sky-100 text-sky-700',
@@ -65,8 +65,9 @@
                     'bg-indigo-100 text-indigo-700',
                     'bg-teal-100 text-teal-700',
                 ];
+                $allMembershipTypes = \App\Models\User::MEMBERSHIP_TYPES + \App\Models\User::STAFF_TYPES;
                 $membershipColorMap = [];
-                foreach (array_keys(\App\Models\User::MEMBERSHIP_TYPES) as $i => $typeKey) {
+                foreach (array_keys($allMembershipTypes) as $i => $typeKey) {
                     $membershipColorMap[$typeKey] = $membershipPalette[$i % count($membershipPalette)];
                 }
             @endphp
@@ -142,7 +143,7 @@
                                                 {{ $u->membershipTypeLabel() }}
                                             </span>
                                             <button type="button"
-                                                    onclick="openMembershipModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->membership_type }}', '{{ route('admin.users.updateMembershipType', $u) }}')"
+                                                    onclick="openMembershipModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->membership_type }}', '{{ route('admin.users.updateMembershipType', $u) }}', '{{ $u->role }}')"
                                                     class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไขประเภทสมาชิก">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -255,13 +256,28 @@
                         'bg-teal-500',
                     ];
                 @endphp
-                @foreach(\App\Models\User::MEMBERSHIP_TYPES as $value => $label)
-                    <button type="button" data-value="{{ $value }}" onclick="selectMembership(this)"
-                            class="membership-option-btn flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {{ $dotPalette[$loop->index % count($dotPalette)] }}"></span>
-                        {{ $label }}
-                    </button>
-                @endforeach
+
+                {{-- ชุดตัวเลือกสำหรับ role = user (ลูกค้า / ผู้สนับสนุน / นักเรียนบาส) --}}
+                <div id="membershipOptionsUser" class="contents">
+                    @foreach(\App\Models\User::MEMBERSHIP_TYPES as $value => $label)
+                        <button type="button" data-value="{{ $value }}" onclick="selectMembership(this)"
+                                class="membership-option-btn flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {{ $dotPalette[$loop->index % count($dotPalette)] }}"></span>
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
+
+                {{-- ชุดตัวเลือกสำหรับ role = staff (พนักงานประจำ / พนักงานชั่วคราว / นักศึกษาฝึกงาน) --}}
+                <div id="membershipOptionsStaff" class="contents hidden">
+                    @foreach(\App\Models\User::STAFF_TYPES as $value => $label)
+                        <button type="button" data-value="{{ $value }}" onclick="selectMembership(this)"
+                                class="membership-option-btn flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {{ $dotPalette[($loop->index + 3) % count($dotPalette)] }}"></span>
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
             </div>
 
             <div class="flex justify-end gap-2">
@@ -338,12 +354,23 @@
         btn.classList.add('bg-orange-500', 'text-white', 'border-orange-500');
     }
 
-    function openMembershipModal(id, name, currentValue, actionUrl) {
+    function openMembershipModal(id, name, currentValue, actionUrl, role) {
         membershipModalUrl = actionUrl;
         membershipModalUserId = id;
 
         document.getElementById('membershipModalUserName').textContent = name;
         document.getElementById('membershipModalInput').value = currentValue;
+
+        // สลับชุดตัวเลือกตาม role: staff เห็นชุดพนักงาน, user เห็นชุดลูกค้า/ผู้สนับสนุน/นักเรียนบาส
+        const userGroup = document.getElementById('membershipOptionsUser');
+        const staffGroup = document.getElementById('membershipOptionsStaff');
+        if (role === 'staff') {
+            userGroup.classList.add('hidden');
+            staffGroup.classList.remove('hidden');
+        } else {
+            staffGroup.classList.add('hidden');
+            userGroup.classList.remove('hidden');
+        }
 
         // ไฮไลต์ปุ่มที่ตรงกับประเภทสมาชิกปัจจุบัน
         document.querySelectorAll('.membership-option-btn').forEach(b => {
