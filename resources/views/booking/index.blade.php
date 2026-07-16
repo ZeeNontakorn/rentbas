@@ -457,9 +457,6 @@ function removeSelection(index) {
     const s = selections[index];
     if (s && s.el) {
         s.el.classList.remove('selected');
-        const start = s.start;
-        const end = s.end;
-
         selections.splice(index, 1);
 
         // อัปเดตช่องอื่นๆ ให้กลับมาคลิกได้ เมื่อลบออกจากรายการจอง
@@ -470,28 +467,80 @@ function removeSelection(index) {
     updateConfirmBox();
 }
 
+// รวมช่อง (cell) ที่เลือกไว้ในคอลัมน์ (section) เดียวกันและเวลาติดกันให้เป็นช่วงเดียว
+// เช่น เลือก 06:00-06:30 และ 06:30-07:00 ของ "เต็มสนาม" -> รวมเป็น 06:00-07:00 รายการเดียว
+// ใช้หลักการเดียวกับหน้าปฏิทิน (calendar) ที่ลากเลือกช่วงต่อเนื่องแล้วได้บล็อกเดียว
+function getMergedSelections() {
+    const bySection = {};
+    selections.forEach(s => {
+        (bySection[s.sectionId] = bySection[s.sectionId] || []).push(s);
+    });
+
+    const merged = [];
+    Object.keys(bySection).forEach(sectionId => {
+        const list = bySection[sectionId].slice().sort((a, b) => a.start.localeCompare(b.start));
+        let current = null;
+        list.forEach(s => {
+            if (current && current.end === s.start) {
+                current.end = s.end;
+                current.cells.push(s.el);
+            } else {
+                current = {
+                    sectionId,
+                    sectionName: s.sectionName,
+                    start: s.start,
+                    end: s.end,
+                    cells: [s.el],
+                };
+                merged.push(current);
+            }
+        });
+    });
+
+    merged.forEach(m => { m.label = `${m.start} - ${m.end}`; });
+    merged.sort((a, b) => a.start.localeCompare(b.start));
+    return merged;
+}
+
+function removeMergedGroup(idx) {
+    const merged = getMergedSelections();
+    const group = merged[idx];
+    if (!group) return;
+
+    group.cells.forEach(el => {
+        el.classList.remove('selected');
+        const i = findSelectionIndex(el);
+        if (i !== -1) selections.splice(i, 1);
+    });
+
+    updateGridStatus();
+    updateConfirmBox();
+}
+
 function updateConfirmBox() {
     const box = document.getElementById('confirmBox');
     const list = document.getElementById('confirmList');
+    const merged = getMergedSelections();
 
-    if (selections.length === 0) {
+    if (merged.length === 0) {
         box.classList.add('hidden');
         list.innerHTML = '';
         return;
     }
 
     box.classList.remove('hidden');
-    list.innerHTML = selections.map((s, idx) => {
+    list.innerHTML = merged.map((s, idx) => {
         const secLabel = s.sectionName ? `<span class="text-gray-400">(${s.sectionName})</span> ` : '';
         return `<div class="flex justify-between items-center border-b border-gray-50 pb-2">
                     <span class="text-gray-500">เวลา ${secLabel}<span class="font-bold text-gray-900">${s.label} น.</span></span>
-                    <button type="button" onclick="removeSelection(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
+                    <button type="button" onclick="removeMergedGroup(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
                 </div>`;
     }).join('');
 }
 
 function submitBooking() {
-    if (selections.length === 0) return;
+    const merged = getMergedSelections();
+    if (merged.length === 0) return;
 
     const form = document.createElement('form');
     form.method = 'POST';
@@ -509,7 +558,7 @@ function submitBooking() {
     dateInput.value = '{{ $date }}';
     form.appendChild(dateInput);
 
-    selections.forEach((s, idx) => {
+    merged.forEach((s, idx) => {
         const ci = document.createElement('input');
         ci.type = 'hidden';
         ci.name = `bookings[${idx}][court_id]`;
