@@ -109,9 +109,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // จัดการโค้ช และผู้ช่วย
     Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
+    Route::post('/staffs', [StaffController::class, 'store'])->name('staffs.store');
     Route::get('/staffs/{staff}', [StaffController::class, 'show'])->name('staffs.show');
     Route::put('/staffs/{staff}/profile', [StaffController::class, 'updateProfile'])->name('staffs.profile.update');
     Route::post('/staffs/{staff}/availabilities', [StaffController::class, 'storeAvailability'])->name('staffs.availabilities.store');
+    Route::delete('/staffs/{staff}', [StaffController::class, 'destroy'])->name('staffs.destroy');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');

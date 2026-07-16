@@ -9,6 +9,11 @@
     $sortedCourts = $courts->sortBy('name', SORT_NATURAL);
     $allServices = collect($upcomingAvailabilities)->merge($pastServices ?? collect());
 
+    $isCoach = $staff->role === 'coach';
+    $roleLabel = $isCoach ? 'ผู้ฝึกสอน (Coach)' : 'ผู้ช่วยสนาม (Staff)';
+    $roleTitle = $isCoach ? 'Coach' : 'Staff';
+    $badgeClass = $isCoach ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+
     $timelineGrid = [];
     foreach ($sortedCourts as $court) {
         $slots = [];
@@ -52,19 +57,10 @@
             transition: opacity 0.2s;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
-
         .group:hover .tooltip-content {
             visibility: visible;
             opacity: 1;
         }
-
-        .no-select {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-
         .slot-selected {
             border: 2px solid #3b82f6 !important;
             transform: scale(0.95);
@@ -78,8 +74,7 @@
 
             <a href="{{ route('admin.staffs.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
-                <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
+                <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
                 กลับไปหน้าจัดการผู้ช่วยสนาม
@@ -93,8 +88,7 @@
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-start gap-6">
-                    <div
-                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
+                    <div class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                         <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
                     </div>
 
@@ -102,17 +96,15 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
                                 <h1 class="text-2xl font-bold text-gray-800">{{ $staff->name }}</h1>
-                                <span
-                                    class="px-3 py-1 text-xs rounded-full font-medium {{ $staff->role === 'coach' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700' }}">
-                                    {{ $staff->role === 'coach' ? 'ผู้ฝึกสอน (Coach)' : 'ผู้ช่วยสนาม (Staff)' }}
+                                <span class="px-3 py-1 text-xs rounded-full font-medium {{ $badgeClass }}">
+                                    {{ $roleLabel }}
                                 </span>
                             </div>
 
-                            <button type="button" onclick="openStaffProfileModal()"
+                            <button type="button" onclick="toggleModal('staffProfileModal', true)"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-xs font-medium transition cursor-pointer">
                                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                                 แก้ไขข้อมูลส่วนตัว
                             </button>
@@ -121,34 +113,28 @@
                         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-y-3 text-sm text-gray-600">
                             <p class="flex items-center gap-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                                 อีเมล: {{ $staff->email }}
                             </p>
                             <p class="flex items-center gap-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                                 เบอร์โทรศัพท์: {{ $staff->phone ?? 'ไม่ระบุ' }}
                             </p>
                             <div class="col-span-1 md:col-span-2 mt-2">
-                                <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile->specialty ?? 'ผู้ช่วยฝึกสอนเบสิค' }}
-                                </p>
-                                <p class="mt-1"><strong>แนะนำตัว (Bio):</strong> {{ $staffProfile->bio ?? 'ไม่มีข้อมูล' }}
-                                </p>
+                                <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile->specialty ?? 'ผู้ช่วยฝึกสอนเบสิค' }}</p>
+                                <p class="mt-1"><strong>แนะนำตัว (Bio):</strong> {{ $staffProfile->bio ?? 'ไม่มีข้อมูล' }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-select" id="timeline-container">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 select-none" id="timeline-container">
                 <div class="mb-4">
-                    <h3 class="font-bold text-gray-800 text-lg">
-                        {{ $staff->role === 'coach' ? 'Coach' : 'Staff' }} Availability Timeline
-                    </h3>
+                    <h3 class="font-bold text-gray-800 text-lg">{{ $roleTitle }} Availability Timeline</h3>
                     <p class="text-xs text-gray-400 mt-0.5">ตารางงานของ {{ $staff->name }} วันนี้ (08:00–22:00 น.)</p>
                 </div>
 
@@ -167,9 +153,7 @@
 
                                 <div class="flex-1 flex gap-[2px]">
                                     @foreach($row['slots'] as $slot)
-                                        @php
-                                            $isBooked = $slot['status'] === 'booked';
-                                        @endphp
+                                        @php $isBooked = $slot['status'] === 'booked'; @endphp
                                         <div class="flex-1 relative group">
                                             <div class="time-slot h-10 w-full {{ $isBooked ? 'bg-[#f97316]' : 'bg-[#10b981]' }} cursor-pointer hover:opacity-85 transition-all relative border-2 border-transparent"
                                                 data-court-id="{{ $row['court']->id }}" data-court-name="{{ $row['court']->name }}"
@@ -202,14 +186,12 @@
 
     <div id="dragActionModal"
         class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
-        <div
-            class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-gray-800">จัดการสถานะการทำงาน</h3>
             </div>
 
-            <form action="{{ route('admin.staffs.availabilities.store', $staff->id) }}" method="POST"
-                class="p-6 space-y-4 bg-white">
+            <form action="{{ route('admin.staffs.availabilities.store', $staff->id) }}" method="POST" class="p-6 space-y-4 bg-white">
                 @csrf
                 <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center mb-2">
                     <p class="text-xs text-blue-500 font-semibold mb-1">ประจำอยู่ที่</p>
@@ -226,19 +208,15 @@
                     <label class="block text-xs font-semibold text-gray-700 mb-2">สถานะผู้ช่วยสนาม/โค้ช</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
-                            <input type="radio" name="status" value="available" id="status-available" class="peer sr-only"
-                                required>
-                            <div
-                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
+                            <input type="radio" name="status" value="available" id="status-available" class="peer sr-only" required>
+                            <div class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
                                 <span class="w-2.5 h-2.5 inline-block bg-[#10b981] rounded-sm mr-1"></span>
                                 <span class="text-gray-700">ว่าง</span>
                             </div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="status" value="booked" id="status-booked" class="peer sr-only"
-                                required>
-                            <div
-                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
+                            <input type="radio" name="status" value="booked" id="status-booked" class="peer sr-only" required>
+                            <div class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
                                 <span class="w-2.5 h-2.5 inline-block bg-[#f97316] rounded-sm mr-1"></span>
                                 <span class="text-gray-700">ไม่ว่าง</span>
                             </div>
@@ -253,7 +231,7 @@
                 </div>
 
                 <div class="pt-2 flex gap-2">
-                    <button type="button" onclick="closeDragModal()"
+                    <button type="button" onclick="toggleModal('dragActionModal', false)"
                         class="w-1/2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">ยกเลิก</button>
                     <button type="submit"
                         class="w-1/2 px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition font-medium shadow-sm">บันทึกสถานะ</button>
@@ -264,38 +242,31 @@
 
     <div id="staffProfileModal"
         class="fixed inset-0 z-50 hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
-        <div
-            class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-gray-800">แก้ไขข้อมูลโปรไฟล์</h3>
             </div>
 
-            <form action="{{ route('admin.staffs.profile.update', $staff->id) }}" method="POST"
-                class="p-6 space-y-4 bg-white">
+            <form action="{{ route('admin.staffs.profile.update', $staff->id) }}" method="POST" class="p-6 space-y-4 bg-white">
                 @csrf @method('PUT')
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ชื่อ-นามสกุล <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $staff->name) }}" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span class="text-red-500">*</span></label>
                     <select name="role" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
-                        <option value="staff" {{ old('role', $staff->role) === 'staff' ? 'selected' : '' }}>ผู้ช่วยสนาม
-                            (Staff)</option>
-                        <option value="coach" {{ old('role', $staff->role) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)
-                        </option>
+                        <option value="staff" {{ old('role', $staff->role) === 'staff' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
+                        <option value="coach" {{ old('role', $staff->role) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">อีเมล <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">อีเมล <span class="text-red-500">*</span></label>
                     <input type="email" name="email" value="{{ old('email', $staff->email) }}" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
@@ -310,8 +281,7 @@
 
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ความเชี่ยวชาญ</label>
-                    <input type="text" name="specialty" value="{{ old('specialty', $staffProfile->specialty ?? '') }}"
-                        placeholder="เช่น ผู้ช่วยฝึกสอนเบสิค"
+                    <input type="text" name="specialty" value="{{ old('specialty', $staffProfile->specialty ?? '') }}" placeholder="เช่น ผู้ช่วยฝึกสอนเบสิค"
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
 
@@ -322,7 +292,7 @@
                 </div>
 
                 <div class="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
-                    <button type="button" onclick="closeStaffProfileModal()"
+                    <button type="button" onclick="toggleModal('staffProfileModal', false)"
                         class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">ยกเลิก</button>
                     <button type="submit"
                         class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium shadow-sm">บันทึกข้อมูล</button>
@@ -333,15 +303,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function openStaffProfileModal() {
-            document.getElementById('staffProfileModal').classList.replace('hidden', 'flex');
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.toggle('hidden', !show);
+                modal.classList.toggle('flex', show);
+                if (id === 'dragActionModal' && !show) clearSelection();
+            }
         }
-        function closeStaffProfileModal() {
-            document.getElementById('staffProfileModal').classList.replace('flex', 'hidden');
-        }
-                            @if($errors->any()) openStaffProfileModal(); @endif
-
-        // Drag & Select Timeline System
+        
         let isDragging = false;
         let selectedSlots = [];
         let currentDraggingCourt = null;
@@ -377,19 +347,24 @@
         });
 
         window.addEventListener('mouseup', function () {
-            if (isDragging) {
+            if (isDragging && selectedSlots.length > 0) {
                 isDragging = false;
-                if (selectedSlots.length > 0) {
-                    selectedSlots.sort((a, b) => parseInt(a.getAttribute('data-hour')) - parseInt(b.getAttribute('data-hour')));
-                    const firstSlot = selectedSlots[0];
-                    const lastSlot = selectedSlots[selectedSlots.length - 1];
-                    openDragModal(
-                        firstSlot.getAttribute('data-court-id'),
-                        firstSlot.getAttribute('data-court-name'),
-                        firstSlot.getAttribute('data-time-start'),
-                        lastSlot.getAttribute('data-time-end')
-                    );
-                }
+                selectedSlots.sort((a, b) => parseInt(a.getAttribute('data-hour')) - parseInt(b.getAttribute('data-hour')));
+                const firstSlot = selectedSlots[0];
+                const lastSlot = selectedSlots[selectedSlots.length - 1];
+                
+                document.getElementById('modal-court-name').innerText = firstSlot.getAttribute('data-court-name');
+                document.getElementById('modal-time-range').innerText = `${firstSlot.getAttribute('data-time-start')} - ${lastSlot.getAttribute('data-time-end')} น.`;
+                document.getElementById('modal-court-id').value = firstSlot.getAttribute('data-court-id');
+                document.getElementById('modal-time-start').value = firstSlot.getAttribute('data-time-start');
+                document.getElementById('modal-time-end').value = lastSlot.getAttribute('data-time-end');
+
+                const isBooked = firstSlot.classList.contains('bg-[#f97316]');
+                document.getElementById('status-booked').checked = isBooked;
+                document.getElementById('status-available').checked = !isBooked;
+
+                toggleDetailInput(isBooked ? 'booked' : 'available');
+                toggleModal('dragActionModal', true);
             }
         });
 
@@ -409,34 +384,13 @@
             });
         });
 
-        function openDragModal(courtId, courtName, timeStart, timeEnd) {
-            document.getElementById('modal-court-name').innerText = courtName;
-            document.getElementById('modal-time-range').innerText = `${timeStart} - ${timeEnd} น.`;
-            document.getElementById('modal-court-id').value = courtId;
-            document.getElementById('modal-time-start').value = timeStart;
-            document.getElementById('modal-time-end').value = timeEnd;
-
-            const isBooked = selectedSlots[0].classList.contains('bg-[#f97316]');
-            document.getElementById('status-booked').checked = isBooked;
-            document.getElementById('status-available').checked = !isBooked;
-
-            toggleDetailInput(isBooked ? 'booked' : 'available');
-            document.getElementById('dragActionModal').classList.replace('hidden', 'flex');
-        }
-
-        function closeDragModal() {
-            document.getElementById('dragActionModal').classList.replace('flex', 'hidden');
-            clearSelection();
-        }
-
         document.addEventListener('click', function (e) {
-            const profileModal = document.getElementById('staffProfileModal');
-            const dragModal = document.getElementById('dragActionModal');
-            if (e.target === profileModal) closeStaffProfileModal();
-            if (e.target === dragModal) closeDragModal();
+            ['staffProfileModal', 'dragActionModal'].forEach(id => {
+                const modal = document.getElementById(id);
+                if (e.target === modal) toggleModal(id, false);
+            });
         });
 
-        // Hover Tooltip
         allSlots.forEach(slot => {
             slot.addEventListener('mousemove', function (e) {
                 const tooltip = document.getElementById('global-tooltip');
@@ -446,14 +400,9 @@
                     tooltip.style.visibility = 'visible';
                     tooltip.style.opacity = '1';
 
-                    const courtName = this.getAttribute('data-court-name');
-                    const timeStart = this.getAttribute('data-time-start');
-                    const timeEnd = this.getAttribute('data-time-end');
-                    const statusText = this.getAttribute('data-status');
                     const detailText = this.getAttribute('data-detail');
-
-                    tooltip.querySelector('#tt-title').innerText = `${courtName} (${statusText})`;
-                    tooltip.querySelector('#tt-time').innerText = `เวลา: ${timeStart} - ${timeEnd} น.`;
+                    tooltip.querySelector('#tt-title').innerText = `${this.getAttribute('data-court-name')} (${this.getAttribute('data-status')})`;
+                    tooltip.querySelector('#tt-time').innerText = `เวลา: ${this.getAttribute('data-time-start')} - ${this.getAttribute('data-time-end')} น.`;
                     tooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่มีรายละเอียด/งานว่าง';
                 }
             });
@@ -467,7 +416,6 @@
             });
         });
 
-        // SweetAlert2 Toast Notifications
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -481,17 +429,9 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            @if (session()->has('success'))
-                Toast.fire({ icon: 'success', title: @js(session('success')) });
-            @endif
-
-            @if (session()->has('error'))
-                Toast.fire({ icon: 'error', title: @js(session('error')) });
-            @endif
-
-            @if ($errors->any())
-                Toast.fire({ icon: 'error', title: @js($errors->first()) });
-            @endif
+            @if (session()->has('success')) Toast.fire({ icon: 'success', title: @js(session('success')) }); @endif
+            @if (session()->has('error')) Toast.fire({ icon: 'error', title: @js(session('error')) }); @endif
+            @if ($errors->any()) Toast.fire({ icon: 'error', title: @js($errors->first()) }); @endif
         });
     </script>
 @endsection

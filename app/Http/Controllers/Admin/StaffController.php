@@ -16,15 +16,11 @@ class StaffController extends Controller
         $role = $request->input('role');
 
         $staffs = User::whereIn('role', ['coach', 'staff'])
-            ->when($role && in_array($role, ['coach', 'staff']), function ($query) use ($role) {
-                $query->where('role', $role);
-            })
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
+            ->when($role && in_array($role, ['coach', 'staff']), fn($query) => $query->where('role', $role))
+            ->when($search, fn($query) => $query->where(
+                fn($q) =>
+                $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")
+            ))
             ->paginate(10)
             ->withQueryString();
 
@@ -33,48 +29,30 @@ class StaffController extends Controller
 
     public function show(User $staff)
     {
-        if (!in_array($staff->role, ['staff', 'coach'])) {
-            abort(404, 'ไม่พบข้อมูลบุคลากร');
-        }
+        abort_unless(in_array($staff->role, ['staff', 'coach']), 404, 'ไม่พบข้อมูลบุคลากร');
 
         $today = now()->toDateString();
         $nowTime = now()->toTimeString();
 
-        // 1. ตารางงานในอนาคตและวันนี้ที่ยังไม่หมดเวลา
         $upcomingAvailabilities = $staff->availabilities()
             ->whereIn('status', ['available', 'booked'])
-            ->where(function ($query) use ($today, $nowTime) {
-                $query->where('date', '>', $today)
-                    ->orWhere(function ($q) use ($today, $nowTime) {
-                        $q->where('date', $today)->where('end_time', '>', $nowTime);
-                    });
-            })
+            ->where(fn($query) => $query->where('date', '>', $today)->orWhere(fn($q) => $q->where('date', $today)->where('end_time', '>', $nowTime)))
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
 
-        // 2. ประวัติงานที่ผ่านมาแล้วหรือโดนจอง
         $pastServices = $staff->availabilities()
-            ->where(function ($query) use ($today, $nowTime) {
-                $query->where('status', 'booked')
-                    ->orWhere('date', '<', $today)
-                    ->orWhere(function ($q) use ($today, $nowTime) {
-                        $q->where('date', $today)->where('end_time', '<=', $nowTime);
-                    });
-            })
+            ->where(fn($query) => $query->where('status', 'booked')->orWhere('date', '<', $today)->orWhere(fn($q) => $q->where('date', $today)->where('end_time', '<=', $nowTime)))
             ->orderByDesc('date')
             ->orderByDesc('start_time')
             ->get();
-
-        // 3. ดึงข้อมูลสนาม (เรียงตามชื่อสนามจากน้อยไปมาก หรือเปลี่ยนเป็น orderByDesc('id') ได้ตามต้องการ)
-        $courts = Court::orderBy('name', 'asc')->get();
 
         return view('admin.staffs.show', [
             'staff' => $staff,
             'staffProfile' => $staff->staffProfile,
             'upcomingAvailabilities' => $upcomingAvailabilities,
             'pastServices' => $pastServices,
-            'courts' => $courts
+            'courts' => Court::orderBy('name', 'asc')->get()
         ]);
     }
 
@@ -112,14 +90,16 @@ class StaffController extends Controller
 
     public function updateProfile(Request $request, User $staff)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $staff->id,
+            'role' => 'required|in:coach,staff',
             'phone' => 'nullable|string|max:20',
             'specialty' => 'nullable|string|max:255',
             'bio' => 'nullable|string',
         ]);
 
-        $staff->update($request->only(['name', 'phone']));
+        $staff->update($request->only(['name', 'email', 'role', 'phone']));
 
         $staff->staffProfile()->updateOrCreate(
             ['user_id' => $staff->id],
@@ -127,5 +107,33 @@ class StaffController extends Controller
         );
 
         return redirect()->back()->with('success', 'แก้ไขข้อมูลโปรไฟล์สำเร็จเรียบร้อย!');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
+            'role' => 'required|in:coach,staff',
+        ]);
+
+        $validated['password'] = bcrypt($validated['password']);
+        $validated['email_verified_at'] = now();
+
+        User::create($validated);
+
+        return redirect()->back()->with('success', 'เพิ่มบุคลากรใหม่เรียบร้อยแล้ว');
+    }
+
+    public function destroy(User $staff)
+    {
+        if (!in_array($staff->role, ['staff', 'coach'])) {
+            return redirect()->back()->withErrors(['ไม่สามารถลบผู้ใช้งานนี้ได้']);
+        }
+
+        $staff->delete();
+
+        return redirect()->back()->with('success', 'ลบข้อมูลบุคลากรเรียบร้อยแล้ว');
     }
 }
