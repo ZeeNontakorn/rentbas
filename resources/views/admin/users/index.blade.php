@@ -75,7 +75,7 @@
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-3 font-medium">รหัส</th>
+                            <th class="px-6 py-3 font-medium">ลำดับ</th>
                             <th class="px-6 py-3 font-medium">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium">อีเมล</th>
                             <th class="px-6 py-3 font-medium">Role</th>
@@ -88,7 +88,7 @@
                         @forelse($users as $u)
                             @continue($u->id === 0)
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $u->id }}</td>
+                                <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">{{ $u->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $u->email }}</td>
                                 <td class="px-6 py-4">
