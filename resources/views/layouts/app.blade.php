@@ -16,6 +16,7 @@
             font-family: 'Kanit', sans-serif;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-[#0b0b1a] min-h-screen flex flex-col text-white antialiased">
 

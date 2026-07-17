@@ -16,7 +16,7 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
-    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified'];
+    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified', 'credit_balance'];
     protected $hidden = ['password', 'remember_token'];
 
     protected function casts(): array
@@ -25,6 +25,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_verified' => 'boolean',
+            'credit_balance' => 'integer', // หน่วยสตางค์
         ];
     }
 
@@ -48,8 +49,21 @@ class User extends Authenticatable
         return $this->hasMany(OtpToken::class);
     }
 
+    public function creditTransactions(): HasMany
+    {
+        return $this->hasMany(CreditTransaction::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
+     */
+    public function getCreditBalanceBahtAttribute(): float
+    {
+        return $this->credit_balance / 100;
     }
 }

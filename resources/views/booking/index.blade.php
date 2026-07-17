@@ -542,9 +542,18 @@ function submitBooking() {
     const merged = getMergedSelections();
     if (merged.length === 0) return;
 
+    // ระบบชำระเงิน (checkout.reserve) ยังรองรับการจอง "ทีละ 1 ช่วงเวลา" ต่อการชำระเงิน 1 ครั้ง
+    // (คำนวณราคา/ล็อกสล็อต 15 นาที/หักเครดิตเป็นรายการเดียว) ถ้าเลือกไว้หลายช่วง ให้ผู้ใช้
+    // ยืนยันทีละรายการก่อน — ไม่งั้นราคา/การล็อกจะไม่ตรงกับที่ตั้งใจไว้
+    if (merged.length > 1) {
+        alert('ตอนนี้ระบบชำระเงินรองรับการจองทีละ 1 ช่วงเวลาต่อการชำระเงิน 1 ครั้ง กรุณาลบรายการที่เลือกไว้ให้เหลือ 1 รายการ แล้วกดยืนยันอีกครั้ง');
+        return;
+    }
+
+    const only = merged[0];
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = "{{ route('booking.store') }}";
+    form.action = "{{ route('checkout.reserve') }}";
 
     const csrf = document.createElement('input');
     csrf.type = 'hidden';
@@ -552,36 +561,18 @@ function submitBooking() {
     csrf.value = '{{ csrf_token() }}';
     form.appendChild(csrf);
 
-    const dateInput = document.createElement('input');
-    dateInput.type = 'hidden';
-    dateInput.name = 'booking_date';
-    dateInput.value = '{{ $date }}';
-    form.appendChild(dateInput);
-
-    merged.forEach((s, idx) => {
-        const ci = document.createElement('input');
-        ci.type = 'hidden';
-        ci.name = `bookings[${idx}][court_id]`;
-        ci.value = "{{ $selectedCourt?->id }}";
-        form.appendChild(ci);
-
-        const sec = document.createElement('input');
-        sec.type = 'hidden';
-        sec.name = `bookings[${idx}][court_section_id]`;
-        sec.value = s.sectionId;
-        form.appendChild(sec);
-
-        const st = document.createElement('input');
-        st.type = 'hidden';
-        st.name = `bookings[${idx}][start_time]`;
-        st.value = s.start;
-        form.appendChild(st);
-
-        const et = document.createElement('input');
-        et.type = 'hidden';
-        et.name = `bookings[${idx}][end_time]`;
-        et.value = s.end;
-        form.appendChild(et);
+    const fields = {
+        court_section_id: only.sectionId,
+        booking_date: '{{ $date }}',
+        start_time: only.start,
+        end_time: only.end,
+    };
+    Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
     });
 
     document.body.appendChild(form);

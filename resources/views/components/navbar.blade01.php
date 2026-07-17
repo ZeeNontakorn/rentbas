@@ -7,22 +7,6 @@
             <span class="font-bold text-lg md:text-2xl leading-tight">THATA HOMECOURT</span>
         </a>
 
-        <div class="flex items-center gap-3 md:hidden ml-auto mr-3">
-            @auth
-                @if(auth()->user()->role === 'admin')
-                    <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                        onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
-                    </button>
-                @else
-                    <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                        onclick="swalalert()">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
-                    </button>
-                @endif
-            @endauth
-        </div>
-
         <!-- ปุ่มเปิด/ปิดเมนู สำหรับจอมือถือ -->
         <button id="mobileMenuBtn" class="md:hidden flex items-center focus:outline-none hover:text-orange-500 transition" aria-label="เปิดเมนู">
             <svg id="mobileMenuIconOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,9 +30,6 @@
                     </a>
                     <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
-                    </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
                     </a>
                     <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
@@ -196,35 +177,22 @@
                             </a>
                         </div>
                     </div>
-
-                    <!-- Logout -->
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                        {{-- credit --}}
-                           <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                            onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                            {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                        </button>
-
                 @else
-                {{-- credit --}}
-                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                    onclick="swalalert()">
-                    {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                </button>
                     <div class="h-6 w-px bg-gray-600 mx-2"></div>
                     <a href="{{ route('profile') }}" class="flex items-center text-gray-300 font-medium hover:text-orange-500 transition">
                         {{ auth()->user()->name }}
                     </a>
-                    <!-- Logout -->
-                <form method="POST" action="{{ route('logout') }}" class="ml-2">
-                    @csrf
-                    <button type="submit" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center">
-                        ออกจากระบบ
-                    </button>
-                </form>
                 @endif
+
+                <!-- Logout -->
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                    @csrf
+                </form>
+                {{-- credit --}}
+                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
+                    onclick="swalalert()">
+                    {{ auth()->user()->credit_balance }} <span class="ml-1">฿</span>
+                </button>
             @endauth
 
             @guest
@@ -259,9 +227,6 @@
                     </a>
                     <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
-                    </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
                     </a>
                     <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง

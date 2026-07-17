@@ -553,30 +553,34 @@ function removeSelectionByIndex(idx) {
 
 function submitBooking() {
     if (selections.length === 0) return;
+
+    // ระบบชำระเงิน (checkout.reserve) ยังรองรับการจอง "ทีละ 1 ช่วงเวลา" ต่อการชำระเงิน 1 ครั้ง
+    // (คำนวณราคา/ล็อกสล็อต 15 นาที/หักเครดิตเป็นรายการเดียว) ถ้าเลือกไว้หลายช่วง ให้ผู้ใช้
+    // ยืนยันทีละรายการก่อน — ไม่งั้นราคา/การล็อกจะไม่ตรงกับที่ตั้งใจไว้
+    if (selections.length > 1) {
+        alert('ตอนนี้ระบบชำระเงินรองรับการจองทีละ 1 ช่วงเวลาต่อการชำระเงิน 1 ครั้ง กรุณาลบรายการที่เลือกไว้ให้เหลือ 1 รายการ แล้วกดยืนยันอีกครั้ง');
+        return;
+    }
+
+    const only = selections[0];
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = "{{ route('booking.store') }}";
+    form.action = "{{ route('checkout.reserve') }}";
 
     const csrf = document.createElement('input');
     csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = '{{ csrf_token() }}';
     form.appendChild(csrf);
 
-    const dateInput = document.createElement('input');
-    dateInput.type = 'hidden'; dateInput.name = 'booking_date'; dateInput.value = '{{ $date }}';
-    form.appendChild(dateInput);
-
-    selections.forEach((s, idx) => {
-        const fields = {
-            [`bookings[${idx}][court_id]`]: "{{ $selectedCourt->id }}",
-            [`bookings[${idx}][court_section_id]`]: s.sectionId,
-            [`bookings[${idx}][start_time]`]: s.start,
-            [`bookings[${idx}][end_time]`]: s.end,
-        };
-        Object.entries(fields).forEach(([name, value]) => {
-            const inp = document.createElement('input');
-            inp.type = 'hidden'; inp.name = name; inp.value = value;
-            form.appendChild(inp);
-        });
+    const fields = {
+        court_section_id: only.sectionId,
+        booking_date: '{{ $date }}',
+        start_time: only.start,
+        end_time: only.end,
+    };
+    Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden'; input.name = name; input.value = value;
+        form.appendChild(input);
     });
 
     document.body.appendChild(form);
