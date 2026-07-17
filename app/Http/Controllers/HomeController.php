@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Course;
 use App\Models\Court;
 use App\Models\CourtClosure;
 use App\Models\SiteVisit;
@@ -23,7 +24,17 @@ class HomeController extends Controller
             return $court->name;
         }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
-        return view('home', compact('courts'));
+        // คอร์สเรียนบาสเกตบอลที่จะโชว์บนหน้าแรก: เอาเฉพาะคอร์สที่มีแพ็กเกจ "เปิดใช้งาน" (is_active) อยู่
+        $trainingCourses = Course::with(['targetGroups', 'schedules', 'packages' => function ($query) {
+                $query->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
+            }])
+            ->whereHas('packages', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->orderBy('course_name')
+            ->get();
+
+        return view('home', compact('courts', 'trainingCourses'));
     }
 
     /**

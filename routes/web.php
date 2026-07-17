@@ -7,6 +7,10 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\ManageCourseController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\Admin\CalendarController;
+
 use Illuminate\Support\Facades\Route;
 
 
@@ -81,6 +85,9 @@ Route::middleware(['auth','verified_otp'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 });
 
+    Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+
  // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -100,6 +107,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
     Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
+    Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
+
+    // Manage Courses
+    Route::get('/courses', [ManageCourseController::class, 'index'])->name('courses');
+    Route::get('/courses/create', [ManageCourseController::class, 'create'])->name('courses.create');
+    Route::post('/courses', [ManageCourseController::class, 'store'])->name('courses.store');
+    Route::get('/courses/{course}/edit', [ManageCourseController::class, 'edit'])->name('courses.edit');
+    Route::put('/courses/{course}', [ManageCourseController::class, 'update'])->name('courses.update');
+    Route::delete('/courses/{course}', [ManageCourseController::class, 'destroy'])->name('courses.destroy');
+    
+    Route::patch('/courses/{course}/toggle-status', [ManageCourseController::class, 'toggleStatus'])
+    ->name('courses.toggleStatus');
+
+
+Route::get('/calendar', [CalendarController::class, 'calendar'])
+    ->name('calendar');
+
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
