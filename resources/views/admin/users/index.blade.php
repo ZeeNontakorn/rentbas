@@ -208,15 +208,18 @@
             <label class="block text-xs font-medium text-gray-500 mb-2">เลือก Role ใหม่</label>
             <div class="grid grid-cols-3 gap-2 mb-5">
                 <button type="button" data-role="user" onclick="selectRole(this)"
-                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        class="role-option flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-gray-400"></span>
                     User
                 </button>
                 <button type="button" data-role="staff" onclick="selectRole(this)"
-                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        class="role-option flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-500"></span>
                     Staff
                 </button>
                 <button type="button" data-role="admin" onclick="selectRole(this)"
-                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        class="role-option flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-purple-500"></span>
                     Admin
                 </button>
             </div>
