@@ -93,7 +93,6 @@
             </aside>
         </div>
 
-        <a href="{{ route('home') }}" class="mt-7 inline-flex text-sm font-bold text-slate-600 transition hover:text-[#d95512]">← กลับไปหน้าแรก</a>
     </div>
 </div>
 @endsection

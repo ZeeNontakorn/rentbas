@@ -120,9 +120,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/courses/{course}/toggle-status', [ManageCourseController::class, 'toggleStatus'])
     ->name('courses.toggleStatus');
 
-
-Route::get('/calendar', [CalendarController::class, 'calendar'])
-    ->name('calendar');
+    Route::get('/courses/calendar', [CalendarController::class, 'calendar'])
+    ->name('courses.calendar');
 
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');

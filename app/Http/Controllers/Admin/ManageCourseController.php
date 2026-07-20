@@ -13,66 +13,76 @@ use Illuminate\Support\Facades\Storage;
 
 class ManageCourseController extends Controller
 {
-    /**
-     * GET /admin/courses -> route('admin.courses')
-     * ค้นหาจากชื่อคอร์ส และแสดงผลหน้าละ 10 รายการ
-     */
-    public function index(Request $request)
-    {
-        $search = trim((string) $request->query('search', ''));
-
-        $courses = Course::query()
-            ->with(['targetGroups', 'schedules', 'packages'])
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where('course_name', 'like', "%{$search}%");
-            })
-            ->orderBy('course_name')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('admin.courses.index', compact('courses', 'search'));
-    }
 
     /**
      * GET /admin/courses/create -> route('admin.courses.create')
+     * เปิดหน้าเพิ่มคอร์ส
      */
     public function create()
     {
         return view('admin.courses.create');
     }
 
+
+    /**
+     * GET /admin/courses -> route('admin.courses')
+     * ค้นหาจากชื่อคอร์ส และแสดงผลหน้าละ 10 รายการ
+     */
+
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+
+        $courses = Course::query()
+        // แสดงผลพร้อม targetGroups, schedules, packages เพื่อไม่ให้เกิด N+1 query
+            ->with(['targetGroups', 'schedules', 'packages'])
+            // ถ้ามี search ให้ค้นหาจาก course_name
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where('course_name', 'like', "%{$search}%");
+            })
+            // เรียงตามชื่อคอร์ส แล้วแบ่งหน้า 10 รายการต่อหน้า
+            ->orderBy('course_name')
+            ->paginate(10)
+            ->withQueryString();
+
+        // ส่งตัวแปร $courses และ $search ไปที่ view เพื่อแสดงผล
+        return view('admin.courses.index', compact('courses', 'search'));
+    }
+
+
     /**
      * POST /admin/courses -> route('admin.courses.store')
      */
     public function store(Request $request)
     {
-        $data = $this->validated($request);
-
+        $data = $this->validated($request); // Validate เพื่อตรวจสอบข้อมูลก่่อนบันทึก
+        // ใช้ DB::transaction() เพื่อให้การบันทึกทั้งหมดเป็น atomic operation ถ้ามีข้อผิดพลาดใดๆ จะ rollback ทั้งหมด
         $course = DB::transaction(function () use ($request, $data) {
             $courseData = $data['course'];
 
+            // ถ้ามีไฟล์รูปภาพที่อัปโหลดมา ให้บันทึก path ของไฟล์ลงใน database ด้วย
             if ($request->hasFile('image')) {
-                $courseData['image_path'] = $request->file('image')->store('site', 'public');
+                $courseData['image_path'] = $request->file('image')->store('courses', 'public');
             }
 
             $course = Course::create($courseData);
-
+            // สร้างกลุ่มเป้าหมาย
             foreach ($data['target_groups'] as $group) {
                 CourseTargetGroup::create([
                     'course_id' => $course->id,
                     'target_group' => $group,
                 ]);
             }
-
+            // สร้างรอบเวลาเรียนใหม่ตามข้อมูลที่ส่งมา
             foreach ($data['schedules'] as $schedule) {
                 CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
             }
-
+            // สร้างแพ็กเกจแรกของคอร์ส
             CoursePackage::create(array_merge($data['package'], ['course_id' => $course->id]));
-
+            // ส่งกลับ $course เพื่อใช้ใน redirect() ด้านล่าง
             return $course;
         });
-
+        // ส่งกลับไปที่หน้า index พร้อม alert success
         return redirect()
             ->route('admin.courses')
             ->with('success', 'เพิ่มคอร์ส "'.$course->course_name.'" เรียบร้อยแล้ว');
@@ -80,6 +90,8 @@ class ManageCourseController extends Controller
 
     /**
      * GET /admin/courses/{course}/edit -> route('admin.courses.edit')
+     * แสดงข้อมูลคอร์สที่เลือกมาในฟอร์มแก้ไข
+     * (รวม target_groups, schedules, packages ด้วย)
      */
     public function edit(Course $course)
     {
@@ -98,21 +110,25 @@ class ManageCourseController extends Controller
         DB::transaction(function () use ($request, $data, $course) {
             $courseData = $data['course'];
 
+            // ถ้ามีไฟล์รูปภาพที่อัปโหลดมา ให้บันทึก path ของไฟล์ลงใน database ด้วย และลบไฟล์เก่าออกจาก storage
             if ($request->hasFile('image')) {
                 if ($course->image_path) {
                     Storage::disk('public')->delete($course->image_path);
                 }
+                // บันทึก path ของไฟล์ใหม่ลงใน database
                 $courseData['image_path'] = $request->file('image')->store('courses', 'public');
+                
+            // ถ้าเลือก "ลบรูปภาพ" ให้ลบไฟล์เก่าออกจาก storage และตั้งค่า image_path เป็น null
             } elseif ($request->boolean('remove_image')) {
                 if ($course->image_path) {
                     Storage::disk('public')->delete($course->image_path);
                 }
                 $courseData['image_path'] = null;
             }
-
+            // อัปเดตข้อมูลคอร์ส
             $course->update($courseData);
 
-            // ลบกลุ่มเป้าหมาย/รอบเวลาเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา (ง่ายและชัดเจนกว่า diff รายตัว)
+            // ลบกลุ่มเป้าหมาย/รอบเวลาเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา 
             $course->targetGroups()->delete();
             foreach ($data['target_groups'] as $group) {
                 CourseTargetGroup::create([
@@ -120,13 +136,13 @@ class ManageCourseController extends Controller
                     'target_group' => $group,
                 ]);
             }
-
+            // ลบรอบเวลาเรียนเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา
             $course->schedules()->delete();
             foreach ($data['schedules'] as $schedule) {
                 CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
             }
 
-            // อัปเดตแพ็กเกจแรกของคอร์ส (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส)
+            // อัปเดตแพ็กเกจแรกของคอร์ส (ถ้ามี) หรือสร้างใหม่ถ้าไม่มี
             $package = $course->packages()->first();
             if ($package) {
                 $package->update($data['package']);
@@ -160,7 +176,7 @@ class ManageCourseController extends Controller
     /**
      * PATCH /admin/courses/{course}/toggle-status -> route('admin.courses.toggleStatus')
      * เปิด/ปิดการใช้งานคอร์ส โดยสลับค่า is_active ของแพ็กเกจแรกของคอร์สนี้
-     * (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส เช่นเดียวกับ store()/update() ด้านบน)
+     * (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส 
      */
     public function toggleStatus(Course $course)
     {
@@ -191,7 +207,7 @@ class ManageCourseController extends Controller
             'min_age'        => ['required', 'integer', 'min:0'],
             'max_age'        => ['nullable', 'integer', 'gte:min_age'],
             'description'    => ['nullable', 'string'],
-            'image'          => ['nullable', 'image', 'max:2048'],
+            'image'          => ['nullable', 'image', 'max:2048'], // สูงสุด 2MB
 
             'target_groups'             => ['required', 'array', 'min:1'],
             'target_groups.*'           => ['required', 'in:Rookie,Beginner,Junior,Player'],
@@ -213,7 +229,7 @@ class ManageCourseController extends Controller
         ], [
             'schedules.*.capacity.required_if' => 'กรุณากรอกจำนวนคนสูงสุด เมื่อเลือก "จำกัดจำนวน" สำหรับรอบเวลาเรียนนี้',
         ]);
-
+        // วนลูปทุกข้อมูลใน Array แล้วแปลงข้อมูลใหม่กลับมาเป็น Array อีกชุดหนึ่ง
         $schedules = array_map(function ($schedule) {
             $isLimited = filter_var($schedule['is_limited_spots'] ?? false, FILTER_VALIDATE_BOOLEAN);
 

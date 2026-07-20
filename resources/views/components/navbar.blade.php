@@ -34,7 +34,10 @@
                     <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
                     <a href="{{ route('admin.courses') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์ส
+                        จัดการคอร์สเรียน
+                    </a>
+                      <a href="{{ route('admin.courses.calendar') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courses.calendar') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ตารางคอร์สเรียน
                     </a>
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard
@@ -227,7 +230,10 @@
                     <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
                     <a href="{{ route('admin.courses') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์ส
+                        จัดการคอร์สเรียน
+                    </a>
+                     <a href="{{ route('admin.courses.calendar') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses.calendar') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ตารางคอร์สเรียน
                     </a>
                     <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard

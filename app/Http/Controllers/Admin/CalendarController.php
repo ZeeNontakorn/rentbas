@@ -16,6 +16,6 @@ class CalendarController extends Controller
 
 public function calendar()
 {
-    return view('admin.calendars.calendar');
+    return view('admin.calendars.course-calendar');
 }
 }
