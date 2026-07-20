@@ -10,6 +10,7 @@ class CourseSchedule extends Model
 {
     protected $fillable = [
         'course_id',
+        'court_section_id',
         'day_type',
         'start_time',
         'end_time',
@@ -25,6 +26,11 @@ class CourseSchedule extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function courtSection(): BelongsTo
+    {
+        return $this->belongsTo(CourtSection::class);
     }
 
     public function getDayTypeLabelAttribute(): string

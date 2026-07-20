@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\CoursePackage;
 use App\Models\CourseSchedule;
 use App\Models\CourseTargetGroup;
+use App\Models\Court;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ class ManageCourseController extends Controller
      */
     public function create()
     {
-        return view('admin.courses.create');
+        return view('admin.courses.create', ['courts' => Court::with('sections')->orderBy('name')->get()]);
     }
 
 
@@ -97,7 +98,7 @@ class ManageCourseController extends Controller
     {
         $course->load(['targetGroups', 'schedules', 'packages']);
 
-        return view('admin.courses.edit', compact('course'));
+        return view('admin.courses.edit', ['course' => $course, 'courts' => Court::with('sections')->orderBy('name')->get()]);
     }
 
     /**
@@ -214,6 +215,7 @@ class ManageCourseController extends Controller
 
             'schedules'                 => ['required', 'array', 'min:1'],
             'schedules.*.day_type'      => ['required', 'in:weekday,weekend'],
+            'schedules.*.court_section_id' => ['nullable', 'exists:court_sections,id'],
             'schedules.*.start_time'    => ['required', 'date_format:H:i'],
             'schedules.*.end_time'      => ['required', 'date_format:H:i', 'after:schedules.*.start_time'],
             'schedules.*.is_limited_spots' => ['nullable', 'boolean'],
@@ -235,6 +237,7 @@ class ManageCourseController extends Controller
 
             return [
                 'day_type' => $schedule['day_type'],
+                'court_section_id' => $schedule['court_section_id'] ?? null,
                 'start_time' => $schedule['start_time'],
                 'end_time' => $schedule['end_time'],
                 'is_limited_spots' => $isLimited,

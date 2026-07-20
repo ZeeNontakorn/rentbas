@@ -142,7 +142,8 @@
             <template id="scheduleRowTemplate">
                 <div class="schedule-row flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
                     <span class="text-sm text-slate-500 flex-shrink-0 w-16 schedule-label">รอบที่ 1:</span>
-                    <input type="hidden" class="schedule-day-type" value="weekday">
+                    <input type="hidden" class="schedule-day-type" value="weekday"><select class="schedule-court-section w-44 px-2 py-1.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"><option value="">เลือกสนาม (ถ้ามี)</option>@foreach($courts as $court)@foreach($court->allSectionsOrdered() as $section)<option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>@endforeach
+@endforeach</select>
                     <input type="time" class="schedule-start w-28 px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value="16:00" required>
                     <span class="text-slate-400">-</span>
                     <input type="time" class="schedule-end w-28 px-2 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" value="17:30" required>
@@ -255,6 +256,7 @@
             'start_time' => \Illuminate\Support\Carbon::parse($s->start_time)->format('H:i'),
             'end_time' => \Illuminate\Support\Carbon::parse($s->end_time)->format('H:i'),
             'is_limited_spots' => $s->is_limited_spots,
+            'court_section_id' => $s->court_section_id,
             'capacity' => $s->capacity,
         ];
     });
@@ -338,6 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function addScheduleRow(prefill) {
         const clone = rowTemplate.content.firstElementChild.cloneNode(true);
         clone.querySelector('.schedule-day-type').value = prefill ? prefill.day_type : globalDayType();
+        clone.querySelector('.schedule-court-section').value = (prefill && prefill.court_section_id) ? prefill.court_section_id : '';
         clone.querySelector('.schedule-start').value = prefill ? prefill.start_time : '16:00';
         clone.querySelector('.schedule-end').value = prefill ? prefill.end_time : '17:30';
         clone.querySelector('.schedule-limited').checked = prefill ? !!prefill.is_limited_spots : false;
@@ -375,6 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const isLimited = row.querySelector('.schedule-limited').checked;
             const fields = {
                 day_type: row.querySelector('.schedule-day-type').value,
+                court_section_id: row.querySelector('.schedule-court-section').value,
                 start_time: row.querySelector('.schedule-start').value,
                 end_time: row.querySelector('.schedule-end').value,
                 is_limited_spots: isLimited ? '1' : '0',
@@ -425,5 +429,13 @@ document.addEventListener('DOMContentLoaded', function () {
     input, select, textarea {
     color: #0f172a; 
 }
+    /* รอบเรียนมีตัวเลือกสนามเพิ่มขึ้น: ให้ตัดบรรทัดแทนการล้นออกนอกการ์ด */
+    .schedule-row { flex-wrap: wrap; align-items: center; }
+    .schedule-row .schedule-limited { margin-left: 0 !important; }
+    .schedule-row .schedule-capacity-wrap { margin-left: 0; }
+    @media (max-width: 640px) {
+        .schedule-row > .schedule-label { width: 100%; }
+        .schedule-row .schedule-court-section { width: 100%; }
+    }
 </style>
 @endsection
