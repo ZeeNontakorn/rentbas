@@ -6,6 +6,7 @@ use App\Mail\BookingApprovedMail;
 use App\Mail\BookingCancelledByAdminMail;
 use App\Models\Booking;
 use App\Models\Court;
+use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Models\User;
 use Carbon\Carbon;
@@ -44,50 +45,174 @@ class BookingController extends Controller
         $courtId = $request->query('court_id', $courts->first()?->id);
         $selectedCourt = $courts->firstWhere('id', $courtId);
 
-        $slots = $selectedCourt ? $this->buildSlotsForCourt($selectedCourt, $date) : [];
+        $matrix = $selectedCourt ? $this->buildAvailabilityMatrix($selectedCourt, $date) : null;
+        // เก็บ $slots (แบบเดิม เต็มสนาม/รายชั่วโมง) ไว้เพื่อ backward-compat กับโค้ด/วิวอื่นที่อาจยังอ้างอิงอยู่
+        $slots = $matrix ? $matrix['legacySlots'] : [];
 
-        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots'));
+        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix'));
     }
 
     /**
-     * สร้าง array ของ slot รายชั่วโมง (06:00–22:00) สำหรับสนามที่ระบุ ในวันที่ระบุ
+     * Google-Calendar-style booking view — ข้อมูลชุดเดียวกับ index() แต่ render เป็นตารางเวลาแนวตั้ง
      */
-    protected function buildSlotsForCourt(Court $court, string $date): array
+    public function calendar(Request $request)
     {
-        $slots = [];
+        $courts = Court::all()->sortBy(function ($court) {
+            return $court->name;
+        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
+        $dateParam = $request->query('date', now()->toDateString());
+
+        try {
+            $parsedDate = Carbon::parse($dateParam);
+            $maxDate = now()->addMonth();
+            $minDate = now()->startOfDay();
+
+            if ($parsedDate->startOfDay()->gt($maxDate->startOfDay())) {
+                $date = $maxDate->toDateString();
+            } elseif ($parsedDate->startOfDay()->lt($minDate)) {
+                $date = now()->toDateString();
+            } else {
+                $date = $parsedDate->toDateString();
+            }
+        } catch (\Exception $e) {
+            $date = now()->toDateString();
+        }
+
+        $courtId = $request->query('court_id', $courts->first()?->id);
+        $selectedCourt = $courts->firstWhere('id', $courtId);
+
+        $matrix = $selectedCourt ? $this->buildAvailabilityMatrix($selectedCourt, $date) : null;
+
+        $mappedRows = collect($matrix['rows'])->map(fn($r) => [
+        'start' => substr($r['start'], 0, 5),
+        'end' => substr($r['end'], 0, 5),
+        'sections' => collect($r['sections'])->map(fn($s) => $s['status'])->all(),
+        ])->all();
+
+        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows'));
+    }
+
+    /**
+     * สร้างตารางความว่าง (matrix) ของสนามหนึ่งสนาม ในวันที่ระบุ โดยแบ่งตาม
+     * ส่วนของสนาม (section: เต็มสนาม/ครึ่งซ้าย/ครึ่งขวา) และความละเอียดเวลาต่อสนาม
+     * (slot_interval_minutes) เพื่อรองรับทั้งการจองครึ่งสนามและเวลาแบบไม่เต็มชั่วโมง
+     *
+     * โครงสร้างผลลัพธ์ถูกออกแบบให้ frontend ทั้ง 2 แบบ (grid และ calendar) ใช้ข้อมูลชุดเดียวกันได้:
+     * - sections: คอลัมน์/เลนที่จองได้ พร้อม id/code/name
+     * - rows: แถวเวลาแต่ละช่วง (ยาว = slot_interval_minutes) แต่ละแถวมีสถานะของทุก section
+     * - openTime/closeTime/intervalMinutes/minBookingMinutes: ใช้ฝั่ง JS สำหรับ snap เวลา/บังคับระยะเวลาขั้นต่ำ
+     */
+    protected function buildAvailabilityMatrix(Court $court, string $date): array
+    {
+        $sections = $court->activeSections();
+        if ($sections->isEmpty()) {
+            // กันเคสสนามที่ยังไม่มี section เลย (ข้อมูลเก่าก่อน migration) ไม่ให้หน้าเว็บพัง
+            $fallback = $court->defaultSection();
+            $sections = $fallback ? collect([$fallback]) : collect();
+        }
+
+        $interval = max(5, (int) ($court->slot_interval_minutes ?? 30));
+        $minMinutes = max($interval, (int) ($court->min_booking_minutes ?? 60));
+        $openMinutes = 6 * 60;   // 06:00
+        $closeMinutes = 22 * 60; // 22:00
         $dateCarbon = Carbon::parse($date);
+        $now = now();
 
-        for ($h = 6; $h < 22; $h++) {
-            $start = sprintf('%02d:00:00', $h);
-            $end = sprintf('%02d:00:00', $h + 1);
+        $bookings = Booking::where('court_id', $court->id)
+            ->whereDate('booking_date', $date)
+            ->whereIn('status', ['pending', 'approved'])
+            ->get();
 
-            $booking = Booking::where('court_id', $court->id)
-                ->whereDate('booking_date', $date)
-                ->whereIn('status', ['pending', 'approved'])
-                ->where('start_time', $start)
-                ->where('end_time', $end)
-                ->first();
+        // เตรียม conflict-map ต่อ section หนึ่งครั้ง (แทนการ query ซ้ำทุกแถว/ทุกคอลัมน์)
+        $conflictMap = [];
+        foreach ($sections as $section) {
+            $conflictMap[$section->id] = $section->conflictingSectionIds();
+        }
+
+        $rows = [];
+        $legacySlots = [];
+        $fullSection = $sections->firstWhere('code', 'full');
+
+        for ($m = $openMinutes; $m < $closeMinutes; $m += $interval) {
+            $start = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
+            $endM = $m + $interval;
+            $end = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
 
             $slotStart = $dateCarbon->copy()->setTimeFromTimeString($start);
             $slotEnd = $dateCarbon->copy()->setTimeFromTimeString($end);
-            $isClosed = $court->isClosedAt($slotStart, $slotEnd);
-            $isPast = $slotStart->lte(now());
+            $isPast = $slotStart->lte($now);
 
-            $status = 'available';
-            if ($isClosed) $status = 'closed';
-            elseif ($booking) $status = $booking->status; // pending | approved
-            elseif ($isPast) $status = 'past';
+            $rowSections = [];
+            foreach ($sections as $section) {
+                $isClosed = $court->isClosedAt($slotStart, $slotEnd, $section);
 
-            $slots[] = [
-                'label' => sprintf('%02d:00 - %02d:00', $h, $h + 1),
+                $conflictIds = $conflictMap[$section->id];
+                $booking = $bookings->first(function ($b) use ($conflictIds, $start, $end) {
+                    return in_array($b->court_section_id, $conflictIds, true)
+                        && $b->start_time < $end
+                        && $b->end_time > $start;
+                });
+
+                $status = 'available';
+                if ($isClosed) $status = 'closed';
+                elseif ($booking) $status = $booking->status; // pending | approved (ของ section ตัวเองหรือ section ที่บล็อกกัน)
+                elseif ($isPast) $status = 'past';
+
+                $rowSections[$section->id] = [
+                    'status' => $status,
+                    'own' => $booking?->court_section_id === $section->id,
+                ];
+            }
+
+            $rows[] = [
                 'start' => $start,
                 'end' => $end,
-                'status' => $status,
-                'booking' => $booking,
+                'label' => substr($start, 0, 5) . ' - ' . substr($end, 0, 5),
+                'sections' => $rowSections,
             ];
+
+            // legacy hourly/full-section slot format (สำหรับโค้ดเก่าที่ยังอ่าน $slots)
+            if ($fullSection && $m % 60 === 0) {
+                $legacySlots[] = [
+                    'label' => sprintf('%02d:00 - %02d:00', intdiv($m, 60), intdiv($m, 60) + 1),
+                    'start' => $start,
+                    'end' => sprintf('%02d:00:00', intdiv($m, 60) + 1),
+                    'status' => $rowSections[$fullSection->id]['status'] ?? 'closed',
+                    'booking' => null,
+                ];
+            }
         }
 
-        return $slots;
+        return [
+            'sections' => $sections->map(fn ($s) => ['id' => $s->id, 'code' => $s->code, 'name' => $s->name])->all(),
+            'rows' => $rows,
+            'intervalMinutes' => $interval,
+            'minBookingMinutes' => $minMinutes,
+            'openTime' => sprintf('%02d:%02d', intdiv($openMinutes, 60), $openMinutes % 60),
+            'closeTime' => sprintf('%02d:%02d', intdiv($closeMinutes, 60), $closeMinutes % 60),
+            'legacySlots' => $legacySlots,
+        ];
+    }
+
+    /**
+     * เช็คว่าเวลาที่ส่งมา (HH:MM) ตรงกับ interval ของสนามนั้น และระยะเวลารวม >= ขั้นต่ำหรือไม่
+     */
+    protected function isValidTimeRangeForCourt(Court $court, string $start, string $end): bool
+    {
+        $interval = max(5, (int) ($court->slot_interval_minutes ?? 30));
+        $minMinutes = max($interval, (int) ($court->min_booking_minutes ?? 60));
+
+        [$sh, $sm] = array_map('intval', explode(':', $start));
+        [$eh, $em] = array_map('intval', explode(':', $end));
+        $startMin = $sh * 60 + $sm;
+        $endMin = $eh * 60 + $em;
+        $duration = $endMin - $startMin;
+
+        if ($duration < $minMinutes) return false;
+        if ($startMin % $interval !== 0) return false;
+        if ($endMin % $interval !== 0) return false;
+
+        return true;
     }
 
     /**
@@ -110,6 +235,7 @@ class BookingController extends Controller
             'booking_date' => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $maxDate],
             'bookings' => ['required', 'array', 'min:1'],
             'bookings.*.court_id' => ['required', 'integer', 'exists:courts,id'],
+            'bookings.*.court_section_id' => ['nullable', 'integer', 'exists:court_sections,id'],
             'bookings.*.start_time' => ['required', 'date_format:H:i'],
             'bookings.*.end_time' => ['required', 'date_format:H:i', 'after:bookings.*.start_time'],
         ]);
@@ -121,6 +247,15 @@ class BookingController extends Controller
             if ($item['start_time'] < '06:00' || $item['end_time'] > '22:00') {
                 return back()->withErrors(['start_time' => 'สามารถจองได้เฉพาะช่วง 06:00–22:00 เท่านั้น']);
             }
+
+            $court = Court::find($item['court_id']);
+            if ($court && ! $this->isValidTimeRangeForCourt($court, $item['start_time'], $item['end_time'])) {
+                $interval = max(5, (int) ($court->slot_interval_minutes ?? 30));
+                $minMinutes = max($interval, (int) ($court->min_booking_minutes ?? 60));
+                return back()->withErrors([
+                    'start_time' => "{$court->name}: เวลาต้องเริ่ม/จบตรงกับช่วงทุก {$interval} นาที และจองอย่างน้อย {$minMinutes} นาที",
+                ]);
+            }
         }
 
         $result = DB::transaction(function () use ($items, $bookingDate, $request) {
@@ -129,6 +264,23 @@ class BookingController extends Controller
 
             foreach ($items as $item) {
                 $court = Court::findOrFail($item['court_id']);
+
+                // ถ้า frontend ยังไม่ได้ส่ง court_section_id มา (เช่น flow เก่า/สนามที่ยังไม่แบ่งครึ่ง)
+                // ให้ fallback ไปใช้ section "เต็มสนาม" ของ court นั้นโดยอัตโนมัติ
+                $section = isset($item['court_section_id'])
+                    ? CourtSection::where('court_id', $court->id)->find($item['court_section_id'])
+                    : $court->defaultSection();
+
+                if (!$section) {
+                    $failed[] = "{$court->name} ({$item['start_time']}-{$item['end_time']}): ไม่พบส่วนของสนามที่เลือก";
+                    continue;
+                }
+
+                if (!$section->is_active) {
+                    $failed[] = "{$court->name} ({$item['start_time']}-{$item['end_time']}): ส่วนของสนามนี้ปิดใช้งานอยู่";
+                    continue;
+                }
+
                 $startAt = Carbon::parse("{$bookingDate} {$item['start_time']}");
                 $endAt = Carbon::parse("{$bookingDate} {$item['end_time']}");
 
@@ -137,7 +289,7 @@ class BookingController extends Controller
                     continue;
                 }
 
-                if ($court->isClosedAt($startAt, $endAt)) {
+                if ($court->isClosedAt($startAt, $endAt, $section)) {
                     $failed[] = "{$court->name} ({$item['start_time']}-{$item['end_time']}): สนามปิดให้บริการ";
                     continue;
                 }
@@ -145,13 +297,7 @@ class BookingController extends Controller
                 $startDb = $item['start_time'] . ':00';
                 $endDb = $item['end_time'] . ':00';
 
-                $overlap = Booking::where('court_id', $court->id)
-                    ->whereDate('booking_date', $bookingDate)
-                    ->whereIn('status', ['pending', 'approved'])
-                    ->where(function ($q) use ($startDb, $endDb) {
-                        $q->where('start_time', '<', $endDb)
-                          ->where('end_time', '>', $startDb);
-                    })
+                $overlap = Booking::overlappingSection($section, $bookingDate, $startDb, $endDb)
                     ->lockForUpdate()
                     ->exists();
 
@@ -163,6 +309,7 @@ class BookingController extends Controller
                 $booking = Booking::create([
                     'user_id' => $request->user()->id,
                     'court_id' => $court->id,
+                    'court_section_id' => $section->id,
                     'booking_date' => $bookingDate,
                     'start_time' => $startDb,
                     'end_time' => $endDb,
@@ -252,11 +399,15 @@ class BookingController extends Controller
         $startAt = Carbon::parse("{$bDate} {$booking->start_time}");
         $endAt = Carbon::parse("{$bDate} {$booking->end_time}");
 
-        if ($booking->court->isClosedAt($startAt, $endAt)) {
+        if ($booking->court->isClosedAt($startAt, $endAt, $booking->courtSection)) {
             return back()->withErrors(['status' => 'ไม่สามารถอนุมัติได้เนื่องจากสนามปิดให้บริการในช่วงเวลานี้']);
         }
 
-        $overlap = Booking::where('court_id', $booking->court_id)
+        $conflictingSectionIds = $booking->courtSection
+            ? $booking->courtSection->conflictingSectionIds()
+            : [$booking->court_id]; // fallback หา booking เก่าที่ยังไม่มี section (ไม่ควรเกิดขึ้นหลัง backfill)
+
+        $overlap = Booking::whereIn('court_section_id', $conflictingSectionIds)
             ->whereDate('booking_date', $bDate)
             ->where('status', 'approved')
             ->where('id', '!=', $booking->id)
@@ -371,12 +522,16 @@ class BookingController extends Controller
             $startAt = Carbon::parse("{$bDate} {$booking->start_time}");
             $endAt = Carbon::parse("{$bDate} {$booking->end_time}");
 
-            if ($booking->court->isClosedAt($startAt, $endAt)) {
+            if ($booking->court->isClosedAt($startAt, $endAt, $booking->courtSection)) {
                 $failed[] = "{$booking->court->name} ({$bDate}): สนามปิดให้บริการ";
                 continue;
             }
 
-            $overlap = Booking::where('court_id', $booking->court_id)
+            $conflictingSectionIds = $booking->courtSection
+                ? $booking->courtSection->conflictingSectionIds()
+                : [$booking->court_id];
+
+            $overlap = Booking::whereIn('court_section_id', $conflictingSectionIds)
                 ->whereDate('booking_date', $bDate)
                 ->where('status', 'approved')
                 ->where('id', '!=', $booking->id)
