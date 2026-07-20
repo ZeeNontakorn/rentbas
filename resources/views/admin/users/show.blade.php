@@ -63,6 +63,20 @@
                                 ยังไม่ยืนยัน OTP
                             </span>
                         @endif
+
+                        @if(in_array($user->role, ['admin', 'superadmin'], true))
+                            <span class="inline-flex items-center gap-1 text-gray-500 font-semibold">
+                                {{ $user->role === 'superadmin' ? 'แอดมิน' : 'แอดมิน' }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 text-orange-600 font-medium">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {{ $user->membershipTypeLabel() }}
+                            </span>
+                        @endif
                     </div>
                 </div>
 
@@ -94,7 +108,7 @@
                         {{ $currentBookings->count() }} รายการ
                     </span>
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
@@ -146,7 +160,7 @@
                         {{ $pastBookings->count() }} รายการ
                     </span>
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
@@ -165,7 +179,7 @@
                                 </tr>
                             @else
                                 @foreach($pastBookings as $b)
-                                    @php 
+                                    @php
                                         $bookingEndTime = \Carbon\Carbon::parse($b->booking_date)->setTimeFromTimeString($b->end_time);
                                         $currentStatus = ($b->status === 'pending' && $bookingEndTime->isPast()) ? 'expired' : $b->status;
                                         [$badgeClass, $dotClass, $statusLabel] = getStatusDetails($currentStatus);
@@ -203,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tabCurrent.addEventListener('click', function() {
         secCurrent.classList.remove('hidden');
         secPast.classList.add('hidden');
-        
+
         tabCurrent.className = "flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer";
         tabPast.className = "flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer";
     });
@@ -211,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tabPast.addEventListener('click', function() {
         secCurrent.classList.add('hidden');
         secPast.classList.remove('hidden');
-        
+
         tabPast.className = "flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer";
         tabCurrent.className = "flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer";
     });
