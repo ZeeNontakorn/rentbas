@@ -31,7 +31,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
                     </svg>
-                    ค้นหาผู้ใช้
+                    ค้นหา
                 </button>
             </form>
         </div>
