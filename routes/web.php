@@ -118,6 +118,26 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/courts/{court}/sections/merge', [AdminCourtController::class, 'mergeSections'])->name('courts.sections.merge');
     Route::put('/court-sections/{courtSection}', [AdminCourtController::class, 'updateSection'])->name('court-sections.update');
     Route::post('/courts/{court}/slot-settings', [AdminCourtController::class, 'updateSlotSettings'])->name('courts.slot-settings');
+    
+     // Manage Courses
+    Route::get('/courses', [ManageCourseController::class, 'index'])->name('courses');
+    Route::get('/courses/create', [ManageCourseController::class, 'create'])->name('courses.create');
+    Route::post('/courses', [ManageCourseController::class, 'store'])->name('courses.store');
+    Route::get('/courses/{course}/edit', [ManageCourseController::class, 'edit'])->name('courses.edit');
+    Route::put('/courses/{course}', [ManageCourseController::class, 'update'])->name('courses.update');
+    Route::delete('/courses/{course}', [ManageCourseController::class, 'destroy'])->name('courses.destroy');
+    
+    Route::patch('/courses/{course}/toggle-status', [ManageCourseController::class, 'toggleStatus'])
+    ->name('courses.toggleStatus');
+
+    Route::get('/courses/calendar', [CalendarController::class, 'calendar'])
+    ->name('courses.calendar');
+    Route::get('/courses/calendar/events', [CalendarController::class, 'events'])->name('courses.calendar.events');
+    Route::post('/courses/calendar/events', [CalendarController::class, 'store'])->name('courses.calendar.events.store');
+    Route::put('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'update'])->name('courses.calendar.events.update');
+    Route::delete('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'destroy'])->name('courses.calendar.events.destroy');
+    Route::put('/courses/calendar/course-events/{schedule}/{date}', [CalendarController::class, 'updateCourseEvent'])->where('date', '\\d{4}-\\d{2}-\\d{2}')->name('courses.calendar.course-events.update');
+   
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
