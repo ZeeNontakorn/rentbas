@@ -36,6 +36,9 @@
             </form>
         </div>
 
+        @php
+            $isSuperadmin = auth()->user()->role === 'superadmin';
+        @endphp
         {{-- ตารางผู้ใช้งาน --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
@@ -75,7 +78,7 @@
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-3 font-medium">รหัส</th>
+                            <th class="px-6 py-3 font-medium">ลำดับ</th>
                             <th class="px-6 py-3 font-medium">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium">อีเมล</th>
                             <th class="px-6 py-3 font-medium">Role</th>
@@ -86,33 +89,54 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($users as $u)
-                            @continue($u->id === 0)
+
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $u->id }}</td>
+                                <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">{{ $u->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $u->email }}</td>
                                 <td class="px-6 py-4">
-                                    @php
-                                        $roleColors = [
-                                            'admin' => 'bg-purple-100 text-purple-700',
-                                            'staff' => 'bg-blue-100 text-blue-700',
-                                            'user'  => 'bg-gray-100 text-gray-600',
-                                        ];
-                                        $roleClass = $roleColors[$u->role] ?? 'bg-gray-100 text-gray-600';
-                                    @endphp
-                                    <div class="flex items-center gap-2 w-[136px]">
-                                        <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
-                                            {{ ucfirst($u->role) }}
-                                        </span>
-                                        <button type="button"
-                                                onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                    </div>
+                                    @if($u->role === 'superadmin')
+                                        <div class="flex items-center gap-2 w-[136px]">
+                                            <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
+                                                Super Admin
+                                            </span>
+                                            @if($isSuperadmin)
+                                                <button type="button"
+                                                        onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                        class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </button>
+                                            @else
+                                                {{-- placeholder ขนาดเท่าปุ่ม เพื่อให้ badge กว้างเท่าแถวอื่นที่มีปุ่มจริง --}}
+                                                <span class="w-[22px] h-[22px] flex-shrink-0"></span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        @php
+                                            $roleColors = [
+                                                'admin' => 'bg-purple-100 text-purple-700',
+                                                'staff' => 'bg-blue-100 text-blue-700',
+                                                'user'  => 'bg-gray-100 text-gray-600',
+                                            ];
+                                            $roleClass = $roleColors[$u->role] ?? 'bg-gray-100 text-gray-600';
+                                        @endphp
+                                        <div class="flex items-center gap-2 w-[136px]">
+                                            <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
+                                                {{ ucfirst($u->role) }}
+                                            </span>
+                                            <button type="button"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($u->is_verified)
@@ -128,7 +152,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    @if($u->role === 'admin')
+                                    @if(in_array($u->role, ['admin', 'superadmin'], true))
                                         {{-- แอดมิน: ป้ายพื้นหลังสีเทา มีกรอบ เหมือนป้ายประเภทสมาชิกอื่นๆ --}}
                                         <div class="flex items-center gap-2 w-[107px]">
                                             <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
@@ -208,17 +232,28 @@
             <label class="block text-xs font-medium text-gray-500 mb-2">เลือก Role ใหม่</label>
             <div class="grid grid-cols-3 gap-2 mb-5">
                 <button type="button" data-role="user" onclick="selectRole(this)"
-                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        class="role-option flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-gray-400"></span>
                     User
                 </button>
                 <button type="button" data-role="staff" onclick="selectRole(this)"
-                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        class="role-option flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-500"></span>
                     Staff
                 </button>
                 <button type="button" data-role="admin" onclick="selectRole(this)"
-                        class="role-option px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        class="role-option flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-purple-500"></span>
                     Admin
                 </button>
+
+                @if($isSuperadmin)
+                    <button type="button" data-role="superadmin" onclick="selectRole(this)"
+                            class="role-option col-span-3 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border transition">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-rose-500"></span>
+                        Super Admin
+                    </button>
+                @endif
             </div>
 
             <div class="flex justify-end gap-2">

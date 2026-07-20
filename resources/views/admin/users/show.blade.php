@@ -64,9 +64,9 @@
                             </span>
                         @endif
 
-                        @if($user->role === 'admin')
+                        @if(in_array($user->role, ['admin', 'superadmin'], true))
                             <span class="inline-flex items-center gap-1 text-gray-500 font-semibold">
-                                แอดมิน
+                                {{ $user->role === 'superadmin' ? 'แอดมิน' : 'แอดมิน' }}
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1 text-orange-600 font-medium">
@@ -108,7 +108,7 @@
                         {{ $currentBookings->count() }} รายการ
                     </span>
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
@@ -160,7 +160,7 @@
                         {{ $pastBookings->count() }} รายการ
                     </span>
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
@@ -179,7 +179,7 @@
                                 </tr>
                             @else
                                 @foreach($pastBookings as $b)
-                                    @php 
+                                    @php
                                         $bookingEndTime = \Carbon\Carbon::parse($b->booking_date)->setTimeFromTimeString($b->end_time);
                                         $currentStatus = ($b->status === 'pending' && $bookingEndTime->isPast()) ? 'expired' : $b->status;
                                         [$badgeClass, $dotClass, $statusLabel] = getStatusDetails($currentStatus);
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tabCurrent.addEventListener('click', function() {
         secCurrent.classList.remove('hidden');
         secPast.classList.add('hidden');
-        
+
         tabCurrent.className = "flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer";
         tabPast.className = "flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer";
     });
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tabPast.addEventListener('click', function() {
         secCurrent.classList.add('hidden');
         secPast.classList.remove('hidden');
-        
+
         tabPast.className = "flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer";
         tabCurrent.className = "flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer";
     });
