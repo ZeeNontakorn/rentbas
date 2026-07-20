@@ -7,6 +7,7 @@ use App\Mail\BookingCancelledByAdminMail;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtClosure;
+use App\Models\CourtSection;
 use App\Models\Setting;
 use App\Models\Notification;
 use Carbon\Carbon;
@@ -32,6 +33,8 @@ class CourtController extends Controller
         $court = Court::create([
             'name' => $data['name'],
             'court_status' => $data['court_status'],
+            'min_booking_minutes' => 30, // default
+            'slot_interval_minutes' => 30, // default
         ]);
 
         if ($request->wantsJson()) {
@@ -101,37 +104,42 @@ class CourtController extends Controller
         }
         $courtId = $request->query('court_id', $courts->first()?->id);
         $selectedCourt = $courts->firstWhere('id', $courtId);
+        $sections = $selectedCourt ? $selectedCourt->allSectionsOrdered() : collect();
 
         $slots = [];
         if ($selectedCourt) {
-            $dateCarbon = Carbon::parse($date);
+            $now = now();
 
             // Check if court is globally closed
             $isGloballyClosed = ($selectedCourt->court_status === 'closed');
+
+            $fullSection = $selectedCourt->defaultSection();
+            $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
+
+            // ดึงการจองของวันนี้ทั้งหมดมาครั้งเดียว แล้วเช็ค overlap เอง (แทนการ query แบบ exact-match ต่อชั่วโมง
+            // ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง และไม่รู้จัก court_section conflict)
+            $dayBookings = Booking::where('court_id', $selectedCourt->id)
+                ->whereDate('booking_date', $date)
+                ->whereIn('status', ['pending', 'approved'])
+                ->get(['court_section_id', 'start_time', 'end_time', 'status']);
 
             for ($h = 6; $h < 22; $h++) {
                 $start = sprintf('%02d:00:00', $h);
                 $end = sprintf('%02d:00:00', $h + 1);
 
-                $booking = Booking::where('court_id', $selectedCourt->id)
-                    ->whereDate('booking_date', $date)
-                    ->whereIn('status', ['pending', 'approved'])
-                    ->where('start_time', $start)
-                    ->where('end_time', $end)
-                    ->first();
+                $booking = $dayBookings->first(function ($b) use ($conflictIds, $start, $end) {
+                    return in_array($b->court_section_id, $conflictIds, true)
+                        && $b->start_time < $end && $b->end_time > $start;
+                });
 
-                $closure = CourtClosure::where('court_id', $selectedCourt->id)
-                    ->whereDate('date', $date)
-                    ->where('start_time', '<', $end)
-                    ->where('end_time', '>', $start)
-                    ->first();
+                $closureType = $selectedCourt->getClosureType($start, $end, $date, $fullSection);
 
                 $status = 'available';
 
                 if ($isGloballyClosed) {
                     $status = 'unavailable'; // Or a specific 'closed' status
-                } elseif ($closure) {
-                    $status = $closure->type; // 'maintenance' or 'unavailable'
+                } elseif ($closureType) {
+                    $status = $closureType; // 'maintenance' or 'unavailable'
                 } elseif ($booking) {
                     $status = 'booking_' . $booking->status; // 'booking_pending' or 'booking_approved'
                 }
@@ -145,7 +153,7 @@ class CourtController extends Controller
             }
         }
 
-        return view('admin.courts', compact('courts', 'date', 'selectedCourt', 'slots'));
+        return view('admin.courts', compact('courts', 'date', 'selectedCourt', 'slots', 'sections'));
     }
 
     public function updateStatus(Request $request, Court $court)
@@ -232,6 +240,149 @@ class CourtController extends Controller
         return back()->with('success', $message);
     }
 
+    /**
+     * แบ่งสนามออกเป็นครึ่ง A/B (สร้าง section ใหม่ถ้ายังไม่มี หรือเปิดใช้งานใหม่ถ้าเคยปิดไว้)
+     * แล้ว sync blocking matrix ให้ถูกต้องเสมอ: full บล็อก full+a+b, a บล็อก a+full, b บล็อก b+full
+     */
+    public function splitSection(Request $request, Court $court)
+    {
+        $data = $request->validate([
+            'name_a' => ['nullable', 'string', 'max:100'],
+            'name_b' => ['nullable', 'string', 'max:100'],
+            'return_date' => ['nullable', 'date'],
+        ]);
+
+        $full = $court->sections()->where('code', 'full')->first();
+        if (!$full) {
+            $full = CourtSection::create([
+                'court_id' => $court->id,
+                'code' => 'full',
+                'name' => 'เต็มสนาม',
+                'is_active' => true,
+            ]);
+        }
+
+        $a = CourtSection::updateOrCreate(
+            ['court_id' => $court->id, 'code' => 'a'],
+            ['name' => $data['name_a'] ?: 'ครึ่ง A', 'is_active' => true]
+        );
+        $b = CourtSection::updateOrCreate(
+            ['court_id' => $court->id, 'code' => 'b'],
+            ['name' => $data['name_b'] ?: 'ครึ่ง B', 'is_active' => true]
+        );
+
+        $this->syncHalfCourtBlockingMatrix($full, $a, $b);
+
+        return redirect()->route('admin.courts', [
+            'court_id' => $court->id,
+            'date' => $data['return_date'] ?? now()->toDateString(),
+        ])->with('success', 'แบ่งครึ่งสนามเรียบร้อยแล้ว (' . $a->name . ' / ' . $b->name . ')');
+    }
+
+    /**
+     * ยกเลิกการแบ่งครึ่งสนาม — ปิดใช้งาน section a/b (ไม่ลบ เพื่อรักษาประวัติการจองเดิมที่อ้างอิงอยู่)
+     * เต็มสนามจะถูกเปิดใช้งานกลับเสมอ เพื่อให้ยังจองได้ต่อ
+     */
+    public function mergeSections(Request $request, Court $court)
+    {
+        $data = $request->validate([
+            'return_date' => ['nullable', 'date'],
+        ]);
+
+        $court->sections()->whereIn('code', ['a', 'b'])->update(['is_active' => false]);
+        $court->sections()->where('code', 'full')->update(['is_active' => true]);
+
+        return redirect()->route('admin.courts', [
+            'court_id' => $court->id,
+            'date' => $data['return_date'] ?? now()->toDateString(),
+        ])->with('success', 'ยกเลิกการแบ่งครึ่งสนามเรียบร้อยแล้ว (กลับเป็นจองเต็มสนามเท่านั้น)');
+    }
+
+    /**
+     * แก้ชื่อ/สถานะเปิด-ปิดของ section หนึ่งรายการ (เต็มสนาม/ครึ่ง A/ครึ่ง B)
+     */
+    public function updateSection(Request $request, CourtSection $courtSection)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'is_active' => ['nullable', 'boolean'],
+            'return_date' => ['nullable', 'date'],
+        ]);
+
+        // เต็มสนามต้องเปิดใช้งานเสมอ เพราะเป็น section หลักที่ระบบ fallback ไปใช้เวลาไม่ได้ระบุ section
+        $isActive = $courtSection->code === 'full' ? true : $request->boolean('is_active');
+
+        $courtSection->update([
+            'name' => $data['name'],
+            'is_active' => $isActive,
+        ]);
+
+        return redirect()->route('admin.courts', [
+            'court_id' => $courtSection->court_id,
+            'date' => $data['return_date'] ?? now()->toDateString(),
+        ])->with('success', 'อัปเดตส่วนของสนามเรียบร้อยแล้ว');
+    }
+
+    /**
+     * ตั้งค่าความละเอียดของเวลา (ทุกกี่นาที) และระยะเวลาจองขั้นต่ำต่อสนาม
+     */
+    // public function updateSlotSettings(Request $request, Court $court)
+    // {
+    //     $data = $request->validate([
+    //         'slot_interval_minutes' => ['required', 'integer', 'min:5', 'max:120'],
+    //         'min_booking_minutes' => ['required', 'integer', 'min:5', 'max:480'],
+    //         'return_date' => ['nullable', 'date'],
+    //     ]);
+
+    //     if ($data['min_booking_minutes'] < $data['slot_interval_minutes']) {
+    //         return back()->withErrors(['min_booking_minutes' => 'ระยะเวลาจองขั้นต่ำต้องไม่น้อยกว่าความละเอียดของเวลา']);
+    //     }
+
+    //     $court->update([
+    //         'slot_interval_minutes' => $data['slot_interval_minutes'],
+    //         'min_booking_minutes' => $data['min_booking_minutes'],
+    //     ]);
+
+    //     return redirect()->route('admin.courts', [
+    //         'court_id' => $court->id,
+    //         'date' => $data['return_date'] ?? now()->toDateString(),
+    //     ])->with('success', 'อัปเดตการตั้งค่าเวลาเรียบร้อยแล้ว');
+    // }
+
+    /**
+     * เติมแถว court_section_blocks ให้ครบตาม "blocking matrix" มาตรฐานของการแบ่งครึ่งสนาม:
+     *   full บล็อก full, a, b   |   a บล็อก a, full   |   b บล็อก b, full
+     * ใช้ exists-check ก่อน insert ทีละคู่ (กัน unique constraint ชนตอนเรียกซ้ำ/reactivate)
+     */
+    protected function syncHalfCourtBlockingMatrix(CourtSection $full, CourtSection $a, CourtSection $b): void
+    {
+        $pairs = [
+            [$full->id, $full->id],
+            [$full->id, $a->id],
+            [$full->id, $b->id],
+            [$a->id, $a->id],
+            [$a->id, $full->id],
+            [$b->id, $b->id],
+            [$b->id, $full->id],
+        ];
+
+        foreach ($pairs as [$sectionId, $blocksId]) {
+            $exists = \Illuminate\Support\Facades\DB::table('court_section_blocks')
+                ->where('court_section_id', $sectionId)
+                ->where('blocks_section_id', $blocksId)
+                ->exists();
+
+            if (!$exists) {
+                \Illuminate\Support\Facades\DB::table('court_section_blocks')->insert([
+                    'court_section_id' => $sectionId,
+                    'blocks_section_id' => $blocksId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
     public function updateImages(Request $request)
     {
         $request->validate([
@@ -265,7 +416,7 @@ class CourtController extends Controller
 
         return back();
     }
-    
+
     public function destroy(Court $court)
     {
         // ตรวจสอบว่าสนามนี้มีการจองในระบบหรือไม่

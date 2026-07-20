@@ -57,6 +57,62 @@
 .court-item:hover { background: #f9fafb; }
 .court-item.active { background: #fff7ed; font-weight: 600; }
 
+/* Section grid (ครึ่งสนาม + เวลาไม่เต็มชั่วโมง) */
+.sec-table { border-collapse: collapse; width: 100%; }
+.sec-table th {
+    font-family: 'Kanit', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #4b5563;
+    padding: 8px 6px;
+    text-align: center;
+    position: sticky; top: 0; background: #fff; z-index: 5;
+    border-bottom: 1px solid #e5e7eb;
+}
+.sec-table td { padding: 3px; vertical-align: top; }
+.sec-time-label {
+    font-family: 'Kanit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+    padding-right: 8px !important;
+}
+.sec-cell {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 7px 4px;
+    text-align: center;
+    font-family: 'Kanit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #4b5563;
+    background: #f9fafb;
+    transition: all .15s;
+    min-width: 64px;
+}
+.sec-cell:hover.available { border-color: #87D068; background: #f0fdf4; }
+.sec-cell.selected { background: #87D068 !important; color: #fff !important; border-color: #6aa952 !important; }
+.sec-cell.pending-s { background: #fef3c7; color: #92400e; cursor: not-allowed; }
+.sec-cell.approved-s { background: #fee2e2; color: #b91c1c; cursor: not-allowed; }
+.sec-cell.past-s { background: #f3f4f6; color: #b0b6c0; cursor: not-allowed; }
+.sec-cell.disabled-slot {
+    pointer-events: none !important;
+    opacity: 0.3 !important;
+    background-color: #f3f4f6 !important;
+    border-color: #e5e7eb !important;
+    color: #9ca3af !important;
+    cursor: not-allowed !important;
+}
+.sec-scroll { max-height: 560px; overflow-y: auto; }
+.view-switch {
+    display: inline-flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;
+    font-family: 'Kanit', sans-serif; font-size: 12px; font-weight: 600;
+}
+.view-switch a { padding: 7px 14px; color: #6b7280; background: #fff; }
+.view-switch a.active { background: #0b0b1a; color: #fff; }
+
 .modal-bg {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.6);
@@ -80,9 +136,15 @@
 <div class="bk-main max-w-[1200px] mx-auto px-4 py-8" data-aos="fade-up">
 
     {{-- Header --}}
-    <div class="mb-6 flex items-baseline gap-4" data-aos="fade-right">
-        <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Court Booking</h1>
-        <span class="text-gray-600 text-[15px]">จองสนามบาสเกตบอล</span>
+    <div class="mb-6 flex items-baseline justify-between flex-wrap gap-4" data-aos="fade-right">
+        <div class="flex items-baseline gap-4">
+            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Court Booking</h1>
+            <span class="text-gray-600 text-[15px]">จองสนามบาสเกตบอล</span>
+        </div>
+        <div class="view-switch">
+            <a href="{{ route('booking.index', ['court_id' => $selectedCourt?->id, 'date' => $date]) }}" class="active">ตาราง (Grid)</a>
+            <a href="{{ route('booking.calendar', ['court_id' => $selectedCourt?->id, 'date' => $date]) }}">ปฏิทิน (Calendar)</a>
+        </div>
     </div>
 
     {{-- Banner Dynamic --}}
@@ -207,31 +269,57 @@
 
                 @if(!$selectedCourt)
                     <div class="text-center py-20 text-gray-400 font-medium">กรุณาเลือกสนาม</div>
+                @elseif(!$matrix || empty($matrix['sections']))
+                    <div class="text-center py-20 text-gray-400 font-medium">สนามนี้ยังไม่เปิดให้จอง</div>
                 @else
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        @foreach($slots as $slot)
-                            @php
-                                $isAvail = $slot['status'] === 'available';
-                                $sClass = match($slot['status']) {
-                                    'available' => 'available', 'pending' => 'pending-s',
-                                    'approved' => 'approved-s', 'closed' => 'past-s', 'past' => 'past-s',
-                                    default => 'past-s'
-                                };
-                                $sLabel = match($slot['status']) {
-                                    'available'=>'ว่าง', 'pending'=>'รออนุมัติ', 'approved'=>'จองแล้ว',
-                                    'closed'=>'ปิดบริการ', 'past'=>'ผ่านมาแล้ว', default=>''
-                                };
-                            @endphp
+                    @php
+                        $statusMeta = [
+                            'available' => ['cls' => 'available', 'label' => 'ว่าง'],
+                            'pending'   => ['cls' => 'pending-s', 'label' => 'รออนุมัติ'],
+                            'approved'  => ['cls' => 'approved-s', 'label' => 'จองแล้ว'],
+                            'closed'    => ['cls' => 'past-s', 'label' => 'ปิดบริการ'],
+                            'past'      => ['cls' => 'past-s', 'label' => 'ผ่านมาแล้ว'],
+                        ];
+                    @endphp
 
-                            <div class="slot-card {{ $sClass }}"
-                                 data-start="{{ substr($slot['start'], 0, 5) }}"
-                                 data-end="{{ substr($slot['end'], 0, 5) }}"
-                                 data-label="{{ $slot['label'] }}"
-                                 {!! $isAvail ? 'onclick="selectTime(this)"' : '' !!}>
-                                <div class="slot-time">{{ $slot['label'] }}</div>
-                                <div class="slot-btn">{{ $sLabel }}</div>
-                            </div>
-                        @endforeach
+                    <p class="text-[12px] text-gray-500 mb-3">เลือกได้ทั้ง "เต็มสนาม" หรือครึ่งสนาม (ครึ่งใดครึ่งหนึ่ง) — ช่วงเวลาละ {{ $matrix['intervalMinutes'] }} นาที จองต่อเนื่องขั้นต่ำ {{ $matrix['minBookingMinutes'] }} นาที</p>
+
+                    <div class="sec-scroll border border-gray-100 rounded-lg">
+                    <table class="sec-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:76px;">เวลา</th>
+                                @foreach($matrix['sections'] as $sec)
+                                    <th>{{ $sec['name'] }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($matrix['rows'] as $row)
+                                <tr>
+                                    <td class="sec-time-label">{{ $row['label'] }}</td>
+                                    @foreach($matrix['sections'] as $sec)
+                                        @php
+                                            $st = $row['sections'][$sec['id']]['status'] ?? 'closed';
+                                            $meta = $statusMeta[$st] ?? $statusMeta['closed'];
+                                            $isAvail = $st === 'available';
+                                        @endphp
+                                        <td>
+                                            <div class="sec-cell {{ $meta['cls'] }}"
+                                                 data-section-id="{{ $sec['id'] }}"
+                                                 data-section-code="{{ $sec['code'] }}"
+                                                 data-section-name="{{ $sec['name'] }}"
+                                                 data-start="{{ substr($row['start'], 0, 5) }}"
+                                                 data-end="{{ substr($row['end'], 0, 5) }}"
+                                                 {!! $isAvail ? 'onclick="selectTime(this)"' : '' !!}>
+                                                {{ $meta['label'] }}
+                                            </div>
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                     </div>
                 @endif
             </div>
@@ -341,29 +429,27 @@ function findSelectionIndex(el) {
 function selectTime(el) {
     const idx = findSelectionIndex(el);
 
-    // กด slot เดิมซ้ำ = ยกเลิกการเลือกอันนี้ออกจากรายการ (ไม่กระทบ slot อื่นที่เลือกไว้)
+    // กด cell เดิมซ้ำ = ยกเลิกการเลือกอันนี้ออกจากรายการ (ไม่กระทบ cell อื่นที่เลือกไว้)
     if (idx !== -1) {
         selections.splice(idx, 1);
         el.classList.remove('selected');
-        el.querySelector('.slot-btn').innerHTML = 'ว่าง';
+        updateGridStatus();
         updateConfirmBox();
         return;
     }
 
-    // เลือกเพิ่มได้เรื่อยๆ ไม่ยกเลิก slot อื่นที่เลือกไว้ก่อนหน้า
     el.classList.add('selected');
-    el.querySelector('.slot-btn').innerHTML = `
-        กำลังเลือก
-        <svg class="w-3.5 h-3.5 bg-white text-[#87D068] rounded-full p-[1px] ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-    `;
 
     selections.push({
         start: el.dataset.start,
         end: el.dataset.end,
-        label: el.dataset.label,
+        label: `${el.dataset.start} - ${el.dataset.end}`,
+        sectionId: el.dataset.sectionId,
+        sectionName: el.dataset.sectionName,
         el,
     });
 
+    updateGridStatus();
     updateConfirmBox();
 }
 
@@ -371,33 +457,90 @@ function removeSelection(index) {
     const s = selections[index];
     if (s && s.el) {
         s.el.classList.remove('selected');
-        s.el.querySelector('.slot-btn').innerHTML = 'ว่าง';
+        selections.splice(index, 1);
+
+        // อัปเดตช่องอื่นๆ ให้กลับมาคลิกได้ เมื่อลบออกจากรายการจอง
+        updateGridStatus();
+    } else {
+        selections.splice(index, 1);
     }
-    selections.splice(index, 1);
+    updateConfirmBox();
+}
+
+// รวมช่อง (cell) ที่เลือกไว้ในคอลัมน์ (section) เดียวกันและเวลาติดกันให้เป็นช่วงเดียว
+// เช่น เลือก 06:00-06:30 และ 06:30-07:00 ของ "เต็มสนาม" -> รวมเป็น 06:00-07:00 รายการเดียว
+// ใช้หลักการเดียวกับหน้าปฏิทิน (calendar) ที่ลากเลือกช่วงต่อเนื่องแล้วได้บล็อกเดียว
+function getMergedSelections() {
+    const bySection = {};
+    selections.forEach(s => {
+        (bySection[s.sectionId] = bySection[s.sectionId] || []).push(s);
+    });
+
+    const merged = [];
+    Object.keys(bySection).forEach(sectionId => {
+        const list = bySection[sectionId].slice().sort((a, b) => a.start.localeCompare(b.start));
+        let current = null;
+        list.forEach(s => {
+            if (current && current.end === s.start) {
+                current.end = s.end;
+                current.cells.push(s.el);
+            } else {
+                current = {
+                    sectionId,
+                    sectionName: s.sectionName,
+                    start: s.start,
+                    end: s.end,
+                    cells: [s.el],
+                };
+                merged.push(current);
+            }
+        });
+    });
+
+    merged.forEach(m => { m.label = `${m.start} - ${m.end}`; });
+    merged.sort((a, b) => a.start.localeCompare(b.start));
+    return merged;
+}
+
+function removeMergedGroup(idx) {
+    const merged = getMergedSelections();
+    const group = merged[idx];
+    if (!group) return;
+
+    group.cells.forEach(el => {
+        el.classList.remove('selected');
+        const i = findSelectionIndex(el);
+        if (i !== -1) selections.splice(i, 1);
+    });
+
+    updateGridStatus();
     updateConfirmBox();
 }
 
 function updateConfirmBox() {
     const box = document.getElementById('confirmBox');
     const list = document.getElementById('confirmList');
+    const merged = getMergedSelections();
 
-    if (selections.length === 0) {
+    if (merged.length === 0) {
         box.classList.add('hidden');
         list.innerHTML = '';
         return;
     }
 
     box.classList.remove('hidden');
-    list.innerHTML = selections.map((s, idx) => {
+    list.innerHTML = merged.map((s, idx) => {
+        const secLabel = s.sectionName ? `<span class="text-gray-400">(${s.sectionName})</span> ` : '';
         return `<div class="flex justify-between items-center border-b border-gray-50 pb-2">
-                    <span class="text-gray-500">เวลา <span class="font-bold text-gray-900">${s.label} น.</span></span>
-                    <button type="button" onclick="removeSelection(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
+                    <span class="text-gray-500">เวลา ${secLabel}<span class="font-bold text-gray-900">${s.label} น.</span></span>
+                    <button type="button" onclick="removeMergedGroup(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
                 </div>`;
     }).join('');
 }
 
 function submitBooking() {
-    if (selections.length === 0) return;
+    const merged = getMergedSelections();
+    if (merged.length === 0) return;
 
     const form = document.createElement('form');
     form.method = 'POST';
@@ -415,12 +558,18 @@ function submitBooking() {
     dateInput.value = '{{ $date }}';
     form.appendChild(dateInput);
 
-    selections.forEach((s, idx) => {
+    merged.forEach((s, idx) => {
         const ci = document.createElement('input');
         ci.type = 'hidden';
         ci.name = `bookings[${idx}][court_id]`;
         ci.value = "{{ $selectedCourt?->id }}";
         form.appendChild(ci);
+
+        const sec = document.createElement('input');
+        sec.type = 'hidden';
+        sec.name = `bookings[${idx}][court_section_id]`;
+        sec.value = s.sectionId;
+        form.appendChild(sec);
 
         const st = document.createElement('input');
         st.type = 'hidden';
@@ -501,6 +650,51 @@ if (dateInput) {
         }
     });
 }
+
+function updateGridStatus() {
+    const allCells = document.querySelectorAll('.sec-cell');
+    const rows = {};
+
+    // จัดกลุ่มตามเวลา (แถว)
+    allCells.forEach(cell => {
+        const timeKey = cell.dataset.start + '-' + cell.dataset.end;
+        if (!rows[timeKey]) rows[timeKey] = [];
+        rows[timeKey].push(cell);
+    });
+
+    Object.values(rows).forEach(rowCells => {
+        // หาช่องที่ "กำลังถูกเลือกอยู่" ในแถวนี้
+        const selectedCells = rowCells.filter(c => c.classList.contains('selected'));
+
+        // --- เปลี่ยนมาเช็คด้วย CODE แทน NAME ---
+        // มีการเลือก "เต็มสนาม" (code: full)
+        const hasFullCourt = selectedCells.some(c => c.dataset.sectionCode === 'full');
+
+        // มีการเลือก "ครึ่งสนาม" (code ไม่ใช่ full, เช่น left, right)
+        const hasHalfCourt = selectedCells.some(c => c.dataset.sectionCode !== 'full');
+
+        rowCells.forEach(cell => {
+            if (!cell.classList.contains('available') && !cell.classList.contains('selected')) {
+                return;
+            }
+
+            const isFullCourtCell = (cell.dataset.sectionCode === 'full');
+
+            cell.classList.remove('disabled-slot');
+
+            if (!cell.classList.contains('selected')) {
+                if (hasFullCourt) {
+                    // ถ้าเลือก 'เต็มสนาม' -> ล็อคช่องอื่นๆ
+                    cell.classList.add('disabled-slot');
+                } else if (hasHalfCourt && isFullCourtCell) {
+                    // ถ้าเลือก 'ครึ่งสนาม' -> ล็อคช่อง 'เต็มสนาม'
+                    cell.classList.add('disabled-slot');
+                }
+            }
+        });
+    });
+}
+
 </script>
 @endpush
 @endsection
