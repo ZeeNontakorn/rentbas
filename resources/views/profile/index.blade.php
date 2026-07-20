@@ -123,8 +123,10 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="info-label">ระดับสมาชิก</div>
-                    <div class="info-value">{{ $user->role === 'admin' ? 'ผู้ดูแลระบบ' : 'สมาชิกทั่วไป' }}</div>
+                    <div class="info-label">ประเภทสมาชิก</div>
+                    <div class="info-value">
+                        {{ $user->role === 'admin' ? 'ผู้ดูแลระบบ' : $user->membershipTypeLabel() }}
+                    </div>
                 </div>
             </div>
 

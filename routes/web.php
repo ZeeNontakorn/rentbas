@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CourtController as AdminCourtController;
+use App\Http\Controllers\Admin\CoachController as AdminCoachController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BookingController;
@@ -66,6 +67,7 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     // Booking System
     Route::prefix('booking')->name('booking.')->group(function () {
         Route::get('/', [BookingController::class, 'index'])->name('index');
+        Route::get('/calendar', [BookingController::class, 'calendar'])->name('calendar');
         Route::get('/court/{court}', [BookingController::class, 'show'])->name('show');
         Route::post('/', [BookingController::class, 'store'])->name('store');
         Route::post('/{booking}/cancel', [BookingController::class, 'cancel'])->name('cancel');
@@ -87,8 +89,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // จัดการการจอง
+    Route::get('/coach', [AdminCoachController::class, 'index'])->name('coach.index');
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
@@ -103,9 +104,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
     Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
 
+    Route::post('/courts/{court}/sections/split', [AdminCourtController::class, 'splitSection'])->name('courts.sections.split');
+    Route::post('/courts/{court}/sections/merge', [AdminCourtController::class, 'mergeSections'])->name('courts.sections.merge');
+    Route::put('/court-sections/{courtSection}', [AdminCourtController::class, 'updateSection'])->name('court-sections.update');
+    Route::post('/courts/{court}/slot-settings', [AdminCourtController::class, 'updateSlotSettings'])->name('courts.slot-settings');
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
+    Route::patch('/users/{user}/membership-type', [\App\Http\Controllers\Admin\UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
+    Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.updateRole');
 
     // จัดการโค้ช และผู้ช่วย
     Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
@@ -132,4 +139,6 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/reset-password', 'resetPassword')->name('password.reset');
 });
 
-Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])->name('admin.courts.images.update');
+
+Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
+    ->name('admin.courts.images.update');
