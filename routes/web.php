@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CourtController as AdminCourtController;
+use App\Http\Controllers\Admin\CoachController as AdminCoachController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BookingController;
@@ -91,6 +92,12 @@ Route::middleware(['auth','verified_otp'])->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/coach', [AdminCoachController::class, 'index'])->name('coach.index');
+    Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
+    Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
+    Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+    Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
+    Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
     Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
     Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
