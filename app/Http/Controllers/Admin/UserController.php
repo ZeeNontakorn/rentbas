@@ -15,7 +15,7 @@ class UserController extends Controller
     {
         $search = $request->query('search');
 
-        $users = User::whereIn('role', ['admin','user','staff'])
+        $users = User::whereIn('role', ['admin','user','staff', 'superadmin'])
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
@@ -56,26 +56,38 @@ class UserController extends Controller
     // แก้ไข role (user / staff / admin)
     public function updateRole(Request $request, User $user)
     {
+        $actor = $request->user();
+        $actorIsSuperadmin = $actor->role === 'superadmin';
+
+        if (! $actorIsSuperadmin && $user->role === 'superadmin') {
+            abort(403, 'ไม่สามารถแก้ไข role ของ superadmin ได้');
+        }
+
+        $allowedRoles = $actorIsSuperadmin
+            ? ['user', 'staff', 'admin', 'superadmin']
+            : ['user', 'staff', 'admin'];
+
         $request->validate([
-            'role' => ['required', 'in:user,staff,admin'],
+            'role' => ['required', Rule::in($allowedRoles)],
         ], [
             'role.in' => 'Role ไม่ถูกต้อง',
         ]);
 
-        if ($user->id === 0) {
-            abort(403, 'ไม่สามารถแก้ไข role ของ superadmin ได้');
-        }
-
         $newRole = $request->role;
         $updates = ['role' => $newRole];
 
-        // ถ้าเปลี่ยน role แล้วประเภทสมาชิกเดิมใช้ไม่ได้กับ role ใหม่ ให้รีเซ็ตเป็นค่าเริ่มต้นที่เหมาะสม
-        $validTypesForNewRole = $newRole === 'staff'
-            ? array_keys(User::STAFF_TYPES)
-            : array_keys(User::MEMBERSHIP_TYPES);
+        if (in_array($newRole, ['admin', 'superadmin'], true)) {
+            // Admin/Superadmin ต้องมี membership_type เป็น 'admin' เสมอ บังคับ overwrite ทุกครั้ง
+            $updates['membership_type'] = 'admin';
+        } else {
+            // เดิม: กรณี user/staff เท่านั้น เช็คว่าค่าปัจจุบัน valid กับ role ใหม่ไหม
+            $validTypesForNewRole = $newRole === 'staff'
+                ? array_keys(User::STAFF_TYPES)
+                : array_keys(User::MEMBERSHIP_TYPES);
 
-        if (!in_array($user->membership_type, $validTypesForNewRole, true)) {
-            $updates['membership_type'] = $newRole === 'staff' ? 'permanent' : 'customer';
+            if (!in_array($user->membership_type, $validTypesForNewRole, true)) {
+                $updates['membership_type'] = $newRole === 'staff' ? 'permanent' : 'customer';
+            }
         }
 
         $user->update($updates);
@@ -86,7 +98,11 @@ class UserController extends Controller
     // แก้ไขประเภทสมาชิก (ชุดตัวเลือกจะต่างกันตาม role ของ user คนนั้น)
     public function updateMembershipType(Request $request, User $user)
     {
-        abort_if($user->role === 'admin', 403, 'ไม่สามารถแก้ไขประเภทสมาชิกของแอดมินได้');
+        abort_if(
+            in_array($user->role, ['admin', 'superadmin'], true),
+            403,
+            'ไม่สามารถแก้ไขประเภทสมาชิกของแอดมินได้'
+        );
 
         $allowedValues = $user->role === 'staff'
             ? array_keys(User::STAFF_TYPES)
