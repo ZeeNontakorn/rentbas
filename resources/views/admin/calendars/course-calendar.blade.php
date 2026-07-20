@@ -6,144 +6,57 @@
 <div class="min-h-screen bg-slate-50 py-8 text-gray-900">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <p class="text-sm font-medium text-orange-500">THATA HOMECOURT / ADMIN</p>
-                <h1 class="mt-1 text-2xl font-semibold text-gray-800">ตารางสอนคอร์ส</h1>
-                <p class="mt-1 text-sm text-gray-500">ดูคลาสทั้งหมด แยกตามวัน เวลา และโค้ชผู้สอน</p>
-            </div>
+            <div><p class="text-sm font-medium text-orange-500">THATA HOMECOURT / ADMIN</p><h1 class="mt-1 text-2xl font-semibold">ตารางสอนคอร์ส</h1><p class="mt-1 text-sm text-gray-500">ตารางคอร์สจากฐานข้อมูล และกำหนดการที่จัดการได้</p></div>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <label class="flex items-center gap-2 text-sm text-gray-600">
-                    <span class="whitespace-nowrap">แสดงโค้ช</span>
-                    <select id="coach-filter" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
-                        <option value="all">โค้ชทุกคน</option>
-                        <option value="โค้ชต้น">โค้ชต้น</option>
-                        <option value="โค้ชฟ้า">โค้ชฟ้า</option>
-                        <option value="โค้ชบี">โค้ชบี</option>
-                    </select>
-                </label>
-                <button id="new-class-button" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    เพิ่มคลาสทดลอง
-                </button>
+                <label class="flex items-center gap-2 text-sm text-gray-600"><span>แสดงโค้ช</span><select id="coach-filter" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"><option value="all">โค้ชทุกคน</option>@foreach($coaches as $coach)<option value="{{ $coach }}">{{ $coach }}</option>@endforeach</select></label>
+                <button id="new-event-button" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700">+ เพิ่มกำหนดการ</button>
             </div>
         </div>
 
         <div class="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">
             <aside class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm xl:h-fit">
-                <h2 class="text-sm font-semibold text-gray-800">ภาพรวมสัปดาห์นี้</h2>
-                <div class="mt-4 grid grid-cols-3 gap-2 xl:grid-cols-1">
-                    <div class="rounded-lg bg-blue-50 px-3 py-3"><p class="text-xs text-blue-600">คลาสทั้งหมด</p><p id="total-classes" class="mt-1 text-xl font-semibold text-blue-700">0</p></div>
-                    <div class="rounded-lg bg-orange-50 px-3 py-3"><p class="text-xs text-orange-600">จำนวนโค้ช</p><p id="total-coaches" class="mt-1 text-xl font-semibold text-orange-700">0</p></div>
-                    <div class="rounded-lg bg-green-50 px-3 py-3"><p class="text-xs text-green-600">ชั่วโมงสอน</p><p id="total-hours" class="mt-1 text-xl font-semibold text-green-700">0</p></div>
-                </div>
-
-                <div class="mt-6 border-t border-gray-100 pt-5">
-                    <h2 class="text-sm font-semibold text-gray-800">สีของคลาส</h2>
-                    <div class="mt-3 space-y-2.5 text-sm text-gray-600">
-                        <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-blue-500"></span>Rookie / Beginner</div>
-                        <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-violet-500"></span>Junior</div>
-                        <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-orange-500"></span>Private training</div>
-                    </div>
-                </div>
-
-                <div class="mt-6 rounded-lg border border-orange-100 bg-orange-50 p-3 text-xs leading-5 text-orange-800">
-                    <b>ตัวอย่าง Frontend:</b> ลากคลาสเพื่อเปลี่ยนเวลา หรือคลิกช่วงเวลาว่างเพื่อเพิ่มคลาสทดลองได้ ข้อมูลจะรีเฟรชเมื่อเปิดหน้าใหม่ เพราะยังไม่เชื่อมฐานข้อมูล
-                </div>
+                <h2 class="text-sm font-semibold">ภาพรวมช่วงที่แสดง</h2>
+                <div class="mt-4 grid grid-cols-3 gap-2 xl:grid-cols-1"><div class="rounded-lg bg-blue-50 px-3 py-3"><p class="text-xs text-blue-600">รายการทั้งหมด</p><p id="total-events" class="mt-1 text-xl font-semibold text-blue-700">0</p></div><div class="rounded-lg bg-orange-50 px-3 py-3"><p class="text-xs text-orange-600">จำนวนโค้ช</p><p id="total-coaches" class="mt-1 text-xl font-semibold text-orange-700">0</p></div><div class="rounded-lg bg-green-50 px-3 py-3"><p class="text-xs text-green-600">ชั่วโมงทั้งหมด</p><p id="total-hours" class="mt-1 text-xl font-semibold text-green-700">0</p></div></div>
+                <div class="mt-6 border-t border-gray-100 pt-5 text-xs leading-5 text-gray-600"><p class="font-semibold text-gray-800">วิธีใช้งาน</p><p class="mt-2">คลิกช่วงเวลาว่างเพื่อเพิ่มกำหนดการ ลากหรือยืดเฉพาะกำหนดการที่สร้างเองได้ ส่วนคอร์สจะดึงจากข้อมูลรอบเรียนจริงและแก้ไขที่หน้าจัดการคอร์ส</p></div>
             </aside>
-
-            <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-                <div id="course-calendar"></div>
-            </section>
+            <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6"><div id="course-calendar"></div></section>
         </div>
     </div>
 </div>
 
-{{-- FullCalendar Standard bundle (timeGrid, dayGrid, drag/drop and list view) --}}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
+<style>
+    /* layout หลักกำหนด body เป็น text-white; modal อยู่นอก content จึงต้องตั้งสีเอง */
+    #event-modal, #details-modal { color: #111827; }
+    #event-modal input, #event-modal select, #event-modal textarea { color: #111827; background-color: #fff; }
+</style>
 
-<div id="class-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div class="flex items-start justify-between gap-4">
-            <div><h2 id="modal-title" class="text-lg font-semibold text-gray-800">เพิ่มคลาสทดลอง</h2><p id="selected-time" class="mt-1 text-sm text-gray-500"></p></div>
-            <button id="close-modal" class="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700" type="button" aria-label="ปิด">✕</button>
-        </div>
-        <form id="class-form" class="mt-5 space-y-4">
-            <div><label class="mb-1.5 block text-sm font-medium text-gray-700">ชื่อคลาส</label><input id="class-name" required value="คลาสใหม่" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200"></div>
-            <div><label class="mb-1.5 block text-sm font-medium text-gray-700">โค้ชผู้สอน</label><select id="class-coach" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200"><option>โค้ชต้น</option><option>โค้ชฟ้า</option><option>โค้ชบี</option></select></div>
-            <div class="flex justify-end gap-2 pt-2"><button id="cancel-modal" type="button" class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100">ยกเลิก</button><button type="submit" class="rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600">เพิ่มลงปฏิทิน</button></div>
-        </form>
-    </div>
-</div>
+<div id="event-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true"><div class="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-start justify-between"><div><h2 id="form-title" class="text-lg font-semibold">เพิ่มกำหนดการ</h2><p class="mt-1 text-sm text-gray-500">ข้อมูลโค้ชและนักเรียนเป็นข้อมูลตัวอย่างในตอนนี้</p></div><button class="close-modal text-xl text-gray-400">×</button></div><form id="event-form" class="mt-5 space-y-4"><input id="event-id" type="hidden"><div><label class="mb-1 block text-sm font-medium">ชื่อกำหนดการ</label><input id="title" required class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"></div><div><label class="mb-1 block text-sm font-medium">รายละเอียด</label><textarea id="description" rows="2" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"></textarea></div><label class="flex items-center gap-2 text-sm"><input id="all-day" type="checkbox"> ทั้งวัน</label><div class="grid gap-3 sm:grid-cols-2"><div><label class="mb-1 block text-sm font-medium">เริ่ม</label><input id="starts-at" required type="datetime-local" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"></div><div><label class="mb-1 block text-sm font-medium">สิ้นสุด</label><input id="ends-at" type="datetime-local" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"></div></div><div class="grid gap-3 sm:grid-cols-2"><div><label class="mb-1 block text-sm font-medium">ทำซ้ำ</label><select id="recurrence" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"><option value="none">ไม่ทำซ้ำ</option><option value="daily">ทุกวัน</option><option value="weekly">ทุกสัปดาห์</option><option value="monthly">ทุกเดือน</option></select></div><div><label class="mb-1 block text-sm font-medium">สิ้นสุดการทำซ้ำ</label><input id="recurrence-until" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"></div></div><div class="grid gap-3 sm:grid-cols-2"><div><label class="mb-1 block text-sm font-medium">สี</label><input id="color" type="color" value="#2563eb" class="h-10 w-full rounded-lg border border-gray-300 p-1"></div><div><label class="mb-1 block text-sm font-medium">โค้ช (ตัวอย่าง)</label><select id="coach" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"><option value="">ไม่ระบุ</option>@foreach($coaches as $coach)<option value="{{ $coach }}">{{ $coach }}</option>@endforeach</select></div></div><div><label class="mb-1 block text-sm font-medium">รายชื่อนักเรียน (คั่นด้วยจุลภาค)</label><input id="students" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm" placeholder="น้องพีท, น้องมินท์"></div><div class="flex justify-between pt-2"><button id="delete-event" type="button" class="hidden rounded-lg px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50">ลบกำหนดการ</button><div class="ml-auto flex gap-2"><button type="button" class="close-modal rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100">ยกเลิก</button><button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700">บันทึก</button></div></div></form></div></div>
+
+<div id="details-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true"><div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-start justify-between gap-4"><div class="flex items-start gap-3"><span id="detail-color" class="mt-1 h-4 w-4 rounded-full"></span><div><h2 id="detail-title" class="text-xl font-semibold"></h2><p id="detail-time" class="mt-1 text-sm text-gray-500"></p></div></div><button class="close-details text-xl text-gray-400">×</button></div><div class="mt-6 grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2"><div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">โค้ชผู้สอน</p><p id="detail-coach" class="mt-1 font-medium"></p></div><div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">จำนวนนักเรียน</p><p id="detail-count" class="mt-1 font-medium"></p></div></div><div class="mt-5"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">รายชื่อนักเรียน</p><div id="detail-students" class="mt-2 flex flex-wrap gap-2"></div></div><div class="mt-5"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">รายละเอียด</p><p id="detail-description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600"></p></div><div class="mt-6 flex justify-end"><button id="edit-event" class="hidden rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white">แก้ไขกำหนดการ</button></div></div></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const calendarEl = document.getElementById('course-calendar');
-    const filter = document.getElementById('coach-filter');
-    const modal = document.getElementById('class-modal');
-    const selectedTime = document.getElementById('selected-time');
-    let selectedRange = null;
-
-    let allEvents = [
-        { id: '1', title: 'Basketball Rookie Class', start: '2026-07-13T16:00:00', end: '2026-07-13T17:30:00', backgroundColor: '#3b82f6', borderColor: '#3b82f6', extendedProps: { coach: 'โค้ชต้น', level: 'Rookie', capacity: 'รับ 10 คน' } },
-        { id: '2', title: 'Junior Class', start: '2026-07-14T16:00:00', end: '2026-07-14T17:30:00', backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', extendedProps: { coach: 'โค้ชฟ้า', level: 'Junior', capacity: 'รับ 12 คน' } },
-        { id: '3', title: 'Private Training', start: '2026-07-15T18:00:00', end: '2026-07-15T19:00:00', backgroundColor: '#f97316', borderColor: '#f97316', extendedProps: { coach: 'โค้ชบี', level: 'Private', capacity: 'ตัวต่อตัว' } },
-        { id: '4', title: 'Basketball Rookie Class', start: '2026-07-16T16:00:00', end: '2026-07-16T17:30:00', backgroundColor: '#3b82f6', borderColor: '#3b82f6', extendedProps: { coach: 'โค้ชต้น', level: 'Rookie', capacity: 'รับ 10 คน' } },
-        { id: '5', title: 'Junior Class', start: '2026-07-18T10:00:00', end: '2026-07-18T11:30:00', backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', extendedProps: { coach: 'โค้ชฟ้า', level: 'Junior', capacity: 'รับ 12 คน' } },
-        { id: '6', title: 'Private Training', start: '2026-07-19T13:00:00', end: '2026-07-19T14:00:00', backgroundColor: '#f97316', borderColor: '#f97316', extendedProps: { coach: 'โค้ชบี', level: 'Private', capacity: 'ตัวต่อตัว' } }
-    ];
-
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek', initialDate: '2026-07-13', locale: 'th', firstDay: 1, height: 'auto', nowIndicator: true,
-        selectable: true, editable: true, allDaySlot: false, slotMinTime: '08:00:00', slotMaxTime: '21:00:00', slotDuration: '00:30:00',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
-        buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', day: 'วัน', list: 'รายการ' },
-        events: allEvents,
-        eventClick: function (info) { showEventDetails(info.event); },
-        select: function (info) { openModal(info); },
-        eventChange: function (info) { syncEvent(info.event); },
-        datesSet: function () { updateSummary(); }
-    });
-
-    calendar.render(); updateSummary();
-
-    filter.addEventListener('change', function () {
-        calendar.removeAllEvents();
-        const visibleEvents = this.value === 'all' ? allEvents : allEvents.filter(event => event.extendedProps.coach === this.value);
-        calendar.addEventSource(visibleEvents); updateSummary();
-    });
-
-    document.getElementById('new-class-button').addEventListener('click', function () {
-        const start = new Date(calendar.getDate()); start.setHours(16, 0, 0, 0);
-        const end = new Date(start); end.setHours(1 + start.getHours());
-        openModal({ start: start, end: end, allDay: false });
-    });
-    document.getElementById('close-modal').addEventListener('click', closeModal);
-    document.getElementById('cancel-modal').addEventListener('click', closeModal);
-    modal.addEventListener('click', function (event) { if (event.target === modal) closeModal(); });
-
-    document.getElementById('class-form').addEventListener('submit', function (event) {
-        event.preventDefault();
-        const coach = document.getElementById('class-coach').value;
-        const palette = coach === 'โค้ชฟ้า' ? '#8b5cf6' : coach === 'โค้ชบี' ? '#f97316' : '#3b82f6';
-        const newEvent = { id: Date.now().toString(), title: document.getElementById('class-name').value, start: selectedRange.start, end: selectedRange.end, backgroundColor: palette, borderColor: palette, extendedProps: { coach: coach, level: 'คลาสทดลอง', capacity: 'ยังไม่กำหนด' } };
-        allEvents.push(newEvent);
-        if (filter.value === 'all' || filter.value === coach) calendar.addEvent(newEvent);
-        closeModal(); updateSummary();
-    });
-
-    function openModal(range) {
-        selectedRange = range;
-        selectedTime.textContent = formatRange(range.start, range.end);
-        modal.classList.remove('hidden'); modal.classList.add('flex');
-        document.getElementById('class-name').focus();
-        calendar.unselect();
-    }
-    function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); selectedRange = null; }
-    function formatRange(start, end) { return start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'short' }) + ' · ' + start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + '–' + end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }); }
-    function showEventDetails(event) { alert(event.title + '\n' + formatRange(event.start, event.end) + '\nโค้ชผู้สอน: ' + event.extendedProps.coach + '\n' + event.extendedProps.capacity); }
-    function syncEvent(event) { const index = allEvents.findIndex(item => item.id === event.id); if (index !== -1) allEvents[index] = { id: event.id, title: event.title, start: event.start, end: event.end, backgroundColor: event.backgroundColor, borderColor: event.borderColor, extendedProps: event.extendedProps }; updateSummary(); }
-    function updateSummary() { const current = calendar.getEvents(); document.getElementById('total-classes').textContent = current.length; document.getElementById('total-coaches').textContent = new Set(current.map(event => event.extendedProps.coach)).size; document.getElementById('total-hours').textContent = current.reduce((sum, event) => sum + ((event.end - event.start) / 3600000), 0).toFixed(1); }
+document.addEventListener('DOMContentLoaded', () => {
+    const csrf = '{{ csrf_token() }}', api = '{{ route('admin.courses.calendar.events') }}';
+    const el = document.getElementById('course-calendar'), filter = document.getElementById('coach-filter'), formModal = document.getElementById('event-modal'), detailsModal = document.getElementById('details-modal'), form = document.getElementById('event-form'); let activeEvent = null, calendar;
+    const pad = n => String(n).padStart(2, '0'); const localInput = date => date ? `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}` : '';
+    calendar = new FullCalendar.Calendar(el, { initialView: 'timeGridWeek', locale: 'th', firstDay: 1, height: 'auto', nowIndicator: true, selectable: true, editable: true, allDaySlot: true, slotMinTime: '08:00:00', slotMaxTime: '21:00:00', slotDuration: '00:30:00', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }, buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', day: 'วัน', list: 'รายการ' },
+        events: { url: api, extraParams: () => ({ coach: filter.value }) },
+        eventDataTransform: event => filter.value === 'all' || event.extendedProps.coach === filter.value ? event : false,
+        select: info => openForm(null, info.start, info.end, info.allDay), eventClick: info => { activeEvent = info.event; showDetails(info.event); }, eventDrop: persistMove, eventResize: persistMove, eventsSet: updateSummary });
+    calendar.render(); filter.addEventListener('change', () => calendar.refetchEvents()); document.getElementById('new-event-button').addEventListener('click', () => { const start = new Date(calendar.getDate()); start.setHours(9, 0, 0, 0); const end = new Date(start); end.setHours(10); openForm(null, start, end, false); });
+    document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeForm)); document.querySelectorAll('.close-details').forEach(btn => btn.addEventListener('click', () => detailsModal.classList.add('hidden'))); formModal.addEventListener('click', e => { if(e.target === formModal) closeForm(); });
+    document.getElementById('edit-event').addEventListener('click', () => { detailsModal.classList.add('hidden'); openForm(activeEvent); });
+    function openForm(event = null, start = null, end = null, allDay = false) { document.getElementById('form-title').textContent = event ? 'แก้ไขกำหนดการ' : 'เพิ่มกำหนดการ'; document.getElementById('event-id').value = event?.extendedProps.eventId || ''; document.getElementById('title').value = event?.title || ''; document.getElementById('description').value = event?.extendedProps.description || ''; document.getElementById('all-day').checked = event?.allDay || allDay; document.getElementById('starts-at').value = localInput(event?.start || start); document.getElementById('ends-at').value = localInput(event?.end || end); document.getElementById('color').value = event?.backgroundColor || '#2563eb'; document.getElementById('coach').value = event?.extendedProps.coach || ''; document.getElementById('students').value = (event?.extendedProps.students || []).join(', '); document.getElementById('recurrence').value = event?.extendedProps.recurrence || 'none'; document.getElementById('recurrence-until').value = event?.extendedProps.recurrenceUntil || ''; document.getElementById('delete-event').classList.toggle('hidden', !event); formModal.classList.remove('hidden'); formModal.classList.add('flex'); }
+    function closeForm() { formModal.classList.add('hidden'); formModal.classList.remove('flex'); form.reset(); }
+    form.addEventListener('submit', async e => { e.preventDefault(); const id = document.getElementById('event-id').value, students = document.getElementById('students').value.split(',').map(s => s.trim()).filter(Boolean); const data = { title: document.getElementById('title').value, description: document.getElementById('description').value || null, starts_at: document.getElementById('starts-at').value, ends_at: document.getElementById('ends-at').value || null, all_day: document.getElementById('all-day').checked, color: document.getElementById('color').value, recurrence: document.getElementById('recurrence').value, recurrence_until: document.getElementById('recurrence-until').value || null, coach_name: document.getElementById('coach').value || null, student_names: students }; const response = await fetch(id ? `${api}/${id}` : api, { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrf}, body: JSON.stringify(data) }); if (!response.ok) return alert('บันทึกไม่สำเร็จ กรุณาตรวจสอบวันและเวลาที่กรอก'); closeForm(); calendar.refetchEvents(); });
+    document.getElementById('delete-event').addEventListener('click', async () => { const id = document.getElementById('event-id').value; if (!id || !confirm('ลบกำหนดการนี้ใช่หรือไม่?')) return; await fetch(`${api}/${id}`, {method:'DELETE',headers:{'X-CSRF-TOKEN':csrf}}); closeForm(); calendar.refetchEvents(); });
+    async function persistMove(info) { if (info.event.extendedProps.kind !== 'personal') { info.revert(); return; } const p = info.event.extendedProps; const data = {title:info.event.title, description:p.description || null, starts_at:info.event.start.toISOString(), ends_at:info.event.end?.toISOString() || null, all_day:info.event.allDay, color:info.event.backgroundColor, recurrence:p.recurrence || 'none', recurrence_until:p.recurrenceUntil || null, coach_name:p.coach || null, student_names:p.students || []}; const response = await fetch(`${api}/${p.eventId}`, {method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrf},body:JSON.stringify(data)}); if(!response.ok) { info.revert(); alert('เปลี่ยนเวลาไม่สำเร็จ'); } calendar.refetchEvents(); }
+    function showDetails(event) { const p = event.extendedProps, students = p.students || []; document.getElementById('detail-color').style.backgroundColor = event.backgroundColor; document.getElementById('detail-title').textContent = event.title; document.getElementById('detail-time').textContent = formatRange(event.start, event.end, event.allDay); document.getElementById('detail-coach').textContent = p.coach || 'ไม่ระบุ'; document.getElementById('detail-count').textContent = p.capacity || `${students.length} คน`; document.getElementById('detail-description').textContent = p.description || 'ไม่มีรายละเอียดเพิ่มเติม'; document.getElementById('detail-students').innerHTML = students.length ? students.map(s => `<span class="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">${escapeHtml(s)}</span>`).join('') : '<span class="text-sm text-gray-500">ยังไม่มีรายชื่อ</span>'; document.getElementById('edit-event').classList.toggle('hidden', p.kind !== 'personal'); detailsModal.classList.remove('hidden'); detailsModal.classList.add('flex'); }
+    function formatRange(start,end,allDay) { if(allDay) return start.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' · ทั้งวัน'; const d={weekday:'long',day:'numeric',month:'short',year:'numeric'}, t={hour:'2-digit',minute:'2-digit'}; return `${start.toLocaleDateString('th-TH',d)} · ${start.toLocaleTimeString('th-TH',t)}${end ? ' – '+end.toLocaleTimeString('th-TH',t):''}`; }
+    function updateSummary(events) { document.getElementById('total-events').textContent=events.length; document.getElementById('total-coaches').textContent=new Set(events.map(e=>e.extendedProps.coach).filter(Boolean)).size; document.getElementById('total-hours').textContent=events.reduce((s,e)=>s+(e.end?Math.max(0,(e.end-e.start)/3600000):0),0).toFixed(1); }
+    function escapeHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 });
 </script>
 @endsection
