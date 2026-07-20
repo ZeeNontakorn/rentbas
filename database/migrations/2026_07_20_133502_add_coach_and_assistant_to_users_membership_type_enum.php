@@ -7,7 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE users MODIFY membership_type ENUM('customer','sponsor','student','permanent','temporary','intern','coach','court_assistant') DEFAULT 'customer'");
+        DB::statement("ALTER TABLE users MODIFY membership_type ENUM('customer','sponsor','student','permanent','temporary','intern','admin', 'coach','court_assistant') DEFAULT 'customer'");
     }
 
     public function down(): void

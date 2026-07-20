@@ -21,7 +21,9 @@
         <div class="hidden md:flex items-center gap-4 md:gap-6">
             @auth
                 @php
-                    $isAdminLike = in_array(auth()->user()->role, ['admin', 'superadmin'], true);
+                    $user = auth()->user();
+                    $isAdminLike = in_array($user->role, ['admin', 'superadmin'], true);
+                    $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
                 @endphp
                 @if($isAdminLike)
                     <!-- เมนูสำหรับ Admin -->
@@ -51,7 +53,7 @@
                         ประวัติการจอง
                     </a>
 
-                    @if(auth()->user()->role === 'staff')
+                    @if($canManageBookings && auth()->user()->role === 'staff')
                         <!-- จัดการการจอง สำหรับ Staff -->
                         <a href="{{ route('admin.bookings') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             จัดการการจอง
@@ -221,7 +223,11 @@
     <!-- เมนู (Mobile, แบบเลื่อนลง) -->
     <div id="mobileMenu" class="hidden md:hidden border-t border-gray-800 bg-gray-900 px-4 pb-4">
         @auth
-            $isAdminLike = in_array(auth()->user()->role, ['admin', 'superadmin'], true);
+            @php
+                $user = auth()->user();
+                $isAdminLike = in_array($user->role, ['admin', 'superadmin'], true);
+                $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
+            @endphp
             @if($isAdminLike)
                 <div class="flex flex-col py-2">
                     <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -248,7 +254,7 @@
                     <a href="{{ route('history') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
-                    @if(auth()->user()->role === 'staff')
+                    @if($canManageBookings && auth()->user()->role === 'staff')
                         <a href="{{ route('admin.bookings') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             จัดการการจอง
                         </a>
