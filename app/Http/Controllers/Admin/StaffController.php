@@ -14,9 +14,11 @@ class StaffController extends Controller
     {
         $search = $request->input('search');
         $role = $request->input('role');
+        $type = $request->input('type');
 
-        $staffs = User::whereIn('role', ['coach', 'staff'])
-            ->when($role && in_array($role, ['coach', 'staff']), fn($query) => $query->where('role', $role))
+        $staffs = User::whereIn('role', ['staff'])
+            ->when($type && in_array($type, ['coach']), fn($query) => $query->where('membership_type', 'coach'))
+            ->when($type && in_array($type, ['court_assistant']), fn($query) => $query->where('membership_type', 'court_assistant'))
             ->when($search, fn($query) => $query->where(
                 fn($q) =>
                 $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")
@@ -29,7 +31,7 @@ class StaffController extends Controller
 
     public function show(User $staff)
     {
-        abort_unless(in_array($staff->role, ['staff', 'coach']), 404, 'ไม่พบข้อมูลบุคลากร');
+        abort_unless(in_array($staff->role, ['staff']), 404, 'ไม่พบข้อมูลบุคลากร');
 
         $today = now()->toDateString();
         $nowTime = now()->toTimeString();
@@ -115,9 +117,10 @@ class StaffController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:coach,staff',
+            'role' => 'staff',
+            'membership_type' => 'required|in:coach,court_assistant',
         ]);
-
+        $validated['role'] = 'staff';
         $validated['password'] = bcrypt($validated['password']);
         $validated['email_verified_at'] = now();
 
