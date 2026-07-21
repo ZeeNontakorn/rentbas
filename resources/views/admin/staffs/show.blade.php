@@ -9,7 +9,7 @@
     $sortedCourts = $courts->sortBy('name', SORT_NATURAL);
     $allServices = collect($upcomingAvailabilities)->merge($pastServices ?? collect());
 
-    $isCoach = $staff->role === 'coach';
+    $isCoach = $staff->membership_type === 'coach';
     $roleLabel = $isCoach ? 'ผู้ฝึกสอน (Coach)' : 'ผู้ช่วยสนาม (Staff)';
     $roleTitle = $isCoach ? 'Coach' : 'Staff';
     $badgeClass = $isCoach ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
@@ -258,10 +258,10 @@
 
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span class="text-red-500">*</span></label>
-                    <select name="role" required
+                    <select name="membership_type" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
-                        <option value="staff" {{ old('role', $staff->role) === 'staff' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
-                        <option value="coach" {{ old('role', $staff->role) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
+                        <option value="court_assistant" {{ old('membership_type', $staff->membership_type) === 'court_assistant' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
+                        <option value="coach" {{ old('membership_type', $staff->membership_type) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
                     </select>
                 </div>
 
@@ -311,11 +311,12 @@
                 if (id === 'dragActionModal' && !show) clearSelection();
             }
         }
-        
+
         let isDragging = false;
         let selectedSlots = [];
         let currentDraggingCourt = null;
         const allSlots = document.querySelectorAll('.time-slot');
+        const globalTooltip = document.getElementById('global-tooltip');
 
         function clearSelection() {
             allSlots.forEach(s => s.classList.remove('slot-selected'));
@@ -328,6 +329,16 @@
                 selectedSlots.push(slotElement);
                 slotElement.classList.add('slot-selected');
             }
+        }
+
+        function toggleDetailInput(status) {
+            const container = document.getElementById('detail-container');
+            const input = document.getElementById('modal-detail-input');
+            const isBooked = status === 'booked';
+
+            container.classList.toggle('hidden', !isBooked);
+            input.disabled = !isBooked;
+            if (!isBooked) input.value = '';
         }
 
         allSlots.forEach(slot => {
@@ -344,6 +355,26 @@
                     addSlotToSelection(this);
                 }
             });
+
+            slot.addEventListener('mousemove', function (e) {
+                if (!globalTooltip) return;
+
+                globalTooltip.style.left = (e.clientX + 15) + 'px';
+                globalTooltip.style.top = (e.clientY + 15) + 'px';
+                globalTooltip.style.visibility = 'visible';
+                globalTooltip.style.opacity = '1';
+
+                const detailText = this.getAttribute('data-detail');
+                globalTooltip.querySelector('#tt-title').innerText = `${this.getAttribute('data-court-name')} (${this.getAttribute('data-status')})`;
+                globalTooltip.querySelector('#tt-time').innerText = `เวลา: ${this.getAttribute('data-time-start')} - ${this.getAttribute('data-time-end')} น.`;
+                globalTooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่มีรายละเอียด/งานว่าง';
+            });
+
+            slot.addEventListener('mouseleave', function () {
+                if (!globalTooltip) return;
+                globalTooltip.style.visibility = 'hidden';
+                globalTooltip.style.opacity = '0';
+            });
         });
 
         window.addEventListener('mouseup', function () {
@@ -352,7 +383,7 @@
                 selectedSlots.sort((a, b) => parseInt(a.getAttribute('data-hour')) - parseInt(b.getAttribute('data-hour')));
                 const firstSlot = selectedSlots[0];
                 const lastSlot = selectedSlots[selectedSlots.length - 1];
-                
+
                 document.getElementById('modal-court-name').innerText = firstSlot.getAttribute('data-court-name');
                 document.getElementById('modal-time-range').innerText = `${firstSlot.getAttribute('data-time-start')} - ${lastSlot.getAttribute('data-time-end')} น.`;
                 document.getElementById('modal-court-id').value = firstSlot.getAttribute('data-court-id');
@@ -368,16 +399,6 @@
             }
         });
 
-        function toggleDetailInput(status) {
-            const container = document.getElementById('detail-container');
-            const input = document.getElementById('modal-detail-input');
-            const isBooked = status === 'booked';
-
-            container.classList.toggle('hidden', !isBooked);
-            input.disabled = !isBooked;
-            if (!isBooked) input.value = '';
-        }
-
         document.querySelectorAll('input[name="status"]').forEach(radio => {
             radio.addEventListener('change', function () {
                 toggleDetailInput(this.value);
@@ -388,31 +409,6 @@
             ['staffProfileModal', 'dragActionModal'].forEach(id => {
                 const modal = document.getElementById(id);
                 if (e.target === modal) toggleModal(id, false);
-            });
-        });
-
-        allSlots.forEach(slot => {
-            slot.addEventListener('mousemove', function (e) {
-                const tooltip = document.getElementById('global-tooltip');
-                if (tooltip) {
-                    tooltip.style.left = (e.clientX + 15) + 'px';
-                    tooltip.style.top = (e.clientY + 15) + 'px';
-                    tooltip.style.visibility = 'visible';
-                    tooltip.style.opacity = '1';
-
-                    const detailText = this.getAttribute('data-detail');
-                    tooltip.querySelector('#tt-title').innerText = `${this.getAttribute('data-court-name')} (${this.getAttribute('data-status')})`;
-                    tooltip.querySelector('#tt-time').innerText = `เวลา: ${this.getAttribute('data-time-start')} - ${this.getAttribute('data-time-end')} น.`;
-                    tooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่มีรายละเอียด/งานว่าง';
-                }
-            });
-
-            slot.addEventListener('mouseleave', function () {
-                const tooltip = document.getElementById('global-tooltip');
-                if (tooltip) {
-                    tooltip.style.visibility = 'hidden';
-                    tooltip.style.opacity = '0';
-                }
             });
         });
 
