@@ -1,0 +1,279 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Course;
+use App\Models\CoursePackage;
+use App\Models\CourseSchedule;
+use App\Models\CourseTargetGroup;
+use App\Models\Court;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
+class ManageCourseController extends Controller
+{
+    /**
+     * GET /admin/courses/create -> route('admin.courses.create')
+     * เปิดหน้าเพิ่มคอร์ส
+     */
+    public function create()
+    {
+        return view('admin.courses.create', ['courts' => Court::with('sections')->orderBy('name')->get()]);
+    }
+
+    /**
+     * GET /admin/courses -> route('admin.courses')
+     * ค้นหาจากชื่อคอร์ส และแสดงผลหน้าละ 10 รายการ
+     */
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+
+        $courses = Course::query()
+        // แสดงผลพร้อม targetGroups, schedules, packages เพื่อไม่ให้เกิด N+1 query
+            ->with(['targetGroups', 'schedules', 'packages'])
+            // ถ้ามี search ให้ค้นหาจาก course_name
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where('course_name', 'like', "%{$search}%");
+            })
+            // เรียงตามชื่อคอร์ส แล้วแบ่งหน้า 10 รายการต่อหน้า
+            ->orderByRaw("case when course_type = 'schedule' then 0 else 1 end")
+            ->orderBy('course_name')
+            ->paginate(10)
+            ->withQueryString();
+
+        // ส่งตัวแปร $courses และ $search ไปที่ view เพื่อแสดงผล
+        return view('admin.courses.index', compact('courses', 'search'));
+    }
+
+    /**
+     * POST /admin/courses -> route('admin.courses.store')
+     */
+    public function store(Request $request)
+    {
+        $data = $this->validated($request); // Validate เพื่อตรวจสอบข้อมูลก่่อนบันทึก
+        // ใช้ DB::transaction() เพื่อให้การบันทึกทั้งหมดเป็น atomic operation ถ้ามีข้อผิดพลาดใดๆ จะ rollback ทั้งหมด
+        $course = DB::transaction(function () use ($request, $data) {
+            $courseData = $data['course'];
+
+            // ถ้ามีไฟล์รูปภาพที่อัปโหลดมา ให้บันทึก path ของไฟล์ลงใน database ด้วย
+            if ($request->hasFile('image')) {
+                $courseData['image_path'] = $request->file('image')->store('courses', 'public');
+            }
+
+            $course = Course::create($courseData);
+            // สร้างกลุ่มเป้าหมาย
+            foreach ($data['target_groups'] as $group) {
+                CourseTargetGroup::create([
+                    'course_id' => $course->id,
+                    'target_group' => $group,
+                ]);
+            }
+            // สร้างรอบเวลาเรียนใหม่ตามข้อมูลที่ส่งมา
+            foreach ($data['schedules'] as $schedule) {
+                CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
+            }
+            // หนึ่งคอร์สมีตัวเลือกแพ็กเกจได้หลายแบบ เช่น 1 / 4 / 8 ครั้ง
+            foreach ($data['packages'] as $package) {
+                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
+            }
+
+            // ส่งกลับ $course เพื่อใช้ใน redirect() ด้านล่าง
+            return $course;
+        });
+
+        // ส่งกลับไปที่หน้า index พร้อม alert success
+        return redirect()
+            ->route('admin.courses')
+            ->with('success', 'เพิ่มคอร์ส "'.$course->course_name.'" เรียบร้อยแล้ว');
+    }
+
+    /**
+     * GET /admin/courses/{course}/edit -> route('admin.courses.edit')
+     * แสดงข้อมูลคอร์สที่เลือกมาในฟอร์มแก้ไข
+     * (รวม target_groups, schedules, packages ด้วย)
+     */
+    public function edit(Course $course)
+    {
+        $course->load(['targetGroups', 'schedules', 'packages']);
+
+        return view('admin.courses.edit', ['course' => $course, 'courts' => Court::with('sections')->orderBy('name')->get()]);
+    }
+
+    /**
+     * PUT /admin/courses/{course} -> route('admin.courses.update')
+     */
+    public function update(Request $request, Course $course)
+    {
+        $data = $this->validated($request);
+
+        DB::transaction(function () use ($request, $data, $course) {
+            $courseData = $data['course'];
+
+            // ถ้ามีไฟล์รูปภาพที่อัปโหลดมา ให้บันทึก path ของไฟล์ลงใน database ด้วย และลบไฟล์เก่าออกจาก storage
+            if ($request->hasFile('image')) {
+                if ($course->image_path) {
+                    Storage::disk('public')->delete($course->image_path);
+                }
+                // บันทึก path ของไฟล์ใหม่ลงใน database
+                $courseData['image_path'] = $request->file('image')->store('courses', 'public');
+
+                // ถ้าเลือก "ลบรูปภาพ" ให้ลบไฟล์เก่าออกจาก storage และตั้งค่า image_path เป็น null
+            } elseif ($request->boolean('remove_image')) {
+                if ($course->image_path) {
+                    Storage::disk('public')->delete($course->image_path);
+                }
+                $courseData['image_path'] = null;
+            }
+            // อัปเดตข้อมูลคอร์ส
+            $course->update($courseData);
+
+            // ลบกลุ่มเป้าหมาย/รอบเวลาเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา
+            $course->targetGroups()->delete();
+            foreach ($data['target_groups'] as $group) {
+                CourseTargetGroup::create([
+                    'course_id' => $course->id,
+                    'target_group' => $group,
+                ]);
+            }
+            // ลบรอบเวลาเรียนเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา
+            $course->schedules()->delete();
+            foreach ($data['schedules'] as $schedule) {
+                CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
+            }
+
+            // สร้างแพ็กเกจใหม่จากรายการในฟอร์มทั้งหมด
+            $course->packages()->delete();
+            foreach ($data['packages'] as $package) {
+                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
+            }
+        });
+
+        return redirect()
+            ->route('admin.courses')
+            ->with('success', 'อัปเดตคอร์ส "'.$course->course_name.'" เรียบร้อยแล้ว');
+    }
+
+    /**
+     * DELETE /admin/courses/{course} -> route('admin.courses.destroy')
+     * target_groups / schedules / packages ถูกลบอัตโนมัติผ่าน cascadeOnDelete()
+     */
+    public function destroy(Course $course)
+    {
+        if ($course->image_path) {
+            Storage::disk('public')->delete($course->image_path);
+        }
+
+        $course->delete();
+
+        return redirect()
+            ->route('admin.courses')
+            ->with('success', 'ลบคอร์สเรียบร้อยแล้ว');
+    }
+
+    /**
+     * PATCH /admin/courses/{course}/toggle-status -> route('admin.courses.toggleStatus')
+     * เปิด/ปิดการใช้งานคอร์ส โดยสลับค่า is_active ของแพ็กเกจแรกของคอร์สนี้
+     * (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส
+     */
+    public function toggleStatus(Course $course)
+    {
+        $package = $course->packages()->first();
+
+        if (! $package) {
+            return redirect()
+                ->route('admin.courses')
+                ->with('error', 'คอร์ส "'.$course->course_name.'" ยังไม่มีแพ็กเกจ ไม่สามารถเปิด/ปิดใช้งานได้');
+        }
+
+        $package->update(['is_active' => ! $package->is_active]);
+
+        $statusText = $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+
+        return redirect()
+            ->route('admin.courses')
+            ->with('success', 'เปลี่ยนสถานะคอร์ส "'.$course->course_name.'" เป็น '.$statusText.' แล้ว');
+    }
+
+    /**
+     * Validate + normalize ข้อมูลจากฟอร์ม แล้วแยกเป็น 3 กลุ่ม: course / target_groups / schedules / package
+     */
+    private function validated(Request $request): array
+    {
+        $validated = $request->validate([
+            'course_name' => ['required', 'string', 'max:255'],
+            'min_age' => ['required', 'integer', 'min:0'],
+            'max_age' => ['nullable', 'integer', 'gte:min_age'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'max:2048'], // สูงสุด 2MB
+
+            'target_groups' => ['required', 'array', 'min:1'],
+            'target_groups.*' => ['required', 'in:Rookie,Beginner,Junior,Player'],
+
+            'schedules' => ['required', 'array', 'min:1'],
+            'schedules.*.day_type' => ['nullable', 'in:weekday,weekend'],
+            'schedules.*.weekdays' => ['required', 'array', 'min:1'],
+            'schedules.*.weekdays.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
+            'schedules.*.court_section_id' => ['nullable', 'exists:court_sections,id'],
+            'schedules.*.start_time' => ['required', 'date_format:H:i'],
+            'schedules.*.end_time' => ['required', 'date_format:H:i', 'after:schedules.*.start_time'],
+            'schedules.*.is_limited_spots' => ['nullable', 'boolean'],
+            // ถ้าติ๊ก "จำกัดจำนวน" (is_limited_spots = 1) ต้องกรอกจำนวนคนสูงสุดด้วยเสมอ
+            'schedules.*.capacity' => ['nullable', 'required_if:schedules.*.is_limited_spots,1', 'integer', 'min:1'],
+
+            'packages' => ['required', 'array', 'min:1'],
+            'packages.*.package_type' => ['required', 'in:group,private'],
+            'packages.*.total_sessions' => ['required', 'integer', 'min:1'],
+            'packages.*.total_price' => ['required', 'numeric', 'min:0'],
+            'packages.*.validity_value' => ['required', 'integer', 'min:1'],
+            'packages.*.validity_unit' => ['required', 'in:days,hours'],
+            'packages.*.recommendation_text' => ['nullable', 'string', 'max:255'],
+        ], [
+            'schedules.*.capacity.required_if' => 'กรุณากรอกจำนวนคนสูงสุด เมื่อเลือก "จำกัดจำนวน" สำหรับรอบเวลาเรียนนี้',
+        ]);
+
+        // วนลูปทุกข้อมูลใน Array แล้วแปลงข้อมูลใหม่กลับมาเป็น Array อีกชุดหนึ่ง
+        $schedules = array_map(function ($schedule) {
+            $isLimited = filter_var($schedule['is_limited_spots'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            return [
+                'day_type' => $schedule['day_type'],
+                'weekdays' => array_values($schedule['weekdays']),
+                'court_section_id' => $schedule['court_section_id'] ?? null,
+                'start_time' => $schedule['start_time'],
+                'end_time' => $schedule['end_time'],
+                'is_limited_spots' => $isLimited,
+                // capacity มีความหมายเฉพาะตอน is_limited_spots = true เท่านั้น
+                // ถ้าไม่จำกัด ให้บันทึกเป็น NULL เสมอ แม้ client จะส่งค่าอะไรมาก็ตาม
+                'capacity' => $isLimited ? (int) $schedule['capacity'] : null,
+            ];
+        }, $validated['schedules'] ?? []);
+
+        $packages = array_map(function ($package) {
+            return [
+                'package_type' => $package['package_type'],
+                'total_sessions' => (int) $package['total_sessions'],
+                'total_price' => $package['total_price'],
+                'price_per_session' => round($package['total_price'] / $package['total_sessions'], 2),
+                'validity_value' => (int) $package['validity_value'],
+                'validity_unit' => $package['validity_unit'],
+                'recommendation_text' => $package['recommendation_text'] ?? null,
+            ];
+        }, $validated['packages']);
+
+        return [
+            'course' => [
+                'course_name' => $validated['course_name'],
+                'course_type' => 'schedule',
+                'min_age' => $validated['min_age'],
+                'max_age' => $validated['max_age'] ?? null,
+                'description' => $validated['description'] ?? null,
+            ],
+            'target_groups' => array_values(array_unique($validated['target_groups'] ?? [])),
+            'schedules' => $schedules,
+            'packages' => $packages,
+        ];
+    }
+}

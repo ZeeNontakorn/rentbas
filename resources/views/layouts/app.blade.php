@@ -17,7 +17,7 @@
         }
     </style>
 </head>
-<body class="bg-[#0b0b1a] min-h-screen flex flex-col text-white antialiased">
+<body class="bg-[#ffffff] min-h-screen flex flex-col text-white antialiased">
 
     {{-- Navbar อยู่ด้านบนสุด --}}
     @include('components.navbar')
@@ -42,6 +42,38 @@
             });
         });
     </script>
+
+    {{-- SweetAlert2 + Toast (ใช้ร่วมกันทุกหน้าที่ extend layout นี้) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            @if (session('success'))
+                Toast.fire({ icon: 'success', title: @json(session('success')) });
+            @endif
+
+            @if (session('error'))
+                Toast.fire({ icon: 'error', title: @json(session('error')) });
+            @endif
+
+            @if ($errors->any())
+                Toast.fire({ icon: 'error', title: @json($errors->first()) });
+            @endif
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>
