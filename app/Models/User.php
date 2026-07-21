@@ -29,10 +29,13 @@ class User extends Authenticatable
     ];
 
     // ประเภทสมาชิกสำหรับ role 'staff' — พนักงานประจำ / พนักงานชั่วคราว / นักศึกษาฝึกงาน
+    // ประเภทสมาชิกสำหรับ role 'staff' — พนักงานประจำ / พนักงานชั่วคราว / นักศึกษาฝึกงาน / โค้ช / ผู้ช่วยสนาม
     const STAFF_TYPES = [
-        'permanent' => 'พนักงานประจำ',
-        'temporary' => 'พนักงานชั่วคราว',
-        'intern'    => 'นักศึกษาฝึกงาน',
+        'permanent'       => 'พนักงานประจำ',
+        'temporary'       => 'พนักงานชั่วคราว',
+        'intern'          => 'นักศึกษาฝึกงาน',
+        'coach'           => 'โค้ช',
+        'court_assistant' => 'ผู้ช่วยสนาม',
     ];
 
     protected function casts(): array

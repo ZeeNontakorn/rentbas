@@ -10,13 +10,15 @@ use Carbon\Carbon;
 
 class StaffController extends Controller
 {
+    private const MEMBERSHIP_TYPE_RULE = 'required|in:coach,court_assistant';
+
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $role = $request->input('role');
+        $type = $request->input('type');
 
-        $staffs = User::whereIn('role', ['coach', 'staff'])
-            ->when($role && in_array($role, ['coach', 'staff']), fn($query) => $query->where('role', $role))
+        $staffs = User::where('role', 'staff')
+            ->when($type && in_array($type, ['coach', 'court_assistant']), fn($query) => $query->where('membership_type', $type))
             ->when($search, fn($query) => $query->where(
                 fn($q) =>
                 $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")
@@ -24,12 +26,12 @@ class StaffController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.staffs.index', compact('staffs', 'search', 'role'));
+        return view('admin.staffs.index', compact('staffs', 'search'));
     }
 
     public function show(User $staff)
     {
-        abort_unless(in_array($staff->role, ['staff', 'coach']), 404, 'ไม่พบข้อมูลบุคลากร');
+        $this->assertIsStaff($staff);
 
         $today = now()->toDateString();
         $nowTime = now()->toTimeString();
@@ -93,13 +95,13 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $staff->id,
-            'role' => 'required|in:coach,staff',
+            'membership_type' => self::MEMBERSHIP_TYPE_RULE,
             'phone' => 'nullable|string|max:20',
             'specialty' => 'nullable|string|max:255',
             'bio' => 'nullable|string',
         ]);
 
-        $staff->update($request->only(['name', 'email', 'role', 'phone']));
+        $staff->update($request->only(['name', 'email', 'membership_type', 'phone']));
 
         $staff->staffProfile()->updateOrCreate(
             ['user_id' => $staff->id],
@@ -115,9 +117,10 @@ class StaffController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:coach,staff',
+            'membership_type' => self::MEMBERSHIP_TYPE_RULE,
         ]);
 
+        $validated['role'] = 'staff';
         $validated['password'] = bcrypt($validated['password']);
         $validated['email_verified_at'] = now();
 
@@ -128,12 +131,17 @@ class StaffController extends Controller
 
     public function destroy(User $staff)
     {
-        if (!in_array($staff->role, ['staff', 'coach'])) {
+        if ($staff->role !== 'staff') {
             return redirect()->back()->withErrors(['ไม่สามารถลบผู้ใช้งานนี้ได้']);
         }
 
         $staff->delete();
 
         return redirect()->back()->with('success', 'ลบข้อมูลบุคลากรเรียบร้อยแล้ว');
+    }
+
+    private function assertIsStaff(User $staff): void
+    {
+        abort_unless($staff->role === 'staff', 404, 'ไม่พบข้อมูลบุคลากร');
     }
 }

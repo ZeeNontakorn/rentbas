@@ -10,15 +10,28 @@ class EnsureStaffOrAdmin
 {
     /**
      * Handle an incoming request.
-     * Allows users with role 'admin', 'superadmin', or 'staff' to pass through.
+     * Allows users with role 'admin' or 'superadmin' to pass through.
+     * Allows users with role 'staff' only if their membership_type
+     * is 'permanent', 'temporary', or 'intern'.
      */
-    private const ALLOWED_ROLES = ['admin', 'superadmin', 'staff'];
+    private const ADMIN_ROLES = ['admin', 'superadmin'];
+
+    private const ALLOWED_STAFF_MEMBERSHIP_TYPES = ['permanent', 'temporary', 'intern'];
 
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, self::ALLOWED_ROLES, true)) {
+        if (! $user) {
+            abort(403, 'Unauthorized.');
+        }
+
+        $isAdmin = in_array($user->role, self::ADMIN_ROLES, true);
+
+        $isEligibleStaff = $user->role === 'staff'
+            && in_array($user->membership_type, self::ALLOWED_STAFF_MEMBERSHIP_TYPES, true);
+
+        if (! $isAdmin && ! $isEligibleStaff) {
             abort(403, 'Unauthorized.');
         }
 
