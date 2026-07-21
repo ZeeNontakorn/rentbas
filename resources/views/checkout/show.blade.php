@@ -153,8 +153,16 @@
                 <p class="text-xs text-gray-500">หักจากยอดเครดิตคงเหลือของคุณทันที และอนุมัติการจองอัตโนมัติ ไม่ต้องรอแอดมิน</p>
 
                 <div class="co-row" style="padding: 6px 0;">
-                    <span class="k">ยอดเครดิตคงเหลือ</span>
+                    <span class="k">ยอดเครดิตปัจจุบัน</span>
                     <span class="v">฿{{ number_format($balance / 100, 0) }}</span>
+                </div>
+                <div class="co-row" style="padding: 6px 0;">
+                    <span class="k">ยอดชำระ</span>
+                    <span class="v">฿-{{number_format($price / 100, 0) }}</span>
+                </div>
+                <div class="co-row" style="padding: 6px 0;">
+                    <span class="k">ยอดเครดิตคงเหลือ</span>
+                    <span class="v">฿{{number_format(($balance - $price) / 100, 0) }}</span>
                 </div>
 
                 @if(!$sufficient)

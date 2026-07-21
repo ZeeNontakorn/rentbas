@@ -40,8 +40,14 @@ class HomeController extends Controller
         // ดึงการจองทั้งหมดของวันนี้ พร้อม court_section_id/end_time เพื่อเช็ค overlap ให้ถูกต้อง
         // (แทนการเทียบ start_time ตรงๆ แบบเดิม ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง)
         $bookings = Booking::whereDate('booking_date', $date)
-            ->whereIn('status', ['pending', 'approved'])
-            ->get(['court_id', 'court_section_id', 'start_time', 'end_time']);
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
+            ->get(['court_id', 'court_section_id', 'start_time', 'end_time', 'status']);
 
         $slots = []; // [court_id][start_time] => status  (คีย์เป็นทุกๆ 30 นาที ให้ตรงกับตารางฝั่ง frontend)
         foreach ($courts as $court) {
@@ -70,7 +76,9 @@ class HomeController extends Controller
                         return in_array($b->court_section_id, $conflictIds, true)
                             && $b->start_time < $endStr && $b->end_time > $startStr;
                     });
-                    $status = $overlap ? 'booked' : 'available';
+                    $status = $overlap?->status === 'pending_payment'
+                        ? 'pending_payment'
+                        : ($overlap ? 'booked' : 'available');
                 }
                 $slots[$court->id][$startStr] = $status;
             }
@@ -99,7 +107,13 @@ class HomeController extends Controller
 
         // preload การจองทั้งเดือน → group by "date|court_id" พร้อม start/end/section เพื่อเช็ค overlap
         $bookings = Booking::whereBetween('booking_date', [$start->toDateString(), $end->toDateString()])
-            ->whereIn('status', ['pending', 'approved'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
             ->get(['booking_date', 'court_id', 'court_section_id', 'start_time', 'end_time']);
         $bookingsByDateCourt = [];
         foreach ($bookings as $b) {

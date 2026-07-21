@@ -26,11 +26,15 @@ class PricingController extends Controller
     public function updateRule(Request $request, PricingRule $pricingRule)
     {
         $data = $request->validate([
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'price_per_hour' => ['required', 'numeric', 'min:0', 'max:100000'], // หน่วยบาท
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $pricingRule->update([
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
             'price_per_hour' => (int) round($data['price_per_hour'] * 100),
             'is_active' => $request->boolean('is_active', $pricingRule->is_active),
         ]);

@@ -494,6 +494,10 @@ html { scroll-behavior: smooth; }
     background: #fff5f5; color: #c92a2a; cursor: default;
     border: 1px solid #ffc9c9;
 }
+.slot-checkout {
+    background: #fff3bf; color: #e67700; cursor: default;
+    border: 1px solid #ffe066;
+}
 .slot-past {
     background: #f1f3f5; color: #adb5bd; cursor: default;
     border: 1px solid #dee2e6;
@@ -514,6 +518,7 @@ html { scroll-behavior: smooth; }
 .slot-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .slot-free .slot-dot { background: #2f9e44; }
 .slot-booked .slot-dot { background: #c92a2a; }
+.slot-checkout .slot-dot { background: #e67700; }
 .slot-past .slot-dot { background: #adb5bd; }
 .slot-closed .slot-dot { background: #e67700; }
 .slot-maintenance .slot-dot { background: #f29c41; }
@@ -1203,7 +1208,9 @@ async function renderSch(ds) {
                 status = 'past';
             }
 
-            if (status === 'booked') {
+            if (status === 'pending_payment') {
+                html += '<td><span class="slot-badge slot-checkout"><span class="slot-dot"></span>กำลังจอง</span></td>';
+            } else if (status === 'booked') {
                 html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>จอง</span></td>';
             } else if (status === 'past') {
                 html += '<td><span class="slot-badge slot-past"><span class="slot-dot"></span>ผ่านมาแล้ว</span></td>';

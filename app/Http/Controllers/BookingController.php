@@ -9,6 +9,7 @@ use App\Models\Court;
 use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\PricingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -120,7 +121,13 @@ class BookingController extends Controller
 
         $bookings = Booking::where('court_id', $court->id)
             ->whereDate('booking_date', $date)
-            ->whereIn('status', ['pending', 'approved'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
             ->get();
 
         // เตรียม conflict-map ต่อ section หนึ่งครั้ง (แทนการ query ซ้ำทุกแถว/ทุกคอลัมน์)
@@ -132,6 +139,7 @@ class BookingController extends Controller
         $rows = [];
         $legacySlots = [];
         $fullSection = $sections->firstWhere('code', 'full');
+        $pricedSlotCache = [];
 
         for ($m = $openMinutes; $m < $closeMinutes; $m += $interval) {
             $start = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
@@ -145,6 +153,21 @@ class BookingController extends Controller
             $rowSections = [];
             foreach ($sections as $section) {
                 $isClosed = $court->isClosedAt($slotStart, $slotEnd, $section);
+                $courtType = $section->code === 'full' ? 'full' : 'half';
+                $priceCacheKey = "{$courtType}:{$start}:{$end}";
+                if (! array_key_exists($priceCacheKey, $pricedSlotCache)) {
+                    try {
+                        app(PricingService::class)->calculate([
+                            'date' => $date,
+                            'start_time' => substr($start, 0, 5),
+                            'end_time' => substr($end, 0, 5),
+                            'court_type' => $courtType,
+                        ]);
+                        $pricedSlotCache[$priceCacheKey] = true;
+                    } catch (\InvalidArgumentException) {
+                        $pricedSlotCache[$priceCacheKey] = false;
+                    }
+                }
 
                 $conflictIds = $conflictMap[$section->id];
                 $booking = $bookings->first(function ($b) use ($conflictIds, $start, $end) {
@@ -156,6 +179,7 @@ class BookingController extends Controller
                 $status = 'available';
                 if ($isClosed) $status = 'closed';
                 elseif ($booking) $status = $booking->status; // pending | approved (ของ section ตัวเองหรือ section ที่บล็อกกัน)
+                elseif (! $pricedSlotCache[$priceCacheKey]) $status = 'unpriced';
                 elseif ($isPast) $status = 'past';
 
                 $rowSections[$section->id] = [

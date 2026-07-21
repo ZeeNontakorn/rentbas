@@ -1,4 +1,13 @@
 <!-- resources/views/components/navbar.blade.php -->
+@auth
+    @php
+        $activeCheckout = \App\Models\Booking::where('user_id', auth()->id())
+            ->where('status', 'pending_payment')
+            ->where('locked_until', '>', now())
+            ->latest('locked_until')
+            ->first();
+    @endphp
+@endauth
 <nav class="sticky top-0 z-50 bg-gray-900 shadow-md text-white">
     <div class="container mx-auto flex justify-between items-center py-4 px-4 md:px-10">
         <!-- Logo / ชื่อระบบ -->
@@ -36,6 +45,12 @@
         <!-- เมนูหลัก (Desktop) -->
         <div class="hidden md:flex items-center gap-4 md:gap-6">
             @auth
+                @if($activeCheckout ?? false)
+                    <a href="{{ route('checkout.show', $activeCheckout) }}" class="flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 transition">
+                        กลับไปชำระเงิน
+                        <span class="inline-block h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                    </a>
+                @endif
                 @if(auth()->user()->role === 'admin')
                     <!-- เมนูสำหรับ Admin -->
                     <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -249,6 +264,12 @@
     <!-- เมนู (Mobile, แบบเลื่อนลง) -->
     <div id="mobileMenu" class="hidden md:hidden border-t border-gray-800 bg-gray-900 px-4 pb-4">
         @auth
+            @if($activeCheckout ?? false)
+                <a href="{{ route('checkout.show', $activeCheckout) }}" class="mt-3 flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition">
+                    กลับไปชำระเงิน
+                    <span class="inline-block h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                </a>
+            @endif
             @if(auth()->user()->role === 'admin')
                 <div class="flex flex-col py-2">
                     <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">

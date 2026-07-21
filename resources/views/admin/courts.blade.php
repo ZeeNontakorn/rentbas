@@ -71,6 +71,11 @@
                 color: #92400e;
             }
 
+            .slot-card.booking_pending_payment .slot-btn {
+                background: #ffedd5;
+                color: #9a3412;
+            }
+
             .slot-card.booking_approved .slot-btn {
                 background: #ff0000;
                 color: #fff;
@@ -338,6 +343,7 @@
                                     @php
                                         $sClass = $slot['status']; // available, unavailable, maintenance, booked
                                         $sLabel = match ($slot['status']) {
+                                            'booking_pending_payment' => 'กำลังจอง (ชำระเงิน)',
                                             'available' => 'ว่าง',
                                             'unavailable' => 'ไม่ว่าง',
                                             'maintenance' => 'ปิดปรับปรุง',

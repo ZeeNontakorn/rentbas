@@ -60,6 +60,7 @@
 }
 .cal-block.st-approved { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 .cal-block.st-pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.cal-block.st-pending_payment { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
 .cal-block.st-closed { background: repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 6px,#e5e7eb 6px,#e5e7eb 12px); color: #9ca3af; border: 1px solid #e5e7eb; }
 .cal-block.st-past { background: #f9fafb; color: #d1d5db; border: 1px solid #f1f3f5; }
 .cal-block.st-crossblocked {
@@ -367,7 +368,7 @@ document.querySelectorAll('.cal-lane').forEach(lane => {
         div.className = 'cal-block st-' + st;
         div.style.top = top + 'px';
         div.style.height = Math.max(height, 16) + 'px';
-        if (height >= 22) div.textContent = labelMap[st] || '';
+        if (height >= 22) div.textContent = st === 'pending_payment' ? 'กำลังจอง' : (labelMap[st] || '');
         lane.appendChild(div);
         i = j + 1;
     }

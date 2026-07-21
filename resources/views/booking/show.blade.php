@@ -85,6 +85,7 @@
                     @foreach($slots as $slot)
                         @php
                             $statusClasses = match($slot['status']) {
+                                'pending_payment' => 'bg-amber-50 border-amber-200 text-amber-700 cursor-not-allowed',
                                 'available' => 'bg-white border-green-200 hover:border-green-500 hover:bg-green-50 text-green-600 shadow-sm hover:shadow-md',
                                 'pending' => 'bg-yellow-50 border-yellow-200 text-yellow-600 cursor-not-allowed',
                                 'approved' => 'bg-red-50 border-red-200 text-red-500 cursor-not-allowed',
@@ -93,6 +94,7 @@
                             };
 
                             $statusLabel = match($slot['status']) {
+                                'pending_payment' => 'กำลังจอง',
                                 'available' => 'กดเพื่อจอง',
                                 'pending' => 'รออนุมัติ',
                                 'approved' => 'จองแล้ว',

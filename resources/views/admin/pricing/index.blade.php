@@ -71,7 +71,13 @@
                                         @csrf
                                         @method('PUT')
                                         <td class="px-6 py-3 text-gray-800 font-medium">{{ $rule->label }}</td>
-                                        <td class="px-6 py-3 text-gray-500">{{ substr($rule->start_time, 0, 5) }} - {{ substr($rule->end_time, 0, 5) }}</td>
+                                        <td class="px-6 py-3">
+                                            <div class="flex items-center gap-2">
+                                                <input type="text" name="start_time" value="{{ substr($rule->start_time, 0, 5) }}" class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                                                <span class="text-gray-400">–</span>
+                                                <input type="text" name="end_time" value="{{ substr($rule->end_time, 0, 5) }}" class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                                            </div>
+                                        </td>
                                         <td class="px-6 py-3">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $rule->court_type === 'full' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700' }}">
                                                 {{ $rule->court_type === 'full' ? 'เต็มสนาม' : 'ครึ่งสนาม' }}
@@ -82,7 +88,7 @@
                                                 <span class="text-gray-400">฿</span>
                                                 <input type="number" step="0.01" min="0" name="price_per_hour"
                                                        value="{{ number_format($rule->price_per_hour / 100, 2, '.', '') }}"
-                                                       class="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                                                       class="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                             </div>
                                         </td>
                                         <td class="px-6 py-3">
@@ -182,3 +188,20 @@
     </div>
 </div>
 @endsection
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ดึงช่อง input ทั้งหมดที่มี class .time-picker
+        const timePickers = document.querySelectorAll('.time-picker');
+
+        timePickers.forEach(function(input) {
+            flatpickr(input, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                defaultDate: input.value
+            });
+        });
+    });
+</script>

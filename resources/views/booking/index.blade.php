@@ -275,6 +275,8 @@
                     @php
                         $statusMeta = [
                             'available' => ['cls' => 'available', 'label' => 'ว่าง'],
+                            'unpriced' => ['cls' => 'closed', 'label' => 'ยังไม่ตั้งราคา'],
+                            'pending_payment' => ['cls' => 'pending-s', 'label' => 'กำลังจอง'],
                             'pending'   => ['cls' => 'pending-s', 'label' => 'รออนุมัติ'],
                             'approved'  => ['cls' => 'approved-s', 'label' => 'จองแล้ว'],
                             'closed'    => ['cls' => 'past-s', 'label' => 'ปิดบริการ'],
