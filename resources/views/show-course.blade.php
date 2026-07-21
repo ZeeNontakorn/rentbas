@@ -34,7 +34,7 @@
                     @foreach($course->targetGroups as $group)
                         <span class="rounded-full border border-white/30 bg-slate-950/20 px-3 py-1 text-xs">{{ $group->target_group }}</span>
                     @endforeach
-                    <span class="rounded-full border border-white/30 bg-slate-950/20 px-3 py-1 text-xs">อายุ {{ $course->age_range_label }}</span>
+                    @if($course->course_type === 'schedule')<span class="rounded-full border border-white/30 bg-slate-950/20 px-3 py-1 text-xs">อายุ {{ $course->age_range_label }}</span>@else<span class="rounded-full border border-white/30 bg-slate-950/20 px-3 py-1 text-xs">Session Course</span>@endif
                     @if($package)<span class="rounded-full border border-white/30 bg-slate-950/20 px-3 py-1 text-xs">{{ $package->package_type_label }}</span>@endif
                 </div>
             </div>
@@ -42,8 +42,8 @@
 
         <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(290px,.8fr)]">
             <main class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <h2 class="text-xl font-extrabold">รอบเวลาเรียน</h2>
-                <p class="mt-1 text-sm leading-6 text-slate-500">เลือกรอบที่สะดวกไว้ในใจ แล้วแอดไลน์สอบถามที่ว่างและสมัครเรียนกับแอดมินได้เลย</p>
+                <h2 class="text-xl font-extrabold">{{ $course->course_type === 'session' ? 'รายละเอียด Session' : 'รอบเวลาเรียน' }}</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-500">{{ $course->course_type === 'session' ? 'ดูภาพประกอบและรายละเอียดราคา แล้วแอดไลน์สอบถามเพื่อสมัครได้เลย' : 'เลือกรอบที่สะดวกไว้ในใจ แล้วแอดไลน์สอบถามที่ว่างและสมัครเรียนกับแอดมินได้เลย' }}</p>
 
                 <div class="mt-5 grid gap-3">
                     @forelse($course->schedules as $schedule)
@@ -59,7 +59,7 @@
                             <span class="col-start-2 w-fit rounded-full px-2.5 py-1 text-xs font-bold sm:col-start-auto {{ $schedule->is_limited_spots ? 'bg-orange-50 text-amber-700' : 'bg-slate-100 text-slate-500' }}">{{ $schedule->spots_label }}</span>
                         </div>
                     @empty
-                        <p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">ยังไม่มีการกำหนดรอบเวลาเรียน กรุณาติดต่อแอดมิน</p>
+                        <p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">{{ $course->course_type === 'session' ? 'Session นี้เป็นคอร์สรายครั้ง กรุณาดูภาพประกอบและติดต่อแอดมินเพื่อสอบถามวันจัดกิจกรรม' : 'ยังไม่มีการกำหนดรอบเวลาเรียน กรุณาติดต่อแอดมิน' }}</p>
                     @endforelse
                 </div>
 
@@ -70,15 +70,18 @@
             </main>
 
             <aside class="lg:sticky lg:top-5 lg:self-start">
-                @if($package)
+                @if($course->packages->isNotEmpty())
                     <section class="overflow-hidden rounded-2xl bg-[#18203b] p-6 text-white shadow-lg shadow-slate-900/10">
-                        <p class="text-xs text-white/60">แพ็กเกจ {{ $package->package_type_label }}</p>
-                        <p class="mt-1 text-4xl font-extrabold tracking-tight text-[#ff914d]">฿{{ number_format($package->total_price, 0) }}</p>
-                        <p class="mt-1 text-xs text-white/60">เฉลี่ยครั้งละ {{ number_format($package->price_per_session, 0) }} บาท</p>
-                        <dl class="mt-5 space-y-3 text-sm">
-                            <div class="flex justify-between border-t border-white/10 pt-3"><dt class="text-white/65">จำนวนครั้ง</dt><dd class="font-semibold">{{ $package->total_sessions }} ครั้ง</dd></div>
-                            <div class="flex justify-between border-t border-white/10 pt-3"><dt class="text-white/65">อายุแพ็กเกจ</dt><dd class="font-semibold">{{ $package->validity_label }}</dd></div>
-                        </dl>
+                        <p class="text-xs text-white/60">เลือกแพ็กเกจที่ต้องการ</p>
+                        <div class="mt-4 space-y-3">
+                            @foreach($course->packages as $coursePackage)
+                                <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+                                    <div class="flex items-baseline justify-between gap-2"><p class="font-bold">{{ $coursePackage->total_sessions }} ครั้ง</p><p class="text-xl font-extrabold text-[#ff914d]">฿{{ number_format($coursePackage->total_price, 0) }}</p></div>
+                                    <p class="mt-1 text-xs text-white/60">เฉลี่ย {{ number_format($coursePackage->price_per_session, 0) }} บาท/ครั้ง · อายุ {{ $coursePackage->validity_label }}</p>
+                                    @if($coursePackage->recommendation_text)<p class="mt-1 text-xs text-white/80">{{ $coursePackage->recommendation_text }}</p>@endif
+                                </div>
+                            @endforeach
+                        </div>
                     </section>
                 @endif
 

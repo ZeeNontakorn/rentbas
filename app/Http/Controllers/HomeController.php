@@ -8,6 +8,7 @@ use App\Models\Court;
 use App\Models\CourtClosure;
 use App\Models\SiteVisit;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -26,15 +27,18 @@ class HomeController extends Controller
 
         // คอร์สเรียนบาสเกตบอลที่จะโชว์บนหน้าแรก: เอาเฉพาะคอร์สที่มีแพ็กเกจ "เปิดใช้งาน" (is_active) อยู่
         $trainingCourses = Course::with(['targetGroups', 'schedules', 'packages' => function ($query) {
-                $query->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
-            }])
+            $query->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
+        }])
             ->whereHas('packages', function ($query) {
                 $query->where('is_active', true);
             })
             ->orderBy('course_name')
             ->get();
 
-        return view('home', compact('courts', 'trainingCourses'));
+        $scheduleCourses = $trainingCourses->where('course_type', 'schedule')->values();
+        $sessionCourses = $trainingCourses->where('course_type', 'session')->values();
+
+        return view('home', compact('courts', 'trainingCourses', 'scheduleCourses', 'sessionCourses'));
     }
 
     /**
@@ -44,9 +48,9 @@ class HomeController extends Controller
     public function schedule(Request $request)
     {
         $date = $request->query('date', now()->toDateString());
-        /** @var \App\Models\Court[] $courts */
+        /** @var Court[] $courts */
         $courts = Court::orderBy('name')->get();
-        $now    = now();
+        $now = now();
 
         // ดึงการจองทั้งหมดของวันนี้ พร้อม court_section_id/end_time เพื่อเช็ค overlap ให้ถูกต้อง
         // (แทนการเทียบ start_time ตรงๆ แบบเดิม ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง)
@@ -63,11 +67,11 @@ class HomeController extends Controller
 
             for ($m = 6 * 60; $m < 22 * 60; $m += 30) {
                 $startStr = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
-                $endM     = $m + 30;
-                $endStr   = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
+                $endM = $m + 30;
+                $endStr = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
 
-                $slotStart = \Carbon\Carbon::parse("{$date} {$startStr}");
-                $slotEnd   = \Carbon\Carbon::parse("{$date} {$endStr}");
+                $slotStart = Carbon::parse("{$date} {$startStr}");
+                $slotEnd = Carbon::parse("{$date} {$endStr}");
 
                 $closuresType = $court->getClosureType($startStr, $endStr, $date, $fullSection);
 
@@ -102,8 +106,8 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             $start = now()->startOfMonth();
         }
-        $end   = $start->copy()->endOfMonth();
-        $now   = now();
+        $end = $start->copy()->endOfMonth();
+        $now = now();
         $today = $now->copy()->startOfDay();
 
         $courts = Court::orderBy('name')->get();
@@ -114,7 +118,7 @@ class HomeController extends Controller
             ->get(['booking_date', 'court_id', 'court_section_id', 'start_time', 'end_time']);
         $bookingsByDateCourt = [];
         foreach ($bookings as $b) {
-            $bd = $b->booking_date instanceof \Carbon\CarbonInterface
+            $bd = $b->booking_date instanceof CarbonInterface
                 ? $b->booking_date->toDateString()
                 : substr((string) $b->booking_date, 0, 10);
             $bookingsByDateCourt["{$bd}|{$b->court_id}"][] = $b;
@@ -137,6 +141,7 @@ class HomeController extends Controller
 
             if ($d->lt($today)) {          // ทั้งวันผ่านไปแล้ว → ไม่มีจุด
                 $days[$ds] = 'past';
+
                 continue;
             }
 
@@ -146,14 +151,18 @@ class HomeController extends Controller
                 $dayCourtBookings = $bookingsByDateCourt["{$ds}|{$court->id}"] ?? [];
 
                 for ($m = 6 * 60; $m < 22 * 60; $m += 30) {
-                    $startStr  = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
-                    $endM      = $m + 30;
-                    $endStr    = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
+                    $startStr = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
+                    $endM = $m + 30;
+                    $endStr = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
                     $slotStart = Carbon::parse("{$ds} {$startStr}");
-                    $slotEnd   = Carbon::parse("{$ds} {$endStr}");
+                    $slotEnd = Carbon::parse("{$ds} {$endStr}");
 
-                    if ($slotEnd->lte($now)) continue;                                                              // past slot
-                    if ($this->slotClosed($court, $closures, $ds, $startStr, $endStr, $slotStart, $slotEnd, $conflictIds)) continue; // closed
+                    if ($slotEnd->lte($now)) {
+                        continue;
+                    }                                                              // past slot
+                    if ($this->slotClosed($court, $closures, $ds, $startStr, $endStr, $slotStart, $slotEnd, $conflictIds)) {
+                        continue;
+                    } // closed
 
                     $overlap = false;
                     foreach ($dayCourtBookings as $b) {
@@ -163,7 +172,9 @@ class HomeController extends Controller
                             break;
                         }
                     }
-                    if ($overlap) continue; // booked (เต็มสนามหรือครึ่งสนามที่บล็อกกัน)
+                    if ($overlap) {
+                        continue;
+                    } // booked (เต็มสนามหรือครึ่งสนามที่บล็อกกัน)
 
                     $available++;
                 }
@@ -190,14 +201,22 @@ class HomeController extends Controller
             return true;
         }
         foreach ($closures as $c) {
-            $cDate = $c->date instanceof \Carbon\CarbonInterface
+            $cDate = $c->date instanceof CarbonInterface
                 ? $c->date->toDateString()
                 : substr((string) $c->date, 0, 10);
-            if ($c->court_id != $court->id || $cDate !== $ds) continue;
-            if ($c->start_time >= $endStr || $c->end_time <= $startStr) continue;
-            if ($c->court_section_id !== null && !in_array($c->court_section_id, $conflictIds, true)) continue;
+            if ($c->court_id != $court->id || $cDate !== $ds) {
+                continue;
+            }
+            if ($c->start_time >= $endStr || $c->end_time <= $startStr) {
+                continue;
+            }
+            if ($c->court_section_id !== null && ! in_array($c->court_section_id, $conflictIds, true)) {
+                continue;
+            }
+
             return true;
         }
+
         return false;
     }
 }

@@ -348,6 +348,10 @@ html { scroll-behavior: smooth; }
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
 }
+.courses-group + .courses-group { margin-top: 48px; }
+.courses-group-title { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; color: var(--ink); font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 700; }
+.courses-group-title::before { width: 5px; height: 26px; border-radius: 8px; background: var(--ore); content: ''; }
+.session-chip { display: inline-flex; width: fit-content; margin-bottom: 14px; background: #ede9fe; color: #6d28d9; }
 
 /* card */
 .course-card2 {
@@ -1049,71 +1053,88 @@ html { scroll-behavior: smooth; }
         <p class="courses-subtitle">คอร์สเรียนบาสเกตบอลกับโค้ชมืออาชีพ เลือกคอร์สที่ใช่สำหรับคุณ</p>
     </div>
 
-    @if(($trainingCourses ?? collect())->isEmpty())
-        <div class="courses-empty">
-            <div class="courses-empty-icon">🏀</div>
-            ขณะนี้ยังไม่มีคอร์สเปิดรับสมัคร
-        </div>
-    @else
-        <div class="courses-grid">
-            @foreach($trainingCourses as $tCourse)
-                @php $tPackage = $tCourse->packages->first(); @endphp
-                <div class="course-card2" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
-                    <div class="course-thumb2">
-                        <img src="{{ $tCourse->image_url ?: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop' }}"
-                             alt="{{ $tCourse->course_name }}" {!! $imageFallback !!}>
-                        <div class="course-thumb2-overlay"></div>
-                        @if($tPackage && $tPackage->is_featured)
-                            <span class="course-badge-featured">⭐ แนะนำ</span>
-                        @endif
-                        <div class="course-name2">{{ $tCourse->course_name }}</div>
+@if(($trainingCourses ?? collect())->isEmpty())
+    <div class="courses-empty">
+        <div class="courses-empty-icon">🏀</div>
+        ขณะนี้ยังไม่มีคอร์สเปิดรับสมัคร
+    </div>
+@else
+    <div class="courses-grid">
+        @foreach($trainingCourses as $tCourse)
+            @php
+                $tPackage = $tCourse->packages->first();
+                $courseType = $tCourse->course_type;
+            @endphp
+            <div class="course-card2" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                <div class="course-thumb2">
+                    <img src="{{ $tCourse->image_url ?: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop' }}"
+                         alt="{{ $tCourse->course_name }}" {!! $imageFallback !!}>
+                    <div class="course-thumb2-overlay"></div>
+                    @if($tPackage && $tPackage->is_featured)
+                        <span class="course-badge-featured">⭐ แนะนำ</span>
+                    @endif
+                    <div class="course-name2">{{ $tCourse->course_name }}</div>
+                </div>
+                <div class="course-body2">
+                    @if($courseType === 'schedule')
+                    <div class="course-meta-row">
+                        @foreach($tCourse->targetGroups as $group)
+                            <span class="course-chip">{{ $group->target_group }}</span>
+                        @endforeach
+                        <span class="course-chip course-chip-age">อายุ {{ $tCourse->age_range_label }}</span>
                     </div>
-                    <div class="course-body2">
-                        <div class="course-meta-row">
-                            @foreach($tCourse->targetGroups as $group)
-                                <span class="course-chip">{{ $group->target_group }}</span>
-                            @endforeach
-                            <span class="course-chip course-chip-age">อายุ {{ $tCourse->age_range_label }}</span>
-                        </div>
 
-                        @if($tCourse->description)
-                            <p class="course-desc2">{{ $tCourse->description }}</p>
-                        @endif
+                    @if($tCourse->description)
+                        <p class="course-desc2">{{ $tCourse->description }}</p>
+                    @endif
+                    @endif
 
-                        <div class="course-info-block">
-                            @forelse($tCourse->schedules as $tSchedule)
-                                <div class="course-info-line">
-                                    <svg class="course-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    <span>{{ $tSchedule->day_type_label }} · {{ \Illuminate\Support\Carbon::parse($tSchedule->start_time)->format('H:i') }}-{{ \Illuminate\Support\Carbon::parse($tSchedule->end_time)->format('H:i') }} น.</span>
-                                    @if($tSchedule->is_limited_spots)
-                                        <span class="course-spots-tag">{{ $tSchedule->spots_label }}</span>
-                                    @endif
-                                </div>
-                            @empty
-                                <div class="course-info-line course-info-muted">ยังไม่กำหนดรอบเวลาเรียน</div>
-                            @endforelse
-                        </div>
+                    @if($courseType === 'schedule')
+                    <div class="course-info-block">
+                        @forelse($tCourse->schedules as $tSchedule)
+                            <div class="course-info-line">
+                                <svg class="course-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>{{ $tSchedule->day_type_label }} · {{ \Illuminate\Support\Carbon::parse($tSchedule->start_time)->format('H:i') }}-{{ \Illuminate\Support\Carbon::parse($tSchedule->end_time)->format('H:i') }} น.</span>
+                                @if($tSchedule->is_limited_spots)
+                                    <span class="course-spots-tag">{{ $tSchedule->spots_label }}</span>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="course-info-line course-info-muted">ยังไม่กำหนดรอบเวลาเรียน</div>
+                        @endforelse
+                    </div>
+                    @else
+                        <span class="course-chip session-chip">Session Course</span>
+                        <p class="course-desc2">คอร์สรายครั้ง ดูรายละเอียดเพิ่มเติมจากภาพประกอบ</p>
+                    @endif
 
-                        @if($tPackage)
-                            <div class="course-price-row">
-                                <div>
-                                    <div class="course-price-tag">เริ่มต้น</div>
-                                    <div class="course-price">฿{{ number_format($tPackage->total_price, 0) }}</div>
-                                    <div class="course-price-sub">
-                                        {{ $tPackage->total_sessions }} ครั้ง ({{ number_format($tPackage->price_per_session, 0) }} บาท/ครั้ง) · {{ $tPackage->validity_label }}
-                                    </div>
-                                </div>
-                                <a href="{{ route('courses.show', $tCourse) }}" class="course-btn-enroll">
-                                    สมัครเรียนเลย
-                                    <svg class="course-btn-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                                </a>
+                    @if($tPackage)
+                        @if($tCourse->packages->count() > 1)
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                @foreach($tCourse->packages as $coursePackage)
+                                    <span class="course-chip">{{ $coursePackage->total_sessions }} ครั้ง · {{ number_format($coursePackage->total_price, 0) }} บาท</span>
+                                @endforeach
                             </div>
                         @endif
-                    </div>
+                        <div class="course-price-row">
+                            <div>
+                                <div class="course-price-tag">เริ่มต้น</div>
+                                <div class="course-price">฿{{ number_format($tPackage->total_price, 0) }}</div>
+                                <div class="course-price-sub">
+                                    {{ $tPackage->total_sessions }} ครั้ง ({{ number_format($tPackage->price_per_session, 0) }} บาท/ครั้ง) · {{ $tPackage->validity_label }}
+                                </div>
+                            </div>
+                            <a href="{{ route('courses.show', $tCourse) }}" class="course-btn-enroll">
+                                สมัครเรียนเลย
+                                <svg class="course-btn-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                            </a>
+                        </div>
+                    @endif
                 </div>
-            @endforeach
-        </div>
-    @endif
+            </div>
+        @endforeach
+    </div>
+@endif
 </section>
 
 {{-- ═══ PROMOTIONS ═══ --}}

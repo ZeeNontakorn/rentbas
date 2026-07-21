@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class CourseSchedule extends Model
 {
@@ -12,6 +12,7 @@ class CourseSchedule extends Model
         'course_id',
         'court_section_id',
         'day_type',
+        'weekdays',
         'start_time',
         'end_time',
         'is_limited_spots',
@@ -21,6 +22,7 @@ class CourseSchedule extends Model
     protected $casts = [
         'is_limited_spots' => 'boolean',
         'capacity' => 'integer',
+        'weekdays' => 'array',
     ];
 
     public function course(): BelongsTo
@@ -35,6 +37,26 @@ class CourseSchedule extends Model
 
     public function getDayTypeLabelAttribute(): string
     {
+        if (! empty($this->weekdays)) {
+            $labels = [
+                'mon' => 'จันทร์', 'tue' => 'อังคาร', 'wed' => 'พุธ', 'thu' => 'พฤหัสบดี',
+                'fri' => 'ศุกร์', 'sat' => 'เสาร์', 'sun' => 'อาทิตย์',
+            ];
+
+            $weekdayDays = collect($this->weekdays)->filter(fn ($day) => in_array($day, ['mon', 'tue', 'wed', 'thu', 'fri'], true));
+            $weekendDays = collect($this->weekdays)->filter(fn ($day) => in_array($day, ['sat', 'sun'], true));
+            $parts = [];
+
+            if ($weekdayDays->isNotEmpty()) {
+                $parts[] = 'วันธรรมดา: '.$weekdayDays->map(fn ($day) => $labels[$day])->implode(', ');
+            }
+            if ($weekendDays->isNotEmpty()) {
+                $parts[] = 'เสาร์-อาทิตย์: '.$weekendDays->map(fn ($day) => $labels[$day])->implode(', ');
+            }
+
+            return implode(' | ', $parts);
+        }
+
         return $this->day_type === 'weekday' ? 'วันธรรมดา (จ, พ, ศ)' : 'เสาร์-อาทิตย์ (ส, อา)';
     }
 

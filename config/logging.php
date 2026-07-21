@@ -101,7 +101,7 @@ return [
             'handler_with' => [
                 'stream' => 'php://stderr',
             ],
-            'formatter' => env('LOG_STDERR_FORMATTER'),
+            'formatter' => env('LOG_STDERRformcourseATTER'),
             'processors' => [PsrLogMessageProcessor::class],
         ],
 

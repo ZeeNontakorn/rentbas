@@ -83,7 +83,9 @@
                                         {{ $course->course_name }}
                                         @if ($package && $package->is_featured)<span class="ml-1" title="แพ็กเกจแนะนำ">⭐</span>@endif
                                     </p>
-                                    <p class="mt-1.5 text-xs leading-5 text-gray-400">{{ $course->targetGroups->pluck('target_group')->implode(', ') ?: '—' }}</p>
+                                    <div class="mt-1.5 flex items-center gap-2 text-xs leading-5">
+                                        <span class="text-gray-400">{{ $course->targetGroups->pluck('target_group')->implode(', ') ?: '—' }}</span>
+                                    </div>
                                 </td>
                                 <td class="px-5 py-6"><span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $course->age_range_label }}</span></td>
                                 <td class="px-5 py-5">
@@ -112,8 +114,11 @@
                                 </td>
                                 <td class="px-5 py-6">
                                     @if ($package)
-                                        <p class="font-medium leading-6 text-slate-700">{{ $package->total_sessions }} ครั้ง <span class="text-gray-300">/</span> {{ number_format($package->total_price, 0) }} บาท</p>
-                                        <p class="mt-1 text-xs text-gray-400">อายุแพ็กเกจ {{ $package->validity_label }}</p>
+                                        <div class="space-y-1.5">
+                                            @foreach($course->packages as $coursePackage)
+                                                <p class="font-medium leading-5 text-slate-700">{{ $coursePackage->total_sessions }} ครั้ง <span class="text-gray-300">/</span> {{ number_format($coursePackage->total_price, 0) }} บาท <span class="text-xs font-normal text-gray-400">({{ $coursePackage->validity_label }})</span></p>
+                                            @endforeach
+                                        </div>
                                     @else
                                         <span class="text-gray-400">ยังไม่มีแพ็กเกจ</span>
                                     @endif

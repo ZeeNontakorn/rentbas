@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ManageCourseController extends Controller
 {
-
     /**
      * GET /admin/courses/create -> route('admin.courses.create')
      * เปิดหน้าเพิ่มคอร์ส
@@ -24,12 +23,10 @@ class ManageCourseController extends Controller
         return view('admin.courses.create', ['courts' => Court::with('sections')->orderBy('name')->get()]);
     }
 
-
     /**
      * GET /admin/courses -> route('admin.courses')
      * ค้นหาจากชื่อคอร์ส และแสดงผลหน้าละ 10 รายการ
      */
-
     public function index(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
@@ -42,6 +39,7 @@ class ManageCourseController extends Controller
                 $query->where('course_name', 'like', "%{$search}%");
             })
             // เรียงตามชื่อคอร์ส แล้วแบ่งหน้า 10 รายการต่อหน้า
+            ->orderByRaw("case when course_type = 'schedule' then 0 else 1 end")
             ->orderBy('course_name')
             ->paginate(10)
             ->withQueryString();
@@ -49,7 +47,6 @@ class ManageCourseController extends Controller
         // ส่งตัวแปร $courses และ $search ไปที่ view เพื่อแสดงผล
         return view('admin.courses.index', compact('courses', 'search'));
     }
-
 
     /**
      * POST /admin/courses -> route('admin.courses.store')
@@ -78,11 +75,15 @@ class ManageCourseController extends Controller
             foreach ($data['schedules'] as $schedule) {
                 CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
             }
-            // สร้างแพ็กเกจแรกของคอร์ส
-            CoursePackage::create(array_merge($data['package'], ['course_id' => $course->id]));
+            // หนึ่งคอร์สมีตัวเลือกแพ็กเกจได้หลายแบบ เช่น 1 / 4 / 8 ครั้ง
+            foreach ($data['packages'] as $package) {
+                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
+            }
+
             // ส่งกลับ $course เพื่อใช้ใน redirect() ด้านล่าง
             return $course;
         });
+
         // ส่งกลับไปที่หน้า index พร้อม alert success
         return redirect()
             ->route('admin.courses')
@@ -118,8 +119,8 @@ class ManageCourseController extends Controller
                 }
                 // บันทึก path ของไฟล์ใหม่ลงใน database
                 $courseData['image_path'] = $request->file('image')->store('courses', 'public');
-                
-            // ถ้าเลือก "ลบรูปภาพ" ให้ลบไฟล์เก่าออกจาก storage และตั้งค่า image_path เป็น null
+
+                // ถ้าเลือก "ลบรูปภาพ" ให้ลบไฟล์เก่าออกจาก storage และตั้งค่า image_path เป็น null
             } elseif ($request->boolean('remove_image')) {
                 if ($course->image_path) {
                     Storage::disk('public')->delete($course->image_path);
@@ -129,7 +130,7 @@ class ManageCourseController extends Controller
             // อัปเดตข้อมูลคอร์ส
             $course->update($courseData);
 
-            // ลบกลุ่มเป้าหมาย/รอบเวลาเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา 
+            // ลบกลุ่มเป้าหมาย/รอบเวลาเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา
             $course->targetGroups()->delete();
             foreach ($data['target_groups'] as $group) {
                 CourseTargetGroup::create([
@@ -143,12 +144,10 @@ class ManageCourseController extends Controller
                 CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
             }
 
-            // อัปเดตแพ็กเกจแรกของคอร์ส (ถ้ามี) หรือสร้างใหม่ถ้าไม่มี
-            $package = $course->packages()->first();
-            if ($package) {
-                $package->update($data['package']);
-            } else {
-                CoursePackage::create(array_merge($data['package'], ['course_id' => $course->id]));
+            // สร้างแพ็กเกจใหม่จากรายการในฟอร์มทั้งหมด
+            $course->packages()->delete();
+            foreach ($data['packages'] as $package) {
+                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
             }
         });
 
@@ -177,7 +176,7 @@ class ManageCourseController extends Controller
     /**
      * PATCH /admin/courses/{course}/toggle-status -> route('admin.courses.toggleStatus')
      * เปิด/ปิดการใช้งานคอร์ส โดยสลับค่า is_active ของแพ็กเกจแรกของคอร์สนี้
-     * (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส 
+     * (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส
      */
     public function toggleStatus(Course $course)
     {
@@ -197,46 +196,51 @@ class ManageCourseController extends Controller
             ->route('admin.courses')
             ->with('success', 'เปลี่ยนสถานะคอร์ส "'.$course->course_name.'" เป็น '.$statusText.' แล้ว');
     }
-    
+
     /**
      * Validate + normalize ข้อมูลจากฟอร์ม แล้วแยกเป็น 3 กลุ่ม: course / target_groups / schedules / package
      */
     private function validated(Request $request): array
     {
         $validated = $request->validate([
-            'course_name'    => ['required', 'string', 'max:255'],
-            'min_age'        => ['required', 'integer', 'min:0'],
-            'max_age'        => ['nullable', 'integer', 'gte:min_age'],
-            'description'    => ['nullable', 'string'],
-            'image'          => ['nullable', 'image', 'max:2048'], // สูงสุด 2MB
+            'course_name' => ['required', 'string', 'max:255'],
+            'min_age' => ['required', 'integer', 'min:0'],
+            'max_age' => ['nullable', 'integer', 'gte:min_age'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'max:2048'], // สูงสุด 2MB
 
-            'target_groups'             => ['required', 'array', 'min:1'],
-            'target_groups.*'           => ['required', 'in:Rookie,Beginner,Junior,Player'],
+            'target_groups' => ['required', 'array', 'min:1'],
+            'target_groups.*' => ['required', 'in:Rookie,Beginner,Junior,Player'],
 
-            'schedules'                 => ['required', 'array', 'min:1'],
-            'schedules.*.day_type'      => ['required', 'in:weekday,weekend'],
+            'schedules' => ['required', 'array', 'min:1'],
+            'schedules.*.day_type' => ['nullable', 'in:weekday,weekend'],
+            'schedules.*.weekdays' => ['required', 'array', 'min:1'],
+            'schedules.*.weekdays.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
             'schedules.*.court_section_id' => ['nullable', 'exists:court_sections,id'],
-            'schedules.*.start_time'    => ['required', 'date_format:H:i'],
-            'schedules.*.end_time'      => ['required', 'date_format:H:i', 'after:schedules.*.start_time'],
+            'schedules.*.start_time' => ['required', 'date_format:H:i'],
+            'schedules.*.end_time' => ['required', 'date_format:H:i', 'after:schedules.*.start_time'],
             'schedules.*.is_limited_spots' => ['nullable', 'boolean'],
             // ถ้าติ๊ก "จำกัดจำนวน" (is_limited_spots = 1) ต้องกรอกจำนวนคนสูงสุดด้วยเสมอ
-            'schedules.*.capacity'      => ['nullable', 'required_if:schedules.*.is_limited_spots,1', 'integer', 'min:1'],
+            'schedules.*.capacity' => ['nullable', 'required_if:schedules.*.is_limited_spots,1', 'integer', 'min:1'],
 
-            'package_type'         => ['required', 'in:group,private'],
-            'total_sessions'       => ['required', 'integer', 'min:1'],
-            'total_price'          => ['required', 'numeric', 'min:0'],
-            'validity_value'       => ['required', 'integer', 'min:1'],
-            'validity_unit'        => ['required', 'in:days,hours'],
-            'recommendation_text'  => ['nullable', 'string', 'max:255'],
+            'packages' => ['required', 'array', 'min:1'],
+            'packages.*.package_type' => ['required', 'in:group,private'],
+            'packages.*.total_sessions' => ['required', 'integer', 'min:1'],
+            'packages.*.total_price' => ['required', 'numeric', 'min:0'],
+            'packages.*.validity_value' => ['required', 'integer', 'min:1'],
+            'packages.*.validity_unit' => ['required', 'in:days,hours'],
+            'packages.*.recommendation_text' => ['nullable', 'string', 'max:255'],
         ], [
             'schedules.*.capacity.required_if' => 'กรุณากรอกจำนวนคนสูงสุด เมื่อเลือก "จำกัดจำนวน" สำหรับรอบเวลาเรียนนี้',
         ]);
+
         // วนลูปทุกข้อมูลใน Array แล้วแปลงข้อมูลใหม่กลับมาเป็น Array อีกชุดหนึ่ง
         $schedules = array_map(function ($schedule) {
             $isLimited = filter_var($schedule['is_limited_spots'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             return [
                 'day_type' => $schedule['day_type'],
+                'weekdays' => array_values($schedule['weekdays']),
                 'court_section_id' => $schedule['court_section_id'] ?? null,
                 'start_time' => $schedule['start_time'],
                 'end_time' => $schedule['end_time'],
@@ -245,27 +249,31 @@ class ManageCourseController extends Controller
                 // ถ้าไม่จำกัด ให้บันทึกเป็น NULL เสมอ แม้ client จะส่งค่าอะไรมาก็ตาม
                 'capacity' => $isLimited ? (int) $schedule['capacity'] : null,
             ];
-        }, $validated['schedules']);
+        }, $validated['schedules'] ?? []);
+
+        $packages = array_map(function ($package) {
+            return [
+                'package_type' => $package['package_type'],
+                'total_sessions' => (int) $package['total_sessions'],
+                'total_price' => $package['total_price'],
+                'price_per_session' => round($package['total_price'] / $package['total_sessions'], 2),
+                'validity_value' => (int) $package['validity_value'],
+                'validity_unit' => $package['validity_unit'],
+                'recommendation_text' => $package['recommendation_text'] ?? null,
+            ];
+        }, $validated['packages']);
 
         return [
             'course' => [
                 'course_name' => $validated['course_name'],
+                'course_type' => 'schedule',
                 'min_age' => $validated['min_age'],
                 'max_age' => $validated['max_age'] ?? null,
                 'description' => $validated['description'] ?? null,
             ],
-            'target_groups' => array_values(array_unique($validated['target_groups'])),
+            'target_groups' => array_values(array_unique($validated['target_groups'] ?? [])),
             'schedules' => $schedules,
-            'package' => [
-                'package_type' => $validated['package_type'],
-                'total_sessions' => $validated['total_sessions'],
-                'total_price' => $validated['total_price'],
-                // price_per_session คำนวณฝั่ง server เสมอ ไม่เชื่อค่าที่ client ส่งมา
-                'price_per_session' => round($validated['total_price'] / $validated['total_sessions'], 2),
-                'validity_value' => $validated['validity_value'],
-                'validity_unit' => $validated['validity_unit'],
-                'recommendation_text' => $validated['recommendation_text'] ?? null,
-            ],
+            'packages' => $packages,
         ];
     }
 }
