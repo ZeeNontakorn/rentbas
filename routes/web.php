@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CourtController as AdminCourtController;
+use App\Http\Controllers\Admin\CoachController as AdminCoachController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BookingController;
@@ -12,7 +13,12 @@ use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Admin\PricingController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Admin\ManageCourseController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\Admin\CalendarController;
 
+use App\Http\Controllers\Admin\StaffController;
+use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -24,7 +30,7 @@ Route::get('/media/{path}', function (string $path) {
     $base = realpath(storage_path('app/public'));
     $full = realpath(storage_path('app/public/' . $path));
 
-    if (! $full || ! str_starts_with($full, $base)) {
+    if (!$full || !str_starts_with($full, $base)) {
         abort(404);
     }
 
@@ -94,32 +100,71 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     });
 });
 
+    Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+
+ // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
-
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/coach', [AdminCoachController::class, 'index'])->name('coach.index');
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
     Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
     Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
+
+    // จัดการสนาม (เปลี่ยนชื่อกลับมาเป็นแบบเดิมของคุณทั้งหมดแล้ว)
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
     Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
     Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
     Route::post('/courts/{court}/status', [AdminCourtController::class, 'updateStatus'])->name('courts.status');
     Route::post('/courts/slot', [AdminCourtController::class, 'updateSlot'])->name('courts.slot');
+    Route::delete('/courts/{court}', [AdminCourtController::class, 'destroy'])->name('destroy');
+
     Route::post('/courts/{court}/sections/split', [AdminCourtController::class, 'splitSection'])->name('courts.sections.split');
     Route::post('/courts/{court}/sections/merge', [AdminCourtController::class, 'mergeSections'])->name('courts.sections.merge');
     Route::put('/court-sections/{courtSection}', [AdminCourtController::class, 'updateSection'])->name('court-sections.update');
     Route::post('/courts/{court}/slot-settings', [AdminCourtController::class, 'updateSlotSettings'])->name('courts.slot-settings');
+    
+     // Manage Courses
+    Route::get('/courses', [ManageCourseController::class, 'index'])->name('courses');
+    Route::get('/courses/create', [ManageCourseController::class, 'create'])->name('courses.create');
+    Route::post('/courses', [ManageCourseController::class, 'store'])->name('courses.store');
+    Route::get('/courses/{course}/edit', [ManageCourseController::class, 'edit'])->name('courses.edit');
+    Route::put('/courses/{course}', [ManageCourseController::class, 'update'])->name('courses.update');
+    Route::delete('/courses/{course}', [ManageCourseController::class, 'destroy'])->name('courses.destroy');
+    
+    Route::patch('/courses/{course}/toggle-status', [ManageCourseController::class, 'toggleStatus'])
+    ->name('courses.toggleStatus');
+
+    Route::get('/courses/calendar', [CalendarController::class, 'calendar'])
+    ->name('courses.calendar');
+    Route::get('/courses/calendar/events', [CalendarController::class, 'events'])->name('courses.calendar.events');
+    Route::post('/courses/calendar/events', [CalendarController::class, 'store'])->name('courses.calendar.events.store');
+    Route::put('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'update'])->name('courses.calendar.events.update');
+    Route::delete('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'destroy'])->name('courses.calendar.events.destroy');
+    Route::put('/courses/calendar/course-events/{schedule}/{date}', [CalendarController::class, 'updateCourseEvent'])->where('date', '\\d{4}-\\d{2}-\\d{2}')->name('courses.calendar.course-events.update');
+   
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
+    Route::patch('/users/{user}/membership-type', [\App\Http\Controllers\Admin\UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
+    Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.updateRole');
+
+    // จัดการโค้ช และผู้ช่วย
+    Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
+    Route::post('/staffs', [StaffController::class, 'store'])->name('staffs.store');
+    Route::get('/staffs/{staff}', [StaffController::class, 'show'])->name('staffs.show');
+    Route::put('/staffs/{staff}/profile', [StaffController::class, 'updateProfile'])->name('staffs.profile.update');
+    Route::post('/staffs/{staff}/availabilities', [StaffController::class, 'storeAvailability'])->name('staffs.availabilities.store');
+    Route::delete('/staffs/{staff}', [StaffController::class, 'destroy'])->name('staffs.destroy');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
@@ -135,20 +180,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
 });
 
-
-
-
 // 6. Password Reset via OTP
 Route::controller(AuthController::class)->group(function () {
-    Route::get('/forgot-password',  'showForgotPasswordForm')->name('password.request');
+    Route::get('/forgot-password', 'showForgotPasswordForm')->name('password.request');
     Route::post('/forgot-password', 'sendResetLinkEmail')->name('password.email');
 
-    Route::get('/reset-otp',        'showResetOtpForm')->name('password.otp.form');
-    Route::post('/reset-otp',       'verifyResetOtp')->name('password.otp.verify');
+    Route::get('/reset-otp', 'showResetOtpForm')->name('password.otp.form');
+    Route::post('/reset-otp', 'verifyResetOtp')->name('password.otp.verify');
 
-    Route::get('/reset-password',   'showResetPasswordForm')->name('password.reset.form');
-    Route::post('/reset-password',  'resetPassword')->name('password.reset');
+    Route::get('/reset-password', 'showResetPasswordForm')->name('password.reset.form');
+    Route::post('/reset-password', 'resetPassword')->name('password.reset');
 });
 
 
-
+Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
+    ->name('admin.courts.images.update');

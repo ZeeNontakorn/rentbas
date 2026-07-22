@@ -328,6 +328,122 @@ html { scroll-behavior: smooth; }
     border-radius: 6px; text-align: center; cursor: not-allowed;
 }
 
+/* ─── COURSES / BASKETBALL SCHOOL SECTION ─── */
+.courses-section {
+    background: var(--cream);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.courses-header { text-align: center; margin-bottom: 40px; }
+.courses-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.courses-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.courses-subtitle { font-size: 13.5px; color: #868e96; }
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+.courses-group + .courses-group { margin-top: 48px; }
+.courses-group-title { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; color: var(--ink); font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 700; }
+.courses-group-title::before { width: 5px; height: 26px; border-radius: 8px; background: var(--ore); content: ''; }
+.session-chip { display: inline-flex; width: fit-content; margin-bottom: 14px; background: #ede9fe; color: #6d28d9; }
+
+/* card */
+.course-card2 {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #edeff2;
+    box-shadow: 0 2px 10px rgba(13,15,30,.04);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+.course-card2:hover { transform: translateY(-6px); box-shadow: 0 20px 36px rgba(13,15,30,.12); }
+
+/* image + overlay title */
+.course-thumb2 { height: 190px; position: relative; overflow: hidden; }
+.course-thumb2 img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.course-card2:hover .course-thumb2 img { transform: scale(1.08); }
+.course-thumb2-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,15,30,.92) 0%, rgba(13,15,30,.15) 55%, rgba(13,15,30,0) 100%);
+}
+.course-badge-featured {
+    position: absolute; top: 12px; right: 12px; z-index: 1;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 5px 11px; border-radius: 20px; letter-spacing: .03em;
+    box-shadow: 0 4px 10px rgba(232,108,42,.35);
+}
+.course-name2 {
+    position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 1;
+    font-family: 'Kanit', sans-serif; font-size: 18px; font-weight: 700;
+    color: #fff; line-height: 1.25;
+}
+
+/* body */
+.course-body2 { padding: 16px 18px 20px; display: flex; flex-direction: column; flex: 1; }
+.course-meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.course-chip {
+    font-size: 10.5px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; background: #f1f3f5; color: #495057;
+}
+.course-chip-age { background: rgba(232,108,42,.1); color: var(--ore-d); }
+
+.course-desc2 {
+    font-size: 12.5px; color: #868e96; line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.course-info-block {
+    background: #f8f9fa; border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 16px;
+}
+.course-info-line {
+    font-size: 12px; color: #495057; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 0;
+}
+.course-info-line + .course-info-line { border-top: 1px dashed #e9ecef; }
+.course-info-icon { width: 13px; height: 13px; flex-shrink: 0; color: var(--ore); }
+.course-info-muted { color: #adb5bd; }
+.course-spots-tag {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    padding: 2px 9px; border-radius: 20px;
+    background: #fff4e6; color: #e67700; white-space: nowrap;
+}
+
+.course-price-row {
+    margin-top: auto; padding-top: 16px; border-top: 1px solid #f1f3f5;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
+}
+.course-price { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--ink); line-height: 1; letter-spacing: .02em; }
+.course-price-tag {
+    font-size: 10px; font-weight: 700; color: var(--ore);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px;
+}
+.course-price-sub { font-size: 10.5px; color: #adb5bd; margin-top: 3px; }
+.course-btn-enroll {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 16px; background: var(--ink); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 12.5px; font-weight: 600;
+    border-radius: 9px; transition: background .2s, transform .2s; white-space: nowrap;
+}
+.course-btn-enroll:hover { background: var(--ore); }
+.course-btn-arrow { width: 14px; height: 14px; transition: transform .2s; }
+.course-btn-enroll:hover .course-btn-arrow { transform: translateX(3px); }
+
+.courses-empty {
+    text-align: center; color: #adb5bd; padding: 56px 0; font-size: 13.5px;
+}
+.courses-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
+
 /* ─── BOOKING / CALENDAR SECTION ─── */
 .booking-section {
     background: #f8f9fb;
@@ -658,9 +774,12 @@ html { scroll-behavior: smooth; }
     .community-img-wrap { margin-bottom: 36px; }
     .hero-stats { display: none; }
     .courts-grid { grid-template-columns: repeat(2,1fr); }
+    .courses-section { padding-left: 20px !important; padding-right: 20px !important; }
+    .courses-grid { grid-template-columns: repeat(2,1fr); }
 }
 @media (max-width: 480px) {
     .courts-grid { grid-template-columns: 1fr; }
+    .courses-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 52px; }
 }
 
@@ -929,6 +1048,98 @@ html { scroll-behavior: smooth; }
             เข้าร่วมเครือข่ายนักบาสเกตบอลคุณภาพพบปะผู้เล่นระดับสูงและโค้ชมืออาชีพในพื้นที่บางแสน
         </p>
     </div>
+</section>
+
+{{-- ═══ COURSES / BASKETBALL SCHOOL ═══ --}}
+<section class="courses-section" data-aos="fade-up">
+    <div class="courses-header">
+        <p class="courses-label">Basketball Clinic</p>
+        <h2 class="courses-title">โรงเรียนสอนบาสเกตบอล</h2>
+        <p class="courses-subtitle">คอร์สเรียนบาสเกตบอลกับโค้ชมืออาชีพ เลือกคอร์สที่ใช่สำหรับคุณ</p>
+    </div>
+
+@if(($trainingCourses ?? collect())->isEmpty())
+    <div class="courses-empty">
+        <div class="courses-empty-icon">🏀</div>
+        ขณะนี้ยังไม่มีคอร์สเปิดรับสมัคร
+    </div>
+@else
+    <div class="courses-grid">
+        @foreach($trainingCourses as $tCourse)
+            @php
+                $tPackage = $tCourse->packages->first();
+                $courseType = $tCourse->course_type;
+            @endphp
+            <div class="course-card2" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                <div class="course-thumb2">
+                    <img src="{{ $tCourse->image_url ?: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop' }}"
+                         alt="{{ $tCourse->course_name }}" {!! $imageFallback !!}>
+                    <div class="course-thumb2-overlay"></div>
+                    @if($tPackage && $tPackage->is_featured)
+                        <span class="course-badge-featured">⭐ แนะนำ</span>
+                    @endif
+                    <div class="course-name2">{{ $tCourse->course_name }}</div>
+                </div>
+                <div class="course-body2">
+                    @if($courseType === 'schedule')
+                    <div class="course-meta-row">
+                        @foreach($tCourse->targetGroups as $group)
+                            <span class="course-chip">{{ $group->target_group }}</span>
+                        @endforeach
+                        <span class="course-chip course-chip-age">อายุ {{ $tCourse->age_range_label }}</span>
+                    </div>
+
+                    @if($tCourse->description)
+                        <p class="course-desc2">{{ $tCourse->description }}</p>
+                    @endif
+                    @endif
+
+                    @if($courseType === 'schedule')
+                    <div class="course-info-block">
+                        @forelse($tCourse->schedules as $tSchedule)
+                            <div class="course-info-line">
+                                <svg class="course-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>{{ $tSchedule->day_type_label }} · {{ \Illuminate\Support\Carbon::parse($tSchedule->start_time)->format('H:i') }}-{{ \Illuminate\Support\Carbon::parse($tSchedule->end_time)->format('H:i') }} น.</span>
+                                @if($tSchedule->is_limited_spots)
+                                    <span class="course-spots-tag">{{ $tSchedule->spots_label }}</span>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="course-info-line course-info-muted">ยังไม่กำหนดรอบเวลาเรียน</div>
+                        @endforelse
+                    </div>
+                    @else
+                        <span class="course-chip session-chip">Session Course</span>
+                        <p class="course-desc2">คอร์สรายครั้ง ดูรายละเอียดเพิ่มเติมจากภาพประกอบ</p>
+                    @endif
+
+                    @if($tPackage)
+                        @if($tCourse->packages->count() > 1)
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                @foreach($tCourse->packages as $coursePackage)
+                                    <span class="course-chip">{{ $coursePackage->total_sessions }} ครั้ง · {{ number_format($coursePackage->total_price, 0) }} บาท</span>
+                                @endforeach
+                            </div>
+                        @endif
+                        <div class="course-price-row">
+                            <div>
+                                <div class="course-price-tag">เริ่มต้น</div>
+                                <div class="course-price">฿{{ number_format($tPackage->total_price, 0) }}</div>
+                                <div class="course-price-sub">
+                                    {{ $tPackage->total_sessions }} ครั้ง ({{ number_format($tPackage->price_per_session, 0) }} บาท/ครั้ง) · {{ $tPackage->validity_label }}
+                                </div>
+                            </div>
+                            <a href="{{ route('courses.show', $tCourse) }}" class="course-btn-enroll">
+                                สมัครเรียนเลย
+                                <svg class="course-btn-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+@endif
 </section>
 
 {{-- ═══ PROMOTIONS ═══ --}}

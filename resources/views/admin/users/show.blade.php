@@ -63,6 +63,20 @@
                                 ยังไม่ยืนยัน OTP
                             </span>
                         @endif
+
+                        @if(in_array($user->role, ['admin', 'superadmin'], true))
+                            <span class="inline-flex items-center gap-1 text-gray-500 font-semibold">
+                                {{ $user->role === 'superadmin' ? 'แอดมิน' : 'แอดมิน' }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 text-orange-600 font-medium">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {{ $user->membershipTypeLabel() }}
+                            </span>
+                        @endif
                     </div>
                 </div>
 
