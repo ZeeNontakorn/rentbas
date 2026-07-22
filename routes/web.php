@@ -11,6 +11,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Admin\CalendarController;
+use App\Http\Controllers\PrivateTrainingController;
 
 use App\Http\Controllers\Admin\StaffController;
 use Illuminate\Support\Facades\Route;
@@ -80,6 +81,14 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     // History
     Route::get('/history', [BookingController::class, 'history'])->name('history');
 
+    // Private Training (จองเทรนเนอร์ส่วนตัว) — ฝั่ง user
+    Route::prefix('private-training')->name('private-training.')->group(function () {
+        Route::get('/', [PrivateTrainingController::class, 'index'])->name('index');
+        Route::get('/{coach}', [PrivateTrainingController::class, 'show'])->name('show');
+        Route::post('/', [PrivateTrainingController::class, 'store'])->name('store');
+        Route::post('/{privateTrainingBooking}/cancel', [PrivateTrainingController::class, 'cancel'])->name('cancel');
+    });
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
@@ -143,6 +152,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{user}/membership-type', [\App\Http\Controllers\Admin\UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
     Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.updateRole');
+
+    // จัดการคำขอจองเทรนเนอร์ส่วนตัว
+    Route::get('/private-training', [PrivateTrainingController::class, 'adminIndex'])->name('private-training.index');
+    Route::post('/private-training/{privateTrainingBooking}/approve', [PrivateTrainingController::class, 'approve'])->name('private-training.approve');
+    Route::post('/private-training/{privateTrainingBooking}/reject', [PrivateTrainingController::class, 'reject'])->name('private-training.reject');
 
     // จัดการโค้ช และผู้ช่วย
     Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
