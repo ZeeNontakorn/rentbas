@@ -91,6 +91,23 @@
 .cal-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: #6b7280; font-family: 'Kanit', sans-serif; }
 .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .cal-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* ===== Pricing option cards (เลือกรูปแบบราคา) ===== */
+.price-option {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+    border: 1.5px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    font-family: 'Kanit', sans-serif;
+}
+.price-option:hover { border-color: #87D068; background: #f7fdf4; }
+.price-option.selected { border-color: #87D068; background: #f0faec; box-shadow: 0 0 0 1px #87D068 inset; }
+.price-option input[type="radio"] { margin-top: 3px; accent-color: #87D068; flex-shrink: 0; }
+.price-option .po-title { font-weight: 700; font-size: 13.5px; color: #111827; }
+.price-option .po-sub { font-size: 11.5px; color: #9ca3af; font-family: 'Sarabun', sans-serif; margin-top: 1px; }
+.price-option .po-badge {
+    font-size: 10px; font-weight: 700; background: #fef3c7; color: #92400e;
+    border-radius: 999px; padding: 1px 8px; margin-left: 6px; display: inline-block;
+    font-family: 'Sarabun', sans-serif;
+}
 </style>
 
 <div class="bk-main max-w-[1200px] mx-auto px-4 py-8" data-aos="fade-up">
@@ -224,8 +241,30 @@
                         <p>สนามที่ <span class="font-bold">{{ str_replace('สนามที่ ', '', $selectedCourt?->name) }}</span></p>
                     </div>
                     <div id="confirmList" class="flex flex-col gap-2 text-[14px] text-gray-900 mt-2"></div>
+
+                    {{-- BOX เลือกรูปแบบราคา (แสดงเมื่อเลือกช่วงเวลาไว้ 1 รายการ — ตรงกับข้อจำกัดของระบบชำระเงินตอนนี้) --}}
+                    <div id="pricingBox" class="hidden mt-3 pt-4 border-t border-gray-100">
+                        <p class="font-bold text-[14px] text-gray-900 mb-3">เลือกรูปแบบราคา</p>
+                        <div id="pricingOptions" class="flex flex-col gap-2"></div>
+
+                        <div id="priceSummary" class="mt-4 pt-3 border-t border-dashed border-gray-200 hidden">
+                            <div id="priceBreakdown" class="flex flex-col gap-1 text-[13px] text-gray-500"></div>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="font-bold text-[14px] text-gray-900">ยอดรวม</span>
+                                <span id="priceTotal" class="font-black text-[20px] text-[#87D068]">฿0</span>
+                            </div>
+                        </div>
+                        <p id="priceLoading" class="hidden text-[13px] text-gray-400 mt-2">กำลังคำนวณราคา...</p>
+                        <p id="priceError" class="hidden text-[13px] text-red-500 mt-2"></p>
+                    </div>
+
+                    {{-- กรณีเลือกไว้มากกว่า 1 ช่วงเวลา — ระบบยังไม่รองรับเลือกโปรโมชั่น (ต้องยืนยันทีละรายการ) --}}
+                    <div id="pricingMultiNote" class="hidden mt-3 pt-4 border-t border-gray-100 text-[13px] text-gray-400">
+                        เลือกไว้มากกว่า 1 ช่วงเวลา — ระบบจะคิดราคาแบบรายชั่วโมงปกติ กรุณาลบให้เหลือ 1 รายการหากต้องการเลือกโปรโมชั่น
+                    </div>
+
                     <div class="flex justify-end mt-2">
-                        <button type="button" onclick="submitBooking()" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition">
+                        <button type="button" id="confirmSubmitBtn" onclick="submitBooking()" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
                             ยืนยัน
                         </button>
                     </div>
@@ -284,6 +323,10 @@ const TODAY_STR = '{{ now()->toDateString() }}';
 const PAGE_DATE = '{{ $date }}';
 // รหัส section (full / a / b ...) ต่อ id — ใช้เช็คว่า section ไหนเป็น "เต็มสนาม"
 const SECTION_CODES = @json(collect($matrix['sections'])->pluck('code', 'id'));
+// แพ็กเกจโปรโมชั่นที่เปิดใช้งาน (ดึงจากตั้งค่าราคา > แพ็กเกจโปรโมชั่น ฝั่งแอดมิน)
+const PROMO_PACKAGES = @json($promotionPackages);
+let selectedPromoCode = null; // null = ราคาปกติ (รายชั่วโมง)
+let quoteRequestSeq = 0; // กัน race condition เวลายิง quote ซ้อนกันเร็วๆ (เลือกสลับตัวเลือกถี่ๆ)
 
 function timeToMin(t) {
     const [h, m] = t.split(':').map(Number);
@@ -528,6 +571,131 @@ function updateConfirmBox() {
             <span class="text-gray-500"><span class="text-gray-400">(${s.sectionName})</span> เวลา <span class="font-bold text-gray-900">${s.label} น.</span></span>
             <button type="button" onclick="removeSelectionByIndex(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
         </div>`).join('');
+
+    renderPricingBox();
+}
+
+// แสดงตัวเลือก "รูปแบบราคา" (ราคาปกติ / แพ็กเกจโปรโมชั่นที่ตรงเงื่อนไข) เฉพาะตอนเลือกไว้ 1 ช่วงเวลา
+// เพราะระบบชำระเงิน (checkout.reserve) รองรับจองทีละ 1 รายการต่อการชำระเงิน 1 ครั้งเท่านั้น
+function renderPricingBox() {
+    const pricingBox = document.getElementById('pricingBox');
+    const multiNote = document.getElementById('pricingMultiNote');
+    const optionsEl = document.getElementById('pricingOptions');
+
+    if (selections.length !== 1) {
+        pricingBox.classList.add('hidden');
+        multiNote.classList.toggle('hidden', selections.length === 0);
+        return;
+    }
+    multiNote.classList.add('hidden');
+    pricingBox.classList.remove('hidden');
+
+    const sel = selections[0];
+    const courtType = (SECTION_CODES[sel.sectionId] === 'full') ? 'full' : 'half';
+    const durationHours = (timeToMin(sel.end) - timeToMin(sel.start)) / 60;
+
+    // แพ็กเกจที่ "ใช้ได้" กับช่วงที่เลือก: private ไม่เช็คระยะเวลา (เป็นคอร์สนัดเรียน)
+    // ส่วนอื่นต้องจองต่อเนื่องพอดีตาม duration_hours ของแพ็กเกจ (เงื่อนไขเดียวกับฝั่ง server ใน PricingService)
+    const matched = PROMO_PACKAGES.filter(p =>
+        p.category === 'private' || Number(p.duration_hours) === durationHours
+    );
+
+    let html = `
+        <label class="price-option selected" data-code="">
+            <input type="radio" name="pricingOption" value="" checked onchange="onPricingOptionChange(this)">
+            <div>
+                <div class="po-title">ราคาปกติ (คิดตามช่วงเวลา)</div>
+                <div class="po-sub">คิดตามอัตราค่าบริการรายชั่วโมงของสนาม ${courtType === 'full' ? 'เต็มสนาม' : 'ครึ่งสนาม'}</div>
+            </div>
+        </label>`;
+
+    matched.forEach(p => {
+        const priceBaht = (p.base_price / 100).toLocaleString('th-TH');
+        let sub = `${p.duration_hours} ชั่วโมง${p.max_people ? ' · สูงสุด ' + p.max_people + ' คน' : ''} · เริ่มต้น ฿${priceBaht}`;
+        html += `
+        <label class="price-option" data-code="${p.code}">
+            <input type="radio" name="pricingOption" value="${p.code}" onchange="onPricingOptionChange(this)">
+            <div>
+                <div class="po-title">${p.label}${p.requires_verification ? '<span class="po-badge">ต้องยืนยันสถานะ</span>' : ''}</div>
+                <div class="po-sub">${sub}</div>
+            </div>
+        </label>`;
+    });
+
+    optionsEl.innerHTML = html;
+    selectedPromoCode = null;
+    fetchQuote();
+}
+
+function onPricingOptionChange(radioEl) {
+    document.querySelectorAll('.price-option').forEach(el => el.classList.remove('selected'));
+    radioEl.closest('.price-option').classList.add('selected');
+    selectedPromoCode = radioEl.value || null;
+    fetchQuote();
+}
+
+// เรียก checkout.quote แบบ real-time เพื่อ preview ราคาจริงก่อนกดยืนยัน (ไม่ล็อกสล็อต ไม่สร้าง booking)
+function fetchQuote() {
+    if (selections.length !== 1) return;
+    const sel = selections[0];
+    const courtType = (SECTION_CODES[sel.sectionId] === 'full') ? 'full' : 'half';
+    const mySeq = ++quoteRequestSeq;
+
+    const summary = document.getElementById('priceSummary');
+    const loading = document.getElementById('priceLoading');
+    const errorEl = document.getElementById('priceError');
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+
+    summary.classList.add('hidden');
+    errorEl.classList.add('hidden');
+    loading.classList.remove('hidden');
+    submitBtn.disabled = true;
+
+    fetch("{{ route('checkout.quote') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({
+            date: PAGE_DATE,
+            start_time: sel.start,
+            end_time: sel.end,
+            court_type: courtType,
+            promotion_code: selectedPromoCode,
+        }),
+    })
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+            if (mySeq !== quoteRequestSeq) return; // มีการเลือกใหม่แซงไปแล้ว ทิ้งผลลัพธ์เก่า
+            loading.classList.add('hidden');
+
+            if (!ok) {
+                errorEl.textContent = data.message || 'ไม่สามารถคำนวณราคาได้ กรุณาลองใหม่';
+                errorEl.classList.remove('hidden');
+                submitBtn.disabled = true;
+                return;
+            }
+
+            const breakdownEl = document.getElementById('priceBreakdown');
+            breakdownEl.innerHTML = (data.breakdown || []).map(b => `
+                <div class="flex justify-between">
+                    <span>${b.label}${b.minutes ? ' (' + Math.round(b.minutes) + ' นาที)' : ''}</span>
+                    <span>฿${(b.price / 100).toLocaleString('th-TH')}</span>
+                </div>`).join('');
+
+            document.getElementById('priceTotal').textContent = '฿' + data.total_baht.toLocaleString('th-TH', { minimumFractionDigits: 0 });
+            summary.classList.remove('hidden');
+            submitBtn.disabled = false;
+        })
+        .catch(() => {
+            if (mySeq !== quoteRequestSeq) return;
+            loading.classList.add('hidden');
+            errorEl.textContent = 'เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่';
+            errorEl.classList.remove('hidden');
+            submitBtn.disabled = true;
+        });
 }
 
 // วาด/ล้าง overlay สีเทาทับฝั่งตรงข้าม (เต็มสนาม <-> ครึ่งสนาม) ตามที่กำลังเลือกอยู่ตอนนี้
@@ -577,6 +745,7 @@ function submitBooking() {
         booking_date: '{{ $date }}',
         start_time: only.start,
         end_time: only.end,
+        promotion_code: selectedPromoCode || '',
     };
     Object.entries(fields).forEach(([name, value]) => {
         const input = document.createElement('input');

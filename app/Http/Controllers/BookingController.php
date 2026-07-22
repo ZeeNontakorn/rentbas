@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtSection;
 use App\Models\Notification;
+use App\Models\PromotionPackage;
 use App\Models\User;
 use App\Services\PricingService;
 use Carbon\Carbon;
@@ -50,7 +51,13 @@ class BookingController extends Controller
         // เก็บ $slots (แบบเดิม เต็มสนาม/รายชั่วโมง) ไว้เพื่อ backward-compat กับโค้ด/วิวอื่นที่อาจยังอ้างอิงอยู่
         $slots = $matrix ? $matrix['legacySlots'] : [];
 
-        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix'));
+        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ใช้ร่วมกับหน้า calendar (JS ฝั่ง client กรองเองว่าอันไหน "ใช้ได้")
+        $promotionPackages = PromotionPackage::where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('duration_hours')
+            ->get();
+
+        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix', 'promotionPackages'));
     }
 
     /**
@@ -90,7 +97,14 @@ class BookingController extends Controller
         'sections' => collect($r['sections'])->map(fn($s) => $s['status'])->all(),
         ])->all();
 
-        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows'));
+        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ส่งให้หน้าจอเลือกช่วงเวลาไว้เสนอเป็นทางเลือกราคา
+        // (JS ฝั่ง client จะกรองเองว่าอันไหน "ใช้ได้" กับช่วงเวลา/วันที่ที่ผู้ใช้เลือก)
+        $promotionPackages = PromotionPackage::where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('duration_hours')
+            ->get();
+
+        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows', 'promotionPackages'));
     }
 
     /**
@@ -501,10 +515,15 @@ class BookingController extends Controller
         $userId = $request->user()->id;
         $today = now()->toDateString();
 
+        // เคลียร์สล็อตที่ล็อกไว้เกิน 15 นาทีแบบ opportunistic ก่อนอ่านข้อมูล (เหมือนที่ทำตอนเข้า
+        // หน้าเลือกเวลา/checkout) กัน "pending_payment" เก่าที่หมดเวลาไปแล้วแต่ยังไม่ถูกอัปเดตสถานะ
+        // ค้างอยู่ในแท็บ "รายการปัจจุบัน" ให้เห็น
+        CheckoutController::releaseStaleLocks();
+
         $current = Booking::with('court')
             ->where('user_id', $userId)
             ->where(function ($q) use ($today) {
-                $q->whereIn('status', ['pending', 'approved'])
+                $q->whereIn('status', ['pending', 'approved', 'pending_payment'])
                     ->whereDate('booking_date', '>=', $today);
             })
             ->orderBy('booking_date')
@@ -514,7 +533,7 @@ class BookingController extends Controller
         $past = Booking::with('court')
             ->where('user_id', $userId)
             ->where(function ($q) use ($today) {
-                $q->whereIn('status', ['rejected', 'cancelled'])
+                $q->whereIn('status', ['rejected', 'cancelled', 'expired'])
                     ->orWhereDate('booking_date', '<', $today);
             })
             ->orderByDesc('updated_at')
