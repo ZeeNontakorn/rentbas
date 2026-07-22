@@ -36,9 +36,10 @@ class PrivateTrainingController extends Controller
         $myRequests = PrivateTrainingBooking::with('coach')
             ->where('user_id', $request->user()->id)
             ->whereDate('date', '>=', now()->toDateString())
-            ->whereIn('status', ['pending', 'approved'])
-            ->orderBy('date')
-            ->orderBy('start_time')
+            // ->whereIn('status', ['pending', 'approved'])
+            // ->orderBy('date')
+            // ->orderBy('start_time')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return view('private-training.index', compact('coaches', 'search', 'myRequests'));

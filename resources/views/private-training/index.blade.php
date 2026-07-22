@@ -4,8 +4,11 @@
 
 @php
     $statusMap = [
-        'pending' => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
+        'pending'  => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
         'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
+        'rejected' => ['label' => 'ถูกปฏิเสธ', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
+        'canceled' => ['label' => 'ยกเลิก', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
+        // 'cancelled' => ['label' => 'ยกเลิก', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'], (เผื่อฐานข้อมูลใช้ l สองตัว)
     ];
 @endphp
 
@@ -13,32 +16,38 @@
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-6 max-w-7xl">
 
-        <div class="mb-6">
-            <h1 class="text-2xl font-semibold text-gray-800">เทรนเนอร์ส่วนตัว (Private Training)</h1>
-            <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
+        {{-- ส่วน Title และ ช่องค้นหา --}}
+        <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-800">เทรนเนอร์ส่วนตัว (Private Training)</h1>
+                <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
+            </div>
+
+            {{-- ค้นหา --}}
+            <form method="GET" action="{{ route('private-training.index') }}" class="flex w-full md:w-96">
+                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="ค้นหาชื่อโค้ช..."
+                    class="w-full border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
+                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
+                    </svg>
+                    ค้นหา
+                </button>
+            </form>
         </div>
 
-        {{-- ค้นหา --}}
-        <form method="GET" action="{{ route('private-training.index') }}" class="mb-6 flex w-full md:w-96">
-            <input type="text" name="search" value="{{ $search }}" placeholder="ค้นหาชื่อโค้ช..."
-                class="w-full border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
-            <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
-                </svg>
-                ค้นหา
-            </button>
-        </form>
-
         {{-- คำขอของฉัน --}}
-        @if($myRequests->isNotEmpty())
+        @if(isset($myRequests) && $myRequests->isNotEmpty())
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100">
                     <h2 class="font-medium text-gray-700 text-sm">คำขอจองเทรนเนอร์ของฉัน</h2>
                 </div>
                 <div class="divide-y divide-gray-100">
                     @foreach($myRequests as $r)
-                        @php $sInfo = $statusMap[$r->status] ?? $statusMap['pending']; @endphp
+                        {{-- ดึงข้อมูลสีและข้อความตามสถานะ (ถ้าไม่มีให้ fallback เป็นสีเทาแทน) --}}
+                        @php 
+                            $sInfo = $statusMap[$r->status] ?? ['label' => $r->status, 'bg' => 'bg-gray-100', 'text' => 'text-gray-600']; 
+                        @endphp
                         <div class="px-6 py-3 flex items-center justify-between flex-wrap gap-2">
                             <div class="text-sm text-gray-700">
                                 <span class="font-medium">โค้ช {{ $r->coach->name }}</span>
@@ -48,7 +57,12 @@
                                 {{ substr($r->start_time, 0, 5) }} - {{ substr($r->end_time, 0, 5) }} น.
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs px-2.5 py-1 rounded-full font-medium {{ $sInfo['bg'] }} {{ $sInfo['text'] }}">{{ $sInfo['label'] }}</span>
+                                {{-- Badge สถานะ --}}
+                                <span class="text-xs px-2.5 py-1 rounded-full font-medium {{ $sInfo['bg'] }} {{ $sInfo['text'] }}">
+                                    {{ $sInfo['label'] }}
+                                </span>
+                                
+                                {{-- ปุ่มยกเลิก จะแสดงเฉพาะเมื่อสถานะเป็น pending เท่านั้น --}}
                                 @if($r->status === 'pending')
                                     <form method="POST" action="{{ route('private-training.cancel', $r) }}" class="cancel-form">
                                         @csrf
