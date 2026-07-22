@@ -8,6 +8,11 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Admin\CreditController;
+use App\Http\Controllers\Admin\PricingController;
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Admin\CalendarController;
@@ -84,6 +89,15 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+
+
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+        Route::post('/quote', [CheckoutController::class, 'quote'])->name('quote');
+        Route::post('/reserve', [CheckoutController::class, 'reserve'])->name('reserve');
+        Route::get('/{booking}', [CheckoutController::class, 'show'])->name('show');
+        Route::post('/{booking}/pay/credit', [CheckoutController::class, 'payWithCredit'])->name('pay.credit');
+        Route::post('/{booking}/pay/promptpay', [CheckoutController::class, 'payWithPromptpay'])->name('pay.promptpay');
+    });
 });
 
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
@@ -155,6 +169,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
     Route::post('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('edit.text.update');
+    Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
+    ->name('admin.courts.images.update');
+
+    Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
+    Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
+
+    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
+    Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
+    Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
 });
 
 // 6. Password Reset via OTP

@@ -21,12 +21,23 @@ class Booking extends Model
         'end_time',
         'status',
         'reject_reason',
+        // === เพิ่มสำหรับ Credit / Payment / Concurrency feature ===
+        'booking_source',       // manual | credit | promptpay
+        'payment_method',       // credit | promptpay
+        'payment_status',       // unpaid | pending_slip | paid | failed | refunded
+        'price',                // สตางค์
+        'pricing_rule_id',
+        'promotion_package_id',
+        'price_breakdown',      // JSON: รายละเอียดราคา ณ ตอนจอง (ใช้แสดงในใบเสร็จ)
+        'locked_until',
     ];
 
     protected function casts(): array
     {
         return [
             'booking_date' => 'date',
+            'locked_until' => 'datetime',
+            'price_breakdown' => 'array',
         ];
     }
 
@@ -50,13 +61,36 @@ class Booking extends Model
         return $this->belongsTo(CourtSection::class);
     }
 
+    public function pricingRule(): BelongsTo
+    {
+        return $this->belongsTo(PricingRule::class);
+    }
+
+    public function promotionPackage(): BelongsTo
+    {
+        return $this->belongsTo(PromotionPackage::class);
+    }
+
+    public function creditTransactions()
+    {
+        return $this->hasMany(CreditTransaction::class);
+    }
+
+    public function paymentSlips()
+    {
+        return $this->hasMany(PaymentSlip::class);
+    }
+
     /**
-     * Scope: find bookings that overlap a given time range on a given day.
-     * Two ranges overlap when start < other.end AND end > other.start.
-     *
-     * @deprecated ใช้ scopeOverlappingSection() แทน เพราะเช็คแค่ court_id เดิม
-     * ไม่รู้จักเรื่องครึ่งสนาม (จอง full ที่ court นี้จะไม่ไปชนกับ booking ที่ผูกกับ
-     * court_id เดียวกันแต่คนละ section) เก็บไว้เผื่อโค้ดเก่าที่ยังไม่ได้ย้ายมาใช้ตัวใหม่
+     * ราคาแบบบาท (float) สำหรับแสดงผล — price เก็บเป็นสตางค์ในฐานข้อมูล
+     */
+    public function getPriceBahtAttribute(): ?float
+    {
+        return $this->price === null ? null : $this->price / 100;
+    }
+
+    /**
+     * @deprecated ใช้ scopeOverlappingSection() แทน
      */
     public function scopeOverlapping(Builder $query, int $courtId, string $date, string $start, string $end): Builder
     {
@@ -70,24 +104,29 @@ class Booking extends Model
     }
 
     /**
-     * Scope: หา booking ที่ทับซ้อนกับช่วงเวลาที่กำหนด โดยพิจารณาความสัมพันธ์ระหว่าง
-     * section ด้วย (จองครึ่ง A ต้องชนกับที่มีคนจอง "เต็มสนาม" ไว้ก่อนด้วย ไม่ใช่แค่ชนกับ A ตรงๆ
-     * และในทางกลับกัน จอง "เต็มสนาม" ต้องชนกับทั้ง A และ B ที่ถูกจองไปแล้ว)
+     * Scope: หา booking ที่ทับซ้อนกับช่วงเวลาที่กำหนด โดยพิจารณาความสัมพันธ์ระหว่าง section ด้วย
+     *
+     * นับเป็น "ชนกัน/ไม่ว่าง" เมื่อ:
+     *  - status เป็น pending (manual, รอแอดมินอนุมัติ) หรือ approved, หรือ
+     *  - status เป็น pending_payment และยังไม่หมดอายุการล็อก (locked_until > now())
+     *    (ถ้าหมดอายุแล้วแต่ scheduler ยังไม่ทันรัน ให้ถือว่า "ว่าง" ไปเลย กันสล็อตค้าง)
      */
     public function scopeOverlappingSection(Builder $query, CourtSection $section, string $date, string $start, string $end): Builder
     {
         return $query->whereIn('court_section_id', $section->conflictingSectionIds())
             ->whereDate('booking_date', $date)
-            ->whereIn('status', ['pending', 'approved'])
+            ->where(function (Builder $q) {
+                $q->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function (Builder $qq) {
+                        $qq->where('status', 'pending_payment')->where('locked_until', '>', now());
+                    });
+            })
             ->where(function (Builder $q) use ($start, $end) {
                 $q->where('start_time', '<', $end)
                     ->where('end_time', '>', $start);
             });
     }
 
-    /**
-     * True if the booking's start time has already passed.
-     */
     public function isStarted(): bool
     {
         $date = $this->booking_date instanceof Carbon

@@ -8,7 +8,9 @@ use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtSection;
 use App\Models\Notification;
+use App\Models\PromotionPackage;
 use App\Models\User;
+use App\Services\PricingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +51,13 @@ class BookingController extends Controller
         // เก็บ $slots (แบบเดิม เต็มสนาม/รายชั่วโมง) ไว้เพื่อ backward-compat กับโค้ด/วิวอื่นที่อาจยังอ้างอิงอยู่
         $slots = $matrix ? $matrix['legacySlots'] : [];
 
-        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix'));
+        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ใช้ร่วมกับหน้า calendar (JS ฝั่ง client กรองเองว่าอันไหน "ใช้ได้")
+        $promotionPackages = PromotionPackage::where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('duration_hours')
+            ->get();
+
+        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix', 'promotionPackages'));
     }
 
     /**
@@ -89,7 +97,14 @@ class BookingController extends Controller
         'sections' => collect($r['sections'])->map(fn($s) => $s['status'])->all(),
         ])->all();
 
-        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows'));
+        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ส่งให้หน้าจอเลือกช่วงเวลาไว้เสนอเป็นทางเลือกราคา
+        // (JS ฝั่ง client จะกรองเองว่าอันไหน "ใช้ได้" กับช่วงเวลา/วันที่ที่ผู้ใช้เลือก)
+        $promotionPackages = PromotionPackage::where('is_active', true)
+            ->orderBy('category')
+            ->orderBy('duration_hours')
+            ->get();
+
+        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows', 'promotionPackages'));
     }
 
     /**
@@ -120,7 +135,13 @@ class BookingController extends Controller
 
         $bookings = Booking::where('court_id', $court->id)
             ->whereDate('booking_date', $date)
-            ->whereIn('status', ['pending', 'approved'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
             ->get();
 
         // เตรียม conflict-map ต่อ section หนึ่งครั้ง (แทนการ query ซ้ำทุกแถว/ทุกคอลัมน์)
@@ -132,6 +153,7 @@ class BookingController extends Controller
         $rows = [];
         $legacySlots = [];
         $fullSection = $sections->firstWhere('code', 'full');
+        $pricedSlotCache = [];
 
         for ($m = $openMinutes; $m < $closeMinutes; $m += $interval) {
             $start = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
@@ -145,6 +167,21 @@ class BookingController extends Controller
             $rowSections = [];
             foreach ($sections as $section) {
                 $isClosed = $court->isClosedAt($slotStart, $slotEnd, $section);
+                $courtType = $section->code === 'full' ? 'full' : 'half';
+                $priceCacheKey = "{$courtType}:{$start}:{$end}";
+                if (! array_key_exists($priceCacheKey, $pricedSlotCache)) {
+                    try {
+                        app(PricingService::class)->calculate([
+                            'date' => $date,
+                            'start_time' => substr($start, 0, 5),
+                            'end_time' => substr($end, 0, 5),
+                            'court_type' => $courtType,
+                        ]);
+                        $pricedSlotCache[$priceCacheKey] = true;
+                    } catch (\InvalidArgumentException) {
+                        $pricedSlotCache[$priceCacheKey] = false;
+                    }
+                }
 
                 $conflictIds = $conflictMap[$section->id];
                 $booking = $bookings->first(function ($b) use ($conflictIds, $start, $end) {
@@ -156,6 +193,7 @@ class BookingController extends Controller
                 $status = 'available';
                 if ($isClosed) $status = 'closed';
                 elseif ($booking) $status = $booking->status; // pending | approved (ของ section ตัวเองหรือ section ที่บล็อกกัน)
+                elseif (! $pricedSlotCache[$priceCacheKey]) $status = 'unpriced';
                 elseif ($isPast) $status = 'past';
 
                 $rowSections[$section->id] = [
@@ -477,10 +515,15 @@ class BookingController extends Controller
         $userId = $request->user()->id;
         $today = now()->toDateString();
 
+        // เคลียร์สล็อตที่ล็อกไว้เกิน 15 นาทีแบบ opportunistic ก่อนอ่านข้อมูล (เหมือนที่ทำตอนเข้า
+        // หน้าเลือกเวลา/checkout) กัน "pending_payment" เก่าที่หมดเวลาไปแล้วแต่ยังไม่ถูกอัปเดตสถานะ
+        // ค้างอยู่ในแท็บ "รายการปัจจุบัน" ให้เห็น
+        CheckoutController::releaseStaleLocks();
+
         $current = Booking::with('court')
             ->where('user_id', $userId)
             ->where(function ($q) use ($today) {
-                $q->whereIn('status', ['pending', 'approved'])
+                $q->whereIn('status', ['pending', 'approved', 'pending_payment'])
                     ->whereDate('booking_date', '>=', $today);
             })
             ->orderBy('booking_date')
@@ -490,7 +533,7 @@ class BookingController extends Controller
         $past = Booking::with('court')
             ->where('user_id', $userId)
             ->where(function ($q) use ($today) {
-                $q->whereIn('status', ['rejected', 'cancelled'])
+                $q->whereIn('status', ['rejected', 'cancelled', 'expired'])
                     ->orWhereDate('booking_date', '<', $today);
             })
             ->orderByDesc('updated_at')

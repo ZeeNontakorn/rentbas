@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,10 +13,14 @@
     <style>
         /* ปรับ Font ให้ดูเป็นสไตล์สปอร์ต (ถ้าต้องการ) */
         @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,900&display=swap');
+
         body {
             font-family: 'Kanit', sans-serif;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body class="bg-[#ffffff] min-h-screen flex flex-col text-white antialiased">
 
@@ -36,8 +41,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             AOS.init({
                 duration: 800, // ความเร็วอนิเมชั่น 0.8 วิ
-                once: true,    // เล่นรอบเดียวตอนโหลดเจอ
-                offset: 50,    // เลื่อนลงมา 50px ค่อยเล่น
+                once: true, // เล่นรอบเดียวตอนโหลดเจอ
+                offset: 50, // เลื่อนลงมา 50px ค่อยเล่น
                 easing: 'ease-out-cubic'
             });
         });
@@ -76,4 +81,5 @@
 
     @stack('scripts')
 </body>
+
 </html>
