@@ -16,6 +16,10 @@
 
 <div class="pf-main bg-white min-h-screen text-[#111827]">
 <div class="max-w-[860px] mx-auto px-4 py-8">
+    @php
+        $canManageProfileImage = in_array($user->membership_type, ['coach', 'court_assistant'], true);
+        $coachProfileImage = $user->staffProfile?->profile_image;
+    @endphp
 
     {{-- HEADER --}}
     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4">
@@ -132,6 +136,48 @@
 
         </div>
     </div>
+
+    @if ($canManageProfileImage)
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#e86c2a]/10 flex items-center justify-center border border-[#e86c2a]/20">
+                    <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-[14px] font-semibold text-gray-800" style="font-family:'Kanit',sans-serif;">รูปโปรไฟล์โค้ช</div>
+                    <div class="text-[12px] text-gray-400">อัปโหลดรูปภาพสำหรับบัญชีโค้ช</div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="px-5 py-5">
+                @csrf
+                @if ($coachProfileImage)
+                    <div class="mb-4 flex items-center gap-3">
+                        <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
+                             alt="Coach profile"
+                             class="w-20 h-20 rounded-xl object-cover border border-gray-200">
+                        <div class="text-[12px] text-gray-500">รูปปัจจุบันของคุณ</div>
+                    </div>
+                @endif
+
+                <label for="profileImageUpload" class="block text-[12px] font-semibold text-gray-600 uppercase tracking-[.06em] mb-2">เลือกรูปใหม่</label>
+                <input id="profileImageUpload" type="file" name="profile_image" accept="image/png,image/jpeg,image/webp"
+                       class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white">
+                <p class="text-[12px] text-gray-500 mt-2">รองรับไฟล์ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
+                @error('profile_image')
+                    <div class="text-[12px] text-red-600 mt-2">{{ $message }}</div>
+                @enderror
+
+                <button type="submit"
+                        class="mt-4 inline-flex items-center gap-2 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-medium px-4 py-2 rounded-lg transition text-sm">
+                    อัปเดตรูปโปรไฟล์
+                </button>
+            </form>
+        </div>
+    @endif
 
 </div>
 </div>

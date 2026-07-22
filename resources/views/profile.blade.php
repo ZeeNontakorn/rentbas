@@ -305,6 +305,11 @@
 .info-value { font-size: 14px; color: #1a1a2e; font-weight: 500; margin-top: 1px; }
 </style>
 
+@php
+    $isCoach = in_array($user->membership_type, ['coach', 'court_assistant'], true);
+    $coachProfileImage = $user->staffProfile?->profile_image;
+@endphp
+
 {{-- ═══ HERO ═══ --}}
 <div class="pf-hero">
     <div class="pf-hero-inner">
@@ -350,7 +355,7 @@
             </script>
             @endif
 
-            <form method="POST" action="{{ route('profile.update') }}" id="profileForm">
+            <form method="POST" action="{{ route('profile.update') }}" id="profileForm" enctype="multipart/form-data">
                 @csrf
 
                 {{-- ชื่อ --}}
@@ -384,6 +389,25 @@
                         <div class="form-error">{{ $message }}</div>
                     @enderror
                 </div>
+
+                @if ($isCoach)
+                    <div class="form-group">
+                        <label class="form-label">🖼️ รูปโปรไฟล์โค้ช</label>
+                        @if ($coachProfileImage)
+                            <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+                                <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
+                                     alt="Coach profile image"
+                                     style="width:66px;height:66px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">
+                                <span style="font-size:12px;color:#6b7280;">รูปโปรไฟล์ปัจจุบัน</span>
+                            </div>
+                        @endif
+                        <input type="file" name="profile_image" accept="image/png,image/jpeg,image/webp" class="form-input" style="padding:8px 10px;">
+                        <div style="font-size:12px;color:#6b7280;margin-top:6px;">รองรับไฟล์ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</div>
+                        @error('profile_image')
+                            <div class="form-error">{{ $message }}</div>
+                        @enderror
+                    </div>
+                @endif
 
                 {{-- OTP Section --}}
                 <div id="otpSection" style="display:none;">
