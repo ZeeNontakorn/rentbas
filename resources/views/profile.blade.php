@@ -392,17 +392,29 @@
 
                 @if ($isCoach)
                     <div class="form-group">
-                        <label class="form-label">🖼️ รูปโปรไฟล์โค้ช</label>
-                        @if ($coachProfileImage)
-                            <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
-                                <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
-                                     alt="Coach profile image"
-                                     style="width:66px;height:66px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">
-                                <span style="font-size:12px;color:#6b7280;">รูปโปรไฟล์ปัจจุบัน</span>
+                        <label class="form-label">รูปโปรไฟล์</label>
+                        <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap;">
+                            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                @if ($coachProfileImage)
+                                    <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
+                                         alt="Coach profile"
+                                         style="width:66px;height:66px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">
+                                @else
+                                    <div style="width:66px;height:66px;border-radius:12px;border:1px dashed #d1d5db;background:#f9fafb;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">ไม่มีรูป</div>
+                                @endif
+                                <span style="font-size:11px;color:#6b7280;">รูปปัจจุบัน</span>
                             </div>
-                        @endif
-                        <input type="file" name="profile_image" accept="image/png,image/jpeg,image/webp" class="form-input" style="padding:8px 10px;">
-                        <div style="font-size:12px;color:#6b7280;margin-top:6px;">รองรับไฟล์ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</div>
+
+                            <div id="newImagePreviewBlock" style="display:none; flex-direction:column; align-items:center; gap:6px;">
+                                <img id="newImagePreview"
+                                     src=""
+                                     alt="New profile preview"
+                                     style="width:66px;height:66px;border-radius:12px;object-fit:cover;border:1px solid #e5e7eb;">
+                                <span style="font-size:11px;color:#6b7280;">รูปใหม่</span>
+                            </div>
+                        </div>
+
+                        <input id="profileImageInput" type="file" name="profile_image" accept="image/png,image/jpeg,image/webp" class="form-input" style="padding:8px 10px;">
                         @error('profile_image')
                             <div class="form-error">{{ $message }}</div>
                         @enderror
@@ -527,10 +539,29 @@
 const originalEmail = '{{ $user->email }}';
 const emailInput    = document.getElementById('emailInput');
 const otpSection    = document.getElementById('otpSection');
+const profileImageInput = document.getElementById('profileImageInput');
+const newImagePreviewBlock = document.getElementById('newImagePreviewBlock');
+const newImagePreview = document.getElementById('newImagePreview');
 
 emailInput.addEventListener('input', function () {
     otpSection.style.display = this.value !== originalEmail ? 'block' : 'none';
 });
+
+if (profileImageInput && newImagePreviewBlock && newImagePreview) {
+    profileImageInput.addEventListener('change', function () {
+        const file = this.files && this.files[0] ? this.files[0] : null;
+
+        if (!file) {
+            newImagePreviewBlock.style.display = 'none';
+            newImagePreview.removeAttribute('src');
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        newImagePreview.src = objectUrl;
+        newImagePreviewBlock.style.display = 'flex';
+    });
+}
 
 @if (session('success'))
     document.addEventListener('DOMContentLoaded', () => {

@@ -120,7 +120,7 @@
 
                     @if ($canManageProfileImage)
                         <div class="form-group" style="margin-top:16px; margin-bottom:0;">
-                            <label class="form-label">รูปโปรไฟล์โค้ช</label>
+                            <label class="form-label">รูปโปรไฟล์</label>
                             @if ($coachProfileImage)
                                 <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
                                     <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
@@ -130,7 +130,7 @@
                                 </div>
                             @endif
                             <input type="file" name="profile_image" accept="image/png,image/jpeg,image/webp" class="form-input" style="padding:8px 10px;">
-                            <div style="font-size:12px; color:#6b7280; margin-top:6px;">รองรับไฟล์ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</div>
+
                             @error('profile_image') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                     @endif
