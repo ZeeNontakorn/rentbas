@@ -17,16 +17,16 @@
 
         {{-- ส่วน Title และ ช่องค้นหา --}}
         <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-            <div>
+            <div class="flex-1 min-w-0">
                 <h1 class="text-2xl font-semibold text-gray-800">เทรนเนอร์ส่วนตัว (Private Training)</h1>
                 <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
             </div>
 
             {{-- ค้นหา --}}
-            <form method="GET" action="{{ route('private-training.index') }}" class="flex w-full md:w-96">
+            <form method="GET" action="{{ route('private-training.index') }}" class="flex w-full md:w-125 flex-shrink-0 md:ml-auto">
                 <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="ค้นหาชื่อโค้ช..."
-                    class="w-full border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
-                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer">
+                    class="w-full min-w-0 border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
+                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
                     </svg>

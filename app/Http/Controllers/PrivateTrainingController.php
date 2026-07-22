@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Availability;
+use App\Models\Court;
 use App\Models\Notification;
 use App\Models\PrivateTrainingBooking;
 use App\Models\User;
@@ -26,8 +27,8 @@ class PrivateTrainingController extends Controller
         $coaches = User::where('role', 'staff')
             ->where('membership_type', 'coach')
             ->with('staffProfile')
-            ->when($search, fn ($q) => $q->where(
-                fn ($qq) => $qq->where('name', 'like', "%{$search}%")
+            ->when($search, fn($q) => $q->where(
+                fn($qq) => $qq->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
             ))
             ->orderBy('name')
@@ -72,20 +73,22 @@ class PrivateTrainingController extends Controller
         for ($h = self::OPEN_HOUR; $h < self::CLOSE_HOUR; $h++) {
             $start = sprintf('%02d:00:00', $h);
             $end = sprintf('%02d:00:00', $h + 1);
-            $slotStart = Carbon::parse($today.' '.$start);
+            $slotStart = Carbon::parse($today . ' ' . $start);
 
             $isPast = $slotStart->lte($now);
 
-            $isBusy = $busyRanges->first(fn ($r) => $r->start_time < $end && $r->end_time > $start) !== null;
-            $reserved = $reservedRanges->first(fn ($r) => $r->start_time < $end && $r->end_time > $start);
+            $isBusy = $busyRanges->first(fn($r) => $r->start_time < $end && $r->end_time > $start) !== null;
+            $reserved = $reservedRanges->first(fn($r) => $r->start_time < $end && $r->end_time > $start);
 
             $status = 'available';
             if ($isPast) {
                 $status = 'past';
+            } elseif ($reserved) {
+                // เช็คก่อน isBusy เพราะถ้าช่วงนี้ไม่ว่างจากการจองเทรนส่วนตัวของเราเอง (ที่ sync ไปตาราง availabilities ตอนอนุมัติ)
+                // อยากให้ขึ้น "คุณจองไว้แล้ว" (mine) แทนที่จะขึ้น "ไม่ว่าง" (unavailable) แบบทั่วไป
+                $status = $reserved->user_id === auth()->id() ? 'mine' : 'reserved';
             } elseif ($isBusy) {
                 $status = 'unavailable';
-            } elseif ($reserved) {
-                $status = $reserved->user_id === auth()->id() ? 'mine' : 'reserved';
             }
 
             $timeline[] = [
@@ -143,8 +146,8 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['start_time' => 'ไม่สามารถจองช่วงเวลาที่ผ่านมาแล้วได้']);
         }
 
-        $startDb = $data['start_time'].':00';
-        $endDb = $data['end_time'].':00';
+        $startDb = $data['start_time'] . ':00';
+        $endDb = $data['end_time'] . ':00';
 
         $result = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
             // เช็คว่าโค้ชติดงานที่แอดมินมาร์คไว้ (สถานะ "ไม่ว่าง") ในช่วงเวลานี้หรือไม่
@@ -185,7 +188,7 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['bookings' => $result['error']]);
         }
 
-        $timeLabel = substr($data['start_time'], 0, 5).' - '.substr($data['end_time'], 0, 5);
+        $timeLabel = substr($data['start_time'], 0, 5) . ' - ' . substr($data['end_time'], 0, 5);
 
         User::where('role', 'admin')->get()->each(function ($admin) use ($request, $coach, $date, $timeLabel) {
             Notification::create([
@@ -236,7 +239,7 @@ class PrivateTrainingController extends Controller
         $status = $request->query('status', 'pending');
 
         $bookings = PrivateTrainingBooking::with(['user', 'coach'])
-            ->when($status && $status !== 'all', fn ($q) => $q->where('status', $status))
+            ->when($status && $status !== 'all', fn($q) => $q->where('status', $status))
             ->orderByDesc('date')
             ->orderByDesc('start_time')
             ->paginate(15)
@@ -270,11 +273,13 @@ class PrivateTrainingController extends Controller
 
         $privateTrainingBooking->update(['status' => 'approved']);
 
+        $this->markCoachAvailabilityAsBooked($privateTrainingBooking);
+
         $date = Carbon::parse($privateTrainingBooking->date)->toDateString();
         Notification::create([
             'user_id' => $privateTrainingBooking->user_id,
             'title' => 'การจองเทรนเนอร์ส่วนตัวได้รับการอนุมัติ',
-            'message' => "การจองกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$date}\nเวลา ".substr($privateTrainingBooking->start_time, 0, 5).'-'.substr($privateTrainingBooking->end_time, 0, 5)."\nได้รับการอนุมัติแล้ว",
+            'message' => "การจองกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$date}\nเวลา " . substr($privateTrainingBooking->start_time, 0, 5) . '-' . substr($privateTrainingBooking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
         ]);
 
         return back()->with('success', 'อนุมัติคำขอจองเรียบร้อย');
@@ -302,9 +307,46 @@ class PrivateTrainingController extends Controller
         Notification::create([
             'user_id' => $privateTrainingBooking->user_id,
             'title' => 'การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ',
-            'message' => "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$date}\nเวลา ".substr($privateTrainingBooking->start_time, 0, 5).'-'.substr($privateTrainingBooking->end_time, 0, 5)."\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
+            'message' => "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$date}\nเวลา " . substr($privateTrainingBooking->start_time, 0, 5) . '-' . substr($privateTrainingBooking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
         ]);
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
+    }
+
+    /**
+     * เมื่อคำขอจองเทรนเนอร์ส่วนตัวได้รับการอนุมัติ ให้เขียนสถานะ "ไม่ว่าง" ลงตาราง availabilities
+     * ของโค้ชคนนั้น (ตารางเดียวกับที่หน้าแอดมิน "โค้ช และผู้ช่วย" ใช้แสดง Coach Availability Timeline)
+     * เขียนทุกสนามที่มีในระบบ เพราะโค้ชติดสอนเทรนส่วนตัวแล้ว จึงไม่ว่างในทุกสนามพร้อมกัน
+     * (ใช้ logic รูปแบบเดียวกับ StaffController::storeAvailability คือแบ่งเป็นรายชั่วโมง)
+     */
+    private function markCoachAvailabilityAsBooked(PrivateTrainingBooking $booking): void
+    {
+        $startHour = Carbon::parse($booking->start_time)->hour;
+        $endHour = Carbon::parse($booking->end_time)->hour;
+        $date = Carbon::parse($booking->date)->toDateString();
+        $detail = 'เทรนเนอร์ส่วนตัว: ' . ($booking->user->name ?? 'ลูกค้า');
+
+        $courts = Court::all();
+
+        for ($h = $startHour; $h < $endHour; $h++) {
+            $slotStart = sprintf('%02d:00:00', $h);
+            $slotEnd = sprintf('%02d:00:00', $h + 1);
+
+            foreach ($courts as $court) {
+                Availability::updateOrCreate(
+                    [
+                        'user_id' => $booking->coach_id,
+                        'date' => $date,
+                        'start_time' => $slotStart,
+                        'end_time' => $slotEnd,
+                        'court_id' => $court->id,
+                    ],
+                    [
+                        'status' => 'booked',
+                        'detail' => $detail,
+                    ]
+                );
+            }
+        }
     }
 }
