@@ -8,7 +8,6 @@
         'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
         'rejected' => ['label' => 'ถูกปฏิเสธ', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
         'canceled' => ['label' => 'ยกเลิก', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
-        // 'cancelled' => ['label' => 'ยกเลิก', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'], (เผื่อฐานข้อมูลใช้ l สองตัว)
     ];
 @endphp
 
