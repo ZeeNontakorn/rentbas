@@ -36,7 +36,7 @@ class PricingService
         $promoCode = $params['promotion_code'] ?? null;
 
         if ($promoCode) {
-            return $this->calculatePromotion($promoCode, $date, $start, $end);
+            return $this->calculatePromotion($promoCode, $date, $start, $end, $courtType);
         }
 
         return $this->calculateHourly($date, $start, $end, $courtType);
@@ -121,32 +121,58 @@ class PricingService
     }
 
     /**
-     * ราคาโปรโมชั่นแบบแพ็กเกจคงที่ (Personal Shooting / Group Court / Private Group)
-     * - ตรวจว่าโปรใช้ได้เฉพาะวันจันทร์-ศุกร์ (ยกเว้นวันหยุดนักขัตฤกษ์) ตามเงื่อนไขใน image.png
-     *   ยกเว้นแพ็กเกจ private ที่ไม่ผูกกับวันในตาราง (คอร์สแบบนัดเรียน)
-     * - ระยะเวลาการจองต้องตรงกับ duration_hours ของแพ็กเกจ
+     * ราคาโปรโมชั่นแบบแพ็กเกจคงที่ (Personal Shooting / Group Court / Private Group / อื่นๆ ที่แอดมินสร้างเอง)
+     *
+     * ทุกเงื่อนไขด้านล่างมาจากคอลัมน์ที่แอดมินตั้งค่าได้จริงในหน้าตั้งราคา (ไม่มีการ hardcode
+     * ตาม category/code ของแพ็กเกจอีกต่อไป) — ทุกฟิลด์เงื่อนไข "null/ว่าง" หมายถึง "ไม่จำกัด":
+     *   - court_type            : เต็มสนาม/ครึ่งสนาม/ทั้งสองแบบ (null)
+     *   - duration_hours        : ต้องจองต่อเนื่องกี่ชั่วโมง / null = ไม่บังคับ (เช่น private นัดเอง)
+     *   - available_days        : ['weekday','weekend','holiday'] วันไหนใช้โปรนี้ได้บ้าง / null = ทุกวัน
+     *   - available_start_time/available_end_time : ช่วงเวลาที่อนุญาตให้ใช้โปรนี้ / null = ทั้งวัน
      */
-    protected function calculatePromotion(string $promoCode, string $date, string $start, string $end): array
+    protected function calculatePromotion(string $promoCode, string $date, string $start, string $end, string $courtType): array
     {
         $package = PromotionPackage::where('code', $promoCode)->where('is_active', true)->firstOrFail();
+
+        // 1) ประเภทสนาม: เต็มสนาม/ครึ่งสนาม ต้องตรงกับที่แพ็กเกจกำหนดไว้ (ถ้ากำหนด)
+        if ($package->court_type !== null && $package->court_type !== $courtType) {
+            $need = $package->court_type === 'full' ? 'เต็มสนาม' : 'ครึ่งสนาม';
+            throw new InvalidArgumentException("แพ็กเกจ {$package->label} ใช้ได้เฉพาะ{$need}เท่านั้น");
+        }
 
         $startAt = Carbon::parse("$date $start");
         $endAt = Carbon::parse("$date $end");
         $durationHours = round($startAt->diffInMinutes($endAt) / 60, 2);
 
-        if ($package->category !== 'private' && $durationHours != $package->duration_hours) {
+        // 2) ระยะเวลาการจองต้องตรงกับที่แพ็กเกจกำหนด (ถ้ากำหนด)
+        if ($package->duration_hours !== null && $durationHours != $package->duration_hours) {
             throw new InvalidArgumentException(
                 "แพ็กเกจ {$package->label} ต้องจองต่อเนื่อง {$package->duration_hours} ชั่วโมงเท่านั้น"
             );
         }
 
-        $isHoliday = Holiday::isHoliday($date);
-        $dayOfWeek = $startAt->dayOfWeekIso; // 1=Mon ... 7=Sun
-        $isWeekend = $dayOfWeek >= 6;
-
-        if ($package->category !== 'private' && ! $isHoliday && $dayOfWeek > 5) {
-            throw new InvalidArgumentException("แพ็กเกจ {$package->label} ใช้ได้เฉพาะวันจันทร์-ศุกร์เท่านั้น");
+        // 3) วันที่ที่อนุญาตให้ใช้โปรนี้ (ถ้ากำหนด) — เทียบกับประเภทวันจริง (holiday > weekend > weekday)
+        $dayType = $this->classifyDayType($date);
+        if (! empty($package->available_days) && ! in_array($dayType, $package->available_days, true)) {
+            $dayLabels = ['weekday' => 'จันทร์-ศุกร์', 'weekend' => 'เสาร์-อาทิตย์', 'holiday' => 'วันหยุดนักขัตฤกษ์'];
+            $allowed = implode(', ', array_map(fn ($d) => $dayLabels[$d] ?? $d, $package->available_days));
+            throw new InvalidArgumentException("แพ็กเกจ {$package->label} ใช้ได้เฉพาะวัน: {$allowed}");
         }
+
+        // 4) ช่วงเวลาของวันที่อนุญาตให้ใช้โปรนี้ (ถ้ากำหนด) — เวลาที่จองต้องอยู่ในกรอบนี้ทั้งหมด
+        if ($package->available_start_time && $start < substr($package->available_start_time, 0, 5)) {
+            throw new InvalidArgumentException(
+                "แพ็กเกจ {$package->label} เริ่มใช้ได้ตั้งแต่เวลา " . substr($package->available_start_time, 0, 5) . ' น. เป็นต้นไป'
+            );
+        }
+        if ($package->available_end_time && $end > substr($package->available_end_time, 0, 5)) {
+            throw new InvalidArgumentException(
+                "แพ็กเกจ {$package->label} ใช้ได้ถึงเวลา " . substr($package->available_end_time, 0, 5) . ' น. เท่านั้น'
+            );
+        }
+
+        $isHoliday = $dayType === 'holiday';
+        $isWeekend = $startAt->dayOfWeekIso >= 6;
 
         $price = $package->base_price;
         $label = $package->label;
@@ -163,7 +189,7 @@ class PricingService
             && $end <= substr($package->weekend_special_end, 0, 5)
         ) {
             $price = $package->weekend_special_price;
-            $label .= ' (ราคาเสาร์-อาทิตย์ 07.00-11.00)';
+            $label .= ' (ราคาเสาร์-อาทิตย์ ' . substr($package->weekend_special_start, 0, 5) . '-' . substr($package->weekend_special_end, 0, 5) . ')';
         }
 
         return [

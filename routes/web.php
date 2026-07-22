@@ -11,12 +11,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Admin\PricingController;
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Admin\CalendarController;
-
 use App\Http\Controllers\Admin\StaffController;
 use Illuminate\Support\Facades\Route;
 
@@ -132,7 +129,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/courts/{court}/sections/merge', [AdminCourtController::class, 'mergeSections'])->name('courts.sections.merge');
     Route::put('/court-sections/{courtSection}', [AdminCourtController::class, 'updateSection'])->name('court-sections.update');
     Route::post('/courts/{court}/slot-settings', [AdminCourtController::class, 'updateSlotSettings'])->name('courts.slot-settings');
-    
+
      // Manage Courses
     Route::get('/courses', [ManageCourseController::class, 'index'])->name('courses');
     Route::get('/courses/create', [ManageCourseController::class, 'create'])->name('courses.create');
@@ -140,7 +137,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/courses/{course}/edit', [ManageCourseController::class, 'edit'])->name('courses.edit');
     Route::put('/courses/{course}', [ManageCourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{course}', [ManageCourseController::class, 'destroy'])->name('courses.destroy');
-    
+
     Route::patch('/courses/{course}/toggle-status', [ManageCourseController::class, 'toggleStatus'])
     ->name('courses.toggleStatus');
 
@@ -151,7 +148,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'update'])->name('courses.calendar.events.update');
     Route::delete('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'destroy'])->name('courses.calendar.events.destroy');
     Route::put('/courses/calendar/course-events/{schedule}/{date}', [CalendarController::class, 'updateCourseEvent'])->where('date', '\\d{4}-\\d{2}-\\d{2}')->name('courses.calendar.course-events.update');
-   
+
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
@@ -177,7 +174,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
     Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
+    Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
     Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
+    Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
 });
 
 // 6. Password Reset via OTP

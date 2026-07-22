@@ -51,13 +51,17 @@ class BookingController extends Controller
         // เก็บ $slots (แบบเดิม เต็มสนาม/รายชั่วโมง) ไว้เพื่อ backward-compat กับโค้ด/วิวอื่นที่อาจยังอ้างอิงอยู่
         $slots = $matrix ? $matrix['legacySlots'] : [];
 
-        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ใช้ร่วมกับหน้า calendar (JS ฝั่ง client กรองเองว่าอันไหน "ใช้ได้")
+        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ใช้ร่วมกับหน้า calendar (JS ฝั่ง client กรองเองว่าอันไหน "ใช้ได้"
+        // กับ ประเภทสนาม/วัน/ช่วงเวลาที่เลือกจริง ไม่ใช่แค่ duration_hours เหมือนเดิม)
         $promotionPackages = PromotionPackage::where('is_active', true)
             ->orderBy('category')
             ->orderBy('duration_hours')
             ->get();
 
-        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix', 'promotionPackages'));
+        // วันนี้เป็นวันประเภทไหน (holiday/weekend/weekday) — ใช้เทียบกับ available_days ของแต่ละแพ็กเกจ
+        $dayType = app(PricingService::class)->classifyDayType($date);
+
+        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix', 'promotionPackages', 'dayType'));
     }
 
     /**
@@ -98,13 +102,16 @@ class BookingController extends Controller
         ])->all();
 
         // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ส่งให้หน้าจอเลือกช่วงเวลาไว้เสนอเป็นทางเลือกราคา
-        // (JS ฝั่ง client จะกรองเองว่าอันไหน "ใช้ได้" กับช่วงเวลา/วันที่ที่ผู้ใช้เลือก)
+        // (JS ฝั่ง client จะกรองเองว่าอันไหน "ใช้ได้" กับ ประเภทสนาม/วัน/ช่วงเวลาที่เลือกจริง)
         $promotionPackages = PromotionPackage::where('is_active', true)
             ->orderBy('category')
             ->orderBy('duration_hours')
             ->get();
 
-        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows', 'promotionPackages'));
+        // วันนี้เป็นวันประเภทไหน (holiday/weekend/weekday) — ใช้เทียบกับ available_days ของแต่ละแพ็กเกจ
+        $dayType = app(PricingService::class)->classifyDayType($date);
+
+        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows', 'promotionPackages', 'dayType'));
     }
 
     /**

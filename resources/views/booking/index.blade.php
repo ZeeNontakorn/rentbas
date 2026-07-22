@@ -464,12 +464,33 @@ let selections = []; // [{ start, end, label, el }]
 
 // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน (ดึงจากตั้งค่าราคา > แพ็กเกจโปรโมชั่น ฝั่งแอดมิน)
 const PROMO_PACKAGES = @json($promotionPackages);
+const DAY_TYPE = '{{ $dayType }}'; // holiday | weekend | weekday ของวันที่กำลังจองอยู่
 let selectedPromoCode = null; // null = ราคาปกติ (รายชั่วโมง)
 let quoteRequestSeq = 0; // กัน race condition เวลายิง quote ซ้อนกันเร็วๆ (เลือกสลับตัวเลือกถี่ๆ)
 
 function timeToMin(t) {
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
+}
+
+// เช็คว่าแพ็กเกจโปรโมชั่น p "ใช้ได้จริง" กับเงื่อนไขที่เลือกอยู่หรือไม่ — ทุกเงื่อนไข null/ว่าง = ไม่จำกัด
+// เขียนให้ตรงกับ PricingService::calculatePromotion() ฝั่งเซิร์ฟเวอร์ทุกจุด (ประเภทสนาม/วัน/ช่วงเวลา/ระยะเวลา)
+// เพื่อไม่ให้ตัวเลือกที่กดแล้วโดน reject โผล่มาให้ผู้ใช้เห็นเลยตั้งแต่แรก
+function packageMatchesConditions(p, courtType, durationHours, startTime, endTime) {
+    // 1) ประเภทสนาม
+    if (p.court_type && p.court_type !== courtType) return false;
+
+    // 2) ระยะเวลา (null/ว่าง = ไม่บังคับ)
+    if (p.duration_hours !== null && p.duration_hours !== '' && Number(p.duration_hours) !== Number(durationHours)) return false;
+
+    // 3) วันที่ใช้โปรได้ (ว่าง/ไม่มี = ทุกวัน)
+    if (p.available_days && p.available_days.length > 0 && !p.available_days.includes(DAY_TYPE)) return false;
+
+    // 4) ช่วงเวลาของวันที่ใช้โปรได้ (null = ไม่จำกัด)
+    if (p.available_start_time && startTime < p.available_start_time.slice(0, 5)) return false;
+    if (p.available_end_time && endTime > p.available_end_time.slice(0, 5)) return false;
+
+    return true;
 }
 
 function findSelectionIndex(el) {
@@ -611,11 +632,9 @@ function renderPricingBox(merged) {
     const courtType = (sel.sectionCode === 'full') ? 'full' : 'half';
     const durationHours = (timeToMin(sel.end) - timeToMin(sel.start)) / 60;
 
-    // แพ็กเกจที่ "ใช้ได้" กับช่วงที่เลือก: private ไม่เช็คระยะเวลา (เป็นคอร์สนัดเรียน)
-    // ส่วนอื่นต้องจองต่อเนื่องพอดีตาม duration_hours ของแพ็กเกจ (เงื่อนไขเดียวกับฝั่ง server ใน PricingService)
-    const matched = PROMO_PACKAGES.filter(p =>
-        p.category === 'private' || Number(p.duration_hours) === durationHours
-    );
+    // แพ็กเกจที่ "ใช้ได้จริง" กับช่วง/สนามที่เลือก — เช็คครบทุกเงื่อนไขเดียวกับฝั่งเซิร์ฟเวอร์
+    // (PricingService::calculatePromotion) เพื่อไม่ให้ตัวเลือกที่กดแล้วเจอ error โผล่มาให้เห็นเลย
+    const matched = PROMO_PACKAGES.filter(p => packageMatchesConditions(p, courtType, durationHours, sel.start, sel.end));
 
     let html = `
         <label class="price-option selected" data-code="">
