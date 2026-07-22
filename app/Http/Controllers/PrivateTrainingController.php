@@ -13,13 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class PrivateTrainingController extends Controller
 {
-    /** ช่วงเวลาเปิดให้จองต่อวัน (ตามตารางเวลาของโค้ช/ผู้ช่วยสนามฝั่งแอดมิน) */
+    /** ช่วงเวลาเปิดให้จองต่อวัน */
     private const OPEN_HOUR = 8;
     private const CLOSE_HOUR = 22;
 
-    /**
-     * หน้ารายชื่อโค้ช/ผู้ช่วยสนาม ให้ user เลือกดูโปรไฟล์และตารางว่าง
-     */
     public function index(Request $request)
     {
         $search = $request->query('search');
@@ -27,6 +24,7 @@ class PrivateTrainingController extends Controller
         $coaches = User::where('role', 'staff')
             ->where('membership_type', 'coach')
             ->with('staffProfile')
+            // ใช้ nested closure (fn($q) และ fn($qq)) เพื่อสร้างวงเล็บคลุมเงื่อนไข OR ป้องกันการคลาดเคลื่อนกับเงื่อนไขหลักด้านบน
             ->when($search, fn($q) => $q->where(
                 fn($qq) => $qq->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
@@ -37,18 +35,12 @@ class PrivateTrainingController extends Controller
         $myRequests = PrivateTrainingBooking::with('coach')
             ->where('user_id', $request->user()->id)
             ->whereDate('date', '>=', now()->toDateString())
-            // ->whereIn('status', ['pending', 'approved'])
-            // ->orderBy('date')
-            // ->orderBy('start_time')
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->get();
 
         return view('private-training.index', compact('coaches', 'search', 'myRequests'));
     }
 
-    /**
-     * หน้าโปรไฟล์โค้ชคนเดียว + ตารางว่างวันนี้ (ดึงจากตาราง availabilities ที่แอดมินตั้งไว้ในเมนู "โค้ช และผู้ช่วย")
-     */
     public function show(User $coach)
     {
         $this->assertIsCoach($coach);
@@ -56,14 +48,11 @@ class PrivateTrainingController extends Controller
         $today = now()->toDateString();
         $now = now();
 
-        // สถานะที่แอดมินตั้งไว้วันนี้ (ทุกสนาม รวมกัน) — ถ้าช่วงไหนแอดมินมาร์คว่า "ไม่ว่าง" (booked) ที่สนามใดสนามหนึ่ง
-        // แปลว่าโค้ชติดงานอยู่ช่วงนั้น จองเทรนส่วนตัวไม่ได้
         $busyRanges = $coach->availabilities()
             ->whereDate('date', $today)
             ->where('status', 'booked')
             ->get(['start_time', 'end_time']);
 
-        // ช่วงที่ถูกจองเทรนส่วนตัวไปแล้ว (ของคนอื่นหรือของตัวเอง) รอ/อนุมัติแล้ว
         $reservedRanges = PrivateTrainingBooking::where('coach_id', $coach->id)
             ->whereDate('date', $today)
             ->whereIn('status', ['pending', 'approved'])
@@ -71,21 +60,21 @@ class PrivateTrainingController extends Controller
 
         $timeline = [];
         for ($h = self::OPEN_HOUR; $h < self::CLOSE_HOUR; $h++) {
+            // sprintf('%02d') ใช้ฟอร์แมตตัวเลขให้มี 0 นำหน้าถ้าเป็นเลขหลักเดียว (เช่น 8 กลายเป็น '08')
             $start = sprintf('%02d:00:00', $h);
             $end = sprintf('%02d:00:00', $h + 1);
-            $slotStart = Carbon::parse($today . ' ' . $start);
+            $isPast = Carbon::parse("$today $start")->lte($now);
 
-            $isPast = $slotStart->lte($now);
-
-            $isBusy = $busyRanges->first(fn($r) => $r->start_time < $end && $r->end_time > $start) !== null;
+            // ใช้ collection methods:
+            // ->first() คืนค่า object แรกที่ตรงเงื่อนไข (เพื่อเอาค่า user_id มาเช็คต่อ)
+            // ->contains() คืนค่า boolean (true/false) ว่ามีข้อมูลที่ตรงเงื่อนไขใน collection หรือไม่
             $reserved = $reservedRanges->first(fn($r) => $r->start_time < $end && $r->end_time > $start);
+            $isBusy = $busyRanges->contains(fn($r) => $r->start_time < $end && $r->end_time > $start);
 
             $status = 'available';
             if ($isPast) {
                 $status = 'past';
             } elseif ($reserved) {
-                // เช็คก่อน isBusy เพราะถ้าช่วงนี้ไม่ว่างจากการจองเทรนส่วนตัวของเราเอง (ที่ sync ไปตาราง availabilities ตอนอนุมัติ)
-                // อยากให้ขึ้น "คุณจองไว้แล้ว" (mine) แทนที่จะขึ้น "ไม่ว่าง" (unavailable) แบบทั่วไป
                 $status = $reserved->user_id === auth()->id() ? 'mine' : 'reserved';
             } elseif ($isBusy) {
                 $status = 'unavailable';
@@ -107,18 +96,12 @@ class PrivateTrainingController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return view('private-training.show', [
-            'coach' => $coach,
+        // ใช้เครื่องหมาย + (Array Union) เพื่อนำ array ธรรมดาไปต่อท้ายผลลัพธ์ที่ได้จากฟังก์ชัน compact()
+        return view('private-training.show', compact('coach', 'today', 'timeline', 'myUpcoming') + [
             'staffProfile' => $coach->staffProfile,
-            'today' => $today,
-            'timeline' => $timeline,
-            'myUpcoming' => $myUpcoming,
         ]);
     }
 
-    /**
-     * ส่งคำขอจองเทรนเนอร์ส่วนตัว (สถานะ pending รออนุมัติจากแอดมิน)
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -131,9 +114,7 @@ class PrivateTrainingController extends Controller
         $coach = User::findOrFail($data['coach_id']);
         $this->assertIsCoach($coach);
 
-        // MVP: จองได้เฉพาะ "วันนี้" เท่านั้น (ตามตารางเวลาที่แอดมินตั้งไว้)
         $date = now()->toDateString();
-
         $openTime = sprintf('%02d:00', self::OPEN_HOUR);
         $closeTime = sprintf('%02d:00', self::CLOSE_HOUR);
 
@@ -141,16 +122,15 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['start_time' => "สามารถจองได้เฉพาะช่วง {$openTime}–{$closeTime} น. เท่านั้น"]);
         }
 
-        $startAt = Carbon::parse("{$date} {$data['start_time']}");
-        if ($startAt->lte(now())) {
+        if (Carbon::parse("{$date} {$data['start_time']}")->lte(now())) {
             return back()->withErrors(['start_time' => 'ไม่สามารถจองช่วงเวลาที่ผ่านมาแล้วได้']);
         }
 
         $startDb = $data['start_time'] . ':00';
         $endDb = $data['end_time'] . ':00';
 
-        $result = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
-            // เช็คว่าโค้ชติดงานที่แอดมินมาร์คไว้ (สถานะ "ไม่ว่าง") ในช่วงเวลานี้หรือไม่
+        // ใช้ DB::transaction เพื่อทำ Atomic Operation ถ้ามีข้อผิดพลาดระบบจะ Rollback สิ่งที่ query ไว้ทั้งหมด ป้องกันข้อมูลขยะ
+        $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
             $isBusy = Availability::where('user_id', $coach->id)
                 ->whereDate('date', $date)
                 ->where('status', 'booked')
@@ -158,113 +138,84 @@ class PrivateTrainingController extends Controller
                 ->where('end_time', '>', $startDb)
                 ->exists();
 
-            if ($isBusy) {
-                return ['error' => 'ช่วงเวลานี้โค้ชติดภารกิจอื่นอยู่ ไม่สามารถจองได้'];
-            }
+            if ($isBusy)
+                return 'ช่วงเวลานี้โค้ชติดภารกิจอื่นอยู่ ไม่สามารถจองได้';
 
-            // เช็คว่ามีคนอื่นจองเทรนส่วนตัวช่วงนี้ไปก่อนแล้วหรือยัง (กันจองซ้ำ)
+            // lockForUpdate() คือ Pessimistic Locking ล็อก row ในฐานข้อมูลจนกว่า Transaction จะจบ
+            // ป้องกัน Race Condition กรณีที่มีผู้ใช้ 2 คนกดจองเวลาเดียวกันเป๊ะในระดับเสี้ยววินาที
             $overlap = PrivateTrainingBooking::overlapping($coach->id, $date, $startDb, $endDb)
                 ->lockForUpdate()
                 ->exists();
 
-            if ($overlap) {
-                return ['error' => 'ช่วงเวลานี้มีการจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น'];
-            }
+            if ($overlap)
+                return 'ช่วงเวลานี้มีการจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น';
 
-            $booking = PrivateTrainingBooking::create([
+            // array_merge รวม array ก้อนที่ส่งมาจาก Request เข้ากับข้อมูลที่ถูกบังคับใส่ (ป้องกันการถูก Inject ข้อมูลผิดๆ ผ่านฟอร์ม)
+            PrivateTrainingBooking::create(array_merge($data, [
                 'user_id' => $request->user()->id,
-                'coach_id' => $coach->id,
                 'date' => $date,
                 'start_time' => $startDb,
                 'end_time' => $endDb,
                 'status' => 'pending',
-                'note' => $data['note'] ?? null,
-            ]);
+            ]));
 
-            return ['booking' => $booking];
+            return null;
         });
 
-        if (isset($result['error'])) {
-            return back()->withErrors(['bookings' => $result['error']]);
-        }
+        if ($error)
+            return back()->withErrors(['bookings' => $error]);
 
-        $timeLabel = substr($data['start_time'], 0, 5) . ' - ' . substr($data['end_time'], 0, 5);
-
-        User::where('role', 'admin')->get()->each(function ($admin) use ($request, $coach, $date, $timeLabel) {
-            Notification::create([
-                'user_id' => $admin->id,
-                'title' => 'คำขอจองเทรนเนอร์ส่วนตัวใหม่',
-                'message' => "คุณ {$request->user()->name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->name} |วันที่ {$date}\nเวลา {$timeLabel}",
-            ]);
-        });
+        $timeLabel = $this->formatTimeRange($data['start_time'], $data['end_time']);
+        $this->notifyAdmins('คำขอจองเทรนเนอร์ส่วนตัวใหม่', "คุณ {$request->user()->name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->name} |วันที่ {$date}\nเวลา {$timeLabel}");
 
         return back()->with('success', 'ส่งคำขอจองเทรนเนอร์ส่วนตัวเรียบร้อย รอแอดมินอนุมัติ');
     }
 
-    /**
-     * ยกเลิกคำขอจองเทรนเนอร์ส่วนตัว (เฉพาะรายการของตัวเอง และยังไม่ได้เริ่ม/ยังรออนุมัติ)
-     */
     public function cancel(Request $request, PrivateTrainingBooking $privateTrainingBooking)
     {
         abort_unless($privateTrainingBooking->user_id === $request->user()->id, 403);
 
-        if ($privateTrainingBooking->status !== 'pending') {
-            return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการนี้ได้ เนื่องจากได้รับการอนุมัติหรือดำเนินการไปแล้ว']);
-        }
+        if ($error = $this->checkIfNotPending($privateTrainingBooking))
+            return $error;
 
         if ($privateTrainingBooking->isStarted()) {
             return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการที่ถึงเวลาแล้วได้']);
         }
 
         $privateTrainingBooking->update(['status' => 'cancelled']);
-
         return back()->with('success', 'ยกเลิกคำขอจองเรียบร้อย');
     }
 
-    private function assertIsCoach(User $coach): void
-    {
-        abort_unless($coach->role === 'staff' && $coach->membership_type === 'coach', 404, 'ไม่พบข้อมูลโค้ช');
-    }
-
     /* =====================================================================
-     |  ส่วนของแอดมิน — จัดการอนุมัติ/ปฏิเสธคำขอจองเทรนเนอร์ส่วนตัว
-     |  (รวมไว้ในคอนโทรลเลอร์เดียวกับฝั่ง user ตามแบบของ BookingController เดิม)
+     |  ADMIN SECTION
      ===================================================================== */
-
-    /**
-     * หน้าแอดมิน: รายการคำขอจองเทรนเนอร์ส่วนตัวทั้งหมด
-     */
     public function adminIndex(Request $request)
     {
         $status = $request->query('status', 'pending');
 
         $bookings = PrivateTrainingBooking::with(['user', 'coach'])
             ->when($status && $status !== 'all', fn($q) => $q->where('status', $status))
-            ->orderByDesc('date')
-            ->orderByDesc('start_time')
+            ->oldest()// oldest() มีค่าเท่ากับ orderBy('created_at', 'asc') คือคิวที่มาก่อนจะอยู่บนสุด (First In, First Out)
             ->paginate(15)
+            // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
         return view('admin.private-training.index', compact('bookings', 'status'));
     }
-
-    /**
-     * แอดมิน: อนุมัติคำขอจอง
-     */
     public function approve(PrivateTrainingBooking $privateTrainingBooking)
     {
-        if ($privateTrainingBooking->status !== 'pending') {
-            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว']);
-        }
+        if ($error = $this->checkIfNotPending($privateTrainingBooking))
+            return $error;
 
-        $overlap = PrivateTrainingBooking::where('coach_id', $privateTrainingBooking->coach_id)
-            ->whereDate('date', $privateTrainingBooking->date)
+        // overlapping() เป็น Local Scope ที่นิยามไว้ในโมเดล ช่วยลดความซ้ำซ้อนของการเขียน Query หาเวลาที่ทับซ้อน
+        $overlap = PrivateTrainingBooking::overlapping(
+            $privateTrainingBooking->coach_id,
+            $privateTrainingBooking->date,
+            $privateTrainingBooking->start_time,
+            $privateTrainingBooking->end_time
+        )
             ->where('status', 'approved')
             ->where('id', '!=', $privateTrainingBooking->id)
-            ->where(function ($q) use ($privateTrainingBooking) {
-                $q->where('start_time', '<', $privateTrainingBooking->end_time)
-                    ->where('end_time', '>', $privateTrainingBooking->start_time);
-            })
             ->exists();
 
         if ($overlap) {
@@ -272,60 +223,49 @@ class PrivateTrainingController extends Controller
         }
 
         $privateTrainingBooking->update(['status' => 'approved']);
-
         $this->markCoachAvailabilityAsBooked($privateTrainingBooking);
 
-        $date = Carbon::parse($privateTrainingBooking->date)->toDateString();
-        Notification::create([
-            'user_id' => $privateTrainingBooking->user_id,
-            'title' => 'การจองเทรนเนอร์ส่วนตัวได้รับการอนุมัติ',
-            'message' => "การจองกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$date}\nเวลา " . substr($privateTrainingBooking->start_time, 0, 5) . '-' . substr($privateTrainingBooking->end_time, 0, 5) . "\nได้รับการอนุมัติแล้ว",
-        ]);
+        $timeLabel = $this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time);
+        $this->notifyUser(
+            $privateTrainingBooking->user_id,
+            'การจองเทรนเนอร์ส่วนตัวได้รับการอนุมัติ',
+            "การจองกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nได้รับการอนุมัติแล้ว"
+        );
 
         return back()->with('success', 'อนุมัติคำขอจองเรียบร้อย');
     }
 
-    /**
-     * แอดมิน: ปฏิเสธคำขอจอง
-     */
     public function reject(Request $request, PrivateTrainingBooking $privateTrainingBooking)
     {
-        $data = $request->validate([
-            'reject_reason' => ['required', 'string', 'max:500'],
-        ]);
+        if ($error = $this->checkIfNotPending($privateTrainingBooking))
+            return $error;
 
-        if ($privateTrainingBooking->status !== 'pending') {
-            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว']);
-        }
+        $data = $request->validate(['reject_reason' => ['required', 'string', 'max:500']]);
 
         $privateTrainingBooking->update([
             'status' => 'rejected',
             'reject_reason' => $data['reject_reason'],
         ]);
 
-        $date = Carbon::parse($privateTrainingBooking->date)->toDateString();
-        Notification::create([
-            'user_id' => $privateTrainingBooking->user_id,
-            'title' => 'การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ',
-            'message' => "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$date}\nเวลา " . substr($privateTrainingBooking->start_time, 0, 5) . '-' . substr($privateTrainingBooking->end_time, 0, 5) . "\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
-        ]);
+        $timeLabel = $this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time);
+        $this->notifyUser(
+            $privateTrainingBooking->user_id,
+            'การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ',
+            "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}"
+        );
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
     }
 
-    /**
-     * เมื่อคำขอจองเทรนเนอร์ส่วนตัวได้รับการอนุมัติ ให้เขียนสถานะ "ไม่ว่าง" ลงตาราง availabilities
-     * ของโค้ชคนนั้น (ตารางเดียวกับที่หน้าแอดมิน "โค้ช และผู้ช่วย" ใช้แสดง Coach Availability Timeline)
-     * เขียนทุกสนามที่มีในระบบ เพราะโค้ชติดสอนเทรนส่วนตัวแล้ว จึงไม่ว่างในทุกสนามพร้อมกัน
-     * (ใช้ logic รูปแบบเดียวกับ StaffController::storeAvailability คือแบ่งเป็นรายชั่วโมง)
-     */
+    /* =====================================================================
+     |  PRIVATE HELPERS
+     ===================================================================== */
+
     private function markCoachAvailabilityAsBooked(PrivateTrainingBooking $booking): void
     {
         $startHour = Carbon::parse($booking->start_time)->hour;
         $endHour = Carbon::parse($booking->end_time)->hour;
-        $date = Carbon::parse($booking->date)->toDateString();
         $detail = 'เทรนเนอร์ส่วนตัว: ' . ($booking->user->name ?? 'ลูกค้า');
-
         $courts = Court::all();
 
         for ($h = $startHour; $h < $endHour; $h++) {
@@ -333,20 +273,55 @@ class PrivateTrainingController extends Controller
             $slotEnd = sprintf('%02d:00:00', $h + 1);
 
             foreach ($courts as $court) {
+                // updateOrCreate(array $attributes, array $values) 
+                // ค้นหา record ด้วย $attributes (ก้อนแรก) ถ้าเจอจะอัปเดตด้วย $values (ก้อนสอง) ถ้าไม่เจอจะ insert ใหม่
                 Availability::updateOrCreate(
                     [
                         'user_id' => $booking->coach_id,
-                        'date' => $date,
+                        'date' => $booking->date,
                         'start_time' => $slotStart,
                         'end_time' => $slotEnd,
                         'court_id' => $court->id,
                     ],
-                    [
-                        'status' => 'booked',
-                        'detail' => $detail,
-                    ]
+                    ['status' => 'booked', 'detail' => $detail]
                 );
             }
+        }
+    }
+
+    private function assertIsCoach(User $coach): void
+    {
+        abort_unless($coach->role === 'staff' && $coach->membership_type === 'coach', 404, 'ไม่พบข้อมูลโค้ช');
+    }
+
+    private function checkIfNotPending(PrivateTrainingBooking $booking)
+    {
+        return $booking->status !== 'pending'
+            ? back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถแก้ไขได้'])
+            : null;
+    }
+
+    private function formatTimeRange(string $start, string $end): string
+    {
+        // ตัดข้อความตำแหน่งที่ 0 จำนวน 5 ตัวอักษร เพื่อเอาแค่วินาทีออก (จาก '08:00:00' เป็น '08:00')
+        return substr($start, 0, 5) . '-' . substr($end, 0, 5);
+    }
+
+    private function notifyUser(int $userId, string $title, string $message): void
+    {
+        Notification::create([
+            'user_id' => $userId,
+            'title' => $title,
+            'message' => $message,
+        ]);
+    }
+
+    private function notifyAdmins(string $title, string $message): void
+    {
+        // pluck('id') จะดึงมาเฉพาะค่า id ในรูปแบบ Flat Array (เช่น [1, 2, 3]) ซึ่งประหยัดหน่วยความจำกว่าการโหลดมาทั้ง Model
+        $admins = User::where('role', 'admin')->pluck('id');
+        foreach ($admins as $adminId) {
+            $this->notifyUser($adminId, $title, $message);
         }
     }
 }

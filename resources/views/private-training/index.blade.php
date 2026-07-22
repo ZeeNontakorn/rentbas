@@ -3,6 +3,7 @@
 @section('title', 'เทรนเนอร์ส่วนตัว')
 
 @php
+    // เก็บ Config ข้อมูล Status ไว้สำหรับแปลงค่าและแสดงสี
     $statusMap = [
         'pending'  => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
         'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
@@ -23,7 +24,7 @@
             </div>
 
             {{-- ค้นหา --}}
-            <form method="GET" action="{{ route('private-training.index') }}" class="flex w-full md:w-125 flex-shrink-0 md:ml-auto">
+            <form method="GET" action="{{ route('private-training.index') }}" class="flex w-full md:max-w-md flex-shrink-0 md:ml-auto">
                 <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="ค้นหาชื่อโค้ช..."
                     class="w-full min-w-0 border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
                 <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer">
@@ -35,7 +36,7 @@
             </form>
         </div>
 
-        {{-- คำขอของฉัน --}}
+        {{-- คำขอจองของฉัน (แสดงเฉพาะเมื่อมีข้อมูล) --}}
         @if(isset($myRequests) && $myRequests->isNotEmpty())
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100">
@@ -43,7 +44,7 @@
                 </div>
                 <div class="divide-y divide-gray-100">
                     @foreach($myRequests as $r)
-                        {{-- ดึงข้อมูลสีและข้อความตามสถานะ (ถ้าไม่มีให้ fallback เป็นสีเทาแทน) --}}
+                        {{-- ดึงข้อมูลสีและข้อความตามสถานะ ถ้าไม่มีให้ fallback เป็นสีเทาแทน --}}
                         @php 
                             $sInfo = $statusMap[$r->status] ?? ['label' => $r->status, 'bg' => 'bg-gray-100', 'text' => 'text-gray-600']; 
                         @endphp
@@ -51,7 +52,8 @@
                             <div class="text-sm text-gray-700">
                                 <span class="font-medium">โค้ช {{ $r->coach->name }}</span>
                                 <span class="text-gray-400 mx-1">•</span>
-                                {{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}
+                                {{-- เรียก format() ได้เลย เพราะสมมติฐานว่าเราใส่ 'date' => 'date' ใน $casts ของ Model แล้ว --}}
+                                {{ $r->date->format('d/m/Y') }}
                                 <span class="text-gray-400 mx-1">•</span>
                                 {{ substr($r->start_time, 0, 5) }} - {{ substr($r->end_time, 0, 5) }} น.
                             </div>
@@ -65,7 +67,7 @@
                                 @if($r->status === 'pending')
                                     <form method="POST" action="{{ route('private-training.cancel', $r) }}" class="cancel-form">
                                         @csrf
-                                        <button type="button" class="btn-cancel-request text-xs text-red-500 hover:text-red-600 font-medium">ยกเลิก</button>
+                                        <button type="button" class="btn-cancel-request text-xs text-red-500 hover:text-red-600 font-medium cursor-pointer transition">ยกเลิก</button>
                                     </form>
                                 @endif
                             </div>
@@ -79,7 +81,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             @forelse($coaches as $coach)
                 <a href="{{ route('private-training.show', $coach->id) }}"
-                    class="bg-white rounded-2xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-md transition group">
+                    class="bg-white rounded-2xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-md transition group block cursor-pointer">
                     <div class="flex items-center gap-4">
                         <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                             <span class="text-orange-600 text-xl font-bold">{{ mb_strtoupper(mb_substr($coach->name, 0, 1)) }}</span>
@@ -102,7 +104,7 @@
                 </a>
             @empty
                 <div class="col-span-full">
-                    <div class="bg-white rounded-xl border border-gray-200 py-16 text-center">
+                    <div class="bg-white rounded-xl border border-gray-200 py-16 text-center shadow-sm">
                         <p class="text-gray-400 font-medium text-sm">ยังไม่มีข้อมูลโค้ชในระบบ</p>
                     </div>
                 </div>
@@ -113,21 +115,47 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.querySelectorAll('.btn-cancel-request').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const form = this.closest('form');
-            Swal.fire({
-                title: 'ยกเลิกคำขอจองนี้?',
-                text: 'คุณจะไม่สามารถกู้คืนคำขอนี้ได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'ใช่, ยกเลิกเลย',
-                cancelButtonText: 'ปิด',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) form.submit();
+    // ตั้งค่าพื้นฐานสำหรับ Toast Notification (ใช้สำหรับแสดงข้อความสำเร็จ/ผิดพลาด)
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // ตรวจสอบ Flash Session และแสดง Toast แบบเดียวกับฝั่งแอดมิน
+        @if (session()->has('success')) 
+            Toast.fire({ icon: 'success', title: @js(session('success')) }); 
+        @endif
+
+        @if ($errors->any()) 
+            Toast.fire({ icon: 'error', title: @js($errors->first()) }); 
+        @endif
+
+        // ดักจับการคลิกปุ่มยกเลิกคำขอจอง
+        document.querySelectorAll('.btn-cancel-request').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const form = this.closest('form');
+                
+                // แสดง Popup ยืนยันก่อน Submit Form
+                Swal.fire({
+                    title: 'ยกเลิกคำขอจองนี้?',
+                    text: 'คุณจะไม่สามารถกู้คืนคำขอนี้ได้',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#9ca3af',
+                    confirmButtonText: 'ใช่, ยกเลิกเลย',
+                    cancelButtonText: 'ปิด',
+                    reverseButtons: true
+                }).then((result) => {
+                    // ถ้าผู้ใช้กด 'ใช่' ให้สั่ง Submit ฟอร์มที่ปุ่มนี้อยู่ข้างใน
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
             });
         });
     });
