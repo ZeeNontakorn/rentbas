@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\OtpToken;
 use App\Mail\SendOtpMail;
@@ -31,6 +32,7 @@ class ProfileController extends Controller
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . Auth::id(),
             'phone' => 'sometimes|nullable|max:10',
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'current_password' => 'required_with:password|string',
             'password' => 'nullable|required_with:current_password|string|min:6|confirmed',
             'otp' => 'nullable|string|size:6'
@@ -40,6 +42,9 @@ class ProfileController extends Controller
             'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
             'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
             'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'profile_image.image' => 'รูปโปรไฟล์ต้องเป็นไฟล์รูปภาพเท่านั้น',
+            'profile_image.mimes' => 'รูปโปรไฟล์รองรับเฉพาะไฟล์ jpg, jpeg, png และ webp',
+            'profile_image.max' => 'รูปโปรไฟล์ต้องมีขนาดไม่เกิน :max KB',
             'current_password.required_with' => 'กรุณากรอกรหัสผ่านเดิมเพื่อเปลี่ยนรหัสผ่านใหม่',
             'current_password.string' => 'กรุณากรอกรหัสผ่านเดิมให้ถูกต้อง',
             'password.required_with' => 'กรุณากรอกรหัสผ่านใหม่',
@@ -94,6 +99,17 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
+        if (in_array($user->membership_type, ['coach', 'court_assistant'], true) && $request->hasFile('profile_image')) {
+            $staffProfile = $user->staffProfile()->firstOrCreate(['user_id' => $user->id]);
+
+            if (!empty($staffProfile->profile_image)) {
+                Storage::disk('public')->delete($staffProfile->profile_image);
+            }
+
+            $staffProfile->profile_image = $request->file('profile_image')->store('coach-profiles', 'public');
+            $staffProfile->save();
+        }
 
         return back()->with('success','อัปเดตข้อมูลสำเร็จ');
     }
