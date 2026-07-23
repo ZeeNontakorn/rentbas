@@ -1,13 +1,4 @@
 <!-- resources/views/components/navbar.blade.php -->
-@auth
-    @php
-        $activeCheckout = \App\Models\Booking::where('user_id', auth()->id())
-            ->where('status', 'pending_payment')
-            ->where('locked_until', '>', now())
-            ->latest('locked_until')
-            ->first();
-    @endphp
-@endauth
 <nav class="sticky top-0 z-50 bg-gray-900 shadow-md text-white">
     <div class="container mx-auto flex justify-between items-center py-4 px-4 md:px-10">
         <!-- Logo / ชื่อระบบ -->
@@ -15,22 +6,6 @@
             <!-- System Name -->
             <span class="font-bold text-lg md:text-2xl leading-tight">THATA HOMECOURT</span>
         </a>
-
-        <div class="flex items-center gap-3 md:hidden ml-auto mr-3">
-            @auth
-                @if(auth()->user()->role === 'admin')
-                    <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                        onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
-                    </button>
-                @else
-                    <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                        onclick="swalalert()">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
-                    </button>
-                @endif
-            @endauth
-        </div>
 
         <!-- ปุ่มเปิด/ปิดเมนู สำหรับจอมือถือ -->
         <button id="mobileMenuBtn" class="md:hidden flex items-center focus:outline-none hover:text-orange-500 transition" aria-label="เปิดเมนู">
@@ -45,18 +20,7 @@
         <!-- เมนูหลัก (Desktop) -->
         <div class="hidden md:flex items-center gap-4 md:gap-6">
             @auth
-                @if($activeCheckout ?? false)
-                    <a href="{{ route('checkout.show', $activeCheckout) }}" class="flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 transition">
-                        กลับไปชำระเงิน
-                        <span class="inline-block h-2 w-2 rounded-full bg-white animate-pulse"></span>
-                    </a>
-                @endif
-                @php
-                    $user = auth()->user();
-                    $isAdminLike = in_array($user->role, ['admin', 'superadmin'], true);
-                    $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
-                @endphp
-                @if($isAdminLike)
+                @if(auth()->user()->role === 'admin')
                     <!-- เมนูสำหรับ Admin -->
                     <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
@@ -67,15 +31,9 @@
                     <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
                     </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
-                    </a>
                     <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
-                    <a href="{{ route('admin.courses') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์สเรียน
                     </a>
-                
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard
                     </a>
@@ -89,13 +47,6 @@
                     <a href="{{ route('history') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
-
-                    @if($canManageBookings && auth()->user()->role === 'staff')
-                        <!-- จัดการการจอง สำหรับ Staff -->
-                        <a href="{{ route('admin.bookings') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                            จัดการการจอง
-                        </a>
-                    @endif
                 @endif
 
                 <!-- Notification -->
@@ -131,8 +82,8 @@
 
                         <div id="notifItemsWrap">
                 @php
-                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน/สตาฟ -> จัดการการจอง
-                    $defaultNotifTarget = in_array(auth()->user()->role, ['admin', 'staff']) ? route('admin.bookings') : route('history');
+                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน -> จัดการการจอง
+                    $defaultNotifTarget = auth()->user()->role === 'admin' ? route('admin.bookings') : route('history');
                     // แต่ถ้าเป็นแจ้งเตือนผลการจอง (อนุมัติ/ปฏิเสธ) ให้ไปหน้าประวัติการจองเสมอ ไม่ว่าจะ role ไหน
                     $historyOnlyTitles = ['การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ'];
                 @endphp
@@ -196,7 +147,7 @@
                 </div>
 
                 <!-- Divider for Admin (as per Figma) -->
-                @if($isAdminLike)
+                @if(auth()->user()->role === 'admin')
                     <div class="h-6 w-px bg-gray-600 mx-2"></div>
                     <div class="relative">
                         <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none">
@@ -212,9 +163,6 @@
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                 จัดการผู้ใช้งาน
                             </a>
-                            <a href="{{ route('admin.staffs.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
-                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"></path></svg>
-                                โค้ช และผู้ช่วย
                             <a href="{{ route('admin.edit.text') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 แก้ไขเนื้อหาเว็บไซต์
@@ -229,35 +177,22 @@
                             </a>
                         </div>
                     </div>
-
-                    <!-- Logout -->
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                        {{-- credit --}}
-                           <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                            onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                            {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                        </button>
-
                 @else
-                {{-- credit --}}
-                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                    onclick="swalalert()">
-                    {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                </button>
                     <div class="h-6 w-px bg-gray-600 mx-2"></div>
                     <a href="{{ route('profile') }}" class="flex items-center text-gray-300 font-medium hover:text-orange-500 transition">
                         {{ auth()->user()->name }}
                     </a>
-                    <!-- Logout -->
-                <form method="POST" action="{{ route('logout') }}" class="ml-2">
-                    @csrf
-                    <button type="submit" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center">
-                        ออกจากระบบ
-                    </button>
-                </form>
                 @endif
+
+                <!-- Logout -->
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                    @csrf
+                </form>
+                {{-- credit --}}
+                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
+                    onclick="swalalert()">
+                    {{ auth()->user()->credit_balance }} <span class="ml-1">฿</span>
+                </button>
             @endauth
 
             @guest
@@ -282,18 +217,7 @@
     <!-- เมนู (Mobile, แบบเลื่อนลง) -->
     <div id="mobileMenu" class="hidden md:hidden border-t border-gray-800 bg-gray-900 px-4 pb-4">
         @auth
-            @if($activeCheckout ?? false)
-                <a href="{{ route('checkout.show', $activeCheckout) }}" class="mt-3 flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition">
-                    กลับไปชำระเงิน
-                    <span class="inline-block h-2 w-2 rounded-full bg-white animate-pulse"></span>
-                </a>
-            @endif
-            @php
-                $user = auth()->user();
-                $isAdminLike = in_array($user->role, ['admin', 'superadmin'], true);
-                $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
-            @endphp
-            @if($isAdminLike)
+            @if(auth()->user()->role === 'admin')
                 <div class="flex flex-col py-2">
                     <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
@@ -304,19 +228,12 @@
                     <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
                     </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
-                    </a>
                     <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
-                    <a href="{{ route('admin.courses') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์สเรียน
                     </a>
-                
                     <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard
                     </a>
-
                 </div>
             @else
                 <div class="flex flex-col py-2">
@@ -326,11 +243,6 @@
                     <a href="{{ route('history') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
-                    @if($canManageBookings && auth()->user()->role === 'staff')
-                        <a href="{{ route('admin.bookings') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                            จัดการการจอง
-                        </a>
-                    @endif
                 </div>
             @endif
 
@@ -353,7 +265,7 @@
             {{-- ใช้ dropdown เดียวกับ desktop โดยอ้างอิงผ่าน id เดิม --}}
             <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto max-h-80"></div>
 
-            @if($isAdminLike)
+            @if(auth()->user()->role === 'admin')
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
                     <div class="font-bold text-orange-500 mb-2">{{ auth()->user()->name }}</div>

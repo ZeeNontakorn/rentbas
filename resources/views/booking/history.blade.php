@@ -39,10 +39,31 @@
     font-size: 11px; font-weight: 600; font-family: 'Kanit', sans-serif;
 }
 .badge-pending { background: #fef3c7; color: #92400e; }
+.badge-pending_payment { background: #ffedd5; color: #9a3412; }
 .badge-approved { background: #ecfdf5; color: #047857; }
 .badge-rejected { background: #fef2f2; color: #b91c1c; }
 .badge-cancelled { background: #f3f4f6; color: #4b5563; }
 .badge-expired { background: #e5e7eb; color: #4b5563; }
+
+/* ─── PAY NOW BUTTON + COUNTDOWN ─── */
+.btn-pay-now {
+    background: #87D068;
+    color: #fff;
+    border: none;
+    font-size: 12px; font-weight: 700; font-family: 'Kanit', sans-serif;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-pay-now:hover { background: #76bc5a; }
+.pay-countdown {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'Kanit', sans-serif; font-size: 11px; font-weight: 700;
+    color: #b45309;
+}
+.pay-countdown.danger { color: #b91c1c; }
 
 /* ─── CANCEL BUTTON ─── */
 .btn-cancel {
@@ -77,6 +98,7 @@
     function getStatusDetails($status) {
         return match($status) {
             'pending' => ['st-pending', 'badge-pending', 'รอการอนุมัติ', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'],
+            'pending_payment' => ['st-pending-payment', 'badge-pending_payment', 'รอชำระเงิน', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-9 4h16a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />'],
             'approved' => ['st-approved', 'badge-approved', 'อนุมัติแล้ว', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'],
             'rejected' => ['st-rejected', 'badge-rejected', 'ถูกปฏิเสธ', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />'],
             'cancelled' => ['st-cancelled', 'badge-cancelled', 'ยกเลิก', '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />'],
@@ -102,10 +124,10 @@
 
     {{-- Banner Image --}}
     <div class="w-full h-[220px] rounded-[16px] overflow-hidden mb-8 shadow-sm relative group" data-aos="zoom-in" data-aos-delay="100">
-        <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1400&auto=format&fit=crop" 
-             style="filter: grayscale(80%) sepia(10%);" 
+        <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1400&auto=format&fit=crop"
+             style="filter: grayscale(80%) sepia(10%);"
              alt="History Banner" class="w-full h-full object-cover transition duration-500 group-hover:scale-105 group-hover:grayscale-0">
-        
+
         <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
         <div class="absolute inset-y-0 left-0 flex flex-col justify-center px-10 text-white">
             <svg class="w-10 h-10 mb-3 text-[#87D068]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -134,7 +156,7 @@
                     <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                     <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                    </svg>                   
+                    </svg>
                  </div>
                     <h3 class="text-base font-medium text-gray-600">ไม่มีรายการจองปัจจุบัน</h3>
                     <p class="text-sm text-gray-500 mt-1">คุณยังไม่มีตารางเล่นบาสในเร็วๆ นี้</p>
@@ -145,11 +167,11 @@
                         @php
                             $bookingEndTime = \Carbon\Carbon::parse($b->booking_date)->setTimeFromTimeString($b->end_time);
                             $currentStatus = ($b->status === 'pending' && $bookingEndTime->isPast()) ? 'expired' : $b->status;
-                        
-                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($currentStatus); 
+
+                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($currentStatus);
                             $bDate = \Carbon\Carbon::parse($b->booking_date);
                         @endphp
-                        
+
                         <div class="b-card">
                             {{-- 1. Details --}}
                             <div class="flex-1">
@@ -171,11 +193,27 @@
 
                             {{-- 3. Status Badge --}}
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 mt-2 md:mt-0 border-t md:border-none border-gray-100 pt-3 md:pt-0">
-                                <span class="badge {{ $bdgClass }}">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $stIcon !!}</svg>
-                                    {{ $stLabel }}
-                                </span>
-                                
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <span class="badge {{ $bdgClass }}" data-status-badge="{{ $b->id }}">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $stIcon !!}</svg>
+                                        <span data-status-label="{{ $b->id }}">{{ $stLabel }}</span>
+                                    </span>
+
+                                    @if($currentStatus === 'pending_payment')
+                                        <span class="pay-countdown" data-locked-until="{{ $b->locked_until?->toIso8601String() }}" data-booking-id="{{ $b->id }}">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span class="pay-clock">--:--</span>
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if($currentStatus === 'pending_payment')
+                                    <a href="{{ route('checkout.show', $b) }}" class="btn-pay-now w-full md:w-auto justify-center md:ml-auto" data-pay-btn="{{ $b->id }}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a4 4 0 00-8 0v2M5 9h14l1 12H4L5 9z"/></svg>
+                                        กลับไปชำระเงิน
+                                    </a>
+                                @endif
+
                                 @if(!$b->isStarted() && $b->status === 'pending')
                                     <form method="POST" action="{{ route('booking.cancel', $b) }}" class="cancel-form md:ml-auto block">
                                         @csrf
@@ -201,14 +239,14 @@
             @else
                 <div class="space-y-4">
                     @foreach($past as $b)
-                        @php 
+                        @php
                             $bookingEndTime = \Carbon\Carbon::parse($b->booking_date)->setTimeFromTimeString($b->end_time);
                             $currentStatus = ($b->status === 'pending' && $bookingEndTime->isPast()) ? 'expired' : $b->status;
-                        
-                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($currentStatus); 
+
+                            [$stClass, $bdgClass, $stLabel, $stIcon] = getStatusDetails($currentStatus);
                             $bDate = \Carbon\Carbon::parse($b->booking_date);
                         @endphp
-                        
+
                         <div class="b-card opacity-80 hover:opacity-100">
                             {{-- 2. Details --}}
                             <div class="flex-1">
@@ -284,6 +322,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
         });
+    });
+
+    // นับถอยหลังเวลาที่เหลือของรายการ "รอชำระเงิน" ทุกรายการในหน้านี้พร้อมกัน
+    // (ใช้กลไก data-locked-until เดียวกับหน้า checkout/show.blade.php)
+    document.querySelectorAll('.pay-countdown').forEach(function (el) {
+        const lockedUntilStr = el.dataset.lockedUntil;
+        const bookingId = el.dataset.bookingId;
+        const clockEl = el.querySelector('.pay-clock');
+        if (!lockedUntilStr) { clockEl.textContent = '—'; return; }
+
+        const lockedUntil = new Date(lockedUntilStr).getTime();
+
+        function tick() {
+            const remainMs = lockedUntil - Date.now();
+
+            if (remainMs <= 0) {
+                clearInterval(interval);
+                el.classList.add('danger');
+                clockEl.textContent = 'หมดเวลา';
+
+                // อัปเดต badge สถานะ + ซ่อนปุ่มจ่ายเงินให้ตรงกับความจริงทันที โดยไม่ต้อง reload หน้า
+                const badge = document.querySelector('[data-status-badge="' + bookingId + '"]');
+                const label = document.querySelector('[data-status-label="' + bookingId + '"]');
+                const payBtn = document.querySelector('[data-pay-btn="' + bookingId + '"]');
+                if (badge) { badge.classList.remove('badge-pending_payment'); badge.classList.add('badge-expired'); }
+                if (label) { label.textContent = 'หมดเวลาชำระเงิน'; }
+                if (payBtn) { payBtn.remove(); }
+                return;
+            }
+
+            const totalSec = Math.floor(remainMs / 1000);
+            const m = Math.floor(totalSec / 60);
+            const s = totalSec % 60;
+            clockEl.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+
+            if (totalSec <= 120) {
+                el.classList.add('danger');
+            }
+        }
+
+        tick();
+        const interval = setInterval(tick, 1000);
     });
 });
 </script>
