@@ -1,86 +1,4 @@
-@php
-$isEdit = isset($course);
-$existingPackages = $isEdit ? $course->packages->values() : collect();
-$existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
-'weekdays' => $s->weekdays ?: ['mon', 'wed', 'fri'],
-'start' => \Illuminate\Support\Carbon::parse($s->start_time)->format('H:i'),
-'end' => \Illuminate\Support\Carbon::parse($s->end_time)->format('H:i'),
-'limited' => $s->is_limited_spots, 'capacity' => $s->capacity,
-])->values() : collect();
-@endphp
-
-<style>
-#courseForm input,
-#courseForm select,
-#courseForm textarea {
-    color-scheme: light;
-    color: #0f172a !important;
-    background: #fff !important;
-}
-
-#courseForm input::placeholder,
-#courseForm textarea::placeholder {
-    color: #94a3b8 !important;
-}
-
-/* กันช่อง "จำนวนคน" (capacity) ตัวอักษรขาวมองไม่เห็น ให้ชัวร์ขึ้นด้วย selector เจาะจง */
-#courseForm input.capacity {
-    color: #0f172a !important;
-    -webkit-text-fill-color: #0f172a !important;
-    background: #fff !important;
-}
-
-.day:checked+span {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #fff;
-}
-
-/* ---- Validation styles ---- */
-#courseForm .field-error-msg {
-    display: none;
-    color: #dc2626;
-    font-size: 0.75rem;
-    margin-top: 0.375rem;
-}
-#courseForm .field-error-msg.show { display: block; }
-#courseForm .input-invalid {
-    border-color: #dc2626 !important;
-    background-color: #fef2f2 !important;
-}
-#courseForm .schedule.row-invalid,
-#courseForm .package.row-invalid {
-    border-color: #dc2626 !important;
-    background-color: #fef2f2 !important;
-}
-
-/* ---- Dropzone ---- */
-#dropzone {
-    transition: border-color .15s ease, background-color .15s ease;
-}
-#dropzone.drag-over {
-    border-color: #2563eb;
-    background-color: rgba(37, 99, 235, .05);
-}
-
-/* ---- ปุ่ม/การ์ดต่างๆ ---- */
-#courseForm .schedule,
-#courseForm .package {
-    transition: border-color .15s ease, background-color .15s ease;
-}
-#courseForm .removeRowBtn {
-    transition: color .15s ease, background-color .15s ease;
-}
-#courseForm .removeRowBtn:hover {
-    background-color: #fee2e2;
-}
-#courseForm .addRowBtn {
-    transition: background-color .15s ease, border-color .15s ease;
-}
-#courseForm .addRowBtn:hover {
-    background-color: #eff6ff;
-}
-</style>
+@php($isEdit = isset($course))
 
 <form action="{{ $isEdit ? route('admin.courses.update', $course) : route('admin.courses.store') }}" method="POST"
     enctype="multipart/form-data" id="courseForm" class="space-y-6" novalidate>
@@ -106,9 +24,9 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
         <div class="mb-6">
             <label class="mb-2 block text-sm font-medium text-slate-700">ชื่อคลาสเรียน</label>
             <input id="course_name_input" name="course_name" value="{{ old('course_name', $isEdit ? $course->course_name : '') }}"
-                class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="เช่น Standard Class">
-            <p id="course_name_error" class="field-error-msg">กรุณากรอกชื่อคลาสเรียน</p>
+            <p id="course_name_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกชื่อคลาสเรียน</p>
         </div>
         <div class="grid gap-6 md:grid-cols-2">
             <div><label class="mb-3 block text-sm font-medium text-slate-700">กลุ่มผู้เรียนเป้าหมาย</label>
@@ -123,17 +41,17 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
                 <div class="flex items-center gap-2">
                     <input id="min_age_input" type="number" name="min_age" min="0"
                         value="{{ old('min_age', $isEdit ? $course->min_age : '') }}"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ขั้นต่ำ"><span
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ขั้นต่ำ"><span
                         class="flex-shrink-0 text-slate-400">ถึง</span><input id="max_age_input" type="number" name="max_age" min="0"
                         value="{{ old('max_age', $isEdit ? $course->max_age : '') }}"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="สูงสุด">
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="สูงสุด">
                 </div>
-                <p id="age_range_error" class="field-error-msg">กรุณากรอกอายุขั้นต่ำ และอายุสูงสุดต้องมากกว่าหรือเท่ากับอายุขั้นต่ำ</p>
+                <p id="age_range_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกอายุขั้นต่ำ และอายุสูงสุดต้องมากกว่าหรือเท่ากับอายุขั้นต่ำ</p>
             </div>
         </div>
         <div class="mt-6"><label class="mb-2 block text-sm font-medium text-slate-700">รายละเอียดคอร์ส
                 (ไม่บังคับ)</label><textarea name="description" rows="3"
-                class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description', $isEdit ? $course->description : '') }}</textarea>
+                class="w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description', $isEdit ? $course->description : '') }}</textarea>
         </div>
     </section>
 
@@ -146,9 +64,9 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
             </div>
         </div>
         <div id="scheduleRows" class="space-y-3"></div>
-        <p id="schedule_error" class="field-error-msg">กรุณาเลือกวันเรียนอย่างน้อย 1 วัน กรอกเวลาให้ครบทุกรอบ (เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น) และถ้าติ๊ก "จำกัดจำนวน" ต้องกรอกจำนวนคนด้วย</p>
+        <p id="schedule_error" class="hidden mt-1.5 text-xs text-red-600">กรุณาเลือกวันเรียนอย่างน้อย 1 วัน กรอกเวลาให้ครบทุกรอบ (เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น) และถ้าติ๊ก "จำกัดจำนวน" ต้องกรอกจำนวนคนด้วย</p>
         <button type="button" id="addSchedule"
-            class="addRowBtn mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600">＋ เพิ่มรอบเวลาเรียน</button>
+            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มรอบเวลาเรียน</button>
         <div id="scheduleInputs"></div>
     </section>
 
@@ -162,9 +80,8 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
             </div>
         </div>
         <div id="packageRows" class="space-y-3"></div>
-        <p id="package_error" class="field-error-msg">กรุณากรอกจำนวนครั้ง ราคา และอายุแพ็กเกจให้ครบทุกแพ็กเกจ (เป็นตัวเลขที่ถูกต้อง)</p>
-        <button type="button" id="addPackage"
-            class="addRowBtn mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600">＋ เพิ่มแพ็กเกจ</button>
+            <p id="package_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกจำนวนครั้ง ราคา (ไม่เกิน {{ number_format($maxPackagePrice) }} บาท) และอายุแพ็กเกจให้ครบทุกแพ็กเกจ (เป็นตัวเลขที่ถูกต้อง)</p>        <button type="button" id="addPackage"
+            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มแพ็กเกจ</button>
     </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -177,7 +94,7 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
         </div>
 
         <div id="dropzone"
-            class="relative cursor-pointer overflow-hidden rounded-lg border-2 border-dashed border-slate-300 text-center hover:border-blue-400 hover:bg-blue-50/40">
+            class="relative cursor-pointer overflow-hidden rounded-lg border-2 border-dashed border-slate-300 text-center transition-colors duration-150 hover:border-blue-400 hover:bg-blue-50/40">
             <div id="dropzone-empty" class="px-6 py-8 {{ $isEdit && $course->image_url ? 'hidden' : '' }}">
                 <svg class="mx-auto mb-2 h-8 w-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -191,17 +108,10 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
                 <div class="group absolute inset-0 flex items-center justify-center bg-black/0 transition hover:bg-black/40">
                     <span class="text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">คลิกเพื่อเปลี่ยนภาพ</span>
                 </div>
-                <button type="button" id="remove-preview-btn"
-                    class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow hover:bg-white"
-                    title="ลบภาพที่เลือก">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
             </div>
             <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" class="hidden">
         </div>
-        <p id="image_error" class="field-error-msg">รองรับเฉพาะไฟล์ JPG, PNG, WEBP และต้องมีขนาดไม่เกิน 2MB</p>
+        <p id="image_error" class="hidden mt-1.5 text-xs text-red-600">รองรับเฉพาะไฟล์ JPG, PNG, WEBP และต้องมีขนาดไม่เกิน 2MB</p>
         <div class="mt-2 flex items-center gap-3">
             <p id="imageName" class="text-xs text-slate-500 {{ $isEdit && $course->image_url ? '' : 'hidden' }}">
                 {{ $isEdit && $course->image_url ? 'ใช้ภาพเดิมของคอร์สนี้' : '' }}
@@ -221,27 +131,25 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
     </div>
 
     <template id="scheduleTemplate">
-        <div class="schedule rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div class="schedule rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
             <div class="flex justify-between"><b class="text-sm text-slate-700">รอบเวลาเรียน</b><button type="button"
-                    class="removeRowBtn remove rounded-lg px-2 py-1 text-sm text-red-500">ลบรอบ</button></div>
+                    class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบรอบ</button></div>
 
             <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน</label>
             <div class="flex flex-wrap gap-2">
-                @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value=>$label)<label class="cursor-pointer"><input class="day sr-only" type="checkbox" value="{{ $value }}"><span
-                        class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm text-slate-600 transition">{{ $label }}</span></label>@endforeach
+                @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value=>$label)<label class="cursor-pointer"><input class="day peer sr-only" type="checkbox" value="{{ $value }}"><span
+                        class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm text-slate-600 transition peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">{{ $label }}</span></label>@endforeach
             </div>
 
             <div class="mt-4 grid gap-3 md:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">เวลาเริ่ม</label>
-                    <input class="start w-full rounded-lg border border-slate-300 px-3 py-2" type="time"
-                        value="16:00">
+                    <input class="start w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]" type="time">
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">เวลาสิ้นสุด</label>
                     <div class="flex items-center gap-2">
-                        <input class="end w-full rounded-lg border border-slate-300 px-3 py-2" type="time"
-                            value="17:30">
+                        <input class="end w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]" type="time">
                         <span class="duration inline-block flex-shrink-0 whitespace-nowrap rounded-full bg-blue-100 px-2 py-1.5 text-xs font-medium text-blue-700">0.00 ชั่วโมง</span>
                     </div>
                 </div>
@@ -251,7 +159,7 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
                 <label class="text-slate-500 flex flex-shrink-0 cursor-pointer items-center gap-2 text-sm"><input class=" limited h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         type="checkbox">จำกัดจำนวน</label>
                 <div class="capacityWrap hidden items-center gap-2">
-                    <input class="capacity w-32 rounded-lg border border-slate-300 px-3 py-2" min="1" type="number"
+                    <input class="capacity w-32 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light] [-webkit-text-fill-color:#0f172a]" min="1" type="number"
                         placeholder="จำนวนคน">
                     <span class="text-xs text-slate-500">คน</span>
                 </div>
@@ -259,43 +167,45 @@ $existingSchedules = $isEdit ? $course->schedules->map(fn ($s) => [
         </div>
     </template>
     <template id="packageTemplate">
-        <div class="package rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div class="package rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
             <div class="flex justify-between"><b class="text-sm text-slate-700">แพ็กเกจ</b><button type="button"
-                    class="removeRowBtn removePackage rounded-lg px-2 py-1 text-sm text-red-500">ลบแพ็กเกจ</button></div>
+                    class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบแพ็กเกจ</button></div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">ประเภทคอร์ส</label>
-                    <select class="packageType w-full rounded-lg border border-slate-300 px-3 py-2">
+                    <select class="packageType w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]">
                         <option value="group">Standard Group Class</option>
                         <option value="private">Private Class</option>
                     </select>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">จำนวนครั้ง</label>
-                    <input class="sessions w-full rounded-lg border border-slate-300 px-3 py-2" type="number" min="1"
+                    <input class="sessions w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]" type="number" min="1"
                         placeholder="จำนวนครั้ง เช่น 4">
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">ราคา (บาท)</label>
-                    <input class="price w-full rounded-lg border border-slate-300 px-3 py-2"
-                        type="number" min="0" step=".01" placeholder="ราคา (บาท)">
+                    <input class="price w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]"
+                        type="number" min="0" max="{{ $maxPackagePrice }}" step=".01" placeholder="ราคา (บาท)">
+
+                    
                     <p class="avgPrice mt-1.5 text-xs font-medium text-green-600">💡 เฉลี่ยครั้งละ: <span class="avgPriceValue">0</span> บาท</p>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">อายุแพ็กเกจ</label>
-                    <input class="validity w-full rounded-lg border border-slate-300 px-3 py-2" type="number" min="1"
+                    <input class="validity w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]" type="number" min="1"
                         placeholder="อายุแพ็กเกจ">
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">หน่วยอายุ</label>
-                    <select class="unit w-full rounded-lg border border-slate-300 px-3 py-2">
+                    <select class="unit w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]">
                         <option value="days">วัน</option>
                         <option value="hours">ชั่วโมง</option>
                     </select>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">คำแนะนำ (ไม่บังคับ)</label>
-                    <input class="recommendation w-full rounded-lg border border-slate-300 px-3 py-2"
+                    <input class="recommendation w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]"
                         placeholder="คำแนะนำ (ไม่บังคับ)">
                 </div>
             </div>
@@ -312,16 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
         oldSchedules = @json($existingSchedules),
         oldPackages = @json($existingPackages);
 
+    const MAX_PACKAGE_PRICE = {{ $maxPackagePrice }};
+    const INVALID_CLASSES = ['!border-red-600', '!bg-red-50'];
+
     // ---------- helper: error แบบ field เดี่ยว ----------
     function showFieldError(inputEl, errorId) {
-        if (inputEl) inputEl.classList.add('input-invalid');
+        if (inputEl) inputEl.classList.add(...INVALID_CLASSES);
         const errEl = document.getElementById(errorId);
-        if (errEl) errEl.classList.add('show');
+        if (errEl) errEl.classList.remove('hidden');
     }
     function clearFieldError(errorId, inputEl) {
-        if (inputEl) inputEl.classList.remove('input-invalid');
+        if (inputEl) inputEl.classList.remove(...INVALID_CLASSES);
         const errEl = document.getElementById(errorId);
-        if (errEl) errEl.classList.remove('show');
+        if (errEl) errEl.classList.add('hidden');
     }
 
     // คำนวณระยะเวลาเรียน (ชม.) จากเวลาเริ่ม-เวลาสิ้นสุดของแต่ละรอบ
@@ -351,8 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addSchedule(data = {
         weekdays: ['mon', 'wed', 'fri'],
-        start: '16:00',
-        end: '17:30'
+        start: '00:00',
+        end: '00:00'
     }) {
         const row = scheduleTemplate.content.firstElementChild.cloneNode(true);
         row.querySelector('.start').value = data.start;
@@ -368,8 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setCapacityVisible(!!data.limited);
         row.querySelectorAll('.day').forEach(input => input.checked = data.weekdays.includes(input.value));
         const clearRowError = () => {
-            row.classList.remove('row-invalid');
-            row.querySelector('.capacity').classList.remove('input-invalid');
+            row.classList.remove(...INVALID_CLASSES);
+            row.querySelector('.capacity').classList.remove(...INVALID_CLASSES);
             clearFieldError('schedule_error');
         };
         row.querySelector('.limited').onchange = e => {
@@ -393,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.querySelector('.validity').value = data.validity_value || '';
         row.querySelector('.unit').value = data.validity_unit || 'days';
         row.querySelector('.recommendation').value = data.recommendation_text || '';
-        const clearRowError = () => { row.classList.remove('row-invalid'); clearFieldError('package_error'); };
+        const clearRowError = () => { row.classList.remove(...INVALID_CLASSES); clearFieldError('package_error'); };
         row.querySelector('.sessions').oninput = () => { calcPackageAverage(row); clearRowError(); };
         row.querySelector('.price').oninput = () => { calcPackageAverage(row); clearRowError(); };
         row.querySelector('.validity').oninput = clearRowError;
@@ -411,8 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ['min_age_input', 'max_age_input'].forEach(id => {
         document.getElementById(id).addEventListener('input', function () {
             clearFieldError('age_range_error');
-            document.getElementById('min_age_input').classList.remove('input-invalid');
-            document.getElementById('max_age_input').classList.remove('input-invalid');
+            document.getElementById('min_age_input').classList.remove(...INVALID_CLASSES);
+            document.getElementById('max_age_input').classList.remove(...INVALID_CLASSES);
         });
     });
 
@@ -426,23 +339,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeImageBtn = document.getElementById('remove-image-btn');
     const removeImageInput = document.getElementById('remove_image_input');
 
+    const DRAG_OVER_CLASSES = ['!border-blue-600', '!bg-blue-600/5'];
     const IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2MB ตามข้อความที่แจ้งผู้ใช้
     const IMAGE_ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-    // เก็บ URL ภาพเดิมของคอร์สไว้ ใช้ตอนกด "ยกเลิก" การเลือกไฟล์ใหม่ระหว่างแก้ไข
-    const originalImageUrl = imgPreview.getAttribute('src') || '';
-    let imageMarkedRemoved = false;
 
     dropzone.addEventListener('click', () => imageInput.click());
 
     function showImageError(message) {
         const errEl = document.getElementById('image_error');
         errEl.textContent = message;
-        errEl.classList.add('show');
+        errEl.classList.remove('hidden');
     }
     function clearImageError() {
-        document.getElementById('image_error').classList.remove('show');
+        document.getElementById('image_error').classList.add('hidden');
     }
 
+    // ภาพใหม่ที่เลือก (ไฟล์หรือลากวาง) จะแทนที่ภาพเดิม/ที่โชว์อยู่ทันที ไม่มีการเก็บภาพเดิมไว้ย้อนกลับ
     function showSelectedFile(file) {
         clearImageError();
         if (!IMAGE_ALLOWED_TYPES.includes(file.type)) {
@@ -464,11 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
         imageNameEl.textContent = 'เลือกไฟล์: ' + file.name;
         imageNameEl.classList.remove('hidden');
+        // มีการอัปโหลดภาพใหม่แล้ว ไม่ถือว่าเป็นการลบภาพอีกต่อไป และภาพเดิม (ถ้ามี) ถูกแทนที่ทันที
         if (removeImageInput) removeImageInput.value = '0';
-        imageMarkedRemoved = false;
+        if (removeImageBtn) removeImageBtn.classList.remove('hidden');
     }
 
-    // เคลียร์ทุกอย่างจนกลายเป็น dropzone ว่าง (ไม่มีภาพเลย)
+    // เคลียร์ทุกอย่างจนกลายเป็น dropzone ว่าง (ไม่มีภาพเลย) — ใช้ตอนกดปุ่ม "ลบภาพ" เท่านั้น
     function clearToEmpty() {
         imageInput.value = '';
         imgPreview.src = '';
@@ -477,45 +390,16 @@ document.addEventListener('DOMContentLoaded', () => {
         imageNameEl.classList.add('hidden');
     }
 
-    // ย้อนกลับไปแสดงภาพเดิมของคอร์ส (ใช้ตอนกด x ทิ้งไฟล์ที่เพิ่งเลือก แต่ยังมีภาพเดิมอยู่)
-    function revertToOriginal() {
-        imageInput.value = '';
-        imgPreview.src = originalImageUrl;
-        dropzoneEmpty.classList.add('hidden');
-        dropzonePreview.classList.remove('hidden');
-        imageNameEl.textContent = 'ใช้ภาพเดิมของคอร์สนี้';
-        imageNameEl.classList.remove('hidden');
-        if (removeImageBtn) removeImageBtn.classList.remove('hidden');
-        if (removeImageInput) removeImageInput.value = '0';
-        imageMarkedRemoved = false;
-    }
-
     imageInput.addEventListener('change', () => {
         if (imageInput.files && imageInput.files[0]) showSelectedFile(imageInput.files[0]);
     });
 
-    // ปุ่ม x บนตัว preview — ถ้ายังมีภาพเดิมของคอร์สและยังไม่ได้สั่งลบ ให้ย้อนกลับไปใช้ภาพเดิม
-    // ถ้าไม่มีภาพเดิม (หรือเพิ่งสั่งลบไปแล้ว) ให้เคลียร์เป็นค่าว่างไปเลย
-    const removeBtn = document.getElementById('remove-preview-btn');
-    if (removeBtn) {
-        removeBtn.addEventListener('click', e => {
-            e.stopPropagation();
-            clearImageError();
-            if (originalImageUrl && !imageMarkedRemoved) {
-                revertToOriginal();
-            } else {
-                clearToEmpty();
-            }
-        });
-    }
-
-    // ปุ่ม "ลบภาพ" — สั่งลบรูปเดิมของคอร์สอย่างชัดเจน แล้วเปิดให้อัปโหลดใหม่ได้ทันที
+    // ปุ่ม "ลบภาพ" — ลบภาพจริง ไม่ว่าจะเป็นภาพเดิมของคอร์ส หรือไฟล์ใหม่ที่เพิ่งเลือกไว้ก็ตาม
     if (removeImageBtn) {
         removeImageBtn.addEventListener('click', e => {
             e.stopPropagation();
             clearImageError();
             clearToEmpty();
-            imageMarkedRemoved = true;
             removeImageInput.value = '1';
             removeImageBtn.classList.add('hidden');
         });
@@ -524,12 +408,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
         e.preventDefault();
         e.stopPropagation();
-        dropzone.classList.add('drag-over');
+        dropzone.classList.add(...DRAG_OVER_CLASSES);
     }));
     ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
         e.preventDefault();
         e.stopPropagation();
-        dropzone.classList.remove('drag-over');
+        dropzone.classList.remove(...DRAG_OVER_CLASSES);
     }));
     dropzone.addEventListener('drop', e => {
         const file = e.dataTransfer.files[0];
@@ -561,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (maxAgeVal !== '' && (isNaN(maxAgeVal) || Number(maxAgeVal) < Number(minAgeVal || 0))) ageInvalid = true;
         if (ageInvalid) {
             showFieldError(minAgeInput, 'age_range_error');
-            maxAgeInput.classList.add('input-invalid');
+            maxAgeInput.classList.add(...INVALID_CLASSES);
             firstInvalidEl = firstInvalidEl || minAgeInput;
             isValid = false;
         }
@@ -581,18 +465,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isLimited) {
                 const capVal = capacityInput.value.trim();
                 if (capVal === '' || isNaN(capVal) || !Number.isInteger(Number(capVal)) || Number(capVal) < 1) {
-                    capacityInput.classList.add('input-invalid');
+                    capacityInput.classList.add(...INVALID_CLASSES);
                     rowBad = true;
                 }
             }
             if (rowBad) {
-                row.classList.add('row-invalid');
+                row.classList.add(...INVALID_CLASSES);
                 scheduleInvalid = true;
                 firstInvalidEl = firstInvalidEl || row;
             }
         });
         if (scheduleInvalid) {
-            document.getElementById('schedule_error').classList.add('show');
+            document.getElementById('schedule_error').classList.remove('hidden');
             isValid = false;
         }
 
@@ -605,16 +489,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const validityVal = row.querySelector('.validity').value.trim();
             let rowBad = false;
             if (sessionsVal === '' || isNaN(sessionsVal) || !Number.isInteger(Number(sessionsVal)) || Number(sessionsVal) < 1) rowBad = true;
-            if (priceVal === '' || isNaN(priceVal) || Number(priceVal) < 0) rowBad = true;
+            if (priceVal === '' || isNaN(priceVal) || Number(priceVal) < 0 || Number(priceVal) > MAX_PACKAGE_PRICE) rowBad = true;
             if (validityVal === '' || isNaN(validityVal) || !Number.isInteger(Number(validityVal)) || Number(validityVal) < 1) rowBad = true;
             if (rowBad) {
-                row.classList.add('row-invalid');
+                row.classList.add(...INVALID_CLASSES);
                 packageInvalid = true;
                 firstInvalidEl = firstInvalidEl || row;
             }
         });
         if (packageInvalid) {
-            document.getElementById('package_error').classList.add('show');
+            document.getElementById('package_error').classList.remove('hidden');
             isValid = false;
         }
 
