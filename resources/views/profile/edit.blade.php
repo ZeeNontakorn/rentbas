@@ -42,6 +42,10 @@
 
 <div class="pf-edit bg-white min-h-screen text-[#111827]">
 <div class="max-w-[860px] mx-auto px-4 py-8">
+    @php
+        $canManageProfileImage = in_array($user->membership_type, ['coach', 'court_assistant'], true);
+        $coachProfileImage = $user->staffProfile?->profile_image;
+    @endphp
 
     {{-- HEADER --}}
     <div class="mb-6 flex items-center gap-4">
@@ -88,7 +92,7 @@
                 </script>
                 @endif
 
-                <form method="POST" action="{{ route('profile.update') }}" id="profileForm">
+                <form method="POST" action="{{ route('profile.update') }}" id="profileForm" enctype="multipart/form-data">
                     @csrf
 
                     <div class="form-group">
@@ -113,6 +117,23 @@
                                maxlength="10" class="form-input">
                         @error('phone') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
+
+                    @if ($canManageProfileImage)
+                        <div class="form-group" style="margin-top:16px; margin-bottom:0;">
+                            <label class="form-label">รูปโปรไฟล์</label>
+                            @if ($coachProfileImage)
+                                <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+                                    <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
+                                         alt="Coach profile image"
+                                         style="width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid #e5e7eb;">
+                                    <span style="font-size:12px; color:#6b7280;">รูปโปรไฟล์ปัจจุบัน</span>
+                                </div>
+                            @endif
+                            <input type="file" name="profile_image" accept="image/png,image/jpeg,image/webp" class="form-input" style="padding:8px 10px;">
+
+                            @error('profile_image') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                    @endif
 
                     {{-- OTP Section --}}
                     <div id="otpSection" style="display:none; margin-top:16px;">

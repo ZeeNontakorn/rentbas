@@ -1,19 +1,20 @@
 <?php
 
 use App\Http\Controllers\Admin\CourtController as AdminCourtController;
-use App\Http\Controllers\Admin\CoachController as AdminCoachController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Admin\CreditController;
+use App\Http\Controllers\Admin\PricingController;
 use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Admin\CalendarController;
-use App\Http\Controllers\PrivateTrainingController;
-
 use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\PrivateTrainingController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -93,6 +94,15 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+
+
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+        Route::post('/quote', [CheckoutController::class, 'quote'])->name('quote');
+        Route::post('/reserve', [CheckoutController::class, 'reserve'])->name('reserve');
+        Route::get('/{booking}', [CheckoutController::class, 'show'])->name('show');
+        Route::post('/{booking}/pay/credit', [CheckoutController::class, 'payWithCredit'])->name('pay.credit');
+        Route::post('/{booking}/pay/promptpay', [CheckoutController::class, 'payWithPromptpay'])->name('pay.promptpay');
+    });
 });
 
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
@@ -108,7 +118,6 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/coach', [AdminCoachController::class, 'index'])->name('coach.index');
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
@@ -127,7 +136,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/courts/{court}/sections/merge', [AdminCourtController::class, 'mergeSections'])->name('courts.sections.merge');
     Route::put('/court-sections/{courtSection}', [AdminCourtController::class, 'updateSection'])->name('court-sections.update');
     Route::post('/courts/{court}/slot-settings', [AdminCourtController::class, 'updateSlotSettings'])->name('courts.slot-settings');
-    
+
      // Manage Courses
     Route::get('/courses', [ManageCourseController::class, 'index'])->name('courses');
     Route::get('/courses/create', [ManageCourseController::class, 'create'])->name('courses.create');
@@ -135,7 +144,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/courses/{course}/edit', [ManageCourseController::class, 'edit'])->name('courses.edit');
     Route::put('/courses/{course}', [ManageCourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{course}', [ManageCourseController::class, 'destroy'])->name('courses.destroy');
-    
+
     Route::patch('/courses/{course}/toggle-status', [ManageCourseController::class, 'toggleStatus'])
     ->name('courses.toggleStatus');
 
@@ -146,7 +155,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'update'])->name('courses.calendar.events.update');
     Route::delete('/courses/calendar/events/{calendarEvent}', [CalendarController::class, 'destroy'])->name('courses.calendar.events.destroy');
     Route::put('/courses/calendar/course-events/{schedule}/{date}', [CalendarController::class, 'updateCourseEvent'])->where('date', '\\d{4}-\\d{2}-\\d{2}')->name('courses.calendar.course-events.update');
-   
+
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
@@ -169,6 +178,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
     Route::post('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('edit.text.update');
+    Route::post('/admin/courts/images', [App\Http\Controllers\Admin\CourtController::class, 'updateImages'])
+    ->name('admin.courts.images.update');
+
+    Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
+    Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
+
+    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
+    Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
+    Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
+    Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
+    Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
 });
 
 // 6. Password Reset via OTP

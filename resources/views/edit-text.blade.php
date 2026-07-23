@@ -84,7 +84,7 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ About {{ $i }}</label>
-                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['about_img_'.$i] ?? '' }}" id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" id="" name="about_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-about-{{ $i }}')">
@@ -164,6 +164,7 @@
                         <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
                             <img id="img-preview"
                                 src="{{ $promoImg ?? '' }}"
+                                data-original-src="{{ $promoImg ?? '' }}"
                                 class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
                             <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             <div class="flex items-start gap-4">
@@ -203,7 +204,7 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Hero Banner {{ $i }}</label>
-                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['hero_img_'.$i] ?? '' }}" id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="hero_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-hero-{{ $i }}')">
@@ -218,14 +219,14 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">พื้นหลังสนาม</label>
-                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['courts_bg'] ?? '' }}" id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" id="" name="courts_bg_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-courts')">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Community</label>
-                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['community_img'] ?? '' }}" id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" id="" name="community_img_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-community')">
@@ -261,7 +262,7 @@
                     <div class="border border-gray-200 rounded-lg p-4">
                         <p class="font-semibold text-sm text-gray-800 mb-3">{{ $court->name }}</p>
 
-                        <img id="preview-court-{{ $court->id }}"
+                        <img data-original-src="{{ $courtImgSrc }}" id="preview-court-{{ $court->id }}"
                              src="{{ $courtImgSrc }}"
                              class="h-32 w-full object-cover rounded-lg border border-gray-200 mb-3">
 
@@ -404,7 +405,21 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
     form.addEventListener('input', refreshStatus);
     form.addEventListener('change', refreshStatus);
     form.addEventListener('reset', () => {
-        requestAnimationFrame(refreshStatus);
+        requestAnimationFrame(() => {
+            // Revert every preview image in this form back to its original src
+            form.querySelectorAll('img[data-original-src]').forEach(img => {
+                img.src = img.dataset.originalSrc || '';
+            });
+
+            // Re-hide the promo banner wrapper if it originally had no image
+            const previewWrap = form.querySelector('#img-preview-wrap');
+            const promoImg = form.querySelector('#img-preview');
+            if (previewWrap && promoImg) {
+                previewWrap.classList.toggle('hidden', !promoImg.dataset.originalSrc);
+            }
+
+            refreshStatus();
+        });
     });
 
     form.addEventListener('submit', async event => {
@@ -430,6 +445,14 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
             }
 
             clearFormFileInputs(form);
+
+            // NEW: lock in the currently-shown previews as the new "original"
+            // so a later "ยกเลิก" reverts to the last SAVED image, not the
+            // image that was on the page at initial load.
+            form.querySelectorAll('img[data-original-src]').forEach(img => {
+                img.dataset.originalSrc = img.src;
+            });
+
             initialState = serializeSettingForm(form);
             refreshStatus();
             showSubmitSuccess();

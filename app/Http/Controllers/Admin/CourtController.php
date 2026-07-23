@@ -12,7 +12,9 @@ use App\Models\Setting;
 use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
@@ -35,6 +37,25 @@ class CourtController extends Controller
             'court_status' => $data['court_status'],
             'min_booking_minutes' => 30, // default
             'slot_interval_minutes' => 30, // default
+        ]);
+
+        // สร้าง section "เต็มสนาม" (code = full) ให้อัตโนมัติเสมอทุกครั้งที่เพิ่มสนามใหม่
+        // ถ้าไม่มี section นี้ หน้าเลือกเวลาจะหา section ไม่เจอเลย แล้วโชว์
+        // "สนามนี้ยังไม่เปิดให้จอง" ทั้งที่ยังไม่ได้ปิดอะไรจริง (ดู buildAvailabilityMatrix())
+        $fullSection = CourtSection::create([
+            'court_id' => $court->id,
+            'code' => 'full',
+            'name' => 'เต็มสนาม',
+            'is_active' => true,
+        ]);
+
+        // เต็มสนามต้องบล็อกตัวเอง (กันจองซ้อนช่วงเวลาเดียวกัน) — จะเพิ่มการบล็อกกับ
+        // ครึ่ง a/b ทีหลังตอนแอดมินไปสร้าง section เหล่านั้นเพิ่มเอง
+        DB::table('court_section_blocks')->insert([
+            'court_section_id' => $fullSection->id,
+            'blocks_section_id' => $fullSection->id,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         if ($request->wantsJson()) {
@@ -120,7 +141,13 @@ class CourtController extends Controller
             // ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง และไม่รู้จัก court_section conflict)
             $dayBookings = Booking::where('court_id', $selectedCourt->id)
                 ->whereDate('booking_date', $date)
-                ->whereIn('status', ['pending', 'approved'])
+                ->where(function ($query) {
+                    $query->whereIn('status', ['pending', 'approved'])
+                        ->orWhere(function ($lockQuery) {
+                            $lockQuery->where('status', 'pending_payment')
+                                ->where('locked_until', '>', now());
+                        });
+                })
                 ->get(['court_section_id', 'start_time', 'end_time', 'status']);
 
             for ($h = 6; $h < 22; $h++) {
@@ -400,10 +427,21 @@ class CourtController extends Controller
                 continue;
             }
 
+            $settingKey = 'court_img_' . $court->id;
+            $old = Setting::where('key', $settingKey)->value('value');
+
+            if ($old && !preg_match('#^https?://#i', $old)) {
+                $relativePath = Setting::normalizeStoragePath($old);
+
+                if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+                    Storage::disk('public')->delete($relativePath);
+                }
+            }
+
             $path = $file->store('site', 'public');
 
             Setting::updateOrCreate(
-                ['key' => 'court_img_' . $court->id],
+                ['key' => $settingKey],
                 ['value' => 'media/' . $path]
             );
         }

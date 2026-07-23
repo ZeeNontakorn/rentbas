@@ -14,7 +14,8 @@ class StaffProfile extends Model
         'specialty',
         'bio',
         'gender',
-        'experience_years'
+        'experience_years',
+        'profile_image'
     ];
 
     public function user(): BelongsTo

@@ -44,6 +44,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_verified' => 'boolean',
+            'credit_balance' => 'integer', // หน่วยสตางค์
         ];
     }
 
@@ -65,6 +66,11 @@ class User extends Authenticatable
     public function otpTokens(): HasMany
     {
         return $this->hasMany(OtpToken::class);
+    }
+
+    public function creditTransactions(): HasMany
+    {
+        return $this->hasMany(CreditTransaction::class);
     }
 
     public function isAdmin(): bool
@@ -113,5 +119,11 @@ class User extends Authenticatable
     public function coachingBookings(): HasMany
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
+    /**
+     * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
+     */
+    public function getCreditBalanceBahtAttribute(): float
+    {
+        return $this->credit_balance / 100;
     }
 }
