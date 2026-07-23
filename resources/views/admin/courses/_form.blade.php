@@ -101,7 +101,7 @@
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
                 </svg>
                 <p class="text-sm text-slate-500"><span class="font-medium text-blue-600">คลิกเพื่อเลือกภาพ</span> หรือลากไฟล์มาวางที่นี่</p>
-                <p class="mt-1 text-xs text-slate-400">JPG, PNG, WEBP ไม่เกิน 2MB</p>
+                <p class="mt-1 text-xs text-slate-400">JPG, PNG, WEBP ไม่เกิน 20MB</p>
             </div>
             <div id="dropzone-preview" class="relative {{ $isEdit && $course->image_url ? '' : 'hidden' }}">
                 <img id="img-preview" src="{{ $isEdit ? $course->image_url : '' }}" class="h-40 w-full object-cover">
@@ -111,7 +111,7 @@
             </div>
             <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" class="hidden">
         </div>
-        <p id="image_error" class="hidden mt-1.5 text-xs text-red-600">รองรับเฉพาะไฟล์ JPG, PNG, WEBP และต้องมีขนาดไม่เกิน 2MB</p>
+        <p id="image_error" class="hidden mt-1.5 text-xs text-red-600">รองรับเฉพาะไฟล์ JPG, PNG, WEBP และต้องมีขนาดไม่เกิน 20MB</p>
         <div class="mt-2 flex items-center gap-3">
             <p id="imageName" class="text-xs text-slate-500 {{ $isEdit && $course->image_url ? '' : 'hidden' }}">
                 {{ $isEdit && $course->image_url ? 'ใช้ภาพเดิมของคอร์สนี้' : '' }}
@@ -188,7 +188,7 @@
                     <input class="price w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]"
                         type="number" min="0" max="{{ $maxPackagePrice }}" step=".01" placeholder="ราคา (บาท)">
 
-                    
+
                     <p class="avgPrice mt-1.5 text-xs font-medium text-green-600">💡 เฉลี่ยครั้งละ: <span class="avgPriceValue">0</span> บาท</p>
                 </div>
                 <div>
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeImageInput = document.getElementById('remove_image_input');
 
     const DRAG_OVER_CLASSES = ['!border-blue-600', '!bg-blue-600/5'];
-    const IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2MB ตามข้อความที่แจ้งผู้ใช้
+    const IMAGE_MAX_BYTES = 20 * 1024 * 1024; // 20MB ตามข้อความที่แจ้งผู้ใช้
     const IMAGE_ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
     dropzone.addEventListener('click', () => imageInput.click());
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (file.size > IMAGE_MAX_BYTES) {
-            showImageError('ไฟล์ต้องมีขนาดไม่เกิน 2MB');
+            showImageError('ไฟล์ต้องมีขนาดไม่เกิน 20MB');
             imageInput.value = '';
             return;
         }

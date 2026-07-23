@@ -240,7 +240,7 @@ class ManageCourseController extends Controller
             'min_age' => ['required', 'integer', 'min:0'],
             'max_age' => ['nullable', 'integer', 'gte:min_age'],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'max:2048'], // สูงสุด 2MB
+            'image' => ['nullable', 'image', 'max:20480'], // สูงสุด 20MB
 
             'target_groups' => ['required', 'array', 'min:1'],
             'target_groups.*' => ['required', 'in:Rookie,Beginner,Junior,Player'],

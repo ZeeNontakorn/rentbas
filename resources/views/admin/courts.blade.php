@@ -507,22 +507,21 @@
             </div>
         </div>
 
-        @push('scripts')
             <script>
                 let selEl = null;
 
                 // ----- SweetAlert2 Toast (มุมขวาบน, ปิดเองอัตโนมัติ) -----
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                });
+                // const Toast = Swal.mixin({
+                //     toast: true,
+                //     position: 'top-end',
+                //     showConfirmButton: false,
+                //     timer: 2000,
+                //     timerProgressBar: true,
+                //     didOpen: (toast) => {
+                //         toast.onmouseenter = Swal.stopTimer;
+                //         toast.onmouseleave = Swal.resumeTimer;
+                //     }
+                // });
 
                 document.addEventListener('DOMContentLoaded', function () {
                     // Toast ที่ถูกฝากไว้ก่อนเปลี่ยนหน้า (จากฟอร์ม AJAX เช่น สร้าง/แก้ไขสนาม)
@@ -887,5 +886,4 @@
                     });
                 }
             </script>
-        @endpush
 @endsection
