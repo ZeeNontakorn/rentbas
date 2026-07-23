@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SettingController extends Controller
 {
@@ -58,6 +60,9 @@ class SettingController extends Controller
 
         foreach ($imageFields as $fileInput => $settingKey) {
             if ($request->hasFile($fileInput)) {
+                // Delete the previous file (if any) before storing the new one
+                $this->deleteOldSettingFile($settingKey);
+
                 $path = $request->file($fileInput)->store('site', 'public');
                 // Store the path that can be used with asset() or Storage::url()
                 $data[$settingKey] = 'media/' . $path;
@@ -82,5 +87,31 @@ class SettingController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Delete the previously stored local file for a given setting key,
+     * if one exists and it is not an external URL (e.g. Unsplash).
+     */
+    protected function deleteOldSettingFile(string $settingKey): void
+    {
+        $old = Setting::where('key', $settingKey)->value('value');
+
+        if (!$old) {
+            return;
+        }
+
+        // Skip external URLs (http/https) — nothing local to delete
+        if (Str::startsWith($old, ['http://', 'https://'])) {
+            return;
+        }
+
+        // Normalize legacy storage prefixes such as media/, storage/app/public/, etc.
+        // so the file can be deleted from the public disk correctly.
+        $relativePath = Setting::normalizeStoragePath($old);
+
+        if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
+        }
     }
 }
