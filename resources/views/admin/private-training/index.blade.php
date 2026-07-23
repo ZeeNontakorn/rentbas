@@ -166,8 +166,8 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            // @js() เป็น Blade Directive ของ Laravel ใช้แปลงตัวแปร PHP ให้เป็น Data Type ของ JavaScript อัตโนมัติ
-            // ข้อดีคือ ปลอดภัยจาก XSS Attack (Cross-Site Scripting) และจัดการเรื่องเครื่องหมายคำพูด (" หรือ ') ให้อัตโนมัติ
+            {{-- @js() เป็น Blade Directive ของ Laravel ใช้แปลงตัวแปร PHP ให้เป็น Data Type ของ JavaScript อัตโนมัติ
+                 ข้อดีคือ ปลอดภัยจาก XSS Attack (Cross-Site Scripting) และจัดการเรื่องเครื่องหมายคำพูด (" หรือ ') ให้อัตโนมัติ  --}}
             @if (session()->has('success'))
                 Toast.fire({ icon: 'success', title: @js(session('success')) });
             @endif

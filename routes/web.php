@@ -115,7 +115,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
     Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
 
-    // จัดการสนาม (เปลี่ยนชื่อกลับมาเป็นแบบเดิมของคุณทั้งหมดแล้ว)
+    // จัดการสนาม
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
     Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
     Route::put('/courts/{court}', [AdminCourtController::class, 'update'])->name('court.update');
