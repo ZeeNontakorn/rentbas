@@ -55,21 +55,34 @@ class Setting extends Model
      * หรือ path ใหม่ media/...) ให้กลายเป็น URL เต็มผ่าน route /media เสมอ
      * ถ้าเป็น URL เต็มอยู่แล้ว (http/https เช่นรูป default จาก unsplash) จะคืนค่าเดิมไว้เฉยๆ
      */
+    public static function normalizeStoragePath(?string $val): ?string
+    {
+        if (empty($val)) {
+            return $val;
+        }
+
+        if (preg_match('#^https?://#i', $val)) {
+            return $val;
+        }
+
+        $clean = preg_replace('#^/?(storage/app/public/|storage/app/|storage/|media/|public/)#i', '', $val);
+
+        return ltrim($clean, '/');
+    }
+
     protected static function resolveImageUrl(?string $val): ?string
     {
         if (empty($val)) {
             return $val;
         }
 
-        // เป็น absolute URL อยู่แล้ว (เช่นรูป default จาก unsplash/pexels) ไม่ต้องแตะ
         if (preg_match('#^https?://#i', $val)) {
             return $val;
         }
 
-        // ตัด prefix เก่าทุกแบบทิ้งให้เหลือแค่ relative path จริงๆ เช่น "site/xxx.jpg"
-        $clean = preg_replace('#^/?(storage/app/public/|storage/app/|storage/|media/)#i', '', $val);
+        $clean = self::normalizeStoragePath($val);
 
-        return asset('media/' . ltrim($clean, '/'));
+        return asset('media/' . $clean);
     }
 
     /**

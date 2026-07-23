@@ -13,6 +13,7 @@ use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
@@ -406,10 +407,21 @@ class CourtController extends Controller
                 continue;
             }
 
+            $settingKey = 'court_img_' . $court->id;
+            $old = Setting::where('key', $settingKey)->value('value');
+
+            if ($old && !preg_match('#^https?://#i', $old)) {
+                $relativePath = Setting::normalizeStoragePath($old);
+
+                if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+                    Storage::disk('public')->delete($relativePath);
+                }
+            }
+
             $path = $file->store('site', 'public');
 
             Setting::updateOrCreate(
-                ['key' => 'court_img_' . $court->id],
+                ['key' => $settingKey],
                 ['value' => 'media/' . $path]
             );
         }
