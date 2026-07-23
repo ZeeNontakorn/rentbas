@@ -9,6 +9,7 @@ use App\Models\CourseSchedule;
 use App\Models\CourseTargetGroup;
 use App\Models\Court;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,9 +19,16 @@ class ManageCourseController extends Controller
      * GET /admin/courses/create -> route('admin.courses.create')
      * เปิดหน้าเพิ่มคอร์ส
      */
+    const MAX_PACKAGE_PRICE = 1000000;
     public function create()
     {
-        return view('admin.courses.create', ['courts' => Court::with('sections')->orderBy('name')->get()]);
+        return view('admin.courses.create', [
+            'courts' => Court::with('sections')->orderBy('name')->get(),
+            'existingSchedules' => collect(),
+            'existingPackages' => collect(),
+            'maxPackagePrice' => self::MAX_PACKAGE_PRICE,
+
+        ]);
     }
 
     /**
@@ -99,7 +107,14 @@ class ManageCourseController extends Controller
     {
         $course->load(['targetGroups', 'schedules', 'packages']);
 
-        return view('admin.courses.edit', ['course' => $course, 'courts' => Court::with('sections')->orderBy('name')->get()]);
+        return view('admin.courses.edit', [
+            'course' => $course,
+            'courts' => Court::with('sections')->orderBy('name')->get(),
+            'existingSchedules' => $this->scheduleFormRows($course),
+            'existingPackages' => $course->packages->values(),
+            'maxPackagePrice' => self::MAX_PACKAGE_PRICE,
+
+        ]);
     }
 
     /**
@@ -195,6 +210,21 @@ class ManageCourseController extends Controller
         return redirect()
             ->route('admin.courses')
             ->with('success', 'เปลี่ยนสถานะคอร์ส "'.$course->course_name.'" เป็น '.$statusText.' แล้ว');
+    }
+
+    /**
+     * แปลง schedules ของคอร์สให้อยู่ในรูปแบบที่ฟอร์ม (JS) ใช้ประกอบแถวรอบเวลาเรียนได้ตรงๆ
+     * ใช้ตอนเปิดหน้าแก้ไขคอร์สเท่านั้น
+     */
+    private function scheduleFormRows(Course $course)
+    {
+        return $course->schedules->map(fn ($schedule) => [
+            'weekdays' => $schedule->weekdays ?: ['mon', 'wed', 'fri'],
+            'start' => Carbon::parse($schedule->start_time)->format('H:i'),
+            'end' => Carbon::parse($schedule->end_time)->format('H:i'),
+            'limited' => $schedule->is_limited_spots,
+            'capacity' => $schedule->capacity,
+        ])->values();
     }
 
     /**
