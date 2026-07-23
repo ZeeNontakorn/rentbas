@@ -52,89 +52,100 @@
     </div>
 
     {{-- INFO CARD --}}
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-[#e86c2a]/10 flex items-center justify-content border border-[#e86c2a]/20 items-center justify-center">
-                <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            </div>
-            <div>
-                <div class="text-[14px] font-semibold text-gray-800" style="font-family:'Kanit',sans-serif;">ข้อมูลบัญชี</div>
-                <div class="text-[12px] text-gray-400">ข้อมูลที่บันทึกในระบบ</div>
-            </div>
-        </div>
-        <div class="px-5">
-
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6 flex">
+        <div class="flex-1 min-w-0">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#e86c2a]/10 flex items-center justify-center border border-[#e86c2a]/20">
+                    <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
                 </div>
                 <div>
-                    <div class="info-label">ชื่อผู้ใช้</div>
-                    <div class="info-value">{{ $user->name }}</div>
+                    <div class="text-[14px] font-semibold text-gray-800" style="font-family:'Kanit',sans-serif;">ข้อมูลบัญชี</div>
+                    <div class="text-[12px] text-gray-400">ข้อมูลที่บันทึกในระบบ</div>
                 </div>
             </div>
 
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="info-label">อีเมล</div>
-                    <div class="info-value">{{ $user->email }}</div>
-                </div>
-            </div>
+            <div class="px-5">
 
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="info-label">เบอร์โทรศัพท์</div>
-                    <div class="info-value">{{ $user->phone ?: '—' }}</div>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="info-label">รหัสผ่าน</div>
-                    <div class="info-value tracking-widest text-gray-400">••••••••</div>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="info-label">ประเภทสมาชิก</div>
-                    <div class="info-value">
-                        {{ $user->role === 'admin' ? 'ผู้ดูแลระบบ' : $user->membershipTypeLabel() }}
+                <div class="info-row">
+                    <div class="info-icon">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-label">ชื่อผู้ใช้</div>
+                        <div class="info-value">{{ $user->name }}</div>
                     </div>
                 </div>
-            </div>
 
+                <div class="info-row">
+                    <div class="info-icon">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-label">อีเมล</div>
+                        <div class="info-value">{{ $user->email }}</div>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-icon">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-label">เบอร์โทรศัพท์</div>
+                        <div class="info-value">{{ $user->phone ?: '—' }}</div>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-icon">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-label">รหัสผ่าน</div>
+                        <div class="info-value tracking-widest text-gray-400">••••••••</div>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-icon">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-label">ประเภทสมาชิก</div>
+                        <div class="info-value">
+                            {{ $user->role === 'admin' ? 'ผู้ดูแลระบบ' : $user->membershipTypeLabel() }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
+
+        @if ($canManageProfileImage && $coachProfileImage)
+            <div class="flex-shrink-0 w-82 p-5">
+                <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
+                    alt="Staff profile"
+                     class="w-full h-full object-cover">
+            </div>
+        @endif
     </div>
 
 
