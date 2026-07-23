@@ -99,13 +99,14 @@ class StaffController extends Controller
             'phone' => 'nullable|string|max:20',
             'specialty' => 'nullable|string|max:255',
             'bio' => 'nullable|string',
+            'gender' => 'nullable|in:male,female',
         ]);
 
         $staff->update($request->only(['name', 'email', 'membership_type', 'phone']));
 
         $staff->staffProfile()->updateOrCreate(
             ['user_id' => $staff->id],
-            $request->only(['specialty', 'bio'])
+            $request->only(['specialty', 'bio', 'gender'])
         );
 
         return redirect()->back()->with('success', 'แก้ไขข้อมูลโปรไฟล์สำเร็จเรียบร้อย!');

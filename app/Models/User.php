@@ -24,17 +24,17 @@ class User extends Authenticatable
     // ประเภทสมาชิกสำหรับ role 'user' — ลูกค้าทั่วไป / ผู้สนับสนุน / นักเรียนบาส
     const MEMBERSHIP_TYPES = [
         'customer' => 'ลูกค้า',
-        'sponsor'  => 'ผู้สนับสนุน',
-        'student'  => 'นักเรียนบาส',
+        'sponsor' => 'ผู้สนับสนุน',
+        'student' => 'นักเรียนบาส',
     ];
 
     // ประเภทสมาชิกสำหรับ role 'staff' — พนักงานประจำ / พนักงานชั่วคราว / นักศึกษาฝึกงาน
     // ประเภทสมาชิกสำหรับ role 'staff' — พนักงานประจำ / พนักงานชั่วคราว / นักศึกษาฝึกงาน / โค้ช / ผู้ช่วยสนาม
     const STAFF_TYPES = [
-        'permanent'       => 'พนักงานประจำ',
-        'temporary'       => 'พนักงานชั่วคราว',
-        'intern'          => 'นักศึกษาฝึกงาน',
-        'coach'           => 'โค้ช',
+        'permanent' => 'พนักงานประจำ',
+        'temporary' => 'พนักงานชั่วคราว',
+        'intern' => 'นักศึกษาฝึกงาน',
+        'coach' => 'โค้ช',
         'court_assistant' => 'ผู้ช่วยสนาม',
     ];
 
@@ -105,6 +105,20 @@ class User extends Authenticatable
         return $this->hasMany(Availability::class, 'user_id');
     }
 
+    /**
+     * รายการคำขอจองเทรนเนอร์ส่วนตัวที่ user คนนี้เป็นคนจอง (ฝั่งลูกค้า)
+     */
+    public function privateTrainingBookings(): HasMany
+    {
+        return $this->hasMany(PrivateTrainingBooking::class, 'user_id');
+    }
+
+    /**
+     * รายการคำขอจองเทรนเนอร์ส่วนตัวที่ user คนนี้เป็นโค้ชที่ถูกจอง (ฝั่งโค้ช)
+     */
+    public function coachingBookings(): HasMany
+    {
+        return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
     /**
      * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
      */

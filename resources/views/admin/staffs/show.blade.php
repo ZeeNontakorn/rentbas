@@ -57,10 +57,12 @@
             transition: opacity 0.2s;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
+
         .group:hover .tooltip-content {
             visibility: visible;
             opacity: 1;
         }
+
         .slot-selected {
             border: 2px solid #3b82f6 !important;
             transform: scale(0.95);
@@ -74,7 +76,8 @@
 
             <a href="{{ route('admin.staffs.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
-                <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
                 กลับไปหน้าจัดการผู้ช่วยสนาม
@@ -88,7 +91,8 @@
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-start gap-6">
-                    <div class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
+                    <div
+                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                         <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
                     </div>
 
@@ -104,29 +108,44 @@
                             <button type="button" onclick="toggleModal('staffProfileModal', true)"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-xs font-medium transition cursor-pointer">
                                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                                 แก้ไขข้อมูลส่วนตัว
                             </button>
                         </div>
 
-                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-y-3 text-sm text-gray-600">
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-4 text-sm text-gray-600">
                             <p class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                                 อีเมล: {{ $staff->email }}
                             </p>
                             <p class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                                 เบอร์โทรศัพท์: {{ $staff->phone ?? 'ไม่ระบุ' }}
                             </p>
-                            <div class="col-span-1 md:col-span-2 mt-2">
-                                <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile->specialty ?? 'ผู้ช่วยฝึกสอนเบสิค' }}</p>
-                                <p class="mt-1"><strong>แนะนำตัว (Bio):</strong> {{ $staffProfile->bio ?? 'ไม่มีข้อมูล' }}</p>
-                            </div>
+
+                            <p class="flex items-center gap-2 md:col-span-2">
+                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                เพศ:
+                                {{ match($staffProfile?->gender) {
+                                    'male' => 'ชาย',
+                                    'female' => 'หญิง',
+                                    default => 'ไม่ระบุ'
+                                } }}
+                            </p>
+
+                            <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile?->specialty ?? 'ผู้ช่วยฝึกสอนเบสิค' }}</p>
+                            <p><strong>แนะนำตัว (Bio):</strong> {{ $staffProfile?->bio ?? 'ไม่มีข้อมูล' }}</p>
                         </div>
                     </div>
                 </div>
@@ -186,12 +205,14 @@
 
     <div id="dragActionModal"
         class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
+        <div
+            class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-gray-800">จัดการสถานะการทำงาน</h3>
             </div>
 
-            <form action="{{ route('admin.staffs.availabilities.store', $staff->id) }}" method="POST" class="p-6 space-y-4 bg-white">
+            <form action="{{ route('admin.staffs.availabilities.store', $staff->id) }}" method="POST"
+                class="p-6 space-y-4 bg-white">
                 @csrf
                 <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center mb-2">
                     <p class="text-xs text-blue-500 font-semibold mb-1">ประจำอยู่ที่</p>
@@ -208,15 +229,19 @@
                     <label class="block text-xs font-semibold text-gray-700 mb-2">สถานะผู้ช่วยสนาม/โค้ช</label>
                     <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
-                            <input type="radio" name="status" value="available" id="status-available" class="peer sr-only" required>
-                            <div class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
+                            <input type="radio" name="status" value="available" id="status-available" class="peer sr-only"
+                                required>
+                            <div
+                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
                                 <span class="w-2.5 h-2.5 inline-block bg-[#10b981] rounded-sm mr-1"></span>
                                 <span class="text-gray-700">ว่าง</span>
                             </div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="status" value="booked" id="status-booked" class="peer sr-only" required>
-                            <div class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
+                            <input type="radio" name="status" value="booked" id="status-booked" class="peer sr-only"
+                                required>
+                            <div
+                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
                                 <span class="w-2.5 h-2.5 inline-block bg-[#f97316] rounded-sm mr-1"></span>
                                 <span class="text-gray-700">ไม่ว่าง</span>
                             </div>
@@ -242,22 +267,26 @@
 
     <div id="staffProfileModal"
         class="fixed inset-0 z-50 hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
+        <div
+            class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-gray-800">แก้ไขข้อมูลโปรไฟล์</h3>
             </div>
 
-            <form action="{{ route('admin.staffs.profile.update', $staff->id) }}" method="POST" class="p-6 space-y-4 bg-white">
+            <form action="{{ route('admin.staffs.profile.update', $staff->id) }}" method="POST"
+                class="p-6 space-y-4 bg-white">
                 @csrf @method('PUT')
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ชื่อ-นามสกุล <span
+                            class="text-red-500">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $staff->name) }}" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span
+                            class="text-red-500">*</span></label>
                     <select name="membership_type" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
                         <option value="court_assistant" {{ old('membership_type', $staff->membership_type) === 'court_assistant' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
@@ -266,7 +295,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1.5">อีเมล <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">อีเมล <span
+                            class="text-red-500">*</span></label>
                     <input type="email" name="email" value="{{ old('email', $staff->email) }}" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
@@ -280,15 +310,27 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">เพศ</label>
+                    <select name="gender"
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        <option value="">ไม่ระบุ</option>
+                        <option value="male" {{ old('gender', $staffProfile?->gender) === 'male' ? 'selected' : '' }}>ชาย
+                        </option>
+                        <option value="female" {{ old('gender', $staffProfile?->gender) === 'female' ? 'selected' : '' }}>หญิง</option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ความเชี่ยวชาญ</label>
-                    <input type="text" name="specialty" value="{{ old('specialty', $staffProfile->specialty ?? '') }}" placeholder="เช่น ผู้ช่วยฝึกสอนเบสิค"
+                    <input type="text" name="specialty" value="{{ old('specialty', $staffProfile?->specialty ?? '') }}"
+                        placeholder="เช่น ผู้ช่วยฝึกสอนเบสิค"
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">แนะนำตัว (Bio)</label>
                     <textarea name="bio" rows="3" placeholder="เขียนคำแนะนำตัว..."
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-gray-700">{{ old('bio', $staffProfile->bio ?? '') }}</textarea>
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-gray-700">{{ old('bio', $staffProfile?->bio ?? '') }}</textarea>
                 </div>
 
                 <div class="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
