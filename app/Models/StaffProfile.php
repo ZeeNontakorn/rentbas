@@ -13,6 +13,7 @@ class StaffProfile extends Model
         'user_id',
         'specialty',
         'bio',
+        'gender',
         'experience_years'
     ];
 
