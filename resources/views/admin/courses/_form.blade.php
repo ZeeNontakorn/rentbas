@@ -22,7 +22,9 @@
             <h2 class="text-lg font-semibold text-slate-900">ข้อมูลทั่วไปของคลาสเรียน</h2>
         </div>
         <div class="mb-6">
-            <label class="mb-2 block text-sm font-medium text-slate-700">ชื่อคลาสเรียน</label>
+            <label class="mb-2 block text-sm font-medium text-slate-700">ชื่อคลาสเรียน
+                <span class="text-xs text-red-500"> *</span>
+            </label>
             <input id="course_name_input" name="course_name" value="{{ old('course_name', $isEdit ? $course->course_name : '') }}"
                 maxlength="255"
                 class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -30,9 +32,10 @@
             <p id="course_name_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกชื่อคลาสเรียน</p>
         </div>
         <div class="grid gap-6 md:grid-cols-2">
-            <div>
-                <label class="mb-3 block text-sm font-medium text-slate-700">กลุ่มผู้เรียนเป้าหมาย</label>
-                <div id="target_groups_wrap" class="grid grid-cols-2 gap-2">@foreach(['Rookie','Beginner','Junior','Player'] as $group)<label
+            <div><label class="mb-3 block text-sm font-medium text-slate-700">กลุ่มผู้เรียนเป้าหมาย
+                <span class="text-xs text-red-500"> *</span>
+            </label>
+                <div class="grid grid-cols-2 gap-2">@foreach(['Rookie','Beginner','Junior','Player'] as $group)<label
                         class="flex cursor-pointer items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="target_groups[]"
                             class="target_group h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                             value="{{ $group }}" @checked(in_array($group, old('target_groups', $isEdit ?
@@ -41,7 +44,9 @@
                 <p id="target_groups_error" class="hidden mt-1.5 text-xs text-red-600">กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม</p>
             </div>
             <div>
-                <label class="mb-3 block text-sm font-medium text-slate-700">เกณฑ์อายุผู้เรียน</label>
+                <label class="mb-3 block text-sm font-medium text-slate-700">เกณฑ์อายุผู้เรียน
+                    <span class="text-xs text-red-500"> *</span>
+                </label>
                 <div class="flex items-center gap-2">
                     <input id="min_age_input" type="number" name="min_age" min="0"
                         value="{{ old('min_age', $isEdit ? $course->min_age : '') }}"
@@ -136,10 +141,10 @@
 
     <template id="scheduleTemplate">
         <div class="schedule rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
-            <div class="flex justify-between"><b class="text-sm text-slate-700">รอบเวลาเรียน</b><button type="button"
+            <div class="flex justify-between"><b class="text-sm text-slate-700">รอบเวลาเรียน <span class="text-xs text-red-500"> *</span></b><button type="button"
                     class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบรอบ</button></div>
 
-            <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน</label>
+            <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน <span class="text-xs text-red-500"> *</span></label>
             <div class="days flex flex-wrap gap-2">
                 @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value=>$label)<label class="cursor-pointer"><input class="day peer sr-only" type="checkbox" value="{{ $value }}"><span
                         class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm text-slate-600 transition peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">{{ $label }}</span></label>@endforeach
@@ -148,11 +153,11 @@
 
             <div class="mt-4 grid gap-3 md:grid-cols-2">
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">เวลาเริ่ม</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">เวลาเริ่ม <span class="text-xs text-red-500"> *</span></label>
                     <input class="start w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]" type="time">
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">เวลาสิ้นสุด</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">เวลาสิ้นสุด <span class="text-xs text-red-500"> *</span></label>
                     <div class="flex items-center gap-2">
                         <input class="end w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]" type="time">
                         <span class="duration inline-block flex-shrink-0 whitespace-nowrap rounded-full bg-blue-100 px-2 py-1.5 text-xs font-medium text-blue-700">0.00 ชั่วโมง</span>
@@ -175,37 +180,37 @@
     </template>
     <template id="packageTemplate">
         <div class="package rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
-            <div class="flex justify-between"><b class="text-sm text-slate-700">แพ็กเกจ</b><button type="button"
+            <div class="flex justify-between"><b class="text-sm text-slate-700">แพ็กเกจ <span class="text-xs text-red-500"> *</span></b><button type="button"
                     class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบแพ็กเกจ</button></div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">ประเภทคอร์ส</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">ประเภทคอร์ส <span class="text-xs text-red-500"> *</span></label>
                     <select class="packageType w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]">
                         <option value="group">Standard Group Class</option>
                         <option value="private">Private Class</option>
                     </select>
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">จำนวนครั้ง</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">จำนวนครั้ง <span class="text-xs text-red-500"> *</span></label>
                     <input class="sessions w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]" type="number" min="1"
                         placeholder="จำนวนครั้ง เช่น 4">
                     <p class="sessions-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกจำนวนครั้ง</p>
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">ราคา (บาท)</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">ราคา (บาท) <span class="text-xs text-red-500"> *</span></label>
                     <input class="price w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]"
                         type="number" min="0" max="{{ $maxPackagePrice }}" step=".01" placeholder="ราคา (บาท)">
                     <p class="price-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกราคาแพ็กเกจ</p>
                     <p class="avgPrice mt-1.5 text-xs font-medium text-green-600">💡 เฉลี่ยครั้งละ: <span class="avgPriceValue">0</span> บาท</p>
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">อายุแพ็กเกจ</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">อายุแพ็กเกจ <span class="text-xs text-red-500"> *</span></label>
                     <input class="validity w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]" type="number" min="1"
                         placeholder="อายุแพ็กเกจ">
                     <p class="validity-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกอายุแพ็กเกจ</p>
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-medium text-slate-500">หน่วยอายุ</label>
+                    <label class="mb-1 block text-xs font-medium text-slate-500">หน่วยอายุ <span class="text-xs text-red-500"> *</span></label>
                     <select class="unit w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]">
                         <option value="days">วัน</option>
                         <option value="hours">ชั่วโมง</option>
