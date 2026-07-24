@@ -119,6 +119,7 @@ class User extends Authenticatable
     public function coachingBookings(): HasMany
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
+    }
     /**
      * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
      */
