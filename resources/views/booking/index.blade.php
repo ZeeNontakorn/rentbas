@@ -521,8 +521,64 @@ function selectTime(el) {
         el,
     });
 
+    mergeHalfCourtPairs();
     updateGridStatus();
     updateConfirmBox();
+}
+
+function getSectionIdByCode(code) {
+    const cell = document.querySelector('.sec-cell[data-section-code="' + code + '"]');
+    return cell ? cell.dataset.sectionId : null;
+}
+
+// ป้องกันช่องโหว่: ถ้าเลือกครึ่งสนาม A และ B ที่ "ช่วงเวลาเดียวกันเป๊ะ" (เท่ากับยึดพื้นที่
+// สนามทั้งหมดในช่วงนั้นเหมือนจองเต็มสนามอยู่แล้ว) ให้ระบบสลับไปเลือก "เต็มสนาม" ให้แทนทันที
+// กันการจงใจจองครึ่งสนามทีละฝั่งแยกกัน เพื่อเลี่ยงราคา/เงื่อนไขโปรโมชั่นของเต็มสนาม
+// (ช่องแบบ grid เป็นสล็อตเวลาคงที่ต่อเนื่อง จึงเช็คแค่ start/end ตรงกันเป๊ะพอ ไม่ต้องคำนวณ
+// ช่วงทับซ้อนบางส่วนแบบหน้า calendar ที่ลากเวลาได้อิสระ)
+function mergeHalfCourtPairs() {
+    const fullId = getSectionIdByCode('full');
+    const aId = getSectionIdByCode('a');
+    const bId = getSectionIdByCode('b');
+    if (!fullId || !aId || !bId) return; // สนามนี้ไม่ได้แบ่งครึ่ง (ไม่มี a/b พร้อมกัน) ข้าม
+
+    let changed = true;
+    while (changed) {
+        changed = false;
+
+        const aCells = selections.filter(s => s.sectionId === aId);
+        for (const a of aCells) {
+            const bMatchIdx = selections.findIndex(s => s.sectionId === bId && s.start === a.start && s.end === a.end);
+            if (bMatchIdx === -1) continue;
+
+            const b = selections[bMatchIdx];
+
+            const fullEl = document.querySelector(
+                '.sec-cell[data-section-id="' + fullId + '"][data-start="' + a.start + '"][data-end="' + a.end + '"]'
+            );
+            if (!fullEl) continue; // เผื่อกรณีหา cell เต็มสนามที่เวลาตรงกันไม่เจอ ข้ามแบบเงียบๆ ดีกว่าทำหน้าเว็บพัง
+
+            a.el.classList.remove('selected');
+            b.el.classList.remove('selected');
+            selections = selections.filter(s => s !== a && s !== b);
+
+            if (findSelectionIndex(fullEl) === -1) {
+                fullEl.classList.add('selected');
+                selections.push({
+                    start: fullEl.dataset.start,
+                    end: fullEl.dataset.end,
+                    label: `${fullEl.dataset.start} - ${fullEl.dataset.end}`,
+                    sectionId: fullEl.dataset.sectionId,
+                    sectionName: fullEl.dataset.sectionName,
+                    sectionCode: fullEl.dataset.sectionCode,
+                    el: fullEl,
+                });
+            }
+
+            changed = true;
+            break;
+        }
+    }
 }
 
 function removeSelection(index) {

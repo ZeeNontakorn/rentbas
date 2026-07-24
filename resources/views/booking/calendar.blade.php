@@ -526,28 +526,7 @@ function setupDrag(lane, sectionId) {
     }
 }
 
-function addSelection(sectionId, sectionName, start, end, lane) {
-    // ถ้าช่วงที่เพิ่งลากทับซ้อน (หรือชนต่อกันพอดี) กับรายการที่เลือกไว้แล้วใน section
-    // เดียวกัน ให้ "รวม" เป็นช่วงเดียวแทนที่จะสร้างเป็นรายการที่ซ้อนกัน 2 รายการ
-    // (วนซ้ำเผื่อรวมแล้วไปทับกับรายการอื่นต่อเป็นทอดๆ เช่น เดิมมี 2 ช่วง แล้วลากช่วงใหม่คาบทั้งคู่)
-    let merged = true;
-    while (merged) {
-        merged = false;
-        for (let i = selections.length - 1; i >= 0; i--) {
-            const s = selections[i];
-            if (s.sectionId !== sectionId) continue;
-
-            const sStart = timeToMin(s.start), sEnd = timeToMin(s.end);
-            if (sStart <= end && sEnd >= start) {
-                start = Math.min(start, sStart);
-                end = Math.max(end, sEnd);
-                s.blockEl.remove();
-                selections.splice(i, 1);
-                merged = true;
-            }
-        }
-    }
-
+function createSelectionBlock(sectionId, sectionName, start, end, lane) {
     const block = document.createElement('div');
     block.className = 'cal-selected';
     block.style.top = ((start - OPEN) * PX_PER_MIN) + 'px';
@@ -565,11 +544,96 @@ function addSelection(sectionId, sectionName, start, end, lane) {
 
     block.querySelector('.cal-sel-remove').addEventListener('click', (ev) => {
         ev.stopPropagation();
-        block.remove();
-        selections = selections.filter(s => s !== entry);
+        removeSelectionEntry(entry);
         updateConfirmBox();
     });
 
+    return entry;
+}
+
+function removeSelectionEntry(entry) {
+    entry.blockEl.remove();
+    selections = selections.filter(s => s !== entry);
+}
+
+// ถ้าช่วงที่จะเพิ่มทับซ้อน (หรือชนต่อกันพอดี) กับรายการที่เลือกไว้แล้วใน section เดียวกัน
+// ให้ "รวม" เป็นช่วงเดียวแทนที่จะสร้างเป็นรายการที่ซ้อนกัน 2 รายการ (วนซ้ำเผื่อรวมแล้วไปทับ
+// กับรายการอื่นต่อเป็นทอดๆ เช่น เดิมมี 2 ช่วง แล้วลากช่วงใหม่คาบทั้งคู่)
+function mergeSameSectionAndAdd(sectionId, sectionName, start, end, lane) {
+    let merged = true;
+    while (merged) {
+        merged = false;
+        for (let i = selections.length - 1; i >= 0; i--) {
+            const s = selections[i];
+            if (s.sectionId !== sectionId) continue;
+
+            const sStart = timeToMin(s.start), sEnd = timeToMin(s.end);
+            if (sStart <= end && sEnd >= start) {
+                start = Math.min(start, sStart);
+                end = Math.max(end, sEnd);
+                removeSelectionEntry(s);
+                merged = true;
+            }
+        }
+    }
+    return createSelectionBlock(sectionId, sectionName, start, end, lane);
+}
+
+function getSectionIdByCode(code) {
+    return Object.keys(SECTION_CODES).find(id => SECTION_CODES[id] === code) || null;
+}
+
+// ป้องกันช่องโหว่: ถ้าเลือกครึ่งสนามทั้ง A และ B ทับช่วงเวลาเดียวกัน (ซึ่งเท่ากับยึด
+// พื้นที่สนามทั้งหมดเหมือนจองเต็มสนามอยู่แล้ว) ให้ระบบรวมเป็น "เต็มสนาม" ให้อัตโนมัติ
+// ทันที — กันการจงใจจองครึ่งสนาม 2 ฝั่งแยกกันเพื่อเลี่ยงราคา/เงื่อนไขโปรโมชั่นของเต็มสนาม
+function mergeHalfCourtPairs() {
+    const fullId = getSectionIdByCode('full');
+    const aId = getSectionIdByCode('a');
+    const bId = getSectionIdByCode('b');
+    if (!fullId || !aId || !bId) return; // สนามนี้ไม่ได้แบ่งครึ่ง (ไม่มี a/b พร้อมกัน) ไม่ต้องทำอะไร
+
+    const fullLane = document.getElementById('lane-' + fullId);
+    const fullSectionName = document.querySelector('[data-section-id="' + fullId + '"]')?.dataset.sectionName || 'เต็มสนาม';
+
+    let changed = true;
+    while (changed) {
+        changed = false;
+        const aList = selections.filter(s => s.sectionId === aId);
+        const bList = selections.filter(s => s.sectionId === bId);
+
+        for (const a of aList) {
+            const aStart = timeToMin(a.start), aEnd = timeToMin(a.end);
+
+            for (const b of bList) {
+                const bStart = timeToMin(b.start), bEnd = timeToMin(b.end);
+                const ovStart = Math.max(aStart, bStart);
+                const ovEnd = Math.min(aEnd, bEnd);
+                if (ovStart >= ovEnd) continue; // ไม่ทับกันจริง ข้าม
+
+                // ลบ 2 รายการเดิมออกก่อน แล้วเติมส่วนที่ไม่ทับกลับเข้าไป (ถ้ามีเหลือ)
+                removeSelectionEntry(a);
+                removeSelectionEntry(b);
+
+                if (aStart < ovStart) createSelectionBlock(aId, a.sectionName, aStart, ovStart, document.getElementById('lane-' + aId));
+                if (ovEnd < aEnd) createSelectionBlock(aId, a.sectionName, ovEnd, aEnd, document.getElementById('lane-' + aId));
+                if (bStart < ovStart) createSelectionBlock(bId, b.sectionName, bStart, ovStart, document.getElementById('lane-' + bId));
+                if (ovEnd < bEnd) createSelectionBlock(bId, b.sectionName, ovEnd, bEnd, document.getElementById('lane-' + bId));
+
+                // ช่วงที่ทับกันพอดี = รวมเป็นเต็มสนาม (ใช้ mergeSameSectionAndAdd เผื่อมี
+                // รายการ "เต็มสนาม" อื่นที่เลือกไว้ก่อนแล้วต่อกันพอดีอยู่แล้วด้วย)
+                mergeSameSectionAndAdd(fullId, fullSectionName, ovStart, ovEnd, fullLane);
+
+                changed = true;
+                break;
+            }
+            if (changed) break; // list เปลี่ยนไปแล้ว เริ่มวนใหม่จาก while ด้านนอก
+        }
+    }
+}
+
+function addSelection(sectionId, sectionName, start, end, lane) {
+    mergeSameSectionAndAdd(sectionId, sectionName, start, end, lane);
+    mergeHalfCourtPairs();
     updateConfirmBox();
 }
 

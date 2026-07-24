@@ -120,7 +120,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
     }
-        /**
+    /**
      * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
      */
     public function getCreditBalanceBahtAttribute(): float
