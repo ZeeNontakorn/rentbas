@@ -171,8 +171,14 @@
                                                 {{ $u->membershipTypeLabel() }}
                                             </span>
                                             <button type="button"
-                                                    onclick="openMembershipModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->membership_type }}', '{{ route('admin.users.updateMembershipType', $u) }}', '{{ $u->role }}')"
-                                                    class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไขประเภทสมาชิก">
+                                                class="membership-edit-btn text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0"
+                                                data-user-id="{{ $u->id }}"
+                                                data-name="{{ $u->name }}"
+                                                data-value="{{ $u->membership_type }}"
+                                                data-url="{{ route('admin.users.updateMembershipType', $u) }}"
+                                                data-role="{{ $u->role }}"
+                                                onclick="openMembershipModal(this.dataset.userId, this.dataset.name, this.dataset.value, this.dataset.url, this.dataset.role)"
+                                                title="แก้ไขประเภทสมาชิก">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                           d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -464,6 +470,8 @@
                 badge.textContent = newLabel;
                 const colorClass = membershipColorMap[newValue] || 'bg-gray-100 text-gray-600';
                 badge.className = 'membership-label inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate ' + colorClass;
+                const editBtn = cell.querySelector('.membership-edit-btn');
+                if (editBtn) editBtn.dataset.value = newValue;
             }
             closeMembershipModal();
         })
