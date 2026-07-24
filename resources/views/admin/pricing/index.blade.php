@@ -93,6 +93,7 @@
                                         </td>
                                         <td class="px-6 py-3">
                                             <label class="inline-flex items-center cursor-pointer">
+                                                <input type="hidden" name="is_active" value="0">
                                                 <input type="checkbox" name="is_active" value="1" @checked($rule->is_active)
                                                        class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                             </label>
