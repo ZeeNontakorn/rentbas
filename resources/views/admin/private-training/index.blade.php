@@ -8,7 +8,6 @@
         'pending' => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-500', 'pill' => 'bg-orange-500'],
         'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-500', 'pill' => 'bg-green-500'],
         'rejected' => ['label' => 'ปฏิเสธแล้ว', 'bg' => 'bg-red-100', 'text' => 'text-red-500', 'pill' => 'bg-red-500'],
-        'cancelled' => ['label' => 'ยกเลิก', 'bg' => 'bg-red-100', 'text' => 'text-red-500', 'pill' => 'bg-red-500'],
     ];
 
     // ลดความซ้ำซ้อนของ Array สำหรับวนลูปแสดง Tabs ด้านบน
@@ -16,7 +15,6 @@
         'pending' => 'รออนุมัติ',
         'approved' => 'อนุมัติแล้ว',
         'rejected' => 'ปฏิเสธแล้ว',
-        'cancelled' => 'ยกเลิก',
         'all' => 'ทั้งหมด',
     ];
 @endphp
