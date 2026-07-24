@@ -24,17 +24,21 @@
         <div class="mb-6">
             <label class="mb-2 block text-sm font-medium text-slate-700">ชื่อคลาสเรียน</label>
             <input id="course_name_input" name="course_name" value="{{ old('course_name', $isEdit ? $course->course_name : '') }}"
+                maxlength="255"
                 class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="เช่น Standard Class">
             <p id="course_name_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกชื่อคลาสเรียน</p>
         </div>
         <div class="grid gap-6 md:grid-cols-2">
-            <div><label class="mb-3 block text-sm font-medium text-slate-700">กลุ่มผู้เรียนเป้าหมาย</label>
-                <div class="grid grid-cols-2 gap-2">@foreach(['Rookie','Beginner','Junior','Player'] as $group)<label
+            <div>
+                <label class="mb-3 block text-sm font-medium text-slate-700">กลุ่มผู้เรียนเป้าหมาย</label>
+                <div id="target_groups_wrap" class="grid grid-cols-2 gap-2">@foreach(['Rookie','Beginner','Junior','Player'] as $group)<label
                         class="flex cursor-pointer items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="target_groups[]"
-                            value="{{ $group }}" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" @checked(in_array($group, old('target_groups', $isEdit ?
+                            class="target_group h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            value="{{ $group }}" @checked(in_array($group, old('target_groups', $isEdit ?
                             $course->targetGroups->pluck('target_group')->all() : [])))>{{ $group }}</label>@endforeach
                 </div>
+                <p id="target_groups_error" class="hidden mt-1.5 text-xs text-red-600">กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม</p>
             </div>
             <div>
                 <label class="mb-3 block text-sm font-medium text-slate-700">เกณฑ์อายุผู้เรียน</label>
@@ -46,7 +50,8 @@
                         value="{{ old('max_age', $isEdit ? $course->max_age : '') }}"
                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="สูงสุด">
                 </div>
-                <p id="age_range_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกอายุขั้นต่ำ และอายุสูงสุดต้องมากกว่าหรือเท่ากับอายุขั้นต่ำ</p>
+                <p id="min_age_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกอายุขั้นต่ำ</p>
+                <p id="max_age_error" class="hidden mt-1.5 text-xs text-red-600">อายุสูงสุดต้องมากกว่าหรือเท่ากับอายุขั้นต่ำ</p>
             </div>
         </div>
         <div class="mt-6"><label class="mb-2 block text-sm font-medium text-slate-700">รายละเอียดคอร์ส
@@ -64,7 +69,6 @@
             </div>
         </div>
         <div id="scheduleRows" class="space-y-3"></div>
-        <p id="schedule_error" class="hidden mt-1.5 text-xs text-red-600">กรุณาเลือกวันเรียนอย่างน้อย 1 วัน กรอกเวลาให้ครบทุกรอบ (เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น) และถ้าติ๊ก "จำกัดจำนวน" ต้องกรอกจำนวนคนด้วย</p>
         <button type="button" id="addSchedule"
             class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มรอบเวลาเรียน</button>
         <div id="scheduleInputs"></div>
@@ -80,7 +84,7 @@
             </div>
         </div>
         <div id="packageRows" class="space-y-3"></div>
-            <p id="package_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกจำนวนครั้ง ราคา (ไม่เกิน {{ number_format($maxPackagePrice) }} บาท) และอายุแพ็กเกจให้ครบทุกแพ็กเกจ (เป็นตัวเลขที่ถูกต้อง)</p>        <button type="button" id="addPackage"
+        <button type="button" id="addPackage"
             class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มแพ็กเกจ</button>
     </section>
 
@@ -136,10 +140,11 @@
                     class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบรอบ</button></div>
 
             <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน</label>
-            <div class="flex flex-wrap gap-2">
+            <div class="days flex flex-wrap gap-2">
                 @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value=>$label)<label class="cursor-pointer"><input class="day peer sr-only" type="checkbox" value="{{ $value }}"><span
                         class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm text-slate-600 transition peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">{{ $label }}</span></label>@endforeach
             </div>
+            <p class="day-error hidden mt-1.5 text-xs text-red-600">กรุณาเลือกวันเรียนอย่างน้อย 1 วัน</p>
 
             <div class="mt-4 grid gap-3 md:grid-cols-2">
                 <div>
@@ -154,6 +159,7 @@
                     </div>
                 </div>
             </div>
+            <p class="time-error hidden mt-1.5 text-xs text-red-600">กรุณาเลือกเวลาเริ่มและเวลาสิ้นสุด</p>
 
             <div class="mt-3 flex flex-wrap items-center gap-3">
                 <label class="text-slate-500 flex flex-shrink-0 cursor-pointer items-center gap-2 text-sm"><input class=" limited h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
@@ -164,6 +170,7 @@
                     <span class="text-xs text-slate-500">คน</span>
                 </div>
             </div>
+            <p class="capacity-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกจำนวนคนสูงสุด เมื่อเลือก "จำกัดจำนวน"</p>
         </div>
     </template>
     <template id="packageTemplate">
@@ -182,19 +189,20 @@
                     <label class="mb-1 block text-xs font-medium text-slate-500">จำนวนครั้ง</label>
                     <input class="sessions w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]" type="number" min="1"
                         placeholder="จำนวนครั้ง เช่น 4">
+                    <p class="sessions-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกจำนวนครั้ง</p>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">ราคา (บาท)</label>
                     <input class="price w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]"
                         type="number" min="0" max="{{ $maxPackagePrice }}" step=".01" placeholder="ราคา (บาท)">
-
-
+                    <p class="price-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกราคาแพ็กเกจ</p>
                     <p class="avgPrice mt-1.5 text-xs font-medium text-green-600">💡 เฉลี่ยครั้งละ: <span class="avgPriceValue">0</span> บาท</p>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">อายุแพ็กเกจ</label>
                     <input class="validity w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light]" type="number" min="1"
                         placeholder="อายุแพ็กเกจ">
+                    <p class="validity-error hidden mt-1.5 text-xs text-red-600">กรุณากรอกอายุแพ็กเกจ</p>
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">หน่วยอายุ</label>
@@ -225,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_PACKAGE_PRICE = {{ $maxPackagePrice }};
     const INVALID_CLASSES = ['!border-red-600', '!bg-red-50'];
 
-    // ---------- helper: error แบบ field เดี่ยว ----------
+    // ---------- helper: error แบบ field เดี่ยว (ใช้กับ error element ที่มี id ตายตัว) ----------
     function showFieldError(inputEl, errorId) {
         if (inputEl) inputEl.classList.add(...INVALID_CLASSES);
         const errEl = document.getElementById(errorId);
@@ -235,6 +243,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (inputEl) inputEl.classList.remove(...INVALID_CLASSES);
         const errEl = document.getElementById(errorId);
         if (errEl) errEl.classList.add('hidden');
+    }
+
+    // ---------- helper: error แบบ scoped ภายในแถว (schedule / package row) ----------
+    function showRowError(row, selector, message, invalidInputs = []) {
+        const errEl = row.querySelector(selector);
+        if (errEl) {
+            if (message) errEl.textContent = message;
+            errEl.classList.remove('hidden');
+        }
+        invalidInputs.forEach(el => el && el.classList.add(...INVALID_CLASSES));
+    }
+    function clearRowErrorEl(row, selector, invalidInputs = []) {
+        const errEl = row.querySelector(selector);
+        if (errEl) errEl.classList.add('hidden');
+        invalidInputs.forEach(el => el && el.classList.remove(...INVALID_CLASSES));
     }
 
     // คำนวณระยะเวลาเรียน (ชม.) จากเวลาเริ่ม-เวลาสิ้นสุดของแต่ละรอบ
@@ -263,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addSchedule(data = {
-        weekdays: ['mon', 'wed', 'fri'],
+        weekdays: [],
         start: '00:00',
         end: '00:00'
     }) {
@@ -280,19 +303,19 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         setCapacityVisible(!!data.limited);
         row.querySelectorAll('.day').forEach(input => input.checked = data.weekdays.includes(input.value));
-        const clearRowError = () => {
-            row.classList.remove(...INVALID_CLASSES);
-            row.querySelector('.capacity').classList.remove(...INVALID_CLASSES);
-            clearFieldError('schedule_error');
-        };
+
+        const clearDayError = () => clearRowErrorEl(row, '.day-error');
+        const clearTimeError = () => clearRowErrorEl(row, '.time-error', [row.querySelector('.start'), row.querySelector('.end')]);
+        const clearCapacityError = () => clearRowErrorEl(row, '.capacity-error', [row.querySelector('.capacity')]);
+
         row.querySelector('.limited').onchange = e => {
             setCapacityVisible(e.target.checked);
-            clearRowError();
+            clearCapacityError();
         };
-        row.querySelectorAll('.day').forEach(input => input.onchange = clearRowError);
-        row.querySelector('.start').oninput = () => { calcDuration(row); clearRowError(); };
-        row.querySelector('.end').oninput = () => { calcDuration(row); clearRowError(); };
-        row.querySelector('.capacity').oninput = clearRowError;
+        row.querySelectorAll('.day').forEach(input => input.onchange = clearDayError);
+        row.querySelector('.start').oninput = () => { calcDuration(row); clearTimeError(); };
+        row.querySelector('.end').oninput = () => { calcDuration(row); clearTimeError(); };
+        row.querySelector('.capacity').oninput = clearCapacityError;
         row.querySelector('.remove').onclick = () => row.remove();
         schedules.append(row);
         calcDuration(row);
@@ -306,14 +329,20 @@ document.addEventListener('DOMContentLoaded', () => {
         row.querySelector('.validity').value = data.validity_value || '';
         row.querySelector('.unit').value = data.validity_unit || 'days';
         row.querySelector('.recommendation').value = data.recommendation_text || '';
-        const clearRowError = () => { row.classList.remove(...INVALID_CLASSES); clearFieldError('package_error'); };
-        row.querySelector('.sessions').oninput = () => { calcPackageAverage(row); clearRowError(); };
-        row.querySelector('.price').oninput = () => { calcPackageAverage(row); clearRowError(); };
-        row.querySelector('.validity').oninput = clearRowError;
+
+        const clearSessionsError = () => clearRowErrorEl(row, '.sessions-error', [row.querySelector('.sessions')]);
+        const clearPriceError = () => clearRowErrorEl(row, '.price-error', [row.querySelector('.price')]);
+        const clearValidityError = () => clearRowErrorEl(row, '.validity-error', [row.querySelector('.validity')]);
+
+        row.querySelector('.sessions').oninput = () => { calcPackageAverage(row); clearSessionsError(); };
+        row.querySelector('.price').oninput = () => { calcPackageAverage(row); clearPriceError(); };
+        row.querySelector('.validity').oninput = clearValidityError;
         row.querySelector('.removePackage').onclick = () => row.remove();
         packages.append(row);
         calcPackageAverage(row);
-    }(oldSchedules.length ? oldSchedules : [undefined]).forEach(addSchedule);
+    }
+
+    (oldSchedules.length ? oldSchedules : [undefined]).forEach(addSchedule);
     (oldPackages.length ? oldPackages : [undefined]).forEach(addPackage);
     document.getElementById('addSchedule').onclick = () => addSchedule();
     document.getElementById('addPackage').onclick = () => addPackage();
@@ -323,10 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     ['min_age_input', 'max_age_input'].forEach(id => {
         document.getElementById(id).addEventListener('input', function () {
-            clearFieldError('age_range_error');
+            clearFieldError('min_age_error');
+            clearFieldError('max_age_error');
             document.getElementById('min_age_input').classList.remove(...INVALID_CLASSES);
             document.getElementById('max_age_input').classList.remove(...INVALID_CLASSES);
         });
+    });
+    document.querySelectorAll('.target_group').forEach(input => {
+        input.addEventListener('change', () => clearFieldError('target_groups_error'));
     });
 
     // ---------- Dropzone รูปภาพ (คลิก / ลาก-วาง / preview / validate / ลบ) ----------
@@ -424,83 +457,148 @@ document.addEventListener('DOMContentLoaded', () => {
         showSelectedFile(file);
     });
 
-    // ---------- ตรวจสอบความถูกต้องก่อน submit ----------
+    // ---------- ตรวจสอบความถูกต้องก่อน submit (แยก validate ทีละช่อง Input) ----------
     function validateForm() {
         let isValid = true;
         let firstInvalidEl = null;
+        const markInvalid = el => { firstInvalidEl = firstInvalidEl || el; isValid = false; };
 
+        // 1) ชื่อคลาสเรียน: ห้ามว่าง, ห้ามยาวเกิน 255 ตัวอักษร
         const courseNameInput = document.getElementById('course_name_input');
-        if (!courseNameInput.value.trim()) {
+        const courseNameVal = courseNameInput.value.trim();
+        if (!courseNameVal) {
+            document.getElementById('course_name_error').textContent = 'กรุณากรอกชื่อคลาสเรียน';
             showFieldError(courseNameInput, 'course_name_error');
-            firstInvalidEl = firstInvalidEl || courseNameInput;
-            isValid = false;
+            markInvalid(courseNameInput);
+        } else if (courseNameVal.length > 255) {
+            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน 255 ตัวอักษร';
+            showFieldError(courseNameInput, 'course_name_error');
+            markInvalid(courseNameInput);
         }
 
+        // 2) กลุ่มเป้าหมาย: ต้องเลือกอย่างน้อย 1 รายการ
+        const targetGroupChecked = document.querySelectorAll('.target_group:checked').length > 0;
+        if (!targetGroupChecked) {
+            document.getElementById('target_groups_error').classList.remove('hidden');
+            markInvalid(document.getElementById('target_groups_wrap'));
+        }
+
+        // 3) อายุขั้นต่ำ: ห้ามว่าง, ต้องเป็นตัวเลขจำนวนเต็ม >= 0
         const minAgeInput = document.getElementById('min_age_input');
         const maxAgeInput = document.getElementById('max_age_input');
         const minAgeVal = minAgeInput.value.trim();
         const maxAgeVal = maxAgeInput.value.trim();
-        let ageInvalid = false;
-        if (minAgeVal === '' || isNaN(minAgeVal) || Number(minAgeVal) < 0) ageInvalid = true;
-        if (maxAgeVal !== '' && (isNaN(maxAgeVal) || Number(maxAgeVal) < Number(minAgeVal || 0))) ageInvalid = true;
-        if (ageInvalid) {
-            showFieldError(minAgeInput, 'age_range_error');
-            maxAgeInput.classList.add(...INVALID_CLASSES);
-            firstInvalidEl = firstInvalidEl || minAgeInput;
-            isValid = false;
+        const isInt = v => /^-?\d+$/.test(v);
+
+        if (minAgeVal === '') {
+            document.getElementById('min_age_error').textContent = 'กรุณากรอกอายุขั้นต่ำ';
+            showFieldError(minAgeInput, 'min_age_error');
+            markInvalid(minAgeInput);
+        } else if (!isInt(minAgeVal) || Number(minAgeVal) < 0) {
+            document.getElementById('min_age_error').textContent = 'กรุณากรอกอายุขั้นต่ำเป็นตัวเลขเท่านั้น';
+            showFieldError(minAgeInput, 'min_age_error');
+            markInvalid(minAgeInput);
         }
 
-        let scheduleInvalid = false;
+        // 4) อายุสูงสุด (ไม่บังคับ): ถ้ากรอกต้องเป็นตัวเลขจำนวนเต็ม >= 0 และ >= อายุขั้นต่ำ
+        if (maxAgeVal !== '') {
+            if (!isInt(maxAgeVal) || Number(maxAgeVal) < 0) {
+                document.getElementById('max_age_error').textContent = 'กรุณากรอกอายุสูงสุดเป็นตัวเลขเท่านั้น';
+                showFieldError(maxAgeInput, 'max_age_error');
+                markInvalid(maxAgeInput);
+            } else if (isInt(minAgeVal) && Number(maxAgeVal) < Number(minAgeVal)) {
+                document.getElementById('max_age_error').textContent = 'อายุสูงสุดต้องมากกว่าหรือเท่ากับอายุขั้นต่ำ';
+                showFieldError(maxAgeInput, 'max_age_error');
+                markInvalid(maxAgeInput);
+            }
+        }
+
+        // 5) รอบเวลาเรียน: แยก validate วันเรียน และ เวลา ของแต่ละแถว
         const scheduleRowEls = [...schedules.children];
-        if (scheduleRowEls.length === 0) scheduleInvalid = true;
         scheduleRowEls.forEach(row => {
             const days = [...row.querySelectorAll('.day:checked')];
-            const start = row.querySelector('.start').value;
-            const end = row.querySelector('.end').value;
-            let rowBad = false;
-            if (!days.length) rowBad = true;
-            if (!start || !end || start >= end) rowBad = true;
+            if (!days.length) {
+                showRowError(row, '.day-error', 'กรุณาเลือกวันเรียนอย่างน้อย 1 วัน');
+                markInvalid(row.querySelector('.days'));
+            }
+
+            const startInput = row.querySelector('.start');
+            const endInput = row.querySelector('.end');
+            const start = startInput.value;
+            const end = endInput.value;
+            if (!start && !end) {
+                showRowError(row, '.time-error', 'กรุณาเลือกเวลาเริ่มและเวลาสิ้นสุด', [startInput, endInput]);
+                markInvalid(startInput);
+            } else if (!start) {
+                showRowError(row, '.time-error', 'กรุณาเลือกเวลาเริ่ม', [startInput]);
+                markInvalid(startInput);
+            } else if (!end) {
+                showRowError(row, '.time-error', 'กรุณาเลือกเวลาสิ้นสุด', [endInput]);
+                markInvalid(endInput);
+            } else if (start >= end) {
+                showRowError(row, '.time-error', 'เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด', [startInput, endInput]);
+                markInvalid(startInput);
+            }
+
             const isLimited = row.querySelector('.limited').checked;
             const capacityInput = row.querySelector('.capacity');
             if (isLimited) {
                 const capVal = capacityInput.value.trim();
-                if (capVal === '' || isNaN(capVal) || !Number.isInteger(Number(capVal)) || Number(capVal) < 1) {
-                    capacityInput.classList.add(...INVALID_CLASSES);
-                    rowBad = true;
+                if (capVal === '' || !isInt(capVal) || Number(capVal) < 1) {
+                    showRowError(row, '.capacity-error', 'กรุณากรอกจำนวนคนสูงสุด เมื่อเลือก "จำกัดจำนวน"', [capacityInput]);
+                    markInvalid(capacityInput);
                 }
             }
-            if (rowBad) {
-                row.classList.add(...INVALID_CLASSES);
-                scheduleInvalid = true;
-                firstInvalidEl = firstInvalidEl || row;
-            }
         });
-        if (scheduleInvalid) {
-            document.getElementById('schedule_error').classList.remove('hidden');
-            isValid = false;
-        }
+        if (!scheduleRowEls.length) markInvalid(schedules);
 
-        let packageInvalid = false;
+        // 6) แพ็กเกจ: แยก validate จำนวนครั้ง / ราคา / อายุแพ็กเกจ ของแต่ละแถว
         const packageRowEls = [...packages.children];
-        if (packageRowEls.length === 0) packageInvalid = true;
         packageRowEls.forEach(row => {
-            const sessionsVal = row.querySelector('.sessions').value.trim();
-            const priceVal = row.querySelector('.price').value.trim();
-            const validityVal = row.querySelector('.validity').value.trim();
-            let rowBad = false;
-            if (sessionsVal === '' || isNaN(sessionsVal) || !Number.isInteger(Number(sessionsVal)) || Number(sessionsVal) < 1) rowBad = true;
-            if (priceVal === '' || isNaN(priceVal) || Number(priceVal) < 0 || Number(priceVal) > MAX_PACKAGE_PRICE) rowBad = true;
-            if (validityVal === '' || isNaN(validityVal) || !Number.isInteger(Number(validityVal)) || Number(validityVal) < 1) rowBad = true;
-            if (rowBad) {
-                row.classList.add(...INVALID_CLASSES);
-                packageInvalid = true;
-                firstInvalidEl = firstInvalidEl || row;
+            const sessionsInput = row.querySelector('.sessions');
+            const priceInput = row.querySelector('.price');
+            const validityInput = row.querySelector('.validity');
+            const sessionsVal = sessionsInput.value.trim();
+            const priceVal = priceInput.value.trim();
+            const validityVal = validityInput.value.trim();
+
+            if (sessionsVal === '') {
+                showRowError(row, '.sessions-error', 'กรุณากรอกจำนวนครั้ง', [sessionsInput]);
+                markInvalid(sessionsInput);
+            } else if (!isInt(sessionsVal)) {
+                showRowError(row, '.sessions-error', 'จำนวนครั้งต้องเป็นตัวเลข', [sessionsInput]);
+                markInvalid(sessionsInput);
+            } else if (Number(sessionsVal) < 1) {
+                showRowError(row, '.sessions-error', Number(sessionsVal) === 0 ? 'กรุณากรอกจำนวนครั้ง' : 'จำนวนครั้งต้องเป็นจำนวนเต็มบวก', [sessionsInput]);
+                markInvalid(sessionsInput);
+            }
+
+            if (priceVal === '') {
+                showRowError(row, '.price-error', 'กรุณากรอกราคาแพ็กเกจ', [priceInput]);
+                markInvalid(priceInput);
+            } else if (isNaN(priceVal)) {
+                showRowError(row, '.price-error', 'ราคาต้องเป็นตัวเลข', [priceInput]);
+                markInvalid(priceInput);
+            } else if (Number(priceVal) <= 0) {
+                showRowError(row, '.price-error', 'ราคาต้องมากกว่า 0', [priceInput]);
+                markInvalid(priceInput);
+            } else if (Number(priceVal) > MAX_PACKAGE_PRICE) {
+                showRowError(row, '.price-error', 'ราคาต้องไม่เกิน ' + MAX_PACKAGE_PRICE.toLocaleString() + ' บาท', [priceInput]);
+                markInvalid(priceInput);
+            }
+
+            if (validityVal === '') {
+                showRowError(row, '.validity-error', 'กรุณากรอกอายุแพ็กเกจ', [validityInput]);
+                markInvalid(validityInput);
+            } else if (!isInt(validityVal)) {
+                showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องเป็นตัวเลข', [validityInput]);
+                markInvalid(validityInput);
+            } else if (Number(validityVal) < 0) {
+                showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องมากกว่าหรือเท่ากับ 0', [validityInput]);
+                markInvalid(validityInput);
             }
         });
-        if (packageInvalid) {
-            document.getElementById('package_error').classList.remove('hidden');
-            isValid = false;
-        }
+        if (!packageRowEls.length) markInvalid(packages);
 
         if (!isValid && firstInvalidEl) {
             firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });

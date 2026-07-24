@@ -235,7 +235,7 @@ class ManageCourseController extends Controller
         $validated = $request->validate([
             'course_name' => ['required', 'string', 'max:255'],
             'min_age' => ['required', 'integer', 'min:0'],
-            'max_age' => ['nullable', 'integer', 'gte:min_age'],
+            'max_age' => ['nullable', 'integer', 'min:0', 'gte:min_age'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'max:20480'], // สูงสุด 20MB
 
@@ -256,12 +256,48 @@ class ManageCourseController extends Controller
             'packages' => ['required', 'array', 'min:1'],
             'packages.*.package_type' => ['required', 'in:group,private'],
             'packages.*.total_sessions' => ['required', 'integer', 'min:1'],
-            'packages.*.total_price' => ['required', 'numeric', 'min:0'],
+            'packages.*.total_price' => ['required', 'numeric', 'min:0.01', 'max:'.self::MAX_PACKAGE_PRICE],
             'packages.*.validity_value' => ['required', 'integer', 'min:1'],
             'packages.*.validity_unit' => ['required', 'in:days,hours'],
             'packages.*.recommendation_text' => ['nullable', 'string', 'max:255'],
         ], [
+            // --- ข้อมูลทั่วไป ---
+            'course_name.required' => 'กรุณากรอกชื่อคลาสเรียน',
+            'course_name.max' => 'ชื่อคลาสเรียนต้องไม่เกิน 255 ตัวอักษร',
+
+            'min_age.required' => 'กรุณากรอกอายุขั้นต่ำ',
+            'min_age.integer' => 'กรุณากรอกอายุขั้นต่ำเป็นตัวเลขเท่านั้น',
+            'min_age.min' => 'กรุณากรอกอายุขั้นต่ำเป็นตัวเลขเท่านั้น',
+            'max_age.integer' => 'กรุณากรอกอายุสูงสุดเป็นตัวเลขเท่านั้น',
+            'max_age.min' => 'กรุณากรอกอายุสูงสุดเป็นตัวเลขเท่านั้น',
+            'max_age.gte' => 'อายุสูงสุดต้องมากกว่าหรือเท่ากับอายุขั้นต่ำ',
+
+            'target_groups.required' => 'กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม',
+            'target_groups.min' => 'กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม',
+
+            // --- รอบเวลาเรียน ---
+            'schedules.*.weekdays.required' => 'กรุณาเลือกวันเรียนอย่างน้อย 1 วัน',
+            'schedules.*.weekdays.min' => 'กรุณาเลือกวันเรียนอย่างน้อย 1 วัน',
+            'schedules.*.start_time.required' => 'กรุณาเลือกเวลาเริ่ม',
+            'schedules.*.end_time.required' => 'กรุณาเลือกเวลาสิ้นสุด',
+            'schedules.*.end_time.after' => 'เวลาเริ่มต้องน้อยกว่าเวลาสิ้นสุด',
             'schedules.*.capacity.required_if' => 'กรุณากรอกจำนวนคนสูงสุด เมื่อเลือก "จำกัดจำนวน" สำหรับรอบเวลาเรียนนี้',
+            'schedules.*.capacity.integer' => 'จำนวนคนสูงสุดต้องเป็นตัวเลข',
+            'schedules.*.capacity.min' => 'จำนวนคนสูงสุดต้องมากกว่า 0',
+
+            // --- แพ็กเกจ ---
+            'packages.*.total_sessions.required' => 'กรุณากรอกจำนวนครั้ง',
+            'packages.*.total_sessions.integer' => 'จำนวนครั้งต้องเป็นตัวเลข',
+            'packages.*.total_sessions.min' => 'จำนวนครั้งต้องเป็นจำนวนเต็มบวก',
+
+            'packages.*.total_price.required' => 'กรุณากรอกราคาแพ็กเกจ',
+            'packages.*.total_price.numeric' => 'ราคาต้องเป็นตัวเลข',
+            'packages.*.total_price.min' => 'ราคาต้องมากกว่า 0',
+            'packages.*.total_price.max' => 'ราคาต้องไม่เกิน '.number_format(self::MAX_PACKAGE_PRICE).' บาท',
+
+            'packages.*.validity_value.required' => 'กรุณากรอกอายุแพ็กเกจ',
+            'packages.*.validity_value.integer' => 'อายุแพ็กเกจต้องเป็นตัวเลข',
+            'packages.*.validity_value.min' => 'อายุแพ็กเกจต้องมากกว่าหรือเท่ากับ 0',
         ]);
 
         // วนลูปทุกข้อมูลใน Array แล้วแปลงข้อมูลใหม่กลับมาเป็น Array อีกชุดหนึ่ง
