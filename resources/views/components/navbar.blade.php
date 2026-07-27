@@ -75,6 +75,7 @@
                     </a>
                     <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
+                    </a>
                     <a href="{{ route('admin.courses') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการคอร์สเรียน
                     </a>
@@ -231,6 +232,7 @@
                             <a href="{{ route('admin.staffs.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"></path></svg>
                                 โค้ช และผู้ช่วย
+                            </a>
                             <a href="{{ route('admin.edit.text') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 แก้ไขเนื้อหาเว็บไซต์
@@ -257,22 +259,35 @@
                         </button>
 
                 @else
-                {{-- credit --}}
-                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                    onclick="swalalert()">
-                    {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                </button>
                     <div class="h-6 w-px bg-gray-600 mx-2"></div>
-                    <a href="{{ route('profile') }}" class="flex items-center text-gray-300 font-medium hover:text-orange-500 transition">
-                        {{ auth()->user()->name }}
-                    </a>
-                    <!-- Logout -->
-                <form method="POST" action="{{ route('logout') }}" class="ml-2">
-                    @csrf
-                    <button type="submit" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center">
-                        ออกจากระบบ
+                    <div class="relative">
+                        <button id="userMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none">
+                            {{ auth()->user()->name }}
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="userMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
+                            <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
+                                <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
+                                <div class="font-bold truncate text-orange-500">{{ auth()->user()->name }}</div>
+                            </div>
+                            <a href="{{ route('profile') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                ตั้งค่าโปรไฟล์
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-700">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                    ออกจากระบบ
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {{-- credit --}}
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
+                        onclick="swalalert()">
+                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                     </button>
-                </form>
                 @endif
             @endauth
 
@@ -328,6 +343,7 @@
                     </a>
                     <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ดูประวัติการจอง
+                    </a>
                     <a href="{{ route('admin.courses') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการคอร์สเรียน
                     </a>
@@ -437,6 +453,10 @@
         const adminMenuBtn = document.getElementById('adminMenuBtn');
         const adminMenuDropdown = document.getElementById('adminMenuDropdown');
 
+        // สำหรับ User Menu Dropdown
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userMenuDropdown = document.getElementById('userMenuDropdown');
+
         // สำหรับเมนูมือถือ
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
@@ -447,12 +467,21 @@
         notifBtn?.addEventListener('click', () => {
             notifDropdown?.classList.toggle('hidden');
             adminMenuDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
+            userMenuDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
         });
 
         // เมื่อคลิกปุ่ม Admin Menu
         adminMenuBtn?.addEventListener('click', () => {
             adminMenuDropdown?.classList.toggle('hidden');
             notifDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
+            userMenuDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
+        });
+
+        // เมื่อคลิกปุ่ม User Menu
+        userMenuBtn?.addEventListener('click', () => {
+            userMenuDropdown?.classList.toggle('hidden');
+            notifDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
+            adminMenuDropdown?.classList.add('hidden'); // ปิดเมนูอื่น
         });
 
         // เมื่อคลิกปุ่มเมนูมือถือ ให้เปิด/ปิดเมนูและสลับไอคอน
@@ -469,6 +498,9 @@
             }
             if (!adminMenuBtn?.contains(e.target) && !adminMenuDropdown?.contains(e.target)) {
                 adminMenuDropdown?.classList.add('hidden');
+            }
+            if (!userMenuBtn?.contains(e.target) && !userMenuDropdown?.contains(e.target)) {
+                userMenuDropdown?.classList.add('hidden');
             }
         });
 
