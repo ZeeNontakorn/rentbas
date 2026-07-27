@@ -129,9 +129,16 @@
                         </svg>
                     </div>
                     <div>
+                        @php
+                            $roleLabel = match(true) {
+                                $user->role === 'superadmin' => 'ผู้ดูแลระบบ', // Super Admin
+                                $user->role === 'admin' => 'ผู้ดูแลระบบ',            // Admin
+                                default => $user->membershipTypeLabel(),
+                            };
+                        @endphp
                         <div class="info-label">ประเภทสมาชิก</div>
                         <div class="info-value">
-                            {{ $user->role === 'admin' ? 'ผู้ดูแลระบบ' : $user->membershipTypeLabel() }}
+                            {{ $roleLabel }}
                         </div>
                     </div>
                 </div>
