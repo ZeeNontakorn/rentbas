@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Availability;
+use App\Models\Booking;
 use App\Models\Court;
+use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Models\PrivateTrainingBooking;
 use App\Models\User;
@@ -46,66 +48,115 @@ class PrivateTrainingController extends Controller
         $this->assertIsCoach($coach);
 
         $today = now()->toDateString();
-        $now = now();
-
-        $busyRanges = $coach->availabilities()
-            ->whereDate('date', $today)
-            ->where('status', 'booked')
-            ->get(['start_time', 'end_time']);
-
-        $reservedRanges = PrivateTrainingBooking::where('coach_id', $coach->id)
-            ->whereDate('date', $today)
-            ->whereIn('status', ['pending', 'approved'])
-            ->get(['start_time', 'end_time', 'user_id']);
-
-        $timeline = [];
-        for ($h = self::OPEN_HOUR; $h < self::CLOSE_HOUR; $h++) {
-            // sprintf('%02d') ใช้ฟอร์แมตตัวเลขให้มี 0 นำหน้าถ้าเป็นเลขหลักเดียว (เช่น 8 กลายเป็น '08')
-            $start = sprintf('%02d:00:00', $h);
-            $end = sprintf('%02d:00:00', $h + 1);
-            $isPast = Carbon::parse("$today $start")->lte($now);
-
-            // ใช้ collection methods:
-            // ->first() คืนค่า object แรกที่ตรงเงื่อนไข (เพื่อเอาค่า user_id มาเช็คต่อ)
-            // ->contains() คืนค่า boolean (true/false) ว่ามีข้อมูลที่ตรงเงื่อนไขใน collection หรือไม่
-            $reserved = $reservedRanges->first(fn($r) => $r->start_time < $end && $r->end_time > $start);
-            $isBusy = $busyRanges->contains(fn($r) => $r->start_time < $end && $r->end_time > $start);
-
-            $status = 'available';
-            if ($isPast) {
-                $status = 'past';
-            } elseif ($reserved) {
-                $status = $reserved->user_id === auth()->id() ? 'mine' : 'reserved';
-            } elseif ($isBusy) {
-                $status = 'unavailable';
-            }
-
-            $timeline[] = [
-                'hour' => $h,
-                'start' => sprintf('%02d:00', $h),
-                'end' => sprintf('%02d:00', $h + 1),
-                'status' => $status,
-            ];
-        }
 
         $myUpcoming = PrivateTrainingBooking::where('coach_id', $coach->id)
             ->where('user_id', auth()->id())
             ->whereDate('date', '>=', $today)
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
 
         // ใช้เครื่องหมาย + (Array Union) เพื่อนำ array ธรรมดาไปต่อท้ายผลลัพธ์ที่ได้จากฟังก์ชัน compact()
-        return view('private-training.show', compact('coach', 'today', 'timeline', 'myUpcoming') + [
+        return view('private-training.show', compact('coach', 'today', 'myUpcoming') + [
             'staffProfile' => $coach->staffProfile,
         ]);
+    }
+
+    public function scheduleEvents(Request $request, User $coach)
+    {
+        $this->assertIsCoach($coach);
+        $range = $request->validate([
+            'start' => ['required', 'date'],
+            'end' => ['required', 'date', 'after:start'],
+        ]);
+
+        $from = Carbon::parse($range['start']);
+        $until = Carbon::parse($range['end']);
+        $viewerIsCoach = $request->user()->id === $coach->id;
+
+        $availableEvents = $coach->availabilities()
+            ->where('status', 'available')
+            ->whereDate('date', '>=', $from->toDateString())
+            ->whereDate('date', '<', $until->toDateString())
+            ->get()
+            ->map(fn (Availability $item) => [
+                'title' => 'เปิดรับจอง',
+                'start' => $item->date.'T'.substr($item->start_time, 0, 8),
+                'end' => $item->date.'T'.substr($item->end_time, 0, 8),
+                'display' => 'background',
+                'backgroundColor' => '#dcfce7',
+                'extendedProps' => ['selectable' => true, 'kind' => 'available'],
+            ]);
+
+        $busyEvents = $coach->availabilities()
+            ->where('status', 'booked')
+            ->whereDate('date', '>=', $from->toDateString())
+            ->whereDate('date', '<', $until->toDateString())
+            ->get()
+            ->unique(fn (Availability $item) => implode('|', [$item->date, $item->start_time, $item->end_time]))
+            ->map(fn (Availability $item) => [
+                'title' => $viewerIsCoach ? ($item->detail ?: 'ไม่ว่าง') : 'ไม่ว่าง',
+                'start' => $item->date.'T'.substr($item->start_time, 0, 8),
+                'end' => $item->date.'T'.substr($item->end_time, 0, 8),
+                'display' => 'block',
+                'backgroundColor' => '#f97316',
+                'borderColor' => '#f97316',
+                'extendedProps' => ['selectable' => false, 'kind' => 'busy'],
+            ]);
+
+        $bookingEvents = PrivateTrainingBooking::with(['user', 'court', 'courtSection'])
+            ->where('coach_id', $coach->id)
+            ->whereDate('date', '>=', $from->toDateString())
+            ->whereDate('date', '<', $until->toDateString())
+            ->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
+            ->get()
+            ->map(function (PrivateTrainingBooking $booking) use ($request, $viewerIsCoach) {
+                $mine = $booking->user_id === $request->user()->id;
+                $title = $viewerIsCoach
+                    ? 'Private: '.$booking->user->name
+                    : ($mine ? 'คำขอของคุณ' : 'ไม่ว่าง');
+                $color = match ($booking->status) {
+                    'confirmed' => '#16a34a',
+                    'awaiting_court' => '#7c3aed',
+                    default => $mine ? '#3b82f6' : '#94a3b8',
+                };
+
+                return [
+                    'id' => 'private-'.$booking->id,
+                    'title' => $title,
+                    'start' => $booking->date->toDateString().'T'.substr($booking->start_time, 0, 8),
+                    'end' => $booking->date->toDateString().'T'.substr($booking->end_time, 0, 8),
+                    'backgroundColor' => $color,
+                    'borderColor' => $color,
+                    'extendedProps' => [
+                        'selectable' => false,
+                        'kind' => 'private_training',
+                        'status' => $booking->status,
+                        'statusLabel' => $this->statusLabel($booking->status),
+                        'court' => $booking->court
+                            ? $booking->court->name.($booking->courtSection ? ' — '.$booking->courtSection->name : '')
+                            : null,
+                    ],
+                ];
+            });
+
+        return response()->json($availableEvents->concat($busyEvents)->concat($bookingEvents)->values());
+    }
+
+    public function mySchedule(Request $request)
+    {
+        $coach = $request->user();
+        $this->assertIsCoach($coach);
+
+        return view('private-training.my-schedule', compact('coach'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'coach_id' => ['required', 'integer', 'exists:users,id'],
+            'date' => ['required', 'date', 'after_or_equal:today'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'note' => ['nullable', 'string', 'max:500'],
@@ -114,7 +165,7 @@ class PrivateTrainingController extends Controller
         $coach = User::findOrFail($data['coach_id']);
         $this->assertIsCoach($coach);
 
-        $date = now()->toDateString();
+        $date = Carbon::parse($data['date'])->toDateString();
         $openTime = sprintf('%02d:00', self::OPEN_HOUR);
         $closeTime = sprintf('%02d:00', self::CLOSE_HOUR);
 
@@ -122,8 +173,16 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['start_time' => "สามารถจองได้เฉพาะช่วง {$openTime}–{$closeTime} น. เท่านั้น"]);
         }
 
-        if (Carbon::parse("{$date} {$data['start_time']}")->lte(now())) {
+        $startsAt = Carbon::parse("{$date} {$data['start_time']}");
+        $endsAt = Carbon::parse("{$date} {$data['end_time']}");
+        if ($startsAt->lte(now())) {
             return back()->withErrors(['start_time' => 'ไม่สามารถจองช่วงเวลาที่ผ่านมาแล้วได้']);
+        }
+        if (! in_array($startsAt->minute, [0, 30], true) || ! in_array($endsAt->minute, [0, 30], true)) {
+            return back()->withErrors(['start_time' => 'กรุณาเลือกเวลาเป็นช่วงละ 30 นาที']);
+        }
+        if ($startsAt->diffInMinutes($endsAt) > 240) {
+            return back()->withErrors(['end_time' => 'จอง Private Training ได้ไม่เกิน 4 ชั่วโมงต่อคำขอ']);
         }
 
         $startDb = $data['start_time'] . ':00';
@@ -131,6 +190,16 @@ class PrivateTrainingController extends Controller
 
         // ใช้ DB::transaction เพื่อทำ Atomic Operation ถ้ามีข้อผิดพลาดระบบจะ Rollback สิ่งที่ query ไว้ทั้งหมด ป้องกันข้อมูลขยะ
         $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
+            $isWithinAvailableSchedule = Availability::where('user_id', $coach->id)
+                ->whereDate('date', $date)
+                ->where('status', 'available')
+                ->where('start_time', '<=', $startDb)
+                ->where('end_time', '>=', $endDb)
+                ->exists();
+
+            if (! $isWithinAvailableSchedule)
+                return 'ช่วงเวลานี้ไม่ได้อยู่ในตารางที่โค้ชเปิดรับจอง';
+
             $isBusy = Availability::where('user_id', $coach->id)
                 ->whereDate('date', $date)
                 ->where('status', 'booked')
@@ -175,8 +244,9 @@ class PrivateTrainingController extends Controller
     {
         abort_unless($privateTrainingBooking->user_id === $request->user()->id, 403);
 
-        if ($error = $this->checkIfNotPending($privateTrainingBooking))
-            return $error;
+        if (! in_array($privateTrainingBooking->status, ['pending', 'awaiting_court'], true)) {
+            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถยกเลิกได้']);
+        }
 
         if ($privateTrainingBooking->isStarted()) {
             return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการที่ถึงเวลาแล้วได้']);
@@ -193,14 +263,19 @@ class PrivateTrainingController extends Controller
     {
         $status = $request->query('status', 'pending');
 
-        $bookings = PrivateTrainingBooking::with(['user', 'coach'])
+        $bookings = PrivateTrainingBooking::with(['user', 'coach', 'court', 'courtSection'])
             ->when($status && $status !== 'all', fn($q) => $q->where('status', $status))
             ->oldest()// oldest() มีค่าเท่ากับ orderBy('created_at', 'asc') คือคิวที่มาก่อนจะอยู่บนสุด (First In, First Out)
             ->paginate(15)
             // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
-        return view('admin.private-training.index', compact('bookings', 'status'));
+        $courts = Court::with(['sections' => fn ($query) => $query->where('is_active', true)])
+            ->where('court_status', 'open')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.private-training.index', compact('bookings', 'status', 'courts'));
     }
     public function approve(PrivateTrainingBooking $privateTrainingBooking)
     {
@@ -210,11 +285,11 @@ class PrivateTrainingController extends Controller
         // overlapping() เป็น Local Scope ที่นิยามไว้ในโมเดล ช่วยลดความซ้ำซ้อนของการเขียน Query หาเวลาที่ทับซ้อน
         $overlap = PrivateTrainingBooking::overlapping(
             $privateTrainingBooking->coach_id,
-            $privateTrainingBooking->date,
+            $privateTrainingBooking->date->toDateString(),
             $privateTrainingBooking->start_time,
             $privateTrainingBooking->end_time
         )
-            ->where('status', 'approved')
+            ->whereIn('status', ['awaiting_court', 'confirmed'])
             ->where('id', '!=', $privateTrainingBooking->id)
             ->exists();
 
@@ -222,23 +297,95 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['status' => 'ไม่สามารถอนุมัติได้ เนื่องจากมีรายการอื่นที่อนุมัติแล้วทับซ้อนช่วงเวลานี้']);
         }
 
-        $privateTrainingBooking->update(['status' => 'approved']);
-        $this->markCoachAvailabilityAsBooked($privateTrainingBooking);
+        $privateTrainingBooking->update(['status' => 'awaiting_court']);
 
         $timeLabel = $this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time);
         $this->notifyUser(
             $privateTrainingBooking->user_id,
-            'การจองเทรนเนอร์ส่วนตัวได้รับการอนุมัติ',
-            "การจองกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nได้รับการอนุมัติแล้ว"
+            'คำขอ Private Training ผ่านการพิจารณา',
+            "คำขอกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')}\nเวลา {$timeLabel}\nกำลังรอแอดมินจัดสนาม"
         );
 
-        return back()->with('success', 'อนุมัติคำขอจองเรียบร้อย');
+        return back()->with('success', 'รับคำขอเรียบร้อยแล้ว ขั้นตอนถัดไปกรุณาจัดสนาม');
+    }
+
+    public function assignCourt(Request $request, PrivateTrainingBooking $privateTrainingBooking)
+    {
+        abort_unless($privateTrainingBooking->status === 'awaiting_court', 422, 'รายการนี้ไม่อยู่ในขั้นตอนจัดสนาม');
+
+        $data = $request->validate([
+            'court_section_id' => ['required', 'integer', 'exists:court_sections,id'],
+        ]);
+
+        $error = DB::transaction(function () use ($request, $privateTrainingBooking, $data) {
+            $booking = PrivateTrainingBooking::whereKey($privateTrainingBooking->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            if ($booking->status !== 'awaiting_court') {
+                return 'รายการนี้ถูกดำเนินการไปแล้ว';
+            }
+
+            $section = CourtSection::with('court')->findOrFail($data['court_section_id']);
+            if (! $section->is_active || $section->court->court_status !== 'open') {
+                return 'สนามหรือส่วนสนามนี้ไม่ได้เปิดใช้งาน';
+            }
+
+            $date = $booking->date->toDateString();
+            $start = $booking->start_time;
+            $end = $booking->end_time;
+            $from = Carbon::parse($date.' '.$start);
+            $until = Carbon::parse($date.' '.$end);
+
+            if ($section->court->isClosedAt($from, $until, $section)) {
+                return 'สนามนี้ถูกปิดในช่วงเวลาที่เลือก';
+            }
+
+            $courtBusy = Booking::overlappingSection($section, $date, $start, $end)
+                ->lockForUpdate()
+                ->exists();
+            $privateBusy = PrivateTrainingBooking::whereKeyNot($booking->id)
+                ->whereIn('court_section_id', $section->conflictingSectionIds())
+                ->whereDate('date', $date)
+                ->where('status', 'confirmed')
+                ->where('start_time', '<', $end)
+                ->where('end_time', '>', $start)
+                ->lockForUpdate()
+                ->exists();
+
+            if ($courtBusy || $privateBusy) {
+                return 'สนามนี้มีรายการอื่นอยู่ในช่วงเวลาที่เลือก';
+            }
+
+            $booking->update([
+                'court_id' => $section->court_id,
+                'court_section_id' => $section->id,
+                'court_assigned_by' => $request->user()->id,
+                'court_assigned_at' => now(),
+                'status' => 'confirmed',
+            ]);
+
+            return null;
+        });
+
+        if ($error) {
+            return back()->withErrors(['court' => $error]);
+        }
+
+        $privateTrainingBooking->refresh()->load(['coach', 'court', 'courtSection']);
+        $this->notifyUser(
+            $privateTrainingBooking->user_id,
+            'ยืนยันการจอง Private Training แล้ว',
+            "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}"
+        );
+
+        return back()->with('success', 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว');
     }
 
     public function reject(Request $request, PrivateTrainingBooking $privateTrainingBooking)
     {
-        if ($error = $this->checkIfNotPending($privateTrainingBooking))
-            return $error;
+        if (! in_array($privateTrainingBooking->status, ['pending', 'awaiting_court'], true)) {
+            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถปฏิเสธได้']);
+        }
 
         $data = $request->validate(['reject_reason' => ['required', 'string', 'max:500']]);
 
@@ -261,34 +408,6 @@ class PrivateTrainingController extends Controller
      |  PRIVATE HELPERS
      ===================================================================== */
 
-    private function markCoachAvailabilityAsBooked(PrivateTrainingBooking $booking): void
-    {
-        $startHour = Carbon::parse($booking->start_time)->hour;
-        $endHour = Carbon::parse($booking->end_time)->hour;
-        $detail = 'เทรนเนอร์ส่วนตัว: ' . ($booking->user->name ?? 'ลูกค้า');
-        $courts = Court::all();
-
-        for ($h = $startHour; $h < $endHour; $h++) {
-            $slotStart = sprintf('%02d:00:00', $h);
-            $slotEnd = sprintf('%02d:00:00', $h + 1);
-
-            foreach ($courts as $court) {
-                // updateOrCreate(array $attributes, array $values) 
-                // ค้นหา record ด้วย $attributes (ก้อนแรก) ถ้าเจอจะอัปเดตด้วย $values (ก้อนสอง) ถ้าไม่เจอจะ insert ใหม่
-                Availability::updateOrCreate(
-                    [
-                        'user_id' => $booking->coach_id,
-                        'date' => $booking->date,
-                        'start_time' => $slotStart,
-                        'end_time' => $slotEnd,
-                        'court_id' => $court->id,
-                    ],
-                    ['status' => 'booked', 'detail' => $detail]
-                );
-            }
-        }
-    }
-
     private function assertIsCoach(User $coach): void
     {
         abort_unless($coach->role === 'staff' && $coach->membership_type === 'coach', 404, 'ไม่พบข้อมูลโค้ช');
@@ -307,6 +426,17 @@ class PrivateTrainingController extends Controller
         return substr($start, 0, 5) . '-' . substr($end, 0, 5);
     }
 
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'awaiting_court' => 'รอจัดสนาม',
+            'confirmed' => 'ยืนยันแล้ว',
+            'rejected' => 'ปฏิเสธ',
+            'cancelled' => 'ยกเลิก',
+            default => 'รออนุมัติ',
+        };
+    }
+
     private function notifyUser(int $userId, string $title, string $message): void
     {
         Notification::create([
@@ -319,7 +449,7 @@ class PrivateTrainingController extends Controller
     private function notifyAdmins(string $title, string $message): void
     {
         // pluck('id') จะดึงมาเฉพาะค่า id ในรูปแบบ Flat Array (เช่น [1, 2, 3]) ซึ่งประหยัดหน่วยความจำกว่าการโหลดมาทั้ง Model
-        $admins = User::where('role', 'admin')->pluck('id');
+        $admins = User::whereIn('role', ['admin', 'superadmin'])->pluck('id');
         foreach ($admins as $adminId) {
             $this->notifyUser($adminId, $title, $message);
         }

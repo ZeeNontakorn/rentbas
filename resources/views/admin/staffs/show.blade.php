@@ -42,6 +42,7 @@
 @endphp
 
 @section('content')
+    @include('private-training._calendar-theme')
     <style>
         .tooltip-content {
             visibility: hidden;
@@ -92,8 +93,13 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-start gap-6">
                     <div
-                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
-                        <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
+                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
+                        @if($staffProfile?->profile_image)
+                            <img src="{{ $staffProfile->profile_image_url }}"
+                                alt="รูปโปรไฟล์ของ {{ $staff->name }}" class="h-full w-full object-cover">
+                        @else
+                            <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
+                        @endif
                     </div>
 
                     <div class="flex-1">
@@ -151,53 +157,30 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 select-none" id="timeline-container">
-                <div class="mb-4">
-                    <h3 class="font-bold text-gray-800 text-lg">{{ $roleTitle }} Availability Timeline</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">ตารางงานของ {{ $staff->name }} วันนี้ (08:00–22:00 น.)</p>
-                </div>
-
-                <div class="flex items-center justify-center gap-6 text-sm font-medium text-gray-700 mb-8 mt-2">
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#10b981]"></span> ว่าง</div>
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#f97316]"></span> ไม่ว่าง</div>
-                </div>
-
-                <div class="overflow-x-auto pb-8">
-                    <div class="min-w-[900px]">
-                        @foreach($timelineGrid as $row)
-                            <div class="flex items-stretch w-full mb-[2px]">
-                                <div class="w-16 shrink-0 flex items-center justify-end pr-3 text-xs font-medium text-gray-600">
-                                    {{ $row['court']->name }}
-                                </div>
-
-                                <div class="flex-1 flex gap-[2px]">
-                                    @foreach($row['slots'] as $slot)
-                                        @php $isBooked = $slot['status'] === 'booked'; @endphp
-                                        <div class="flex-1 relative group">
-                                            <div class="time-slot h-10 w-full {{ $isBooked ? 'bg-[#f97316]' : 'bg-[#10b981]' }} cursor-pointer hover:opacity-85 transition-all relative border-2 border-transparent"
-                                                data-court-id="{{ $row['court']->id }}" data-court-name="{{ $row['court']->name }}"
-                                                data-hour="{{ $slot['hour'] }}" data-time-start="{{ $slot['time_start'] }}"
-                                                data-time-end="{{ $slot['time_end'] }}"
-                                                data-status="{{ $isBooked ? 'ไม่ว่าง' : 'ว่าง' }}"
-                                                data-detail="{{ $slot['detail'] }}">
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
-
-                        <div class="flex items-center text-xs text-gray-500 mt-2">
-                            <div class="w-16 shrink-0"></div>
-                            <div class="flex-1 flex justify-between px-[2px]">
-                                @foreach($timelineGrid[0]['slots'] as $slot)
-                                    <div class="w-full text-left -ml-4">{{ $slot['time_start'] }}</div>
-                                @endforeach
-                                <div class="text-right -mr-4">22:00</div>
-                            </div>
-                        </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+                <div class="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">{{ $roleTitle }} Schedule Calendar</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">ตารางงานของ {{ $staff->name }} แบบรายเดือน รายสัปดาห์ และรายวัน</p>
                     </div>
+                    @if($isCoach)
+                        <a href="{{ route('admin.private-schedule.index', ['coach_id' => $staff->id]) }}"
+                            class="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-700">
+                            จัดการ Private Schedule
+                        </a>
+                    @endif
                 </div>
+
+                <div class="mb-4 flex flex-wrap gap-4 text-xs text-gray-600">
+                    <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-emerald-500"></i>ว่าง</span>
+                    <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-slate-500"></i>ไม่ว่าง</span>
+                    @if($isCoach)
+                        <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-orange-500"></i>คำขอ Private</span>
+                        <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-violet-600"></i>ยืนยันแล้ว</span>
+                    @endif
+                </div>
+
+                <div id="staff-schedule-calendar" class="private-calendar-theme"></div>
             </div>
 
         </div>
@@ -215,12 +198,12 @@
                 class="p-6 space-y-4 bg-white">
                 @csrf
                 <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center mb-2">
-                    <p class="text-xs text-blue-500 font-semibold mb-1">ประจำอยู่ที่</p>
+                    <p class="text-xs text-blue-500 font-semibold mb-1">วันที่และเวลาที่เลือก</p>
                     <p class="text-sm font-bold text-blue-700 mb-1" id="modal-court-name">สนาม X</p>
                     <div class="text-lg font-extrabold text-blue-700" id="modal-time-range">00:00 - 00:00 น.</div>
                 </div>
 
-                <input type="hidden" name="date" value="{{ $today }}">
+                <input type="hidden" name="date" id="modal-date" value="{{ $today }}">
                 <input type="hidden" name="court_id" id="modal-court-id">
                 <input type="hidden" name="start_time" id="modal-time-start">
                 <input type="hidden" name="end_time" id="modal-time-end">
@@ -268,13 +251,14 @@
     <div id="staffProfileModal"
         class="fixed inset-0 z-50 hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
         <div
-            class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
+            class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[calc(100vh-2rem)] overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-gray-800">แก้ไขข้อมูลโปรไฟล์</h3>
             </div>
 
             <form action="{{ route('admin.staffs.profile.update', $staff->id) }}" method="POST"
-                class="p-6 space-y-4 bg-white">
+                enctype="multipart/form-data"
+                class="grid grid-cols-1 gap-4 overflow-y-auto bg-white p-6 md:grid-cols-2">
                 @csrf @method('PUT')
 
                 <div>
@@ -327,13 +311,61 @@
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
 
-                <div>
+                <div class="md:col-span-1">
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">แนะนำตัว (Bio)</label>
-                    <textarea name="bio" rows="3" placeholder="เขียนคำแนะนำตัว..."
+                    <textarea name="bio" rows="6" placeholder="เขียนคำแนะนำตัว..."
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-gray-700">{{ old('bio', $staffProfile?->bio ?? '') }}</textarea>
                 </div>
 
-                <div class="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">รูปโปรไฟล์</label>
+                    <div id="staff-image-dropzone"
+                        class="relative cursor-pointer overflow-hidden rounded-lg border-2 border-dashed border-slate-300 text-center transition-colors duration-150 hover:border-blue-400 hover:bg-blue-50/40">
+                        <div id="staff-dropzone-empty"
+                            class="px-6 py-6 {{ $staffProfile?->profile_image ? 'hidden' : '' }}">
+                            <svg class="mx-auto mb-2 h-8 w-8 text-slate-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3" />
+                            </svg>
+                            <p class="text-sm text-slate-500"><span class="font-medium text-blue-600">คลิกเพื่อเลือกภาพ</span>
+                                หรือลากไฟล์มาวางที่นี่</p>
+                            <p class="mt-1 text-xs text-slate-400">JPG, PNG, WEBP ไม่เกิน 20MB</p>
+                        </div>
+                        <div id="staff-dropzone-preview"
+                            class="relative {{ $staffProfile?->profile_image ? '' : 'hidden' }}">
+                            <img id="staff-img-preview"
+                                src="{{ $staffProfile?->profile_image_url ?? '' }}"
+                                alt="ตัวอย่างรูปโปรไฟล์" class="h-36 w-full object-cover">
+                            <div class="group absolute inset-0 flex items-center justify-center bg-black/0 transition hover:bg-black/40">
+                                <span class="text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">
+                                    คลิกเพื่อเปลี่ยนภาพ
+                                </span>
+                            </div>
+                        </div>
+                        <input id="staff-profile-image" name="profile_image" type="file"
+                            accept="image/png,image/jpeg,image/webp" class="hidden">
+                    </div>
+                    <p id="staff-image-error" class="hidden mt-1.5 text-xs text-red-600">
+                        รองรับเฉพาะไฟล์ JPG, PNG, WEBP และต้องมีขนาดไม่เกิน 20MB
+                    </p>
+                    @error('profile_image')
+                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                    <div class="mt-2 flex items-center gap-3">
+                        <p id="staff-image-name"
+                            class="text-xs text-slate-500 {{ $staffProfile?->profile_image ? '' : 'hidden' }}">
+                            {{ $staffProfile?->profile_image ? 'ใช้รูปโปรไฟล์เดิม' : '' }}
+                        </p>
+                        <button type="button" id="remove-staff-image-btn"
+                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+                            ลบภาพ
+                        </button>
+                        <input type="hidden" name="remove_profile_image" id="remove-staff-image-input" value="0">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 md:col-span-2">
                     <button type="button" onclick="toggleModal('staffProfileModal', false)"
                         class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">ยกเลิก</button>
                     <button type="submit"
@@ -343,8 +375,65 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
     <script>
+        const staffScheduleCalendar = new FullCalendar.Calendar(
+            document.getElementById('staff-schedule-calendar'),
+            {
+                initialView: 'timeGridWeek',
+                locale: 'th',
+                firstDay: 1,
+                height: 'auto',
+                nowIndicator: true,
+                selectable: true,
+                selectMirror: true,
+                allDaySlot: false,
+                slotMinTime: '08:00:00',
+                slotMaxTime: '22:00:00',
+                slotDuration: '00:30:00',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                },
+                buttonText: {
+                    today: 'วันนี้',
+                    month: 'เดือน',
+                    week: 'สัปดาห์',
+                    day: 'วัน',
+                    list: 'รายการ'
+                },
+                events: @js(route('admin.staffs.schedule-events', $staff)),
+                select(info) {
+                    const pad = value => String(value).padStart(2, '0');
+                    const formatDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+                    const formatTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                    document.getElementById('modal-date').value = formatDate(info.start);
+                    document.getElementById('modal-time-start').value = formatTime(info.start);
+                    document.getElementById('modal-time-end').value = formatTime(info.end);
+                    document.getElementById('modal-time-range').textContent =
+                        `${formatTime(info.start)} - ${formatTime(info.end)} น.`;
+                    document.getElementById('modal-court-name').textContent =
+                        info.start.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+                    document.getElementById('modal-court-id').value = '';
+                    document.getElementById('status-available').checked = true;
+                    toggleDetailInput('available');
+                    toggleModal('dragActionModal', true);
+                    staffScheduleCalendar.unselect();
+                },
+                eventClick(info) {
+                    const props = info.event.extendedProps;
+                    Swal.fire({
+                        icon: 'info',
+                        title: info.event.title,
+                        text: props.statusLabel || props.detail || 'กำหนดการของบุคลากร'
+                    });
+                }
+            }
+        );
+        staffScheduleCalendar.render();
+
         function toggleModal(id, show) {
             const modal = document.getElementById(id);
             if (modal) {
@@ -353,6 +442,97 @@
                 if (id === 'dragActionModal' && !show) clearSelection();
             }
         }
+
+        const staffImageDropzone = document.getElementById('staff-image-dropzone');
+        const staffDropzoneEmpty = document.getElementById('staff-dropzone-empty');
+        const staffDropzonePreview = document.getElementById('staff-dropzone-preview');
+        const staffImagePreview = document.getElementById('staff-img-preview');
+        const staffImageInput = document.getElementById('staff-profile-image');
+        const staffImageName = document.getElementById('staff-image-name');
+        const removeStaffImageButton = document.getElementById('remove-staff-image-btn');
+        const removeStaffImageInput = document.getElementById('remove-staff-image-input');
+        const staffImageError = document.getElementById('staff-image-error');
+        const staffAllowedImageTypes = ['image/png', 'image/jpeg', 'image/webp'];
+        const staffImageMaxBytes = 20 * 1024 * 1024;
+        const staffDragOverClasses = ['!border-blue-600', '!bg-blue-600/5'];
+
+        staffImageDropzone.addEventListener('click', () => staffImageInput.click());
+
+        function showStaffImageError(message) {
+            staffImageError.textContent = message;
+            staffImageError.classList.remove('hidden');
+        }
+
+        function showSelectedStaffImage(file) {
+            staffImageError.classList.add('hidden');
+
+            if (!staffAllowedImageTypes.includes(file.type)) {
+                showStaffImageError('รองรับเฉพาะไฟล์ JPG, PNG, WEBP เท่านั้น');
+                staffImageInput.value = '';
+                return;
+            }
+
+            if (file.size > staffImageMaxBytes) {
+                showStaffImageError('ไฟล์ต้องมีขนาดไม่เกิน 20MB');
+                staffImageInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = event => {
+                staffImagePreview.src = event.target.result;
+                staffDropzoneEmpty.classList.add('hidden');
+                staffDropzonePreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            staffImageName.textContent = 'เลือกไฟล์: ' + file.name;
+            staffImageName.classList.remove('hidden');
+            removeStaffImageInput.value = '0';
+            removeStaffImageButton.classList.remove('hidden');
+        }
+
+        staffImageInput.addEventListener('change', () => {
+            if (staffImageInput.files?.[0]) showSelectedStaffImage(staffImageInput.files[0]);
+        });
+
+        removeStaffImageButton.addEventListener('click', event => {
+            event.stopPropagation();
+            staffImageInput.value = '';
+            staffImagePreview.src = '';
+            staffDropzoneEmpty.classList.remove('hidden');
+            staffDropzonePreview.classList.add('hidden');
+            staffImageName.classList.add('hidden');
+            staffImageError.classList.add('hidden');
+            removeStaffImageInput.value = '1';
+            removeStaffImageButton.classList.add('hidden');
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            staffImageDropzone.addEventListener(eventName, event => {
+                event.preventDefault();
+                event.stopPropagation();
+                staffImageDropzone.classList.add(...staffDragOverClasses);
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            staffImageDropzone.addEventListener(eventName, event => {
+                event.preventDefault();
+                event.stopPropagation();
+                staffImageDropzone.classList.remove(...staffDragOverClasses);
+            });
+        });
+
+        staffImageDropzone.addEventListener('drop', event => {
+            const file = event.dataTransfer.files[0];
+            if (!file) return;
+
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            staffImageInput.files = transfer.files;
+            showSelectedStaffImage(file);
+        });
 
         let isDragging = false;
         let selectedSlots = [];
@@ -454,22 +634,5 @@
             });
         });
 
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.onmouseenter = Swal.stopTimer;
-                toast.onmouseleave = Swal.resumeTimer;
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            @if (session()->has('success')) Toast.fire({ icon: 'success', title: @js(session('success')) }); @endif
-            @if (session()->has('error')) Toast.fire({ icon: 'error', title: @js(session('error')) }); @endif
-            @if ($errors->any()) Toast.fire({ icon: 'error', title: @js($errors->first()) }); @endif
-        });
     </script>
 @endsection
