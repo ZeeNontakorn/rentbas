@@ -10,6 +10,7 @@ use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Services\CreditService;
 use App\Services\PricingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -90,6 +91,12 @@ class CheckoutController extends Controller
         try {
             $booking = DB::transaction(function () use ($request, $section, $data) {
                 $conflictIds = $section->conflictingSectionIds();
+                $startsAt = Carbon::parse($data['booking_date'].' '.$data['start_time']);
+                $endsAt = Carbon::parse($data['booking_date'].' '.$data['end_time']);
+
+                if ($section->court->isClosedAt($startsAt, $endsAt, $section)) {
+                    throw new RuntimeException('สนามนี้ไม่ว่างในช่วงเวลาที่เลือก กรุณาเลือกช่วงเวลาอื่น');
+                }
 
                 // ล็อกแถวที่เกี่ยวข้องทั้งหมดก่อนเช็คทับซ้อน กันสอง request แข่งกันอ่านค่าที่ยังไม่ commit
                 $overlap = Booking::whereIn('court_section_id', $conflictIds)

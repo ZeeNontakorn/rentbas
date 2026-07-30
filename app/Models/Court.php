@@ -117,7 +117,21 @@ class Court extends Model
             $query->whereNull('court_section_id');
         }
 
-        return $query->exists();
+        if ($query->exists()) {
+            return true;
+        }
+
+        $sectionIds = $section
+            ? $section->conflictingSectionIds()
+            : $this->sections()->pluck('id')->all();
+
+        return PrivateTrainingBooking::where('court_id', $this->id)
+            ->whereIn('court_section_id', $sectionIds)
+            ->whereDate('date', $dateStr)
+            ->where('status', 'confirmed')
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
+            ->exists();
     }
     public function getClosureType(string $from, string $to, string $date, ?CourtSection $section = null): ?string
     {
@@ -139,6 +153,23 @@ class Court extends Model
             $query->whereNull('court_section_id');
         }
 
-        return $query->first()?->type;
+        $closureType = $query->first()?->type;
+        if ($closureType) {
+            return $closureType;
+        }
+
+        $sectionIds = $section
+            ? $section->conflictingSectionIds()
+            : $this->sections()->pluck('id')->all();
+
+        return PrivateTrainingBooking::where('court_id', $this->id)
+            ->whereIn('court_section_id', $sectionIds)
+            ->whereDate('date', $date)
+            ->where('status', 'confirmed')
+            ->where('start_time', '<', $to)
+            ->where('end_time', '>', $from)
+            ->exists()
+                ? 'unavailable'
+                : null;
     }
 }

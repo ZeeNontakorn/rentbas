@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -123,5 +124,31 @@ class UserController extends Controller
         }
 
         return back()->with('success', "อัปเดตประเภทสมาชิกของ {$user->name} เรียบร้อย");
+    }
+
+    public function destroy(Request $request, User $user)
+    {
+        $actor = $request->user();
+
+        abort_if($user->id === $actor->id, 403, 'ไม่สามารถลบบัญชีของตนเองได้');
+        abort_if($user->role === 'superadmin', 403, 'ไม่สามารถลบบัญชี Super Admin ได้');
+        abort_if(
+            $user->role === 'admin' && $actor->role !== 'superadmin',
+            403,
+            'เฉพาะ Super Admin เท่านั้นที่สามารถลบบัญชี Admin ได้'
+        );
+
+        $profileImage = $user->staffProfile?->profile_image;
+        $name = $user->name;
+
+        $user->delete();
+
+        if ($profileImage) {
+            Storage::disk('public')->delete($profileImage);
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', "ลบบัญชีผู้ใช้ {$name} ออกจากระบบเรียบร้อยแล้ว");
     }
 }
