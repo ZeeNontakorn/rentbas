@@ -95,11 +95,23 @@
                 <p id="booking-time-label" class="text-lg font-extrabold text-blue-700"></p>
             </div>
             <div>
+                <label class="mb-1.5 block text-xs font-semibold text-gray-700">แพ็กเกจโปรโมชั่น (ถ้ามี)</label>
+                <select name="promotion_code" id="promotion-code-select" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">ไม่ใช้โปรโมชั่น (คิดราคาตามช่วงเวลาปกติ)</option>
+                    @foreach ($promotionPackages as $p)
+                        <option value="{{ $p->code }}" data-duration-hours="{{ $p->duration_hours ?? '' }}">
+                            {{ $p->label }}{{ $p->duration_hours !== null ? " ({$p->duration_hours} ชม.)" : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <p id="promotion-hint" class="mt-1 text-[11px] text-gray-400">ระบบจะเช็คเงื่อนไข (เต็ม/ครึ่งสนาม, ระยะเวลา, วันที่) อีกครั้งตอนแอดมินจัดสนามให้ ถ้าใช้ไม่ได้จะแจ้งแอดมินให้ทราบ</p>
+            </div>
+            <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-700">รายละเอียดที่ต้องการฝึก (ถ้ามี)</label>
                 <textarea name="note" rows="3" maxlength="500" placeholder="เช่น ฝึกการยิงสามแต้ม"
                     class="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
-            <p class="text-xs text-gray-500">คำขอจะอยู่ในสถานะรอแอดมินตรวจสอบ ยังไม่มีการหักเครดิตในขั้นตอนนี้</p>
+            <p class="text-xs text-gray-500">ราคาและการหักเครดิตจะเกิดขึ้นตอนแอดมินจัดสนามให้เท่านั้น (ยังไม่หักตอนส่งคำขอ)</p>
             <div class="flex gap-2 pt-2">
                 <button type="button" id="cancel-booking-modal"
                     class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
@@ -124,6 +136,44 @@ document.addEventListener('DOMContentLoaded', function () {
         calendar.unselect();
     };
 
+    // เช็คว่าแพ็กเกจโปรโมชั่นแต่ละตัวใช้ได้กับช่วงเวลาที่ลูกค้าเพิ่งลากเลือกหรือไม่ (เฉพาะเงื่อนไข
+    // ระยะเวลา — duration_hours) แล้ว disable ตัวเลือกที่ไม่เข้าเงื่อนไข พร้อมโชว์คำอธิบายไว้ในตัวเลือก
+    // (เงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ จะถูกเช็คจริงจังอีกทีตอนแอดมินจัดสนามให้)
+    const promotionSelect = document.getElementById('promotion-code-select');
+    const promotionHint = document.getElementById('promotion-hint');
+
+    function updatePromotionAvailability(start, end) {
+        if (!promotionSelect) return;
+        const selectedHours = (end - start) / (1000 * 60 * 60);
+        let selectedBecameInvalid = false;
+
+        Array.from(promotionSelect.options).forEach(option => {
+            if (!option.value) return; // ตัวเลือก "ไม่ใช้โปรโมชั่น" ใช้ได้เสมอ
+
+            const durationAttr = option.dataset.durationHours;
+            const requiredHours = durationAttr ? parseFloat(durationAttr) : null;
+            const matches = requiredHours === null || Math.abs(requiredHours - selectedHours) < 0.01;
+
+            option.disabled = !matches;
+            option.classList.toggle('text-gray-300', !matches);
+
+            if (!matches && option.selected) {
+                selectedBecameInvalid = true;
+            }
+        });
+
+        if (selectedBecameInvalid) {
+            promotionSelect.value = '';
+        }
+
+        promotionHint.textContent = `ช่วงเวลาที่เลือก ${selectedHours} ชม. — แพ็กเกจที่ระยะเวลาไม่ตรงจะถูกปิดใช้งานให้อัตโนมัติ (ระบบจะเช็คเงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ อีกครั้งตอนแอดมินจัดสนามให้)`;
+    }
+
+    // จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
+    // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
+    // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
+    const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
+
     const calendar = new FullCalendar.Calendar(document.getElementById('private-calendar'), {
         initialView: 'timeGridWeek',
         locale: 'th',
@@ -140,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
         slotMaxTime: '22:00:00',
         slotDuration: '00:30:00',
         snapDuration: '00:30:00',
-        validRange: { start: @js($today) },
+        validRange: { start: @js($today), end: @js(\Carbon\Carbon::parse($maxDate)->addDay()->toDateString()) },
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -164,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
             );
             return insideAvailableSchedule
                 && info.start >= new Date()
+                && info.start <= maxSelectableDate
                 && (info.end - info.start) <= 4 * 60 * 60 * 1000;
         },
         select(info) {
@@ -174,6 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 info.start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             document.getElementById('booking-time-label').textContent =
                 `${localTime(info.start)}–${localTime(info.end)} น.`;
+            updatePromotionAvailability(info.start, info.end);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         },

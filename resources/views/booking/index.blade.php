@@ -259,7 +259,7 @@
                     <form id="dateForm" method="GET" action="{{ route('booking.index') }}">
                         <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
                         <input type="date" name="date" id="dateInput" value="{{ $date }}"
-                               min="{{ now()->toDateString() }}" max="{{ now()->addMonth()->toDateString() }}"
+                               min="{{ now()->toDateString() }}" max="{{ now()->addDays(3)->toDateString() }}"
                                id="dateInput"
                                class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
                     </form>
@@ -268,7 +268,7 @@
                 {{-- Mock Calendar below --}}
                 <div class="bg-[#f8f9fe] rounded-lg mt-3 p-3 text-center border border-gray-100 flex-1">
                     <p class="font-bold text-[14px] text-gray-900 mt-2">เลือก {{ $thDays[$cDate->dayOfWeek] }} ที่ {{ $cDate->day }} {{ $thMonthsFull[$cDate->month] }} {{ $cDate->year + 543 }}</p>
-                    <p class="text-[12px] text-gray-500 mt-2">จองได้ล่วงหน้าได้สูงสุด 1 เดือน</p>
+                    <p class="text-[12px] text-gray-500 mt-2">จองได้ล่วงหน้าได้สูงสุด 3 วัน</p>
                 </div>
             </div>
 
@@ -838,7 +838,7 @@ setInterval(() => {
 }, 60000);
 
 function validateAndSubmitDate(input) {
-    const maxDate = new Date("{{ now()->addMonth()->toDateString() }}");
+    const maxDate = new Date("{{ now()->addDays(3)->toDateString() }}");
     const minDate = new Date("{{ now()->toDateString() }}");
     const selectedDate = new Date(input.value);
 
@@ -847,8 +847,8 @@ function validateAndSubmitDate(input) {
     selectedDate.setHours(0,0,0,0);
 
     if (selectedDate > maxDate) {
-        alert("สามารถจองล่วงหน้าได้สูงสุด 1 เดือนเท่านั้น");
-        input.value = "{{ now()->addMonth()->toDateString() }}";
+        alert("สามารถจองล่วงหน้าได้สูงสุด 3 วันเท่านั้น");
+        input.value = "{{ now()->addDays(3)->toDateString() }}";
     }
     else if (selectedDate < minDate) {
         alert("ไม่สามารถเลือกวันย้อนหลังได้");

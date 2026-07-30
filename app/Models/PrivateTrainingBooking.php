@@ -27,16 +27,27 @@ class PrivateTrainingBooking extends Model
         'status',
         'note',
         'reject_reason',
+        'promotion_package_id',
+        'price',
+        'price_breakdown',
+        'pricing_rule_id',
+        'payment_status',
     ];
 
     protected function casts(): array
     {
         return [
-            // แคสต์ฟิลด์ date ให้เป็น Object ของ Carbon อัตโนมัติ 
+            // แคสต์ฟิลด์ date ให้เป็น Object ของ Carbon อัตโนมัติ
             // ทำให้ตอนเรียก $this->date สามารถต่อด้วยฟังก์ชันของ Carbon ได้เลย
             'date' => 'date',
             'court_assigned_at' => 'datetime',
+            'price_breakdown' => 'array',
         ];
+    }
+
+    public function promotionPackage(): BelongsTo
+    {
+        return $this->belongsTo(PromotionPackage::class);
     }
 
     public function user(): BelongsTo
@@ -74,7 +85,7 @@ class PrivateTrainingBooking extends Model
             ->whereDate('date', $date)
             ->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
             // Logic เช็คเวลาทับซ้อน (Overlapping Logic):
-            // รายการเก่าต้องเริ่ม "ก่อน" รายการใหม่จะจบ (start_time < $end) 
+            // รายการเก่าต้องเริ่ม "ก่อน" รายการใหม่จะจบ (start_time < $end)
             // และ รายการเก่าต้องจบ "หลัง" รายการใหม่เริ่ม (end_time > $start)
             ->where(function (Builder $q) use ($start, $end) {
                 $q->where('start_time', '<', $end)

@@ -2,22 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AdminPaymentReceivedMail;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Models\PrivateTrainingBooking;
+use App\Models\PromotionPackage;
 use App\Models\User;
+use App\Services\CreditService;
+use App\Services\PricingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use RuntimeException;
 
 class PrivateTrainingController extends Controller
 {
     /** ช่วงเวลาเปิดให้จองต่อวัน */
     private const OPEN_HOUR = 8;
     private const CLOSE_HOUR = 22;
+
+    public function __construct(
+        protected PricingService $pricingService,
+        protected CreditService $creditService,
+    ) {
+    }
 
     public function index(Request $request)
     {
@@ -48,6 +60,7 @@ class PrivateTrainingController extends Controller
         $this->assertIsCoach($coach);
 
         $today = now()->toDateString();
+        $maxDate = now()->addDays(\App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString();
 
         $myUpcoming = PrivateTrainingBooking::where('coach_id', $coach->id)
             ->where('user_id', auth()->id())
@@ -57,8 +70,20 @@ class PrivateTrainingController extends Controller
             ->orderBy('start_time')
             ->get();
 
+        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน ให้ลูกค้าเลือกตอนส่งคำขอ — filter เฉพาะหมวดหมู่ 'private'
+        // เพราะเป็นแพ็กเกจที่ตั้งใจไว้สำหรับ Private Training เท่านั้น (แพ็กเกจหมวด personal/group
+        // เป็นของการจองสนามปกติ ไม่เกี่ยวข้องกับ flow นี้ ไม่ควรเอามาให้เลือกปนกัน)
+        // ส่วนเงื่อนไขระยะเวลา (duration_hours) จะเช็คแบบ real-time ฝั่ง client ตอนลูกค้าลากเลือก
+        // ช่วงเวลาในปฏิทิน (ดู select() ใน <script> ด้านล่างของหน้านี้) เพราะยังไม่รู้ระยะเวลาจนกว่า
+        // จะเลือกช่วงเวลา และจะเช็คเงื่อนไขทั้งหมดอีกครั้งจริงจังตอนแอดมินจัดสนามให้ ณ ตอนที่รู้
+        // court_type แล้ว — ดู PrivateTrainingController::assignCourt())
+        $promotionPackages = PromotionPackage::where('is_active', true)
+            ->where('category', 'private')
+            ->orderBy('label')
+            ->get();
+
         // ใช้เครื่องหมาย + (Array Union) เพื่อนำ array ธรรมดาไปต่อท้ายผลลัพธ์ที่ได้จากฟังก์ชัน compact()
-        return view('private-training.show', compact('coach', 'today', 'myUpcoming') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }
@@ -156,10 +181,14 @@ class PrivateTrainingController extends Controller
     {
         $data = $request->validate([
             'coach_id' => ['required', 'integer', 'exists:users,id'],
-            'date' => ['required', 'date', 'after_or_equal:today'],
+            'date' => [
+                'required', 'date', 'after_or_equal:today',
+                'before_or_equal:' . now()->addDays(\App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString(),
+            ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'note' => ['nullable', 'string', 'max:500'],
+            'promotion_code' => ['nullable', 'string'],
         ]);
 
         $coach = User::findOrFail($data['coach_id']);
@@ -188,8 +217,23 @@ class PrivateTrainingController extends Controller
         $startDb = $data['start_time'] . ':00';
         $endDb = $data['end_time'] . ':00';
 
+        // เช็คแค่ว่า code นี้มีอยู่จริงและเปิดใช้งาน (ยังไม่เช็ค court_type/duration/วันที่ ณ
+        // จุดนี้ เพราะยังไม่รู้ court_type จนกว่าแอดมินจะจัดสนามให้ — จะเช็คเงื่อนไขที่เหลือ
+        // ทั้งหมดอีกทีตอน assignCourt() ผ่าน PricingService::calculate() ให้ถูกต้องตรงกับ
+        // สนามที่ถูกจัดจริง ถ้าใช้ไม่ได้ตอนนั้นแอดมินจะเห็น error แทนการ silently ignore)
+        $promotionPackageId = null;
+        if (! empty($data['promotion_code'])) {
+            $promotionPackageId = PromotionPackage::where('code', $data['promotion_code'])
+                ->where('is_active', true)
+                ->value('id');
+
+            if (! $promotionPackageId) {
+                return back()->withErrors(['promotion_code' => 'รหัสโปรโมชั่นนี้ไม่ถูกต้องหรือถูกปิดใช้งานแล้ว']);
+            }
+        }
+
         // ใช้ DB::transaction เพื่อทำ Atomic Operation ถ้ามีข้อผิดพลาดระบบจะ Rollback สิ่งที่ query ไว้ทั้งหมด ป้องกันข้อมูลขยะ
-        $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
+        $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data, $promotionPackageId) {
             $isWithinAvailableSchedule = Availability::where('user_id', $coach->id)
                 ->whereDate('date', $date)
                 ->where('status', 'available')
@@ -226,6 +270,7 @@ class PrivateTrainingController extends Controller
                 'start_time' => $startDb,
                 'end_time' => $endDb,
                 'status' => 'pending',
+                'promotion_package_id' => $promotionPackageId,
             ]));
 
             return null;
@@ -356,13 +401,50 @@ class PrivateTrainingController extends Controller
                 return 'สนามนี้มีรายการอื่นอยู่ในช่วงเวลาที่เลือก';
             }
 
+            // ตอนนี้รู้ court_type แล้ว (เต็ม/ครึ่งสนาม) — คำนวณราคาจริงตามช่วงเวลาปกติ
+            // หรือตามแพ็กเกจโปรโมชั่นที่ลูกค้าเลือกไว้ตอนส่งคำขอ (ถ้ามี)
+            $courtType = $section->code === 'full' ? 'full' : 'half';
+
+            try {
+                $priceResult = $this->pricingService->calculate([
+                    'date' => $date,
+                    'start_time' => substr($start, 0, 5),
+                    'end_time' => substr($end, 0, 5),
+                    'court_type' => $courtType,
+                    'promotion_code' => $booking->promotionPackage?->code,
+                ]);
+            } catch (\InvalidArgumentException $e) {
+                return 'คำนวณราคาไม่สำเร็จ: ' . $e->getMessage();
+            }
+
+            // ตั้งค่าราคาลงบน instance ในหน่วยความจำก่อน (ยังไม่ save) เพราะ deductForPrivateTraining()
+            // อ่านค่าจาก $booking->price โดยตรง — ถ้าไม่ตั้งก่อน ค่านี้จะยังเป็น null (แถวเดิมใน DB
+            // ที่ยังไม่เคยมีการจัดสนาม) แล้วไปเรียก decrement('credit_balance', null) ทำให้เกิด
+            // InvalidArgumentException: Non-numeric value passed to decrement method
+            $booking->price = $priceResult['total'];
+            $booking->price_breakdown = $priceResult['breakdown'];
+            $booking->pricing_rule_id = $priceResult['pricing_rule_id'];
+
+            // หักเครดิตลูกค้าทันทีตอนจัดสนาม (ถ้าเครดิตไม่พอ จะ throw RuntimeException
+            // แล้ว rollback ทั้ง transaction — แอดมินจะเห็น error กลับไปแก้ไข/แจ้งลูกค้าเติมเครดิตก่อน)
+            try {
+                $this->creditService->deductForPrivateTraining($booking->user, $booking);
+            } catch (RuntimeException $e) {
+                return $e->getMessage();
+            }
+
             $booking->update([
                 'court_id' => $section->court_id,
                 'court_section_id' => $section->id,
                 'court_assigned_by' => $request->user()->id,
                 'court_assigned_at' => now(),
                 'status' => 'confirmed',
+                'price' => $priceResult['total'],
+                'price_breakdown' => $priceResult['breakdown'],
+                'pricing_rule_id' => $priceResult['pricing_rule_id'],
+                'payment_status' => 'paid',
             ]);
+
 
             return null;
         });
@@ -371,14 +453,24 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['court' => $error]);
         }
 
-        $privateTrainingBooking->refresh()->load(['coach', 'court', 'courtSection']);
+        $privateTrainingBooking->refresh()->load(['coach', 'court', 'courtSection', 'user']);
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'ยืนยันการจอง Private Training แล้ว',
-            "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}"
+            "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}\nยอดชำระ: " . number_format($privateTrainingBooking->price / 100, 2) . ' บาท (หักจากเครดิต)'
         );
 
-        return back()->with('success', 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว');
+        $this->notifyAdminsOfPayment(
+            'Private Training',
+            $privateTrainingBooking->id,
+            $privateTrainingBooking->user->name ?? '-',
+            "โค้ช {$privateTrainingBooking->coach->name} | {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name} | "
+                . "{$privateTrainingBooking->date->toDateString()} {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}",
+            $privateTrainingBooking->price,
+            'credit'
+        );
+
+        return back()->with('success', 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว (หักเครดิตลูกค้าเรียบร้อย)');
     }
 
     public function reject(Request $request, PrivateTrainingBooking $privateTrainingBooking)
@@ -452,6 +544,31 @@ class PrivateTrainingController extends Controller
         $admins = User::whereIn('role', ['admin', 'superadmin'])->pluck('id');
         foreach ($admins as $adminId) {
             $this->notifyUser($adminId, $title, $message);
+        }
+    }
+
+    /**
+     * แจ้งเตือนแอดมินทุกคนทางอีเมล เมื่อมีการชำระเงินสำเร็จ (ครอบ try/catch กันเมล
+     * เซิร์ฟเวอร์ล่มแล้วดึงหน้าเว็บพัง ทั้งที่หักเครดิต/ยืนยันสำเร็จไปแล้วจริง)
+     */
+    private function notifyAdminsOfPayment(
+        string $refType,
+        int $refId,
+        string $customerName,
+        string $detailLine,
+        int $amountSatang,
+        string $paymentMethod
+    ): void {
+        try {
+            $adminEmails = User::whereIn('role', ['admin', 'superadmin'])->pluck('email')->filter();
+
+            foreach ($adminEmails as $email) {
+                Mail::to($email)->send(new AdminPaymentReceivedMail(
+                    $refType, $refId, $customerName, $detailLine, $amountSatang, $paymentMethod
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ส่งอีเมลแจ้งเตือนแอดมินไม่สำเร็จ: ' . $e->getMessage());
         }
     }
 }

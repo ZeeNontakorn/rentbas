@@ -30,7 +30,7 @@ class BookingController extends Controller
 
         try {
             $parsedDate = Carbon::parse($dateParam);
-            $maxDate = now()->addMonth();
+            $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS);
             $minDate = now()->startOfDay();
 
             if ($parsedDate->startOfDay()->gt($maxDate->startOfDay())) {
@@ -76,7 +76,7 @@ class BookingController extends Controller
 
         try {
             $parsedDate = Carbon::parse($dateParam);
-            $maxDate = now()->addMonth();
+            $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS);
             $minDate = now()->startOfDay();
 
             if ($parsedDate->startOfDay()->gt($maxDate->startOfDay())) {
@@ -274,7 +274,7 @@ class BookingController extends Controller
      */
     public function store(Request $request)
     {
-        $maxDate = now()->addMonth()->toDateString();
+        $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString();
 
         $data = $request->validate([
             'booking_date' => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $maxDate],
