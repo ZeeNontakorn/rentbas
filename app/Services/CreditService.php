@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\CreditTransaction;
+use App\Models\PrivateTrainingBooking;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -78,6 +79,51 @@ class CreditService
                 'balance_after' => $lockedUser->fresh()->credit_balance,
                 'booking_id' => $booking->id,
                 'note' => $note ?? "คืนเครดิตค่าจอง #{$booking->id}",
+            ]);
+        });
+    }
+
+    /**
+     * หักเครดิตเพื่อจ่ายค่า Private Training — เรียกตอนแอดมิน "จัดสนามให้" (assignCourt)
+     * เพราะเป็นจุดแรกที่รู้ court_type (เต็ม/ครึ่งสนาม) แล้วคำนวณราคาได้จริง ต้องเรียก
+     * ภายใน DB::transaction เดียวกับ flow assignCourt เพื่อกันเงินถูกหักแต่จัดสนามไม่สำเร็จ
+     */
+    public function deductForPrivateTraining(User $user, PrivateTrainingBooking $booking): CreditTransaction
+    {
+        $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
+
+        if ($lockedUser->credit_balance < $booking->price) {
+            throw new RuntimeException('ยอดเครดิตของลูกค้าไม่เพียงพอสำหรับชำระค่า Private Training นี้');
+        }
+
+        $lockedUser->decrement('credit_balance', $booking->price);
+
+        return CreditTransaction::create([
+            'user_id' => $lockedUser->id,
+            'type' => 'deduct',
+            'amount' => $booking->price,
+            'balance_after' => $lockedUser->fresh()->credit_balance,
+            'private_training_booking_id' => $booking->id,
+            'note' => "ชำระค่า Private Training #{$booking->id}",
+        ]);
+    }
+
+    /**
+     * คืนเครดิต กรณี Private Training ที่ชำระเงินแล้วถูกยกเลิก/ปฏิเสธย้อนหลัง
+     */
+    public function refundPrivateTraining(PrivateTrainingBooking $booking, ?string $note = null): CreditTransaction
+    {
+        return DB::transaction(function () use ($booking, $note) {
+            $lockedUser = User::whereKey($booking->user_id)->lockForUpdate()->first();
+            $lockedUser->increment('credit_balance', $booking->price);
+
+            return CreditTransaction::create([
+                'user_id' => $lockedUser->id,
+                'type' => 'refund',
+                'amount' => $booking->price,
+                'balance_after' => $lockedUser->fresh()->credit_balance,
+                'private_training_booking_id' => $booking->id,
+                'note' => $note ?? "คืนเครดิตค่า Private Training #{$booking->id}",
             ]);
         });
     }

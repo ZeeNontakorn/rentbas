@@ -16,10 +16,6 @@
 
 <div class="pf-main bg-white min-h-screen text-[#111827]">
 <div class="max-w-[860px] mx-auto px-4 py-8">
-    @php
-        $canManageProfileImage = in_array($user->membership_type, ['coach', 'court_assistant'], true);
-        $coachProfileImage = $user->staffProfile?->profile_image;
-    @endphp
 
     {{-- HEADER --}}
     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4">
@@ -52,8 +48,8 @@
     </div>
 
     {{-- INFO CARD --}}
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6 flex">
-        <div class="flex-1 min-w-0">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
+        <div>
             <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
                 <div class="w-9 h-9 rounded-lg bg-[#e86c2a]/10 flex items-center justify-center border border-[#e86c2a]/20">
                     <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,13 +142,6 @@
             </div>
         </div>
 
-        @if ($canManageProfileImage && $coachProfileImage)
-            <div class="flex-shrink-0 w-82 p-5">
-                <img src="{{ route('storage.local', ['path' => $coachProfileImage]) }}"
-                    alt="Staff profile"
-                     class="w-full h-full object-cover">
-            </div>
-        @endif
     </div>
 
 

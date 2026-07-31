@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AdminPaymentReceivedMail;
 use App\Mail\BookingCancelledByAdminMail;
 use App\Mail\BookingConfirmedCreditMail;
 use App\Mail\BookingReceiptMail;
 use App\Models\Booking;
 use App\Models\CourtSection;
 use App\Models\Notification;
+use App\Models\User;
 use App\Services\CreditService;
 use App\Services\PricingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -38,6 +41,10 @@ class CheckoutController extends Controller
 {
     public const LOCK_MINUTES = 15;
 
+    // จองล่วงหน้าได้สูงสุดกี่วัน (ทั้งจองสนามปกติและ Private Training ใช้ค่าเดียวกัน
+    // ดู PrivateTrainingController::ADVANCE_BOOKING_DAYS ด้วย)
+    public const ADVANCE_BOOKING_DAYS = 3;
+
     public function __construct(
         protected PricingService $pricingService,
         protected CreditService $creditService,
@@ -51,7 +58,7 @@ class CheckoutController extends Controller
     public function quote(Request $request)
     {
         $data = $request->validate([
-            'date' => ['required', 'date'],
+            'date' => ['required', 'date', 'before_or_equal:' . now()->addDays(self::ADVANCE_BOOKING_DAYS)->toDateString()],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'court_type' => ['required', 'in:full,half'],
@@ -75,7 +82,10 @@ class CheckoutController extends Controller
     {
         $data = $request->validate([
             'court_section_id' => ['required', 'integer', 'exists:court_sections,id'],
-            'booking_date' => ['required', 'date', 'after_or_equal:today'],
+            'booking_date' => [
+                'required', 'date', 'after_or_equal:today',
+                'before_or_equal:' . now()->addDays(self::ADVANCE_BOOKING_DAYS)->toDateString(),
+            ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'promotion_code' => ['nullable', 'string'],
@@ -90,6 +100,12 @@ class CheckoutController extends Controller
         try {
             $booking = DB::transaction(function () use ($request, $section, $data) {
                 $conflictIds = $section->conflictingSectionIds();
+                $startsAt = Carbon::parse($data['booking_date'].' '.$data['start_time']);
+                $endsAt = Carbon::parse($data['booking_date'].' '.$data['end_time']);
+
+                if ($section->court->isClosedAt($startsAt, $endsAt, $section)) {
+                    throw new RuntimeException('สนามนี้ไม่ว่างในช่วงเวลาที่เลือก กรุณาเลือกช่วงเวลาอื่น');
+                }
 
                 // ล็อกแถวที่เกี่ยวข้องทั้งหมดก่อนเช็คทับซ้อน กันสอง request แข่งกันอ่านค่าที่ยังไม่ commit
                 $overlap = Booking::whereIn('court_section_id', $conflictIds)
@@ -202,8 +218,44 @@ class CheckoutController extends Controller
             Mail::to($confirmed->user->email)->send(new BookingReceiptMail($confirmed));
         }
 
+        $this->notifyAdminsOfPayment(
+            'การจองสนาม',
+            $confirmed->id,
+            $confirmed->user->name ?? '-',
+            "{$confirmed->court->name} — {$confirmed->courtSection->name} | "
+                . "{$confirmed->booking_date->toDateString()} " . substr($confirmed->start_time, 0, 5) . '-' . substr($confirmed->end_time, 0, 5),
+            $confirmed->price,
+            'credit'
+        );
+
         return redirect()->route('history')
             ->with('success', "ชำระเงินสำเร็จ! การจอง #{$confirmed->id} ได้รับการยืนยันแล้ว");
+    }
+
+    /**
+     * แจ้งเตือนแอดมินทุกคนทางอีเมล เมื่อมีการชำระเงินสำเร็จ (ใช้ร่วมกันทั้งจองสนามและ
+     * Private Training) — ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วดึงหน้าเว็บพังทั้งที่
+     * เงินหักสำเร็จไปแล้วจริง (การหักเงิน/commit transaction เกิดขึ้นก่อนหน้านี้แล้ว)
+     */
+    protected function notifyAdminsOfPayment(
+        string $refType,
+        int $refId,
+        string $customerName,
+        string $detailLine,
+        int $amountSatang,
+        string $paymentMethod
+    ): void {
+        try {
+            $adminEmails = User::whereIn('role', ['admin', 'superadmin'])->pluck('email')->filter();
+
+            foreach ($adminEmails as $email) {
+                Mail::to($email)->send(new AdminPaymentReceivedMail(
+                    $refType, $refId, $customerName, $detailLine, $amountSatang, $paymentMethod
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ส่งอีเมลแจ้งเตือนแอดมินไม่สำเร็จ: ' . $e->getMessage());
+        }
     }
 
     /**

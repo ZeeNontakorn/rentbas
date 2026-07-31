@@ -44,12 +44,16 @@
                     </button>
                 </form>
 
+                {{-- ซ่อนการสร้างบัญชีบุคลากรจากหน้านี้:
+                     ให้สร้าง/เลือกบัญชีจากหน้าจัดการผู้ใช้ แล้วกำหนด Role = Staff
+                     และ Membership Type = Coach หรือ Court Assistant แทน
                 <button type="button" onclick="toggleModal(true)" class="w-full md:w-auto bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 flex-shrink-0 shadow-sm cursor-pointer relative -translate-y-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
                     เพิ่มบุคลากร
                 </button>
+                --}}
 
             </div>
         </div>
@@ -122,14 +126,14 @@
                                         ดูโปรไฟล์และตารางงาน
                                     </a>
 
-                                    <form action="{{ route('admin.staffs.destroy', $s->id) }}" method="POST" class="inline-block form-delete">
+                                    <form action="{{ route('admin.staffs.remove-role', $s->id) }}" method="POST" class="inline-block form-remove-role">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="button" class="btn-delete inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm cursor-pointer">
+                                        @method('PATCH')
+                                        <button type="button" class="btn-remove-role inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm cursor-pointer">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6m6 6l-6-6 6-6" />
                                             </svg>
-                                            ลบ
+                                            ถอดบทบาท
                                         </button>
                                     </form>
                                 </td>
@@ -154,6 +158,8 @@
     </div>
 </div>
 
+{{-- เก็บโค้ด modal เพิ่มบุคลากรไว้ แต่ซ่อน flow นี้:
+     ให้เพิ่มโค้ช/ผู้ช่วยสนามผ่านหน้าจัดการผู้ใช้แทน
 <div id="addStaffModal" class="fixed inset-0 z-50 hidden bg-slate-900/20 backdrop-blur-sm flex items-center justify-center transition-all">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all">
 
@@ -213,27 +219,31 @@
         </form>
     </div>
 </div>
+--}}
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    /*
+    เก็บฟังก์ชันเปิด/ปิด modal เพิ่มบุคลากรไว้ เผื่อต้องนำ flow เดิมกลับมาใช้
     function toggleModal(show) {
         const modal = document.getElementById('addStaffModal');
         modal.classList.toggle('hidden', !show);
         document.body.style.overflow = show ? 'hidden' : 'auto';
     }
+    */
 
-    document.querySelectorAll('.btn-delete').forEach(button => {
+    document.querySelectorAll('.btn-remove-role').forEach(button => {
         button.addEventListener('click', function() {
             const form = this.closest('form');
 
             Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: "หากลบแล้วจะไม่สามารถกู้คืนข้อมูลบุคลากรนี้ได้!",
+                title: 'ยืนยันการถอดบทบาท?',
+                text: "บัญชีนี้จะกลับเป็นผู้ใช้ทั่วไป และจะไม่แสดงในหน้าจัดการโค้ช/ผู้ช่วยสนาม แต่ข้อมูลโปรไฟล์เดิมจะยังคงอยู่",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'ใช่, ลบข้อมูลเลย!',
+                confirmButtonText: 'ยืนยันถอดบทบาท',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true
             }).then((result) => {

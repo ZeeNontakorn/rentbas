@@ -6,14 +6,17 @@
     // เก็บ Config ข้อมูล Status ไว้รวมกันเพื่อให้แก้ไขจุดเดียว
     $statusMap = [
         'pending' => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-500', 'pill' => 'bg-orange-500'],
-        'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-500', 'pill' => 'bg-green-500'],
+        'awaiting_court' => ['label' => 'รอจัดสนาม', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600', 'pill' => 'bg-purple-500'],
+        'confirmed' => ['label' => 'ยืนยันแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600', 'pill' => 'bg-green-500'],
         'rejected' => ['label' => 'ปฏิเสธแล้ว', 'bg' => 'bg-red-100', 'text' => 'text-red-500', 'pill' => 'bg-red-500'],
+        'cancelled' => ['label' => 'ยกเลิกแล้ว', 'bg' => 'bg-gray-100', 'text' => 'text-gray-500', 'pill' => 'bg-gray-500'],
     ];
 
     // ลดความซ้ำซ้อนของ Array สำหรับวนลูปแสดง Tabs ด้านบน
     $tabs = [
         'pending' => 'รออนุมัติ',
-        'approved' => 'อนุมัติแล้ว',
+        'awaiting_court' => 'รอจัดสนาม',
+        'confirmed' => 'ยืนยันแล้ว',
         'rejected' => 'ปฏิเสธแล้ว',
         'all' => 'ทั้งหมด',
     ];
@@ -69,6 +72,11 @@
                                     @if($b->reject_reason)
                                         <p class="text-xs text-red-500 mt-1">เหตุผลที่ปฏิเสธ: {{ $b->reject_reason }}</p>
                                     @endif
+                                    @if($b->court)
+                                        <p class="mt-1 text-xs font-medium text-green-700">
+                                            สนาม: {{ $b->court->name }}{{ $b->courtSection ? ' — '.$b->courtSection->name : '' }}
+                                        </p>
+                                    @endif
                                 </div>
 
                                 @if($b->status === 'pending')
@@ -82,6 +90,20 @@
                                             <button type="submit"
                                                 class="bg-green-500 text-white text-xs px-3 py-1.5 rounded cursor-pointer transition duration-200 hover:scale-105 hover:bg-green-600">อนุมัติ</button>
                                         </form>
+                                    </div>
+                                @elseif($b->status === 'awaiting_court')
+                                    <div class="flex gap-2">
+                                        <button type="button"
+                                            onclick="openRejectModal('{{ route('admin.private-training.reject', $b) }}')"
+                                            class="rounded bg-red-500 px-3 py-1.5 text-xs text-white transition hover:bg-red-600">ปฏิเสธ</button>
+                                        <button type="button"
+                                            data-action="{{ route('admin.private-training.assign-court', $b) }}"
+                                            data-date="{{ $b->date->format('d/m/Y') }}"
+                                            data-time="{{ substr($b->start_time, 0, 5) }}–{{ substr($b->end_time, 0, 5) }}"
+                                            onclick="openCourtModal(this)"
+                                            class="rounded bg-purple-600 px-3 py-1.5 text-xs text-white transition hover:bg-purple-700">
+                                            จัดสนาม
+                                        </button>
                                     </div>
                                 @endif
                             </div>
@@ -100,6 +122,43 @@
                     </div>
                 @endif
             </div>
+        </div>
+    </div>
+
+    <div id="courtModal"
+        class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
+            <div class="border-b border-gray-100 bg-gray-50 px-6 py-4">
+                <h3 class="text-sm font-bold text-gray-800">จัดสนามสำหรับ Private Training</h3>
+            </div>
+            <form id="courtForm" method="POST" class="space-y-4 p-6">
+                @csrf
+                <div class="rounded-lg border border-purple-100 bg-purple-50 p-3 text-center">
+                    <p id="courtBookingDate" class="text-sm font-semibold text-purple-800"></p>
+                    <p id="courtBookingTime" class="text-lg font-bold text-purple-700"></p>
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-700">เลือกสนามและส่วนสนาม</label>
+                    <select name="court_section_id" required
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-purple-500">
+                        <option value="">กรุณาเลือกสนาม</option>
+                        @foreach($courts as $court)
+                            <optgroup label="{{ $court->name }}">
+                                @foreach($court->sections as $section)
+                                    <option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeCourtModal()"
+                        class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
+                    <button type="submit"
+                        class="w-1/2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">ยืนยันจัดสนาม</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -151,28 +210,20 @@
             modal.classList.remove('flex');
         }
 
-        /**
-         * Swal.mixin: เป็นการสร้าง Template หรือ Instance ของ SweetAlert2 ที่มี Config เริ่มต้น 
-         * ทำให้เราเรียกใช้คำสั่งสั้นๆ เช่น Toast.fire() ได้เลย ไม่ต้องเซ็ตค่าใหม่ซ้ำๆ
-         */
-        const Toast = Swal.mixin({
-            toast: true,               // ให้แสดงในรูปแบบ Popup เล็กๆ (Toast) แทนที่จะบังเต็มจอ
-            position: 'top-end',       // ตำแหน่งที่โผล่ (มุมขวาบน)
-            showConfirmButton: false,  // ซ่อนปุ่ม "ตกลง" 
-            timer: 3000,               // หน่วงเวลาให้หายไปเอง 3 วินาที (3000 ms)
-            timerProgressBar: true,    // แสดงแถบเวลาโหลดลดลงด้านล่างของ Popup
-        });
+        function openCourtModal(button) {
+            document.getElementById('courtForm').action = button.dataset.action;
+            document.getElementById('courtBookingDate').textContent = 'วันที่ ' + button.dataset.date;
+            document.getElementById('courtBookingTime').textContent = button.dataset.time + ' น.';
+            const modal = document.getElementById('courtModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            {{-- @js() เป็น Blade Directive ของ Laravel ใช้แปลงตัวแปร PHP ให้เป็น Data Type ของ JavaScript อัตโนมัติ
-                 ข้อดีคือ ปลอดภัยจาก XSS Attack (Cross-Site Scripting) และจัดการเรื่องเครื่องหมายคำพูด (" หรือ ') ให้อัตโนมัติ  --}}
-            @if (session()->has('success'))
-                Toast.fire({ icon: 'success', title: @js(session('success')) });
-            @endif
+        function closeCourtModal() {
+            const modal = document.getElementById('courtModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
 
-            @if ($errors->any())
-                Toast.fire({ icon: 'error', title: @js($errors->first()) });
-            @endif
-        });
     </script>
 @endsection

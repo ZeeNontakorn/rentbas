@@ -3,316 +3,252 @@
 @section('title', 'จองเทรนเนอร์ส่วนตัว: ' . $coach->name)
 
 @section('content')
-    <style>
-        .pt-tooltip {
-            visibility: hidden;
-            position: fixed;
-            background-color: #1f2937;
-            color: #ffffff;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0;
-            transition: opacity 0.2s;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-        }
+@include('private-training._calendar-theme')
+<div class="min-h-screen bg-slate-50 py-8 text-gray-900">
+    <div class="container mx-auto max-w-6xl px-4 sm:px-6">
+        <a href="{{ route('private-training.index') }}"
+            class="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-orange-500">
+            ← กลับไปหน้ารายชื่อโค้ช
+        </a>
 
-        .pt-slot-selected {
-            border: 2px solid #3b82f6 !important;
-            transform: scale(0.95);
-            border-radius: 4px;
-            z-index: 10;
-        }
-    </style>
-
-    <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-        <div class="container mx-auto px-6 max-w-5xl">
-
-            <a href="{{ route('private-training.index') }}"
-                class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
-                <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                กลับไปหน้ารายชื่อโค้ช
-            </a>
-
-            <div id="pt-tooltip" class="pt-tooltip">
-                <div id="pt-tt-title" class="font-bold border-b border-gray-700 pb-1 mb-1"></div>
-                <div id="pt-tt-time" class="text-xs text-blue-300"></div>
-            </div>
-
-            {{-- โปรไฟล์โค้ช --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-                <div class="flex flex-col sm:flex-row sm:items-start gap-6">
-                    <div
-                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
-                        <span
-                            class="text-orange-600 text-3xl font-bold">{{ mb_strtoupper(mb_substr($coach->name, 0, 1)) }}</span>
+        <section class="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-6 sm:flex-row sm:items-start">
+                <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-orange-100 shadow-sm">
+                    @if($staffProfile?->profile_image_url)
+                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->name }}"
+                            class="h-full w-full object-cover">
+                    @else
+                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->name, 0, 1)) }}</span>
+                    @endif
+                </div>
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h1 class="text-2xl font-bold text-gray-800">{{ $coach->name }}</h1>
+                        <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">ผู้ฝึกสอน (Coach)</span>
                     </div>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3">
-                            <h1 class="text-2xl font-bold text-gray-800">{{ $coach->name }}</h1>
-                            <span class="px-3 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-700">ผู้ฝึกสอน
-                                (Coach)</span>
-                        </div>
-                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-4 text-sm text-gray-600">
-                            <p class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                อีเมล: {{ $coach->email }}
-                            </p>
-                            <p class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                </svg>
-                                เบอร์โทรศัพท์: {{ $coach->phone ?? 'ไม่ระบุ' }}
-                            </p>
+                    <div class="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
+                        <p>อีเมล: {{ $coach->email }}</p>
+                        <p>เบอร์โทรศัพท์: {{ $coach->phone ?? 'ไม่ระบุ' }}</p>
+                        <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile?->specialty ?? 'ไม่ระบุ' }}</p>
+                        <p><strong>แนะนำตัว:</strong> {{ $staffProfile?->bio ?? 'ไม่มีข้อมูล' }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-                            <p class="flex items-center gap-2 md:col-span-2">
-                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                เพศ:
-                                {{ match($staffProfile?->gender) {
-                                    'male' => 'ชาย',
-                                    'female' => 'หญิง',
-                                    default => 'ไม่ระบุ'
+        @if($myUpcoming->isNotEmpty())
+            <section class="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                <h2 class="mb-2 text-sm font-bold text-blue-700">คำขอของคุณกับโค้ชคนนี้</h2>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    @foreach($myUpcoming as $booking)
+                        <div class="rounded-lg bg-white/80 px-3 py-2 text-sm text-blue-800">
+                            {{ $booking->date->format('d/m/Y') }}
+                            {{ substr($booking->start_time, 0, 5) }}–{{ substr($booking->end_time, 0, 5) }} น.
+                            <span class="ml-1 text-xs font-semibold">
+                                {{ match($booking->status) {
+                                    'confirmed' => 'ยืนยันแล้ว',
+                                    'awaiting_court' => 'รอจัดสนาม',
+                                    default => 'รออนุมัติ',
                                 } }}
-                            </p>
-
-                            <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile->specialty ?? 'ผู้ช่วยฝึกสอนเบสิค' }}</p>
-                            <p><strong>แนะนำตัว (Bio):</strong> {{ $staffProfile->bio ?? 'ไม่มีข้อมูล' }}</p>
+                            </span>
                         </div>
-                    </div>
+                    @endforeach
                 </div>
-            </div>
+            </section>
+        @endif
 
-            {{-- คำขอที่ฉันจองไว้กับโค้ชคนนี้แล้ว --}}
-            @if($myUpcoming->isNotEmpty())
-                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6">
-                    <h3 class="text-sm font-bold text-blue-700 mb-2">คิวที่คุณจองไว้กับโค้ชคนนี้</h3>
-                    <ul class="space-y-1 text-sm text-blue-700">
-                        @foreach($myUpcoming as $u)
-                            <li>
-                                {{ \Carbon\Carbon::parse($u->date)->format('d/m/Y') }} — {{ substr($u->start_time, 0, 5) }} -
-                                {{ substr($u->end_time, 0, 5) }} น.
-                                <span
-                                    class="text-xs {{ $u->status === 'approved' ? 'text-green-600' : 'text-orange-600' }} font-medium">
-                                    ({{ $u->status === 'approved' ? 'อนุมัติแล้ว' : 'รออนุมัติ' }})
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            {{-- ตารางว่าง --}}
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 select-none"
-                id="pt-timeline-container">
-                <div class="mb-4">
-                    <h3 class="font-bold text-gray-800 text-lg">ตารางว่างวันนี้</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ \Carbon\Carbon::parse($today)->format('d/m/Y') }}
-                        (08:00–22:00 น.) — คลิกหรือลากเพื่อเลือกช่วงเวลาที่ต้องการจอง</p>
-                </div>
-                <div class="flex flex-wrap items-center justify-center gap-6 text-sm font-medium text-gray-700 mb-8 mt-2">
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#10b981] inline-block rounded"></span>
-                        ว่าง</div>
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#f97316] inline-block rounded"></span>
-                        ไม่ว่าง</div>
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#3b82f6] inline-block rounded"></span>
-                        คุณจองไว้แล้ว</div>
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#94a3b8] inline-block rounded"></span>
-                        ถูกจองแล้ว</div>
-                    <div class="flex items-center gap-2"><span class="w-4 h-4 bg-[#e2e8f0] inline-block rounded"></span>
-                        เวลาผ่านไปแล้ว</div>
-                </div>
-
-                <div class="overflow-x-auto pb-4">
-                    <div class="min-w-[900px]">
-                        <div class="flex-1 flex gap-[2px]">
-                            @foreach($timeline as $slot)
-                                @php
-                                    $colorClass = match ($slot['status']) {
-                                        'unavailable' => 'bg-[#f97316]',
-                                        'reserved' => 'bg-[#94a3b8]',
-                                        'mine' => 'bg-[#3b82f6]',
-                                        'past' => 'bg-[#e2e8f0]',
-                                        default => 'bg-[#10b981]',
-                                    };
-                                    $isSelectable = $slot['status'] === 'available';
-                                    $statusLabel = match ($slot['status']) {
-                                        'unavailable' => 'ไม่ว่าง',
-                                        'reserved' => 'ถูกจองแล้ว',
-                                        'mine' => 'คุณจองไว้แล้ว',
-                                        'past' => 'เวลาผ่านไปแล้ว',
-                                        default => 'ว่าง',
-                                    };
-                                @endphp
-                                <div class="flex-1 relative group">
-                                    <div class="pt-time-slot h-12 w-full {{ $colorClass }} {{ $isSelectable ? 'cursor-pointer hover:opacity-85' : 'cursor-not-allowed opacity-90' }} transition-all relative border-2 border-transparent"
-                                        data-hour="{{ $slot['hour'] }}" data-time-start="{{ $slot['start'] }}"
-                                        data-time-end="{{ $slot['end'] }}" data-selectable="{{ $isSelectable ? '1' : '0' }}"
-                                        data-status-label="{{ $statusLabel }}">
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="flex items-center text-xs text-gray-500 mt-2">
-                            <div class="flex-1 flex justify-between px-[2px]">
-                                @foreach($timeline as $slot)
-                                    <div class="w-full text-left -ml-4">{{ $slot['start'] }}</div>
-                                @endforeach
-                                <div class="text-right -mr-4">22:00</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    {{-- Modal ยืนยันการจอง --}}
-    <div id="bookTrainingModal"
-        class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
-        <div
-            class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform border border-gray-100 flex flex-col mx-auto">
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="text-sm font-bold text-gray-800">ยืนยันจองเทรนเนอร์ส่วนตัว</h3>
-            </div>
-
-            <form action="{{ route('private-training.store') }}" method="POST" class="p-6 space-y-4 bg-white">
-                @csrf
-                <input type="hidden" name="coach_id" value="{{ $coach->id }}">
-                <input type="hidden" name="start_time" id="pt-modal-start">
-                <input type="hidden" name="end_time" id="pt-modal-end">
-
-                <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center mb-2">
-                    <p class="text-xs text-blue-500 font-semibold mb-1">โค้ช {{ $coach->name }}</p>
-                    <p class="text-xs text-blue-500 mb-1">{{ \Carbon\Carbon::parse($today)->format('d/m/Y') }}</p>
-                    <div class="text-lg font-extrabold text-blue-700" id="pt-modal-time-range">00:00 - 00:00 น.</div>
-                </div>
-
+        <section class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+            <div class="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">หมายเหตุถึงโค้ช (ถ้ามี)</label>
-                    <textarea name="note" rows="2" maxlength="500" placeholder="เช่น อยากฝึกลูกยิงสามแต้ม"
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition text-gray-900 bg-white resize-none"></textarea>
+                    <h2 class="text-lg font-bold text-gray-800">เลือกวันและเวลาที่โค้ชว่าง</h2>
+                    <p class="mt-1 text-xs text-gray-500">ลากเลือกช่วงเวลาในปฏิทินรายสัปดาห์ เวลา 08:00–22:00 น.</p>
                 </div>
-
-                <p class="text-xs text-gray-400">คำขอของคุณจะถูกส่งไปให้แอดมินตรวจสอบและอนุมัติก่อนยืนยันการจอง</p>
-
-                <div class="pt-2 flex gap-2">
-                    <button type="button" onclick="ptToggleModal(false)"
-                        class="w-1/2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">ยกเลิก</button>
-                    <button type="submit"
-                        class="w-1/2 px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition font-medium shadow-sm">ส่งคำขอจอง</button>
+                <div class="flex flex-wrap gap-3 text-xs text-gray-600">
+                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-blue-500"></i>คำขอของคุณ</span>
+                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-slate-400"></i>ไม่ว่าง</span>
+                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-green-600"></i>ยืนยันแล้ว</span>
                 </div>
-            </form>
-        </div>
+            </div>
+            <div id="no-available-schedule"
+                class="mb-4 hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                โค้ชยังไม่ได้เปิดช่วงเวลารับจอง กรุณารอผู้ดูแลระบบกำหนดตารางก่อน
+            </div>
+            <div id="private-calendar" class="private-calendar-theme"></div>
+        </section>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        function ptToggleModal(show) {
-            const modal = document.getElementById('bookTrainingModal');
-            if (!modal) return;
-            modal.classList.toggle('hidden', !show);
-            modal.classList.toggle('flex', show);
-            if (!show) ptClearSelection();
-        }
+</div>
 
-        let ptDragging = false;
-        let ptSelected = [];
-        const ptSlots = document.querySelectorAll('.pt-time-slot');
-        const ptTooltip = document.getElementById('pt-tooltip');
+<div id="bookTrainingModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
+        <div class="border-b border-gray-100 bg-gray-50 px-6 py-4">
+            <h3 class="font-bold text-gray-800">ยืนยันคำขอ Private Training</h3>
+        </div>
+        <form action="{{ route('private-training.store') }}" method="POST" class="space-y-4 p-6">
+            @csrf
+            <input type="hidden" name="coach_id" value="{{ $coach->id }}">
+            <input type="hidden" name="date" id="booking-date">
+            <input type="hidden" name="start_time" id="booking-start">
+            <input type="hidden" name="end_time" id="booking-end">
+            <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-center">
+                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->name }}</p>
+                <p id="booking-date-label" class="mt-1 font-bold text-blue-800"></p>
+                <p id="booking-time-label" class="text-lg font-extrabold text-blue-700"></p>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-xs font-semibold text-gray-700">แพ็กเกจโปรโมชั่น (ถ้ามี)</label>
+                <select name="promotion_code" id="promotion-code-select" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">ไม่ใช้โปรโมชั่น (คิดราคาตามช่วงเวลาปกติ)</option>
+                    @foreach ($promotionPackages as $p)
+                        <option value="{{ $p->code }}" data-duration-hours="{{ $p->duration_hours ?? '' }}">
+                            {{ $p->label }}{{ $p->duration_hours !== null ? " ({$p->duration_hours} ชม.)" : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <p id="promotion-hint" class="mt-1 text-[11px] text-gray-400">ระบบจะเช็คเงื่อนไข (เต็ม/ครึ่งสนาม, ระยะเวลา, วันที่) อีกครั้งตอนแอดมินจัดสนามให้ ถ้าใช้ไม่ได้จะแจ้งแอดมินให้ทราบ</p>
+            </div>
+            <div>
+                <label class="mb-1.5 block text-xs font-semibold text-gray-700">รายละเอียดที่ต้องการฝึก (ถ้ามี)</label>
+                <textarea name="note" rows="3" maxlength="500" placeholder="เช่น ฝึกการยิงสามแต้ม"
+                    class="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <p class="text-xs text-gray-500">ราคาและการหักเครดิตจะเกิดขึ้นตอนแอดมินจัดสนามให้เท่านั้น (ยังไม่หักตอนส่งคำขอ)</p>
+            <div class="flex gap-2 pt-2">
+                <button type="button" id="cancel-booking-modal"
+                    class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
+                <button type="submit"
+                    class="w-1/2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">ส่งคำขอ</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        function ptClearSelection() {
-            ptSlots.forEach(s => s.classList.remove('pt-slot-selected'));
-            ptSelected = [];
-        }
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('bookTrainingModal');
+    const pad = value => String(value).padStart(2, '0');
+    const localDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const localTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        calendar.unselect();
+    };
 
-        function ptAddToSelection(el) {
-            if (!ptSelected.includes(el)) {
-                ptSelected.push(el);
-                el.classList.add('pt-slot-selected');
-            }
-        }
+    // เช็คว่าแพ็กเกจโปรโมชั่นแต่ละตัวใช้ได้กับช่วงเวลาที่ลูกค้าเพิ่งลากเลือกหรือไม่ (เฉพาะเงื่อนไข
+    // ระยะเวลา — duration_hours) แล้ว disable ตัวเลือกที่ไม่เข้าเงื่อนไข พร้อมโชว์คำอธิบายไว้ในตัวเลือก
+    // (เงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ จะถูกเช็คจริงจังอีกทีตอนแอดมินจัดสนามให้)
+    const promotionSelect = document.getElementById('promotion-code-select');
+    const promotionHint = document.getElementById('promotion-hint');
 
-        ptSlots.forEach(slot => {
-            slot.addEventListener('mousedown', function (e) {
-                if (this.getAttribute('data-selectable') !== '1') return;
-                e.preventDefault();
-                ptDragging = true;
-                ptClearSelection();
-                ptAddToSelection(this);
-            });
+    function updatePromotionAvailability(start, end) {
+        if (!promotionSelect) return;
+        const selectedHours = (end - start) / (1000 * 60 * 60);
+        let selectedBecameInvalid = false;
 
-            slot.addEventListener('mouseenter', function () {
-                if (ptDragging && this.getAttribute('data-selectable') === '1') {
-                    ptAddToSelection(this);
-                }
-            });
+        Array.from(promotionSelect.options).forEach(option => {
+            if (!option.value) return; // ตัวเลือก "ไม่ใช้โปรโมชั่น" ใช้ได้เสมอ
 
-            slot.addEventListener('mousemove', function (e) {
-                if (!ptTooltip) return;
-                ptTooltip.style.left = (e.clientX + 15) + 'px';
-                ptTooltip.style.top = (e.clientY + 15) + 'px';
-                ptTooltip.style.visibility = 'visible';
-                ptTooltip.style.opacity = '1';
-                document.getElementById('pt-tt-title').innerText = this.getAttribute('data-status-label');
-                document.getElementById('pt-tt-time').innerText = `เวลา: ${this.getAttribute('data-time-start')} - ${this.getAttribute('data-time-end')} น.`;
-            });
+            const durationAttr = option.dataset.durationHours;
+            const requiredHours = durationAttr ? parseFloat(durationAttr) : null;
+            const matches = requiredHours === null || Math.abs(requiredHours - selectedHours) < 0.01;
 
-            slot.addEventListener('mouseleave', function () {
-                if (!ptTooltip) return;
-                ptTooltip.style.visibility = 'hidden';
-                ptTooltip.style.opacity = '0';
-            });
-        });
+            option.disabled = !matches;
+            option.classList.toggle('text-gray-300', !matches);
 
-        window.addEventListener('mouseup', function () {
-            if (ptDragging && ptSelected.length > 0) {
-                ptDragging = false;
-                ptSelected.sort((a, b) => parseInt(a.getAttribute('data-hour')) - parseInt(b.getAttribute('data-hour')));
-                const first = ptSelected[0];
-                const last = ptSelected[ptSelected.length - 1];
-
-                document.getElementById('pt-modal-time-range').innerText = `${first.getAttribute('data-time-start')} - ${last.getAttribute('data-time-end')} น.`;
-                document.getElementById('pt-modal-start').value = first.getAttribute('data-time-start');
-                document.getElementById('pt-modal-end').value = last.getAttribute('data-time-end');
-
-                ptToggleModal(true);
-            } else {
-                ptDragging = false;
-            }
-        });
-
-        document.addEventListener('click', function (e) {
-            const modal = document.getElementById('bookTrainingModal');
-            if (e.target === modal) ptToggleModal(false);
-        });
-
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.onmouseenter = Swal.stopTimer;
-                toast.onmouseleave = Swal.resumeTimer;
+            if (!matches && option.selected) {
+                selectedBecameInvalid = true;
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            @if (session()->has('success')) Toast.fire({ icon: 'success', title: @js(session('success')) }); @endif
-            @if ($errors->any()) Toast.fire({ icon: 'error', title: @js($errors->first()) }); @endif
-        });
-    </script>
+        if (selectedBecameInvalid) {
+            promotionSelect.value = '';
+        }
+
+        promotionHint.textContent = `ช่วงเวลาที่เลือก ${selectedHours} ชม. — แพ็กเกจที่ระยะเวลาไม่ตรงจะถูกปิดใช้งานให้อัตโนมัติ (ระบบจะเช็คเงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ อีกครั้งตอนแอดมินจัดสนามให้)`;
+    }
+
+    // จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
+    // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
+    // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
+    const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
+
+    const calendar = new FullCalendar.Calendar(document.getElementById('private-calendar'), {
+        initialView: 'timeGridWeek',
+        locale: 'th',
+        firstDay: 1,
+        height: 'auto',
+        nowIndicator: true,
+        selectable: true,
+        selectMirror: true,
+        selectOverlap(event) {
+            return event.extendedProps.kind === 'available';
+        },
+        allDaySlot: false,
+        slotMinTime: '08:00:00',
+        slotMaxTime: '22:00:00',
+        slotDuration: '00:30:00',
+        snapDuration: '00:30:00',
+        validRange: { start: @js($today), end: @js(\Carbon\Carbon::parse($maxDate)->addDay()->toDateString()) },
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridWeek,timeGridDay'
+        },
+        buttonText: { today: 'วันนี้', week: 'สัปดาห์', day: 'วัน' },
+        events: @js(route('private-training.schedule', $coach)),
+        eventSourceSuccess(events) {
+            const hasAvailableSchedule = events.some(event =>
+                event.extendedProps?.kind === 'available'
+            );
+            document.getElementById('no-available-schedule')
+                .classList.toggle('hidden', hasAvailableSchedule);
+            return events;
+        },
+        selectAllow(info) {
+            const insideAvailableSchedule = calendar.getEvents().some(event =>
+                event.extendedProps.kind === 'available'
+                && info.start >= event.start
+                && info.end <= event.end
+            );
+            return insideAvailableSchedule
+                && info.start >= new Date()
+                && info.start <= maxSelectableDate
+                && (info.end - info.start) <= 4 * 60 * 60 * 1000;
+        },
+        select(info) {
+            document.getElementById('booking-date').value = localDate(info.start);
+            document.getElementById('booking-start').value = localTime(info.start);
+            document.getElementById('booking-end').value = localTime(info.end);
+            document.getElementById('booking-date-label').textContent =
+                info.start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('booking-time-label').textContent =
+                `${localTime(info.start)}–${localTime(info.end)} น.`;
+            updatePromotionAvailability(info.start, info.end);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        },
+        eventClick(info) {
+            const props = info.event.extendedProps;
+            Swal.fire({
+                title: info.event.title,
+                text: [props.statusLabel, props.court].filter(Boolean).join(' · ') || 'ช่วงเวลานี้ไม่ว่าง',
+                icon: 'info'
+            });
+        }
+    });
+
+    calendar.render();
+    document.getElementById('cancel-booking-modal').addEventListener('click', closeModal);
+    modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+
+    @if(session('success'))
+        Swal.fire({ icon: 'success', title: @js(session('success')), timer: 2500, showConfirmButton: false });
+    @endif
+    @if($errors->any())
+        Swal.fire({ icon: 'error', title: 'ส่งคำขอไม่สำเร็จ', text: @js($errors->first()) });
+    @endif
+});
+</script>
 @endsection

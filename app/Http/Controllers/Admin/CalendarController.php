@@ -7,12 +7,13 @@ use App\Models\CalendarEvent;
 use App\Models\CourseSchedule;
 use App\Models\CourtSection;
 use App\Models\CourseCalendarOverride;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CalendarController extends Controller
 {
-    private const COACHES = ['โค้ชต้น', 'โค้ชฟ้า', 'โค้ชบี'];
     private const SAMPLE_STUDENTS = ['น้องพีท', 'น้องข้าวหอม', 'น้องภูมิ', 'น้องมินท์', 'น้องไทเกอร์'];
 
     public function calendar()
@@ -21,8 +22,13 @@ class CalendarController extends Controller
             'id' => $section->id,
             'label' => $section->court->name.' — '.$section->name,
         ]);
+        $coaches = User::query()
+            ->where('role', 'staff')
+            ->where('membership_type', 'coach')
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        return view('admin.calendars.course-calendar', ['coaches' => self::COACHES, 'courtSections' => $courtSections]);
+        return view('admin.calendars.course-calendar', compact('coaches', 'courtSections'));
     }
 
     public function events(Request $request)
@@ -31,7 +37,7 @@ class CalendarController extends Controller
         $from = Carbon::parse($data['start'])->startOfDay(); $until = Carbon::parse($data['end'])->endOfDay();
         $overrides = CourseCalendarOverride::with('courtSection.court')->whereBetween('occurrence_date', [$from->toDateString(), $until->toDateString()])->get()->keyBy(fn ($override) => $override->course_schedule_id.'-'.$override->occurrence_date->toDateString());
         $courseEvents = CourseSchedule::with(['course', 'course.targetGroups', 'course.packages', 'courtSection.court'])->get()->flatMap(fn (CourseSchedule $schedule) => $this->courseOccurrences($schedule, $from, $until, $overrides));
-        $personalEvents = CalendarEvent::with('courtSection.court')->get()->flatMap(fn (CalendarEvent $event) => $this->eventOccurrences($event, $from, $until));
+        $personalEvents = CalendarEvent::with(['courtSection.court', 'coach'])->get()->flatMap(fn (CalendarEvent $event) => $this->eventOccurrences($event, $from, $until));
         return response()->json($courseEvents->concat($personalEvents)->values());
     }
 
@@ -60,13 +66,15 @@ class CalendarController extends Controller
         return $request->validate([
             'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string'], 'starts_at' => ['required', 'date'], 'ends_at' => ['nullable', 'date', 'after:starts_at'], 'all_day' => ['boolean'],
             'color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'], 'recurrence' => ['required', 'in:none,daily,weekly,monthly'], 'recurrence_until' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'event_type' => ['required', 'in:school_class,general'],
+            'coach_id' => [Rule::requiredIf($request->input('event_type') === 'school_class'), 'nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'staff')->where('membership_type', 'coach'))],
             'coach_name' => ['nullable', 'string', 'max:100'], 'package_type' => ['nullable', 'in:group,private'], 'court_section_id' => ['nullable', 'exists:court_sections,id'], 'student_names' => ['nullable', 'array'], 'student_names.*' => ['string', 'max:100'],
         ]);
     }
 
     private function courseOccurrences(CourseSchedule $schedule, Carbon $from, Carbon $until, $overrides): array
     {
-        $coach = self::COACHES[($schedule->id - 1) % count(self::COACHES)]; $days = $schedule->day_type === 'weekday' ? [Carbon::MONDAY, Carbon::WEDNESDAY, Carbon::FRIDAY] : [Carbon::SATURDAY, Carbon::SUNDAY]; $result = [];
+        $coach = 'ยังไม่ระบุโค้ช'; $days = $schedule->day_type === 'weekday' ? [Carbon::MONDAY, Carbon::WEDNESDAY, Carbon::FRIDAY] : [Carbon::SATURDAY, Carbon::SUNDAY]; $result = [];
         for ($date = $from->copy(); $date->lte($until); $date->addDay()) {
             if (! in_array($date->dayOfWeek, $days, true)) continue;
             $override = $overrides->get($schedule->id.'-'.$date->toDateString());
@@ -96,7 +104,7 @@ class CalendarController extends Controller
     private function toEvent(CalendarEvent $event, ?Carbon $start = null, ?Carbon $end = null): array
     {
         return ['id' => 'event-'.$event->id, 'title' => $event->title, 'start' => ($start ?? $event->starts_at)->toIso8601String(), 'end' => ($end ?? $event->ends_at)?->toIso8601String(), 'allDay' => $event->all_day, 'backgroundColor' => $event->color, 'borderColor' => $event->color,
-            'extendedProps' => ['kind' => 'personal', 'eventId' => $event->id, 'coach' => $event->coach_name, 'students' => $event->student_names ?? [], 'description' => $event->description, 'recurrence' => $event->recurrence, 'recurrenceUntil' => $event->recurrence_until?->toDateString(),
+            'extendedProps' => ['kind' => 'personal', 'eventId' => $event->id, 'eventType' => $event->event_type, 'coachId' => $event->coach_id, 'coach' => $event->coach?->name ?? $event->coach_name, 'students' => $event->student_names ?? [], 'description' => $event->description, 'recurrence' => $event->recurrence, 'recurrenceUntil' => $event->recurrence_until?->toDateString(),
                 'packageTypeValue' => $event->package_type,
                 'packageType' => $event->package_type === 'private' ? 'Private Class (ส่วนตัว)' : ($event->package_type === 'group' ? 'Standard Group Class (กลุ่มเรียนรวม)' : 'ยังไม่ระบุประเภทแพ็กเกจ'),
                 'courtSectionId' => $event->court_section_id,

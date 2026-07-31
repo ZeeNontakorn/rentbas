@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\PrivateScheduleController;
 use App\Http\Controllers\PrivateTrainingController;
 use Illuminate\Support\Facades\Route;
 
@@ -85,6 +86,8 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     // Private Training (จองเทรนเนอร์ส่วนตัว) — ฝั่ง user
     Route::prefix('private-training')->name('private-training.')->group(function () {
         Route::get('/', [PrivateTrainingController::class, 'index'])->name('index');
+        Route::get('/my-schedule', [PrivateTrainingController::class, 'mySchedule'])->name('my-schedule');
+        Route::get('/{coach}/schedule', [PrivateTrainingController::class, 'scheduleEvents'])->name('schedule');
         Route::get('/{coach}', [PrivateTrainingController::class, 'show'])->name('show');
         Route::post('/', [PrivateTrainingController::class, 'store'])->name('store');
         Route::post('/{privateTrainingBooking}/cancel', [PrivateTrainingController::class, 'cancel'])->name('cancel');
@@ -157,14 +160,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{user}/membership-type', [\App\Http\Controllers\Admin\UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
     Route::patch('/users/{user}/role', [\App\Http\Controllers\Admin\UserController::class, 'updateRole'])->name('users.updateRole');
+    Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
 
     // จัดการโค้ช และผู้ช่วย
     Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
     Route::post('/staffs', [StaffController::class, 'store'])->name('staffs.store');
     Route::get('/staffs/{staff}', [StaffController::class, 'show'])->name('staffs.show');
+    Route::get('/staffs/{staff}/schedule-events', [StaffController::class, 'scheduleEvents'])->name('staffs.schedule-events');
     Route::put('/staffs/{staff}/profile', [StaffController::class, 'updateProfile'])->name('staffs.profile.update');
     Route::post('/staffs/{staff}/availabilities', [StaffController::class, 'storeAvailability'])->name('staffs.availabilities.store');
-    Route::delete('/staffs/{staff}', [StaffController::class, 'destroy'])->name('staffs.destroy');
+    Route::patch('/staffs/{staff}/remove-role', [StaffController::class, 'removeRole'])->name('staffs.remove-role');
+
+    // จัดการช่วงเวลาสำหรับ Private Training (ไม่รวมคลาสโรงเรียน)
+    Route::get('/private-schedule', [PrivateScheduleController::class, 'index'])->name('private-schedule.index');
+    Route::get('/private-schedule/events', [PrivateScheduleController::class, 'events'])->name('private-schedule.events');
+    Route::post('/private-schedule/events', [PrivateScheduleController::class, 'store'])->name('private-schedule.store');
+    Route::put('/private-schedule/events/{availability}', [PrivateScheduleController::class, 'update'])->name('private-schedule.update');
+    Route::delete('/private-schedule/events/{availability}', [PrivateScheduleController::class, 'destroy'])->name('private-schedule.destroy');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('edit.text');
@@ -203,6 +215,7 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
     // จัดการคำขอจองเทรนเนอร์ส่วนตัว
     Route::get('/private-training', [PrivateTrainingController::class, 'adminIndex'])->name('private-training.index');
     Route::post('/private-training/{privateTrainingBooking}/approve', [PrivateTrainingController::class, 'approve'])->name('private-training.approve');
+    Route::post('/private-training/{privateTrainingBooking}/assign-court', [PrivateTrainingController::class, 'assignCourt'])->name('private-training.assign-court');
     Route::post('/private-training/{privateTrainingBooking}/reject', [PrivateTrainingController::class, 'reject'])->name('private-training.reject');
 
     //จัดการการจอง

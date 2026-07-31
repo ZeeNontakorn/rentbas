@@ -68,7 +68,10 @@
                         จัดการการจอง
                     </a>
                     <a href="{{ route('admin.private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        เทรนเนอร์ส่วนตัว
+                       จัดการ Private Training
+                    </a>
+                    <a href="{{ route('admin.private-schedule.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ตารางโค้ช
                     </a>
                     <a href="{{ route('admin.pricing.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ตั้งราคา
@@ -90,7 +93,11 @@
                     </a>
 
                     <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
-                    @if($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
+                    @if($user->role === 'staff' && $user->membership_type === 'coach')
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            ตาราง Private ของฉัน
+                        </a>
+                    @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
                         <a href="{{ route('admin.private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
@@ -336,7 +343,10 @@
                         จัดการการจอง
                     </a>
                     <a href="{{ route('admin.private-training.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        เทรนเนอร์ส่วนตัว
+                        จัดการ Private Training
+                    </a>
+                    <a href="{{ route('admin.private-schedule.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        ตารางโค้ช
                     </a>
                     <a href="{{ route('admin.pricing.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ตั้งราคา
@@ -358,7 +368,11 @@
                     <a href="{{ route('booking.index') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
                     </a>
-                    @if($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
+                    @if($user->role === 'staff' && $user->membership_type === 'coach')
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            ตาราง Private ของฉัน
+                        </a>
+                    @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
                         <a href="{{ route('admin.private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว

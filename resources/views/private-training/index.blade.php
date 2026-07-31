@@ -5,8 +5,10 @@
 @php
     $statusMap = [
         'pending' => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
-        'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
+        'awaiting_court' => ['label' => 'รอจัดสนาม', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
+        'confirmed' => ['label' => 'ยืนยันแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
         'rejected' => ['label' => 'ถูกปฏิเสธ', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
+        'cancelled' => ['label' => 'ยกเลิกแล้ว', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
 
     ];
 @endphp
@@ -51,8 +53,8 @@
                                 {{-- รูปโปรไฟล์โค้ช --}}
                                 <div
                                     class="w-full h-70 bg-orange-50 flex items-center justify-center overflow-hidden border-b border-orange-100 flex-shrink-0">
-                                    @if(!empty($coach->photo_url))
-                                        <img src="{{ $coach->photo_url }}" alt="{{ $coach->name }}"
+                                    @if($coach->staffProfile?->profile_image_url)
+                                        <img src="{{ $coach->staffProfile->profile_image_url }}" alt="{{ $coach->name }}"
                                             class="w-full h-full object-cover object-top">
                                     @else
                                         @php
@@ -123,7 +125,7 @@
                                     <div class="flex items-center justify-between mt-2">
                                         <span
                                             class="text-xs px-2.5 py-1 rounded-full font-medium {{ $sInfo['bg'] }} {{ $sInfo['text'] }}">{{ $sInfo['label'] }}</span>
-                                        @if($r->status === 'pending')
+                                        @if(in_array($r->status, ['pending', 'awaiting_court'], true))
                                             <form method="POST" action="{{ route('private-training.cancel', $r) }}"
                                                 class="cancel-form">
                                                 @csrf
