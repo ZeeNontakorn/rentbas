@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -120,6 +121,33 @@ class User extends Authenticatable
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
     }
+
+    /**
+     * รีวิวที่ user คนนี้เป็นคนเขียน (ทั้งรีวิวสถานที่และรีวิวโค้ช)
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * รีวิวที่ user คนนี้ได้รับในฐานะโค้ช — ใช้คิดดาวเฉลี่ยของโค้ช
+     */
+    public function coachReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'coach_id');
+    }
+
+    /**
+     * คะแนนรายหมวดของรีวิวที่โค้ชคนนี้ได้รับ — ทะลุผ่านตาราง reviews ไปหา review_scores
+     * มีไว้เพื่อให้ใช้ ->withAvg('coachReviewScores as avg_rating', 'score') ได้ในคิวรี่เดียว
+     * ตอนดึงรายชื่อโค้ช โดยไม่ต้องวน query ทีละคน
+     */
+    public function coachReviewScores(): HasManyThrough
+    {
+        return $this->hasManyThrough(ReviewScore::class, Review::class, 'coach_id', 'review_id');
+    }
+
     /**
      * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
      */

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PrivateTrainingBooking extends Model
 {
@@ -32,6 +33,7 @@ class PrivateTrainingBooking extends Model
         'price_breakdown',
         'pricing_rule_id',
         'payment_status',
+        'review_invited_at',    // เวลาที่ยิงแจ้งเตือนชวนรีวิวโค้ชไปแล้ว (null = ยังไม่เคยชวน)
     ];
 
     protected function casts(): array
@@ -41,6 +43,7 @@ class PrivateTrainingBooking extends Model
             // ทำให้ตอนเรียก $this->date สามารถต่อด้วยฟังก์ชันของ Carbon ได้เลย
             'date' => 'date',
             'court_assigned_at' => 'datetime',
+            'review_invited_at' => 'datetime',
             'price_breakdown' => 'array',
         ];
     }
@@ -102,5 +105,18 @@ class PrivateTrainingBooking extends Model
         // ->setTimeFromTimeString() นำ String เวลามาประกอบเข้ากับวันที่
         // ->isPast() รีเทิร์นค่า true หากเวลาที่ได้ เป็นอดีตหรือเท่ากับปัจจุบัน (now)
         return $this->date->copy()->setTimeFromTimeString($this->start_time)->isPast();
+    }
+
+    /**
+     * เรียนจบคาบแล้วหรือยัง — เงื่อนไขหลักของสิทธิ์รีวิวโค้ช
+     */
+    public function hasFinished(): bool
+    {
+        return $this->date->copy()->setTimeFromTimeString($this->end_time)->isPast();
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
     }
 }

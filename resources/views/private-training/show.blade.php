@@ -25,6 +25,16 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <h1 class="text-2xl font-bold text-gray-800">{{ $coach->name }}</h1>
                         <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">ผู้ฝึกสอน (Coach)</span>
+
+                        @if($ratingCount)
+                            <span class="inline-flex items-center gap-1.5 text-sm text-gray-500">
+                                @include('reviews._stars', ['score' => $ratingAvg, 'size' => 'h-4 w-4'])
+                                <span class="font-semibold text-gray-700">{{ number_format($ratingAvg, 1) }}</span>
+                                <span class="text-xs">({{ $ratingCount }} รีวิว)</span>
+                            </span>
+                        @else
+                            <span class="text-xs text-gray-400">ยังไม่มีรีวิว</span>
+                        @endif
                     </div>
                     <div class="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
                         <p>อีเมล: {{ $coach->email }}</p>
@@ -51,6 +61,27 @@
                                     default => 'รออนุมัติ',
                                 } }}
                             </span>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- รีวิวจากลูกค้าที่เคยเรียนกับโค้ชคนนี้ --}}
+        @if($reviews->isNotEmpty())
+            <section class="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <h2 class="mb-4 text-lg font-bold text-gray-800">รีวิวจากผู้เรียน ({{ $ratingCount }})</h2>
+                <div class="divide-y divide-gray-100">
+                    @foreach($reviews as $review)
+                        <div class="py-3 first:pt-0 last:pb-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                @include('reviews._stars', ['score' => $review->averageScore(), 'size' => 'h-4 w-4'])
+                                <span class="text-sm font-medium text-gray-700">{{ $review->user->name ?? 'ผู้ใช้' }}</span>
+                                <span class="text-xs text-gray-400">{{ $review->created_at->format('d/m/Y') }}</span>
+                            </div>
+                            @if($review->comment)
+                                <p class="mt-1.5 text-sm text-gray-600">{{ $review->comment }}</p>
+                            @endif
                         </div>
                     @endforeach
                 </div>

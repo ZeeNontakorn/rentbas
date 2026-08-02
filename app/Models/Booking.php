@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Booking extends Model
 {
@@ -30,6 +31,7 @@ class Booking extends Model
         'promotion_package_id',
         'price_breakdown',      // JSON: รายละเอียดราคา ณ ตอนจอง (ใช้แสดงในใบเสร็จ)
         'locked_until',
+        'review_invited_at',    // เวลาที่ยิงแจ้งเตือนชวนรีวิวไปแล้ว (null = ยังไม่เคยชวน)
     ];
 
     protected function casts(): array
@@ -37,6 +39,7 @@ class Booking extends Model
         return [
             'booking_date' => 'date',
             'locked_until' => 'datetime',
+            'review_invited_at' => 'datetime',
             'price_breakdown' => 'array',
         ];
     }
@@ -44,6 +47,24 @@ class Booking extends Model
     public function startDateTime(): Carbon
     {
         return Carbon::parse($this->booking_date->toDateString() . ' ' . $this->start_time);
+    }
+
+    public function endDateTime(): Carbon
+    {
+        return Carbon::parse($this->booking_date->toDateString() . ' ' . $this->end_time);
+    }
+
+    /**
+     * ใช้บริการจบแล้วหรือยัง — เงื่อนไขหลักของสิทธิ์รีวิว
+     */
+    public function hasFinished(): bool
+    {
+        return $this->endDateTime()->isPast();
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
     }
 
     public function user(): BelongsTo

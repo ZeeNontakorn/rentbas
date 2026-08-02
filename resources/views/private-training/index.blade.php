@@ -79,6 +79,17 @@
                                         class="inline-block mt-1 w-fit px-2 py-0.5 text-[11px] rounded-full font-medium bg-blue-100 text-blue-700">ผู้ฝึกสอน
                                         (Coach)</span>
 
+                                    {{-- ดาวเฉลี่ยจากรีวิวของลูกค้า --}}
+                                    <div class="mt-2 flex items-center gap-1.5 text-[11px] text-gray-500">
+                                        @if($coach->rating_count)
+                                            @include('reviews._stars', ['score' => $coach->rating_avg, 'size' => 'h-3.5 w-3.5'])
+                                            <span class="font-semibold text-gray-700">{{ number_format((float) $coach->rating_avg, 1) }}</span>
+                                            <span>({{ $coach->rating_count }} รีวิว)</span>
+                                        @else
+                                            <span class="text-gray-400">ยังไม่มีรีวิว</span>
+                                        @endif
+                                    </div>
+
                                     <div class="mt-4 text-xs text-gray-500 space-y-1">
                                         <p><span class="font-medium text-gray-600">ความเชี่ยวชาญ:</span>
                                             {{ $coach->staffProfile?->specialty ?? 'ผู้ช่วยฝึกสอนเบสิค' }}</p>
@@ -108,6 +119,35 @@
 
                 {{-- Sidebar: คำขอของฉัน --}}
                 <div class="lg:col-span-1 lg:grid-cols-4 gap-6 lg:top-6">
+
+                    {{-- คาบที่เรียนจบแล้วแต่ยังไม่ได้ให้คะแนนโค้ช --}}
+                    @if($reviewable->isNotEmpty())
+                        <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden mb-6">
+                            <div class="px-5 py-4 border-b border-orange-100 bg-orange-50">
+                                <h2 class="font-medium text-orange-800 text-sm flex items-center gap-1.5">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.362-1.118l-3.977-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                                    รอให้คะแนนโค้ช
+                                </h2>
+                            </div>
+                            <div class="divide-y divide-gray-100">
+                                @foreach($reviewable as $r)
+                                    <div class="px-5 py-3">
+                                        <p class="text-sm font-medium text-gray-700">โค้ช {{ $r->coach->name }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            {{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}
+                                            <span class="text-gray-300 mx-1">•</span>
+                                            {{ substr($r->start_time, 0, 5) }} - {{ substr($r->end_time, 0, 5) }} น.
+                                        </p>
+                                        <a href="{{ route('reviews.create-coach', $r) }}"
+                                           class="mt-2 inline-flex items-center gap-1 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-600">
+                                            ให้คะแนน
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="px-5 py-4 border-b border-gray-100">
                             <h2 class="font-medium text-gray-700 text-sm">คำขอจองเทรนเนอร์ของฉัน</h2>

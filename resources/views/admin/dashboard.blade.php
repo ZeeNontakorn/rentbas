@@ -34,7 +34,8 @@
         ['key' => 'booked_hours',     'label' => 'Booked Hours',          'grad' => ['#818cf8', '#6366f1'], 'icon' => 'clock',    'suffix' => 'h'],
         ['key' => 'active_customers', 'label' => 'Active Customers',      'grad' => ['#38bdf8', '#0ea5e9'], 'icon' => 'users'],
         ['key' => 'pending',          'label' => 'Pending Bookings',      'grad' => ['#fbbf24', '#f59e0b'], 'icon' => 'alert'],
-        ['key' => 'cancellation_rate','label' => 'Cancellation Rate',     'grad' => ['#fb7185', '#e11d48'], 'icon' => 'x',        'suffix' => '%', 'invert' => true],
+        ['key' => 'cancellation_rate','label' => 'Cancellation Rate',     'grad' => ['#fb7185', '#e11d48'], 'icon' => 'x',        'suffix' => '%', 'invert' => true, 'decimals' => 1],
+        ['key' => 'avg_rating',       'label' => 'Average Rating',        'grad' => ['#facc15', '#eab308'], 'icon' => 'star',     'suffix' => ' ★', 'decimals' => 1],
     ];
 
     $icons = [
@@ -44,6 +45,7 @@
         'users'    => 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4 0m8 0a4 4 0 10-3-7.75',
         'alert'    => 'M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.74-3L13.74 4a2 2 0 00-3.48 0L3.33 16a2 2 0 001.74 3z',
         'x'        => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+        'star'     => 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.362-1.118l-3.977-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
     ];
 @endphp
 
@@ -88,7 +90,7 @@
                     </div>
                     <div class="mt-4 text-sm font-medium text-white/85">{{ $card['label'] }}</div>
                     <div class="text-3xl font-extrabold tracking-tight">
-                        {{ number_format($k['value'], ($card['key'] === 'cancellation_rate') ? 1 : 0) }}{{ $card['suffix'] ?? '' }}
+                        {{ number_format($k['value'], $card['decimals'] ?? 0) }}{{ $card['suffix'] ?? '' }}
                     </div>
 
                     @if(($card['spark'] ?? false) && !empty($k['spark']))
@@ -251,6 +253,36 @@
                         <p class="text-sm text-gray-400 text-center py-8">ไม่มีคิวที่กำลังจะถึง</p>
                     @endforelse
                 </div>
+            </div>
+        </div>
+
+        <!-- ============ CUSTOMER RATINGS ============ -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">Customer Ratings</h3>
+                    <p class="text-xs text-gray-400">ค่าเฉลี่ยคะแนนรายหมวด — เต็ม 5 ดาว</p>
+                </div>
+                <a href="{{ route('admin.reviews.index') }}"
+                   class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full hover:bg-orange-100 transition">
+                    ดูรีวิวทั้งหมด
+                </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
+                @foreach($ratingByCategory as $row)
+                    <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition">
+                        <div>
+                            <div class="text-sm text-gray-700">{{ $row['label'] }}</div>
+                            <div class="text-xs text-gray-400">{{ $row['count'] }} รีวิว</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @include('reviews._stars', ['score' => $row['avg'], 'size' => 'h-4 w-4'])
+                            <span class="text-sm font-bold text-gray-800 w-7 text-right">
+                                {{ $row['count'] ? number_format($row['avg'], 1) : '-' }}
+                            </span>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
 

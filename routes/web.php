@@ -15,7 +15,9 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\PrivateScheduleController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\PrivateTrainingController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -93,6 +95,20 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
         Route::post('/{privateTrainingBooking}/cancel', [PrivateTrainingController::class, 'cancel'])->name('cancel');
     });
 
+    // Rating / รีวิว (requirement ข้อ 1.4) — ให้คะแนนได้เฉพาะการจองที่ใช้บริการจบแล้ว
+    Route::prefix('reviews')->name('reviews.')->group(function () {
+        Route::get('/', [ReviewController::class, 'index'])->name('index');
+        // รีวิวสถานที่ 5 หมวด ผูกกับการจองสนาม
+        Route::get('/booking/{booking}', [ReviewController::class, 'create'])->name('create');
+        Route::post('/booking/{booking}', [ReviewController::class, 'store'])->name('store');
+        // รีวิวโค้ช (หมวดที่ 6) ผูกกับคาบ Private Training
+        Route::get('/private-training/{privateTrainingBooking}', [ReviewController::class, 'createCoach'])->name('create-coach');
+        Route::post('/private-training/{privateTrainingBooking}', [ReviewController::class, 'storeCoach'])->name('store-coach');
+        // โค้ชดูคะแนนที่ตัวเองได้รับ — วางไว้ในกลุ่มนี้เพราะ middleware admin/staff_or_admin
+        // ไม่รับ role coach ทั้งคู่ จึงเช็คสิทธิ์ใน ReviewController::myCoachReviews() แทน
+        Route::get('/my-coach-reviews', [ReviewController::class, 'myCoachReviews'])->name('my-coach');
+    });
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
@@ -122,6 +138,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // รีวิว / คะแนนจากลูกค้า
+    Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
 
     // จัดการสนาม
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');

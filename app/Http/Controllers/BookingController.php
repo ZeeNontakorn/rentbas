@@ -527,6 +527,9 @@ class BookingController extends Controller
         // ค้างอยู่ในแท็บ "รายการปัจจุบัน" ให้เห็น
         CheckoutController::releaseStaleLocks();
 
+        // ชวนรีวิวการจองที่เพิ่งใช้บริการจบ — opportunistic แบบเดียวกับบรรทัดบน
+        ReviewController::inviteForFinishedBookings($userId);
+
         $current = Booking::with('court')
             ->where('user_id', $userId)
             ->where(function ($q) use ($today) {
@@ -537,7 +540,8 @@ class BookingController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        $past = Booking::with('court')
+        // eager load review ด้วย เพื่อให้การ์ดในแท็บ "ประวัติ" รู้ว่ารีวิวไปแล้วหรือยังโดยไม่ยิง query รายใบ
+        $past = Booking::with(['court', 'review.scores'])
             ->where('user_id', $userId)
             ->where(function ($q) use ($today) {
                 $q->whereIn('status', ['rejected', 'cancelled', 'expired'])

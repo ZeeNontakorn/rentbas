@@ -35,9 +35,15 @@ class PrivateTrainingController extends Controller
     {
         $search = $request->query('search');
 
+        // ชวนรีวิวโค้ชสำหรับคาบที่เรียนจบแล้ว — opportunistic ไม่ต้องพึ่ง scheduler
+        ReviewController::inviteForFinishedPrivateBookings($request->user()->id);
+
         $coaches = User::where('role', 'staff')
             ->where('membership_type', 'coach')
             ->with('staffProfile')
+            // ดาวเฉลี่ย + จำนวนรีวิวของโค้ชแต่ละคน ดึงมาในคิวรี่เดียวกัน ไม่ต้องวนถามทีละคน
+            ->withAvg('coachReviewScores as rating_avg', 'score')
+            ->withCount('coachReviews as rating_count')
             // ใช้ nested closure (fn($q) และ fn($qq)) เพื่อสร้างวงเล็บคลุมเงื่อนไข OR ป้องกันการคลาดเคลื่อนกับเงื่อนไขหลักด้านบน
             ->when($search, fn($q) => $q->where(
                 fn($qq) => $qq->where('name', 'like', "%{$search}%")
@@ -52,7 +58,18 @@ class PrivateTrainingController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('private-training.index', compact('coaches', 'search', 'myRequests'));
+        // คาบที่เรียนจบแล้วและยังไม่ได้ให้คะแนนโค้ช — กรอง hasFinished() ต่อในภายหลังเพราะต้องเทียบ
+        // ทั้งวันและเวลา ซึ่ง where แบบ date อย่างเดียวยังครอบไม่ครบสำหรับคาบของวันนี้
+        $reviewable = PrivateTrainingBooking::with('coach')
+            ->where('user_id', $request->user()->id)
+            ->whereIn('status', ['confirmed', 'approved'])
+            ->whereDate('date', '<=', now()->toDateString())
+            ->whereDoesntHave('review')
+            ->orderByDesc('date')
+            ->get()
+            ->filter->hasFinished();
+
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'reviewable'));
     }
 
     public function show(User $coach)
@@ -82,8 +99,17 @@ class PrivateTrainingController extends Controller
             ->orderBy('label')
             ->get();
 
+        // รีวิวที่โค้ชคนนี้ได้รับ — แสดงชื่อคนรีวิวได้เพราะเป็นหน้าสาธารณะที่ลูกค้าใช้ประกอบการตัดสินใจ
+        $reviews = \App\Models\Review::with(['scores', 'user:id,name'])
+            ->where('coach_id', $coach->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $ratingCount = $reviews->count();
+        $ratingAvg = $ratingCount ? round((float) $reviews->flatMap->scores->avg('score'), 1) : 0.0;
+
         // ใช้เครื่องหมาย + (Array Union) เพื่อนำ array ธรรมดาไปต่อท้ายผลลัพธ์ที่ได้จากฟังก์ชัน compact()
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'reviews', 'ratingCount', 'ratingAvg') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }

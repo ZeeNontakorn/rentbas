@@ -82,6 +82,10 @@
                         จัดการคอร์สเรียน
                     </a>
 
+                    <a href="{{ route('admin.reviews.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.reviews.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        รีวิว
+                    </a>
+
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard
                     </a>
@@ -95,6 +99,9 @@
                     @if($user->role === 'staff' && $user->membership_type === 'coach')
                         <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             ตาราง Private ของฉัน
+                        </a>
+                        <a href="{{ route('reviews.my-coach') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('reviews.my-coach') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            คะแนนของฉัน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
@@ -111,6 +118,11 @@
                     <!-- ประวัติการจอง -->
                     <a href="{{ route('history') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
+                    </a>
+
+                    <!-- รีวิวที่เคยให้ไว้ -->
+                    <a href="{{ route('reviews.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('reviews.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        รีวิวของฉัน
                     </a>
 
                     @if($canManageBookings && auth()->user()->role === 'staff')
@@ -342,6 +354,10 @@
                         จัดการคอร์สเรียน
                     </a>
 
+                    <a href="{{ route('admin.reviews.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.reviews.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        รีวิว
+                    </a>
+
                     <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         Dashboard
                     </a>
@@ -356,6 +372,9 @@
                         <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             ตาราง Private ของฉัน
                         </a>
+                        <a href="{{ route('reviews.my-coach') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('reviews.my-coach') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            คะแนนของฉัน
+                        </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
                         <a href="{{ route('admin.private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -369,6 +388,9 @@
                     @endif
                     <a href="{{ route('history') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
+                    </a>
+                    <a href="{{ route('reviews.index') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('reviews.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        รีวิวของฉัน
                     </a>
                     @if($canManageBookings && auth()->user()->role === 'staff')
                         <a href="{{ route('admin.bookings') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">

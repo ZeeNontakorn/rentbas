@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtClosure;
+use App\Models\ReviewScore;
 use App\Models\SiteVisit;
 use App\Models\User;
 use ArielMejiaDev\LarapexCharts\LarapexChart;
@@ -132,6 +133,16 @@ class DashboardController extends Controller
         $prevCancelRate = $prevMonthTotal > 0 ? $prevMonthCancelled / $prevMonthTotal * 100 : 0;
         $cancellationTrend = $this->pctChange($cancellationRate, $prevCancelRate);
 
+        // ---------------------------------------------------------------
+        // KPI 7 — Average rating (requirement ข้อ 1.4)
+        // ---------------------------------------------------------------
+        $ratingByCategory = ReviewController::averagesByCategory();
+        $overallRating = ReviewController::overallAverage();
+
+        $thisMonthRating = (float) ReviewScore::whereBetween('created_at', [$monthStart, $monthEnd])->avg('score');
+        $prevMonthRating = (float) ReviewScore::whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])->avg('score');
+        $ratingTrend = $this->pctChange($thisMonthRating, $prevMonthRating);
+
         $kpis = [
             'today_bookings' => ['value' => $todayBookings, 'trend' => $bookingsTrend, 'spark' => $spark],
             'utilization' => ['value' => $utilizationRate, 'trend' => $utilizationTrend],
@@ -139,6 +150,7 @@ class DashboardController extends Controller
             'active_customers' => ['value' => $activeCustomers, 'trend' => $activeTrend],
             'pending' => ['value' => $pendingBookings],
             'cancellation_rate' => ['value' => $cancellationRate, 'trend' => $cancellationTrend],
+            'avg_rating' => ['value' => $overallRating, 'trend' => $ratingTrend],
         ];
 
         // ---------------------------------------------------------------
@@ -542,7 +554,8 @@ class DashboardController extends Controller
             'courtCharts',
             'occChart',
             'memberChart',
-            'visitChart'
+            'visitChart',
+            'ratingByCategory'
         ));
     }
 
