@@ -108,20 +108,50 @@
     border-radius: 999px; padding: 1px 8px; margin-left: 6px; display: inline-block;
     font-family: 'Sarabun', sans-serif;
 }
+
+.wizard-steps { display: flex; align-items: center; gap: 6px; font-family: 'Kanit', sans-serif; font-size: 12px; color: #9ca3af; flex-wrap: wrap; }
+.wizard-steps .step { display: flex; align-items: center; gap: 6px; }
+.wizard-steps .num {
+    width: 22px; height: 22px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 11px; background: #f3f4f6; color: #9ca3af;
+}
+.wizard-steps .step.active .num, .wizard-steps .step.done .num { background: #87D068; color: #fff; }
+.wizard-steps .step.active { color: #111827; font-weight: 700; }
+.wizard-steps .sep { color: #d1d5db; }
 </style>
 
 <div class="bk-main max-w-[1200px] mx-auto px-4 py-8" data-aos="fade-up">
+
+    @if($onlySectionId)
+        {{-- มาจาก flow ใหม่ (เลือกวัน → เวลา → สนาม → ครึ่งสนาม) --}}
+        <div class="wizard-steps mb-6">
+            <div class="step done"><span class="num">✓</span><span>เลือกวัน &amp; เวลาที่ต้องการ</span></div>
+            <span class="sep">›</span>
+            <div class="step done"><span class="num">✓</span><span>เลือกสนาม</span></div>
+            <span class="sep">›</span>
+            <div class="step done"><span class="num">✓</span><span>เลือกครึ่งสนาม</span></div>
+            <span class="sep">›</span>
+            <div class="step active"><span class="num">4</span><span>เลือกเวลา</span></div>
+            <span class="sep">›</span>
+            <div class="step"><span class="num">5</span><span>ชำระเงิน</span></div>
+        </div>
+    @endif
 
     {{-- Header --}}
     <div class="mb-6 flex items-baseline justify-between flex-wrap gap-4" data-aos="fade-right">
         <div class="flex items-baseline gap-4">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Court Booking</h1>
-            <span class="text-gray-600 text-[15px]">จองสนามแบบปฏิทิน — ลากเลือกช่วงเวลาได้เลย</span>
+            @if($requestedDuration)
+                <span class="text-gray-600 text-[15px]">แตะช่วงเวลาที่ต้องการ — ระบบจะเลือกให้ยาว {{ $requestedDuration }} นาทีให้อัตโนมัติ</span>
+            @else
+                <span class="text-gray-600 text-[15px]">จองสนามแบบปฏิทิน — ลากเลือกช่วงเวลาได้เลย</span>
+            @endif
         </div>
-        <div class="view-switch">
-            <a href="{{ route('booking.index', ['court_id' => $selectedCourt?->id, 'date' => $date]) }}">ตาราง (Grid)</a>
-            <a href="{{ route('booking.calendar', ['court_id' => $selectedCourt?->id, 'date' => $date]) }}" class="active">ปฏิทิน (Calendar)</a>
-        </div>
+        @if($onlySectionId)
+            <a href="{{ route('booking.sections', ['court_id' => $selectedCourt?->id, 'date' => $date, 'duration_minutes' => $requestedDuration]) }}" class="text-[13px] text-gray-500 hover:text-gray-800">← เลือกครึ่งสนามอื่น</a>
+        @else
+            <a href="{{ route('booking.index') }}" class="text-[13px] text-gray-500 hover:text-gray-800">← เริ่มจองใหม่</a>
+        @endif
     </div>
 
     @if ($errors->any())
@@ -137,28 +167,38 @@
         {{-- LEFT COLUMN --}}
         <div class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
 
-            {{-- BOX 1: เลือกสนาม --}}
-            <div class="relative z-50 border border-gray-300 rounded-lg p-5 flex items-center justify-between">
-                <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
-                <div class="relative w-[120px]">
-                    <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between cursor-pointer bg-white text-[13px]"
-                         onclick="document.getElementById('courtList').classList.toggle('hidden')">
-                        <span class="truncate">{{ $selectedCourt->name ?? 'เลือก' }}</span>
-                        <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </div>
-                    <div id="courtList" class="hidden absolute top-full mt-1 left-0 w-full max-h-[380px] overflow-y-auto overflow-x-hidden bg-white border border-gray-200 rounded-md shadow-xl z-50 flex flex-col">
-                        @foreach($courts as $court)
-                            <a href="{{ route('booking.calendar', ['court_id' => $court->id, 'date' => $date]) }}"
-                               class="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0 truncate {{ $selectedCourt?->id == $court->id ? 'font-bold bg-gray-50 text-[#87D068]' : '' }}">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 {{ ($court->court_status ?? 'open') === 'open' ? 'bg-emerald-500' : 'bg-red-500' }}"></span>
-                                <span class="truncate">{{ $court->name }}</span>
-                            </a>
-                        @endforeach
+            {{-- BOX 1: สนาม/ครึ่งสนามที่เลือกไว้ --}}
+            @if($onlySectionId)
+                <div class="border border-gray-300 rounded-lg p-5">
+                    <span class="font-bold text-[15px] text-gray-900 block mb-1">1. สนามที่เลือก</span>
+                    <p class="text-[14px] text-gray-800 font-semibold mt-2">{{ $selectedCourt->name }}</p>
+                    <p class="text-[13px] text-gray-500">
+                        {{ collect($matrix['sections'])->firstWhere('id', (int) $onlySectionId)['name'] ?? '' }}
+                    </p>
+                </div>
+            @else
+                <div class="relative z-50 border border-gray-300 rounded-lg p-5 flex items-center justify-between">
+                    <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
+                    <div class="relative w-[120px]">
+                        <div class="border border-gray-400 rounded px-3 py-1 flex items-center justify-between cursor-pointer bg-white text-[13px]"
+                             onclick="document.getElementById('courtList').classList.toggle('hidden')">
+                            <span class="truncate">{{ $selectedCourt->name ?? 'เลือก' }}</span>
+                            <svg class="w-3.5 h-3.5 text-gray-500 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                        <div id="courtList" class="hidden absolute top-full mt-1 left-0 w-full max-h-[380px] overflow-y-auto overflow-x-hidden bg-white border border-gray-200 rounded-md shadow-xl z-50 flex flex-col">
+                            @foreach($courts as $court)
+                                <a href="{{ route('booking.calendar', ['court_id' => $court->id, 'date' => $date]) }}"
+                                   class="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0 truncate {{ $selectedCourt?->id == $court->id ? 'font-bold bg-gray-50 text-[#87D068]' : '' }}">
+                                    <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 {{ ($court->court_status ?? 'open') === 'open' ? 'bg-emerald-500' : 'bg-red-500' }}"></span>
+                                    <span class="truncate">{{ $court->name }}</span>
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endif
 
             {{-- BOX 2: เลือกวันที่ --}}
             @php
@@ -173,6 +213,10 @@
                     <span class="absolute -top-2.5 left-2 bg-white px-1 text-[10px] font-bold text-purple-600 tracking-wider">Date</span>
                     <form id="dateForm" method="GET" action="{{ route('booking.calendar') }}">
                         <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
+                        @if($onlySectionId)
+                            <input type="hidden" name="section_id" value="{{ $onlySectionId }}">
+                            <input type="hidden" name="duration_minutes" value="{{ $requestedDuration }}">
+                        @endif
                         <input type="date" name="date" id="dateInput" value="{{ $date }}"
                                min="{{ now()->toDateString() }}" max="{{ now()->addDays(3)->toDateString() }}"
                                class="w-full text-sm text-gray-700 p-2 outline-none bg-transparent">
@@ -213,17 +257,22 @@
                 @else
                     <p class="text-[12px] text-gray-500 mb-3">ลากขึ้น/ลงในแต่ละคอลัมน์เพื่อเลือกช่วงเวลา หรือแตะครั้งเดียวเพื่อเลือกช่วงขั้นต่ำ {{ $matrix['minBookingMinutes'] }} นาที (ปัดตามช่วง {{ $matrix['intervalMinutes'] }} นาที)</p>
 
+                    @php
+                        $displaySections = $onlySectionId
+                            ? collect($matrix['sections'])->filter(fn($s) => (string) $s['id'] === (string) $onlySectionId)->values()
+                            : collect($matrix['sections']);
+                    @endphp
                     <div class="cal-shell">
                         <div class="cal-head">
                             <div class="cal-head-spacer"></div>
-                            @foreach($matrix['sections'] as $sec)
+                            @foreach($displaySections as $sec)
                                 <div class="cal-head-lane">{{ $sec['name'] }}</div>
                             @endforeach
                         </div>
                         <div class="cal-body" id="calBody">
                             <div class="cal-axis" id="calAxis"></div>
                             <div class="cal-lanes" id="calLanes">
-                                @foreach($matrix['sections'] as $sec)
+                                @foreach($displaySections as $sec)
                                     <div class="cal-lane" data-section-id="{{ $sec['id'] }}" data-section-name="{{ $sec['name'] }}" id="lane-{{ $sec['id'] }}"></div>
                                 @endforeach
                             </div>
@@ -317,7 +366,10 @@ const PX_PER_MIN = 1; // 60px ต่อชั่วโมง
 const OPEN = timeToMin('{{ $matrix['openTime'] }}');
 const CLOSE = timeToMin('{{ $matrix['closeTime'] }}');
 const INTERVAL = {{ $matrix['intervalMinutes'] }};
-const MIN_MINUTES = {{ $matrix['minBookingMinutes'] }};
+// ระยะเวลาที่ตั้งใจไว้จาก Step 1 ของ flow ใหม่ (ถ้ามี) ใช้แทนระยะเวลาขั้นต่ำของสนามตอนแตะ/ลากเลือก
+const REQUESTED_DURATION = {{ $requestedDuration ?? 'null' }};
+const LOCK_DURATION = {{ $lockDuration ? 'true' : 'false' }};
+const MIN_MINUTES = REQUESTED_DURATION || {{ $matrix['minBookingMinutes'] }};
 const ROWS = @json($mappedRows);
 const TODAY_STR = '{{ now()->toDateString() }}';
 const PAGE_DATE = '{{ $date }}';
@@ -497,8 +549,13 @@ function setupDrag(lane, sectionId) {
         let start = parseInt(ghost.dataset.start, 10);
         let end = parseInt(ghost.dataset.end, 10);
 
-        // แตะครั้งเดียว (ไม่ลาก) → ใช้ระยะเวลาขั้นต่ำของสนามแทน 1 ช่วง interval เดียว
-        if (!moved && (end - start) < MIN_MINUTES) {
+        if (LOCK_DURATION) {
+            // มาจาก flow ใหม่ (เลือกจำนวนนาทีไว้ตั้งแต่ Step 1) — ทุกการแตะ/ลาก ให้ได้ช่วงเวลา
+            // ยาวเท่ากับที่ตั้งใจไว้พอดีเสมอ ไม่ว่าจะลากสั้น/ยาวแค่ไหนก็ตาม
+            end = Math.min(anchorMin + MIN_MINUTES, runBounds.hi);
+            start = Math.max(end - MIN_MINUTES, runBounds.lo);
+        } else if (!moved && (end - start) < MIN_MINUTES) {
+            // แตะครั้งเดียว (ไม่ลาก) → ใช้ระยะเวลาขั้นต่ำของสนามแทน 1 ช่วง interval เดียว
             end = Math.min(start + MIN_MINUTES, runBounds.hi);
             start = Math.max(end - MIN_MINUTES, runBounds.lo);
         }
@@ -632,6 +689,11 @@ function mergeHalfCourtPairs() {
 }
 
 function addSelection(sectionId, sectionName, start, end, lane) {
+    if (selections.length > 0) {
+        selections.forEach(s => s.blockEl?.remove());
+        selections = [];
+    }
+
     mergeSameSectionAndAdd(sectionId, sectionName, start, end, lane);
     mergeHalfCourtPairs();
     updateConfirmBox();

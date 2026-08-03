@@ -18,14 +18,16 @@ use Illuminate\Support\Facades\Mail;
 
 class BookingController extends Controller
 {
+    /** ระยะเวลาต่อ 1 การจอง: ขั้นต่ำ/ขั้นสูง/สเต็ป (นาที) — ใช้ในหน้า Step 1 (เลือกวัน + จำนวนชั่วโมง) */
+    public const MIN_DURATION_MINUTES = 30;
+    public const MAX_DURATION_MINUTES = 300;
+    public const DURATION_STEP_MINUTES = 30;
+
     /**
-     * Landing page — เลือกสนาม (สนามเดียว) และเวลา (เลือกได้หลายช่วงเวลาพร้อมกัน)
+     * ปรับค่าวันที่จาก query string ให้อยู่ในช่วงที่จองได้ (วันนี้ .. วันนี้+ADVANCE_BOOKING_DAYS)
      */
-    public function index(Request $request)
+    protected function resolveDate(Request $request): string
     {
-        $courts = Court::all()->sortBy(function ($court) {
-            return $court->name;
-        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
         $dateParam = $request->query('date', now()->toDateString());
 
         try {
@@ -34,34 +36,142 @@ class BookingController extends Controller
             $minDate = now()->startOfDay();
 
             if ($parsedDate->startOfDay()->gt($maxDate->startOfDay())) {
-                $date = $maxDate->toDateString();
+                return $maxDate->toDateString();
             } elseif ($parsedDate->startOfDay()->lt($minDate)) {
-                $date = now()->toDateString();
-            } else {
-                $date = $parsedDate->toDateString();
+                return now()->toDateString();
             }
+            return $parsedDate->toDateString();
         } catch (\Exception $e) {
-            $date = now()->toDateString();
+            return now()->toDateString();
         }
+    }
 
-        $courtId = $request->query('court_id', $courts->first()?->id);
-        $selectedCourt = $courts->firstWhere('id', $courtId);
+    /**
+     * ปรับค่าจำนวนนาทีจาก query string ให้อยู่ในช่วง 15–300 นาที และเป็นทวีคูณของ 15
+     */
+    protected function resolveDuration(Request $request): int
+    {
+        $raw = (int) $request->query('duration_minutes', 60);
+        $step = self::DURATION_STEP_MINUTES;
 
-        $matrix = $selectedCourt ? $this->buildAvailabilityMatrix($selectedCourt, $date) : null;
-        // เก็บ $slots (แบบเดิม เต็มสนาม/รายชั่วโมง) ไว้เพื่อ backward-compat กับโค้ด/วิวอื่นที่อาจยังอ้างอิงอยู่
-        $slots = $matrix ? $matrix['legacySlots'] : [];
+        $rounded = (int) (round($raw / $step) * $step);
+        return max(self::MIN_DURATION_MINUTES, min(self::MAX_DURATION_MINUTES, $rounded));
+    }
 
-        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ใช้ร่วมกับหน้า calendar (JS ฝั่ง client กรองเองว่าอันไหน "ใช้ได้"
-        // กับ ประเภทสนาม/วัน/ช่วงเวลาที่เลือกจริง ไม่ใช่แค่ duration_hours เหมือนเดิม)
-        $promotionPackages = PromotionPackage::where('is_active', true)
-            ->orderBy('category')
-            ->orderBy('duration_hours')
-            ->get();
+    /**
+     * Step 1 — เลือกวันที่ + กรอกจำนวนเวลาที่ต้องการเล่น (เริ่ม 15 นาที, +/- 15 นาที, สูงสุด 300 นาที)
+     * ผลลัพธ์จะพาไปหน้า "เลือกสนาม" (booking.courts) ที่ sort สนามตามช่วงเวลาว่างที่เหมาะสมให้อัตโนมัติ
+     */
+    public function index(Request $request)
+    {
+        $date = $this->resolveDate($request);
+        $duration = $this->resolveDuration($request);
 
-        // วันนี้เป็นวันประเภทไหน (holiday/weekend/weekday) — ใช้เทียบกับ available_days ของแต่ละแพ็กเกจ
+        return view('booking.index', [
+            'date' => $date,
+            'duration' => $duration,
+            'minDuration' => self::MIN_DURATION_MINUTES,
+            'maxDuration' => self::MAX_DURATION_MINUTES,
+            'stepDuration' => self::DURATION_STEP_MINUTES,
+            'maxAdvanceDays' => CheckoutController::ADVANCE_BOOKING_DAYS,
+        ]);
+    }
+
+    /**
+     * Step 3/4 — รายชื่อสนาม เรียงตามความเหมาะสม (มีช่วงเวลาติดกันยาวพอสำหรับ duration ที่เลือก
+     * และเริ่มได้เร็วที่สุด) ให้ผู้ใช้เลือกสนามที่ต้องการ
+     */
+    public function courts(Request $request)
+    {
+        $date = $this->resolveDate($request);
+        $duration = $this->resolveDuration($request);
+
+        $courts = Court::where('court_status', '!=', 'closed')
+            ->get()
+            ->sortBy(fn ($court) => $court->name, SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
         $dayType = app(PricingService::class)->classifyDayType($date);
 
-        return view('booking.index', compact('courts', 'date', 'selectedCourt', 'slots', 'matrix', 'promotionPackages', 'dayType'));
+        $courtOptions = $courts->map(function (Court $court) use ($date, $duration) {
+            $matrix = $this->buildAvailabilityMatrix($court, $date);
+            $bestFit = null;
+            $totalStarts = 0;
+
+            foreach ($matrix['sections'] as $sec) {
+                $fit = $this->sectionFit($matrix, $sec['id'], $duration);
+                $totalStarts += count($fit['starts']);
+                if (! $fit['possible']) continue;
+
+                if (! $bestFit || $fit['earliest'] < $bestFit['earliest']) {
+                    $bestFit = [
+                        'earliest' => $fit['earliest'],
+                        'count' => count($fit['starts']),
+                        'court_type' => $sec['code'] === 'full' ? 'full' : 'half',
+                    ];
+                }
+            }
+
+            return [
+                'court' => $court,
+                'available' => (bool) $bestFit,
+                'earliest' => $bestFit['earliest'] ?? null,
+                'slots_count' => $totalStarts,
+            ];
+        });
+
+        // สนามที่มีช่วงว่างเหมาะสม ขึ้นก่อนเสมอ เรียงตามเวลาเริ่มเร็วสุด แล้วตามด้วยจำนวนตัวเลือกที่มาก
+        // ที่สุด (ยืดหยุ่นกว่า) — สนามที่ไม่มีช่วงว่างพอสำหรับ duration นี้ไปอยู่ท้ายสุด
+        $sorted = $courtOptions->sort(function ($a, $b) {
+            if ($a['available'] !== $b['available']) {
+                return $a['available'] ? -1 : 1;
+            }
+            if (! $a['available']) {
+                return strnatcasecmp($a['court']->name, $b['court']->name);
+            }
+            $cmp = strcmp($a['earliest'], $b['earliest']);
+            if ($cmp !== 0) return $cmp;
+            return $b['slots_count'] <=> $a['slots_count'];
+        })->values();
+
+        return view('booking.courts', [
+            'date' => $date,
+            'duration' => $duration,
+            'courtOptions' => $sorted,
+            'dayType' => $dayType,
+        ]);
+    }
+
+    /**
+     * Step 5 — เลือกครึ่งสนาม (หรือเต็มสนาม) ของสนามที่เลือกไว้ในขั้นก่อนหน้า
+     */
+    public function sections(Request $request)
+    {
+        $date = $this->resolveDate($request);
+        $duration = $this->resolveDuration($request);
+
+        $court = Court::findOrFail($request->query('court_id'));
+        $matrix = $this->buildAvailabilityMatrix($court, $date);
+
+        $sectionOptions = collect($matrix['sections'])->map(function ($sec) use ($matrix, $duration) {
+            $fit = $this->sectionFit($matrix, $sec['id'], $duration);
+            return [
+                'id' => $sec['id'],
+                'code' => $sec['code'],
+                'name' => $sec['name'],
+                'court_type' => $sec['code'] === 'full' ? 'full' : 'half',
+                'available' => $fit['possible'],
+                'earliest' => $fit['earliest'],
+                'slots_count' => count($fit['starts']),
+            ];
+        })->values();
+
+        return view('booking.sections', [
+            'date' => $date,
+            'duration' => $duration,
+            'court' => $court,
+            'sectionOptions' => $sectionOptions,
+        ]);
     }
 
     /**
@@ -72,34 +182,25 @@ class BookingController extends Controller
         $courts = Court::all()->sortBy(function ($court) {
             return $court->name;
         }, SORT_NATURAL | SORT_FLAG_CASE)->values();
-        $dateParam = $request->query('date', now()->toDateString());
-
-        try {
-            $parsedDate = Carbon::parse($dateParam);
-            $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS);
-            $minDate = now()->startOfDay();
-
-            if ($parsedDate->startOfDay()->gt($maxDate->startOfDay())) {
-                $date = $maxDate->toDateString();
-            } elseif ($parsedDate->startOfDay()->lt($minDate)) {
-                $date = now()->toDateString();
-            } else {
-                $date = $parsedDate->toDateString();
-            }
-        } catch (\Exception $e) {
-            $date = now()->toDateString();
-        }
+        $date = $this->resolveDate($request);
 
         $courtId = $request->query('court_id', $courts->first()?->id);
         $selectedCourt = $courts->firstWhere('id', $courtId);
 
         $matrix = $selectedCourt ? $this->buildAvailabilityMatrix($selectedCourt, $date) : null;
 
-        $mappedRows = collect($matrix['rows'])->map(fn($r) => [
+        // ระยะเวลาที่ผู้ใช้เลือกไว้ตั้งแต่ Step 1 (ถ้ามี) — ใช้แทน min_booking_minutes ของสนาม
+        // ตอนแตะเลือกครั้งเดียว (single tap) ในหน้าปฏิทิน ให้ได้ระยะเวลาตรงกับที่ตั้งใจไว้พอดี
+        $requestedDuration = $request->has('duration_minutes') ? $this->resolveDuration($request) : null;
+        $onlySectionId = $request->query('section_id');
+        // ล็อกให้เลือกได้เฉพาะช่วงที่ยาวเท่ากับ duration ที่ตั้งใจไว้ (มาจาก flow ใหม่ Step 1-5) หรือไม่
+        $lockDuration = $request->boolean('lock_duration', $onlySectionId !== null);
+
+        $mappedRows = $matrix ? collect($matrix['rows'])->map(fn($r) => [
         'start' => substr($r['start'], 0, 5),
         'end' => substr($r['end'], 0, 5),
         'sections' => collect($r['sections'])->map(fn($s) => $s['status'])->all(),
-        ])->all();
+        ])->all() : [];
 
         // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน — ส่งให้หน้าจอเลือกช่วงเวลาไว้เสนอเป็นทางเลือกราคา
         // (JS ฝั่ง client จะกรองเองว่าอันไหน "ใช้ได้" กับ ประเภทสนาม/วัน/ช่วงเวลาที่เลือกจริง)
@@ -111,7 +212,48 @@ class BookingController extends Controller
         // วันนี้เป็นวันประเภทไหน (holiday/weekend/weekday) — ใช้เทียบกับ available_days ของแต่ละแพ็กเกจ
         $dayType = app(PricingService::class)->classifyDayType($date);
 
-        return view('booking.calendar', compact('courts', 'date', 'selectedCourt', 'matrix', 'mappedRows', 'promotionPackages', 'dayType'));
+        return view('booking.calendar', compact(
+            'courts', 'date', 'selectedCourt', 'matrix', 'mappedRows', 'promotionPackages', 'dayType',
+            'requestedDuration', 'onlySectionId', 'lockDuration'
+        ));
+    }
+
+    /**
+     * หาช่วงเวลาที่สามารถ "เริ่มจอง" ได้ ในหนึ่ง section โดยต้องมีช่วงว่างติดกัน (ทุกแถวเป็น
+     * available) ยาวอย่างน้อยเท่ากับ duration ที่ต้องการ (ปัดขึ้นเป็นทวีคูณของ interval)
+     *
+     * คืนค่า: possible (bool), starts (array ของเวลาเริ่ม HH:MM ที่เลือกได้ทั้งหมด), earliest (เวลาเริ่มเร็วสุด)
+     */
+    protected function sectionFit(array $matrix, int|string $sectionId, int $requestedDuration): array
+    {
+        $interval = $matrix['intervalMinutes'];
+        $rows = $matrix['rows'];
+        $n = count($rows);
+
+        $effectiveMinutes = max($requestedDuration, 0);
+        $needRows = max(1, (int) ceil($effectiveMinutes / $interval));
+
+        $avail = [];
+        foreach ($rows as $row) {
+            $avail[] = ($row['sections'][$sectionId]['status'] ?? 'closed') === 'available';
+        }
+
+        $starts = [];
+        for ($i = 0; $i <= $n - $needRows; $i++) {
+            $ok = true;
+            for ($k = 0; $k < $needRows; $k++) {
+                if (! $avail[$i + $k]) { $ok = false; break; }
+            }
+            if ($ok) {
+                $starts[] = substr($rows[$i]['start'], 0, 5);
+            }
+        }
+
+        return [
+            'possible' => count($starts) > 0,
+            'starts' => $starts,
+            'earliest' => $starts[0] ?? null,
+        ];
     }
 
     /**
@@ -200,7 +342,7 @@ class BookingController extends Controller
                 $status = 'available';
                 if ($isClosed) $status = 'closed';
                 elseif ($booking) $status = $booking->status; // pending | approved (ของ section ตัวเองหรือ section ที่บล็อกกัน)
-                elseif (! $pricedSlotCache[$priceCacheKey]) $status = 'unpriced';
+                elseif (! $pricedSlotCache[$priceCacheKey]) $status = 'closed'; // ช่วงที่ยังไม่มีการตั้งราคา -> แสดงเป็นปิดบริการ
                 elseif ($isPast) $status = 'past';
 
                 $rowSections[$section->id] = [
