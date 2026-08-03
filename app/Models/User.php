@@ -9,16 +9,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-
-
-
 // #[Fillable(['name', 'email', 'phone', 'password', 'role', 'is_verified'])]
 // #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
     protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified', 'membership_type'];
+
     protected $hidden = ['password', 'remember_token'];
 
     // ประเภทสมาชิกสำหรับ role 'user' — ลูกค้าทั่วไป / ผู้สนับสนุน / นักเรียนบาส
@@ -73,6 +72,11 @@ class User extends Authenticatable
         return $this->hasMany(CreditTransaction::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function isAdmin(): bool
     {
         return in_array($this->role, ['admin', 'superadmin'], true);
@@ -120,6 +124,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
     }
+
     /**
      * ยอดเครดิตคงเหลือแบบบาท (float) สำหรับแสดงผล
      */
