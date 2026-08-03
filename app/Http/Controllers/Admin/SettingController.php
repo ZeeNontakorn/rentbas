@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Court;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,8 +16,9 @@ class SettingController extends Controller
      */
     public function edit()
     {
-        $courts = \App\Models\Court::all();
-
+        $courts = Court::all()->sortBy(function ($court) {
+            return $court->name;
+        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
         $courtKeys = $courts->map(fn($c) => 'court_img_' . $c->id)->all();
         $settings = Setting::values(array_merge(array_keys(Setting::DEFAULTS), $courtKeys));
 
