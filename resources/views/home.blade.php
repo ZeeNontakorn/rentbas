@@ -645,6 +645,91 @@ html { scroll-behavior: smooth; }
 .sch-empty-icon { font-size: 32px; margin-bottom: 8px; opacity: .5; }
 
 /* ─── COMMUNITY ─── */
+.facilities-section {
+    background: var(--cream);
+    color: var(--ink);
+    overflow: hidden;
+    padding: 72px max(40px, calc((100% - var(--max-w)) / 2)) 0;
+}
+.facilities-head, .reviews-head {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+}
+.facilities-label, .reviews-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.facilities-title { font-size: clamp(30px, 4vw, 44px); font-weight: 800; line-height: 1.15; color: var(--ink); }
+.facilities-sub { margin-top: 9px; max-width: 650px; color: #6b7280; font-size: 13px; line-height: 1.7; }
+.slider-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.slider-btn {
+    width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(13,15,30,.16); background: transparent;
+    color: var(--ink); cursor: pointer; font-size: 18px; transition: .2s; display: flex; align-items: center; justify-content: center;
+}
+.slider-btn:hover { background: var(--ore); border-color: var(--ore); color: #fff; }
+.facility-track, .review-track {
+    display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    scrollbar-width: none; padding: 26px 0 16px;
+}
+.facility-track::-webkit-scrollbar, .review-track::-webkit-scrollbar { display: none; }
+.facility-card {
+    flex: 0 0 min(72vw, 420px); height: 380px; border-radius: 16px; overflow: hidden; position: relative;
+    scroll-snap-align: start; background: var(--navy-d); color: #fff;
+}
+.facility-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s; }
+.facility-card:hover img { transform: scale(1.04); }
+.facility-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(13,15,30,.95), rgba(13,15,30,.06) 72%); }
+.facility-index {
+    position: absolute; top: 16px; left: 16px; z-index: 2; padding: 6px 10px; border: 1px solid rgba(255,255,255,.22);
+    border-radius: 20px; background: rgba(13,15,30,.5); font-size: 10px; letter-spacing: .1em;
+}
+.facility-card-body { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 22px; }
+.facility-card-title { font-size: 24px; font-weight: 700; color: #fff; }
+.facility-card-desc { margin-top: 5px; color: rgba(255,255,255,.62); font-size: 12px; line-height: 1.6; }
+.facility-score { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+.facility-stars, .review-stars { color: #fbbf24; letter-spacing: 1px; }
+.facility-score strong { font-size: 17px; }
+.facility-score small { color: rgba(255,255,255,.5); }
+.reviews-wrap {
+    position: relative; margin: 48px 0 72px; padding: 8px 0 0; color: var(--ink);
+    background: transparent;
+}
+.reviews-wrap::before { display: none; }
+.reviews-head { align-items: center; }
+.reviews-heading-row { display: flex; align-items: center; gap: 20px; }
+.reviews-title { font-size: clamp(26px, 3vw, 38px); font-weight: 800; line-height: 1.2; color: var(--ink); }
+.reviews-summary { color: #7b746e; font-size: 12px; margin-top: 7px; }
+.reviews-score {
+    display: flex; align-items: center; gap: 12px; min-width: 130px; padding: 11px 14px; border: 1px solid #f1dfd1;
+    border-radius: 14px; background: rgba(255,247,240,.9);
+}
+.reviews-score strong { color: var(--ink); font-size: 25px; line-height: 1; }
+.reviews-score-stars { color: #fbbf24; font-size: 12px; letter-spacing: 1px; }
+.reviews-score small { display: block; margin-top: 2px; color: #92877d; font-size: 9px; }
+.write-review-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 19px; border-radius: 12px;
+    background: var(--ore); box-shadow: 0 10px 25px rgba(232,108,42,.25); color: #fff !important; font-size: 13px; font-weight: 700; transition: .2s;
+}
+.write-review-btn:hover { background: var(--ore-d); transform: translateY(-1px); }
+.review-track { gap: 14px; padding: 28px 2px 2px; }
+.review-card {
+    position: relative; flex: 0 0 min(82vw, 460px); padding: 22px; border: 0; border-radius: 18px;
+    background: #fff; box-shadow: 0 14px 38px rgba(67,45,28,.11); scroll-snap-align: start;
+}
+.review-user-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.review-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.review-avatar {
+    width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ff8a4c, var(--ore)); color: #fff; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.review-name { color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.review-member { color: #18976b; font-size: 10px; margin-top: 2px; }
+.review-comment { margin-top: 20px; min-height: 54px; color: #5e5a56; font-size: 13.5px; line-height: 1.8; }
+.review-ratings { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.review-rating-chip { padding: 5px 9px; border: 1px solid #f3ded0; border-radius: 20px; background: #fff5ee; color: #c85e25; font-size: 10px; }
+.review-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 12px; }
+.review-images img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 7px; }
+.review-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; color: #aaa19a; font-size: 10px; }
+.reviews-empty { width: 100%; padding: 34px; border: 1px dashed #e5d8ce; border-radius: 14px; color: #9a918a; text-align: center; font-size: 13px; }
+
 .community-section {
     background: var(--navy-d);
     padding-top: 64px;
@@ -776,6 +861,13 @@ html { scroll-behavior: smooth; }
     .courts-grid { grid-template-columns: repeat(2,1fr); }
     .courses-section { padding-left: 20px !important; padding-right: 20px !important; }
     .courses-grid { grid-template-columns: repeat(2,1fr); }
+    .facilities-section { padding-left: 20px; padding-right: 20px; }
+    .facilities-head, .reviews-head { align-items: flex-start; flex-direction: column; }
+    .facility-card { flex-basis: 84vw; height: 350px; }
+    .reviews-wrap { margin: 36px 0 52px; padding: 4px 0 0; }
+    .reviews-heading-row { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .reviews-score { min-width: 0; }
+    .review-card { flex-basis: 88vw; }
 }
 @media (max-width: 480px) {
     .courts-grid { grid-template-columns: 1fr; }
@@ -1174,6 +1266,9 @@ html { scroll-behavior: smooth; }
     </a>
 </section>
 
+{{-- ═══ FACILITIES & MEMBER REVIEWS ═══ --}}
+@include('partials.home-facilities')
+
 {{-- ═══ FOOTER ═══ --}}
 <footer class="footer" data-aos="fade-in">
     <div class="footer-grid">
@@ -1272,6 +1367,15 @@ function initHeroSlideshow() {
         }, fadeMs);
     }, rotationMs);
 }
+
+document.querySelectorAll('[data-slider]').forEach(button => {
+    button.addEventListener('click', () => {
+        const track = document.getElementById(button.dataset.slider);
+        if (!track || !track.firstElementChild) return;
+        const distance = track.firstElementChild.getBoundingClientRect().width + 16;
+        track.scrollBy({ left: distance * Number(button.dataset.direction), behavior: 'smooth' });
+    });
+});
 
 // ─── SCROLL TOP ───
 window.addEventListener('scroll', () => {

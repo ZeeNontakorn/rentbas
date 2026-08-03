@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'แก้ไขเนื้อหาและโปรโมชั่น')
+@section('title', 'จัดการเว็บไซต์')
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen min-w-screen py-8">
@@ -9,8 +9,8 @@
         {{-- Header --}}
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">แก้ไขเนื้อหาเว็บไซต์</h1>
-                <p class="text-sm text-gray-500 mt-1">จัดการข้อความโปรโมชั่น รูปภาพ และส่วน About Court</p>
+                <h1 class="text-2xl font-bold text-gray-900">จัดการเว็บไซต์</h1>
+                <p class="text-sm text-gray-500 mt-1">จัดการเนื้อหา รูปภาพ สิ่งอำนวยความสะดวก และรีวิวที่แสดงบนหน้า Home</p>
             </div>
         </div>
 
@@ -280,6 +280,176 @@
                     <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
                 </div>
             </form>
+
+            {{-- ─── Section 5: Facilities ─── --}}
+            <section id="facility-management" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 scroll-mt-24">
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">5. สิ่งอำนวยความสะดวก</h3>
+                    <p class="text-xs text-gray-400">เพิ่มการ์ดใหม่พร้อมรูปภาพ หรือเปิด–ปิดการแสดงผลบนหน้า Home</p>
+                </div>
+
+                <form action="{{ route('admin.website.facilities.store') }}" method="POST" enctype="multipart/form-data"
+                      class="rounded-xl border-2 border-dashed border-orange-200 bg-orange-50/50 p-5">
+                    @csrf
+                    <p class="mb-4 font-semibold text-gray-800">เพิ่มการ์ดใหม่</p>
+                    @if($errors->facilityCreate->any())
+                        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">กรุณาตรวจสอบข้อมูลที่กรอกให้ถูกต้อง</div>
+                    @endif
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">ชื่อหัวข้อ</label>
+                            <input type="text" name="name" value="{{ old('name') }}" required maxlength="100" placeholder="เช่น ที่จอดรถ"
+                                   class="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500">
+                            @if($errors->facilityCreate->has('name'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('name') }}</p>@endif
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">ลำดับ</label>
+                            <input type="number" name="sort_order" min="0" max="999" value="{{ old('sort_order', ($facilities->max('sort_order') ?? 0) + 1) }}"
+                                   class="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500">
+                            @if($errors->facilityCreate->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('sort_order') }}</p>@endif
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">รายละเอียด</label>
+                            <textarea name="description" rows="2" maxlength="500" placeholder="รายละเอียดสั้นๆ ที่แสดงบนการ์ด"
+                                      class="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500">{{ old('description') }}</textarea>
+                            @if($errors->facilityCreate->has('description'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('description') }}</p>@endif
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">รูปภาพ</label>
+                            <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
+                                   class="block w-full text-xs text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-100 file:px-4 file:py-2 file:font-semibold file:text-orange-700 hover:file:bg-orange-200">
+                            <p class="mt-1 text-[11px] text-gray-400">JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</p>
+                            @if($errors->facilityCreate->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('image') }}</p>@endif
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button type="submit" class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">เพิ่มการ์ด</button>
+                    </div>
+                </form>
+
+                <div class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+                    @forelse($facilities as $facility)
+                        <form action="{{ route('admin.website.facilities.update', $facility) }}" method="POST" enctype="multipart/form-data"
+                              id="facility-{{ $facility->id }}" class="scroll-mt-24 overflow-hidden rounded-xl border border-gray-200">
+                            @csrf
+                            @method('PUT')
+                            <img src="{{ $facility->image_url }}" alt="{{ $facility->name }}" class="h-40 w-full bg-gray-100 object-cover">
+                            <div class="space-y-3 p-4">
+                                @if($errors->getBag('facilityUpdate'.$facility->id)->any())
+                                    <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">กรุณาตรวจสอบข้อมูลในการ์ดนี้</div>
+                                @endif
+                                <div class="flex items-center justify-between gap-3">
+                                    <input type="text" name="name" value="{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('name') : $facility->name }}" required maxlength="100"
+                                           class="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold outline-none focus:border-orange-500">
+                                    <label class="flex shrink-0 items-center gap-2 text-xs font-medium text-gray-600">
+                                        <input type="checkbox" name="is_active" value="1" @checked($errors->getBag('facilityUpdate'.$facility->id)->any() ? old('is_active') : $facility->is_active) class="rounded border-gray-300 text-orange-500">
+                                        แสดง
+                                    </label>
+                                </div>
+                                @if($errors->getBag('facilityUpdate'.$facility->id)->has('name'))<p class="text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('name') }}</p>@endif
+                                <textarea name="description" rows="2" maxlength="500"
+                                          class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('description') : $facility->description }}</textarea>
+                                @if($errors->getBag('facilityUpdate'.$facility->id)->has('description'))<p class="text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('description') }}</p>@endif
+                                <div class="grid grid-cols-[90px_1fr] gap-3">
+                                    <div>
+                                        <label class="mb-1 block text-xs text-gray-500">ลำดับ</label>
+                                        <input type="number" name="sort_order" value="{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('sort_order') : $facility->sort_order }}" min="0" max="999" required
+                                               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">
+                                        @if($errors->getBag('facilityUpdate'.$facility->id)->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('sort_order') }}</p>@endif
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs text-gray-500">เปลี่ยนรูป</label>
+                                        <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
+                                               class="block w-full text-xs text-gray-500 file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-2">
+                                        @if($errors->getBag('facilityUpdate'.$facility->id)->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('image') }}</p>@endif
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">บันทึกการ์ด</button>
+                            </div>
+                        </form>
+                    @empty
+                        <p class="text-sm text-gray-400">ยังไม่มีสิ่งอำนวยความสะดวก</p>
+                    @endforelse
+                </div>
+            </section>
+
+            {{-- ─── Section 6: Review moderation ─── --}}
+            <section id="review-moderation" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 scroll-mt-24">
+                <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">6. รีวิวจากสมาชิก</h3>
+                        <p class="text-xs text-gray-400">รีวิวใหม่จะรอตรวจสอบ และจะแสดงบนหน้า Home หลัง Admin กดเผยแพร่เท่านั้น</p>
+                    </div>
+                    <div class="flex gap-2 text-xs">
+                        <span class="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700">รอตรวจ {{ $reviews->where('status', 'pending')->count() }}</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    @forelse($reviews as $review)
+                        <article class="rounded-xl border border-gray-200 p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-semibold text-gray-900">{{ $review->user->name }}</p>
+                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold
+                                            {{ $review->status === 'published' ? 'bg-emerald-100 text-emerald-700' : ($review->status === 'hidden' ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-700') }}">
+                                            {{ $review->status === 'published' ? 'เผยแพร่แล้ว' : ($review->status === 'hidden' ? 'ซ่อนอยู่' : 'รอตรวจสอบ') }}
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400">{{ $review->user->email }} · {{ $review->created_at->format('d/m/Y H:i') }}</p>
+                                </div>
+                                <div class="text-lg text-amber-400">{{ str_repeat('★', $review->overall_rating) }}<span class="text-gray-200">{{ str_repeat('★', 5 - $review->overall_rating) }}</span></div>
+                            </div>
+
+                            <p class="mt-3 whitespace-pre-line text-sm leading-6 text-gray-700">{{ $review->comment }}</p>
+
+                            @if($review->ratings->isNotEmpty())
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach($review->ratings as $rating)
+                                        <span class="rounded-full bg-orange-50 px-3 py-1 text-xs text-orange-700">{{ $rating->facility->name }} {{ $rating->rating }}/5</span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($review->images->isNotEmpty())
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach($review->images as $image)
+                                        <a href="{{ $image->image_url }}" target="_blank" rel="noopener">
+                                            <img src="{{ $image->image_url }}" alt="รูปประกอบรีวิว" class="h-20 w-24 rounded-lg border border-gray-200 object-cover">
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="mt-4 flex flex-wrap justify-end gap-2">
+                                @if($review->status !== 'published')
+                                    <form action="{{ route('admin.website.reviews.status', $review) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="published">
+                                        <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700">เผยแพร่</button>
+                                    </form>
+                                @endif
+                                @if($review->status !== 'hidden')
+                                    <form action="{{ route('admin.website.reviews.status', $review) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="hidden">
+                                        <button type="submit" class="rounded-lg bg-gray-700 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800">ซ่อนรีวิว</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </article>
+                    @empty
+                        <div class="rounded-xl bg-gray-50 px-5 py-10 text-center text-sm text-gray-400">ยังไม่มีรีวิวจากสมาชิก</div>
+                    @endforelse
+                </div>
+
+                @if($reviews->hasPages())
+                    <div class="mt-5">{{ $reviews->links() }}</div>
+                @endif
+            </section>
 
         </div>
 
