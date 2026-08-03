@@ -76,6 +76,15 @@ class WebsiteReviewController extends Controller
             ->with('success', 'อัปเดตสิ่งอำนวยความสะดวกเรียบร้อยแล้ว');
     }
 
+    public function destroyFacility(Facility $facility)
+    {
+        $this->deleteUploadedFacilityImage($facility);
+        $facility->delete();
+
+        return redirect()->to(route('admin.edit.text').'#facility-management')
+            ->with('success', 'ลบสิ่งอำนวยความสะดวกเรียบร้อยแล้ว');
+    }
+
     public function updateReviewStatus(Request $request, Review $review)
     {
         $data = $request->validate([
@@ -97,6 +106,27 @@ class WebsiteReviewController extends Controller
             ->with('success', $data['status'] === 'published'
                 ? 'เผยแพร่รีวิวบนหน้าเว็บไซต์แล้ว'
                 : 'ซ่อนรีวิวจากหน้าเว็บไซต์แล้ว');
+    }
+
+    public function destroyReview(Review $review)
+    {
+        $review->loadMissing('images');
+
+        foreach ($review->images as $image) {
+            $path = Setting::normalizeStoragePath($image->image_path);
+            if ($path && Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+
+        Notification::where('title', 'มีรีวิวใหม่รอตรวจสอบ')
+            ->where('message', 'like', "รีวิว #{$review->id} จาก%")
+            ->delete();
+
+        $review->delete();
+
+        return redirect()->to(route('admin.edit.text').'#review-moderation')
+            ->with('success', 'ลบรีวิวเรียบร้อยแล้ว');
     }
 
     private function uniqueSlug(string $name): string

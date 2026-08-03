@@ -288,7 +288,7 @@
                     <p class="text-xs text-gray-400">เพิ่มการ์ดใหม่พร้อมรูปภาพ หรือเปิด–ปิดการแสดงผลบนหน้า Home</p>
                 </div>
 
-                <form action="{{ route('admin.website.facilities.store') }}" method="POST" enctype="multipart/form-data"
+                <form action="{{ route('admin.website.facilities.store') }}" method="POST" enctype="multipart/form-data" novalidate
                       class="rounded-xl border-2 border-dashed border-orange-200 bg-orange-50/50 p-5">
                     @csrf
                     <p class="mb-4 font-semibold text-gray-800">เพิ่มการ์ดใหม่</p>
@@ -299,25 +299,27 @@
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">ชื่อหัวข้อ</label>
                             <input type="text" name="name" value="{{ old('name') }}" required maxlength="100" placeholder="เช่น ที่จอดรถ"
-                                   class="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500">
+                                   class="w-full rounded-lg border-2 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500 {{ $errors->facilityCreate->has('name') ? 'border-red-500 bg-red-50/40' : 'border-gray-200' }}">
                             @if($errors->facilityCreate->has('name'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('name') }}</p>@endif
                         </div>
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">ลำดับ</label>
                             <input type="number" name="sort_order" min="0" max="999" value="{{ old('sort_order', ($facilities->max('sort_order') ?? 0) + 1) }}"
-                                   class="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500">
+                                   class="w-full rounded-lg border-2 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500 {{ $errors->facilityCreate->has('sort_order') ? 'border-red-500 bg-red-50/40' : 'border-gray-200' }}">
                             @if($errors->facilityCreate->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('sort_order') }}</p>@endif
                         </div>
                         <div class="md:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-gray-700">รายละเอียด</label>
                             <textarea name="description" rows="2" maxlength="500" placeholder="รายละเอียดสั้นๆ ที่แสดงบนการ์ด"
-                                      class="w-full rounded-lg border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500">{{ old('description') }}</textarea>
+                                      class="w-full rounded-lg border-2 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500 {{ $errors->facilityCreate->has('description') ? 'border-red-500 bg-red-50/40' : 'border-gray-200' }}">{{ old('description') }}</textarea>
                             @if($errors->facilityCreate->has('description'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('description') }}</p>@endif
                         </div>
                         <div class="md:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-gray-700">รูปภาพ</label>
-                            <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
-                                   class="block w-full text-xs text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-100 file:px-4 file:py-2 file:font-semibold file:text-orange-700 hover:file:bg-orange-200">
+                            <div class="rounded-lg border p-2 {{ $errors->facilityCreate->has('image') ? 'border-red-500 bg-red-50/40' : 'border-transparent' }}">
+                                <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
+                                       class="block w-full text-xs text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-100 file:px-4 file:py-2 file:font-semibold file:text-orange-700 hover:file:bg-orange-200">
+                            </div>
                             <p class="mt-1 text-[11px] text-gray-400">JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</p>
                             @if($errors->facilityCreate->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('image') }}</p>@endif
                         </div>
@@ -329,8 +331,17 @@
 
                 <div class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
                     @forelse($facilities as $facility)
-                        <form action="{{ route('admin.website.facilities.update', $facility) }}" method="POST" enctype="multipart/form-data"
-                              id="facility-{{ $facility->id }}" class="scroll-mt-24 overflow-hidden rounded-xl border border-gray-200">
+                        <article id="facility-{{ $facility->id }}" class="relative scroll-mt-24 overflow-hidden rounded-xl border border-gray-200">
+                            <form action="{{ route('admin.website.facilities.destroy', $facility) }}" method="POST"
+                                  id="delete-facility-{{ $facility->id }}" class="js-confirm-delete hidden"
+                                  data-title="ลบการ์ดนี้?"
+                                  data-text="{{ $facility->name }} จะถูกลบออกจากหน้าเว็บไซต์"
+                                  data-confirm-text="ลบการ์ด">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+
+                            <form action="{{ route('admin.website.facilities.update', $facility) }}" method="POST" enctype="multipart/form-data" novalidate>
                             @csrf
                             @method('PUT')
                             <img src="{{ $facility->image_url }}" alt="{{ $facility->name }}" class="h-40 w-full bg-gray-100 object-cover">
@@ -364,9 +375,19 @@
                                         @if($errors->getBag('facilityUpdate'.$facility->id)->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('image') }}</p>@endif
                                     </div>
                                 </div>
-                                <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">บันทึกการ์ด</button>
+                                <div class="grid grid-cols-[1fr_auto] gap-2">
+                                    <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700">บันทึกการ์ด</button>
+                                    <button type="submit" form="delete-facility-{{ $facility->id }}"
+                                            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        ลบการ์ด
+                                    </button>
+                                </div>
                             </div>
-                        </form>
+                            </form>
+                        </article>
                     @empty
                         <p class="text-sm text-gray-400">ยังไม่มีสิ่งอำนวยความสะดวก</p>
                     @endforelse
@@ -387,7 +408,15 @@
 
                 <div class="space-y-4">
                     @forelse($reviews as $review)
-                        <article class="rounded-xl border border-gray-200 p-4">
+                        <article class="relative rounded-xl border border-gray-200 p-4">
+                            <form action="{{ route('admin.website.reviews.destroy', $review) }}" method="POST"
+                                  id="delete-review-{{ $review->id }}" class="js-confirm-delete hidden"
+                                  data-title="ลบรีวิวนี้?"
+                                  data-text="รีวิวของ {{ $review->user->name }} จะถูกลบถาวร"
+                                  data-confirm-text="ลบรีวิว">
+                                @csrf
+                                @method('DELETE')
+                            </form>
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
@@ -439,6 +468,13 @@
                                         <button type="submit" class="rounded-lg bg-gray-700 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800">ซ่อนรีวิว</button>
                                     </form>
                                 @endif
+                                <button type="submit" form="delete-review-{{ $review->id }}"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    ลบรีวิว
+                                </button>
                             </div>
                         </article>
                     @empty
@@ -458,6 +494,29 @@
 
 @push('scripts')
 <script>
+document.querySelectorAll('.js-confirm-delete').forEach(form => {
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: form.dataset.title || 'ยืนยันการลบ?',
+            text: form.dataset.text || 'การดำเนินการนี้ไม่สามารถย้อนกลับได้',
+            showCancelButton: true,
+            reverseButtons: true,
+            focusCancel: true,
+            confirmButtonText: form.dataset.confirmText || 'ลบ',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+        });
+
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+});
+
 function previewImg(input, targetId = 'img-preview') {
     if (input.files && input.files[0]) {
         const reader = new FileReader();

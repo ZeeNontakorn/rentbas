@@ -184,7 +184,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/edit-text', [SettingController::class, 'update'])->name('edit.text.update');
     Route::post('/website/facilities', [WebsiteReviewController::class, 'storeFacility'])->name('website.facilities.store');
     Route::put('/website/facilities/{facility}', [WebsiteReviewController::class, 'updateFacility'])->name('website.facilities.update');
+    Route::delete('/website/facilities/{facility}', [WebsiteReviewController::class, 'destroyFacility'])->name('website.facilities.destroy');
     Route::patch('/website/reviews/{review}/status', [WebsiteReviewController::class, 'updateReviewStatus'])->name('website.reviews.status');
+    Route::delete('/website/reviews/{review}', [WebsiteReviewController::class, 'destroyReview'])->name('website.reviews.destroy');
     Route::post('/admin/courts/images', [CourtController::class, 'updateImages'])
         ->name('admin.courts.images.update');
 
