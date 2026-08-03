@@ -4,6 +4,7 @@
 
 @section('content')
 @php
+    // ดึงค่าการตั้งค่าเว็บไซต์จากฐานข้อมูล
     $site = \App\Models\Setting::values([
         'hero_img_1',
         'hero_img_2',
@@ -24,6 +25,7 @@
 @endphp
 
 @php
+    // กรองรูปภาพสำหรับทำ Hero Slider
     $heroSlides = array_values(array_filter([
         $site['hero_img_1'] ?? null,
         $site['hero_img_2'] ?? null,
@@ -265,13 +267,11 @@ html { scroll-behavior: smooth; }
 
 /* ─── COURTS SECTION ─── */
 .courts-section {
-    /* ใส่ Overlay สีดำจางๆ ทับรูปสนามบาส */
     background: linear-gradient(rgba(0, 31, 63, 0.8), rgba(0, 17, 34, 0.8)),
                 url('{{ $site['courts_bg'] }}');
-    background-size: cover;      /* ให้รูปขยายเต็มพื้นที่ */
+    background-size: cover;
     background-position: center;
-    background-attachment: fixed; /* (Optional) ทำเอฟเฟกต์ Parallax ให้รูปนิ่งขณะเลื่อน */
-
+    background-attachment: fixed;
     padding-top: 60px;
     padding-bottom: 60px;
 }
@@ -319,6 +319,7 @@ html { scroll-behavior: smooth; }
     background: var(--ore); color: #fff;
     font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 600;
     border-radius: 6px; text-align: center; transition: background .2s;
+    cursor: pointer;
 }
 .court-btn-book:hover { background: var(--ore-d); }
 .court-btn-disabled {
@@ -557,12 +558,27 @@ html { scroll-behavior: smooth; }
     font-size: 15px; font-weight: 700; color: #fff;
 }
 .bk-sch-time { font-size: 12px; color: rgba(255,255,255,.45); }
-.bk-sch-courts { display: flex; gap: 6px; }
+.bk-sch-courts { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ─── ปุ่มแท็บรายชื่อสนามในแถบสีดำ (Tab เลือกสนาม) ─── */
 .bk-court-pill {
-    font-size: 10px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 11px; font-weight: 600;
+    padding: 6px 14px; border-radius: 6px;
     background: rgba(255,255,255,.1); color: rgba(255,255,255,.7);
-    letter-spacing: .04em;
+    letter-spacing: .04em; cursor: pointer;
+    transition: all .2s ease;
+    border: 1px solid transparent;
+}
+.bk-court-pill:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+.bk-court-pill.active {
+    background: var(--ore);
+    color: #fff;
+    border-color: rgba(255,255,255,.3);
+    box-shadow: 0 2px 8px rgba(232,108,42,.4);
 }
 
 .sch-wrap { overflow-y: auto; max-height: 380px; }
@@ -829,6 +845,35 @@ html { scroll-behavior: smooth; }
     background: rgba(255,255,255,.08);
     border-color: rgba(255,255,255,.6);
 }
+
+/* ─── ครึ่งสนาม ─── */
+.half-court-divider {
+    margin: 14px 0 10px;
+    border-top: 1px dashed rgba(255,255,255,.15);
+}
+.half-court-actions {
+    display: flex;
+    gap: 8px;
+}
+.court-btn-half {
+    flex: 1;
+    padding: 7px;
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.8);
+    font-family: 'Kanit', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,.1);
+    transition: background .2s, color .2s, border-color .2s;
+    pointer-events: none; /* คลิกไม่ได้แต่โฮเวอร์สีติดเหมือนเดิม */
+}
+.court-btn-half:hover {
+    background: var(--ore);
+    color: #fff;
+    border-color: var(--ore);
+}
 </style>
 
 <div class="home-content">
@@ -958,7 +1003,51 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง</a>
+                        <!-- เปลี่ยนปุ่มเป็น "ดูช่วงเวลา" และคลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
+                        <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
+                        
+                        <div class="half-court-divider"></div>
+                        <div class="half-court-actions">
+                            @php
+                                $sections = collect();
+                                if (method_exists($court, 'sections') && $court->sections) {
+                                    $sections = $court->sections;
+                                } elseif (method_exists($court, 'courtSections') && $court->courtSections) {
+                                    $sections = $court->courtSections;
+                                } elseif (isset($court->sections)) {
+                                    $sections = $court->sections;
+                                }
+                                $usesSectionSystem = $sections->isNotEmpty();
+                            @endphp
+
+                            @if($usesSectionSystem)
+                                @php
+                                    $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
+                                    $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
+                                        $isActive = !isset($s->is_active) || $s->is_active; 
+                                        return $s->id !== $defaultSectionId && $isActive;
+                                    });
+                                @endphp
+                                
+                                @if($halfSections->isNotEmpty())
+                                    @foreach($halfSections as $section)
+                                        <a href="javascript:void(0);" class="court-btn-half">
+                                            {{ $section->name ?? 'ครึ่งสนาม' }}
+                                        </a>
+                                    @endforeach
+                                @else
+                                    <div class="court-btn-disabled" style="flex: 1; padding: 7px; font-size: 12px;">ครึ่งสนามปิดให้บริการ</div>
+                                @endif
+
+                            @else
+                                <a href="javascript:void(0);" class="court-btn-half">
+                                    {{ $court->half_a_name ?? 'ครึ่ง A' }}
+                                </a>
+                                <a href="javascript:void(0);" class="court-btn-half">
+                                    {{ $court->half_b_name ?? 'ครึ่ง B' }}
+                                </a>
+                            @endif
+                        </div>
                     @else
                         <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
                     @endif
@@ -969,7 +1058,7 @@ html { scroll-behavior: smooth; }
 </section>
 
 {{-- ═══ BOOKING CALENDAR ═══ --}}
-<section class="booking-section">
+<section class="booking-section" id="booking-section">
     <p class="booking-label">Check Courts Booking</p>
     <h2 class="booking-title">ดูตารางการจองสนาม</h2>
 
@@ -1005,6 +1094,7 @@ html { scroll-behavior: smooth; }
                     <div class="bk-sch-date" id="bk-date-label">เลือกวันที่เพื่อดูตาราง</div>
                     <div class="bk-sch-time" id="bk-time-label"></div>
                 </div>
+                <!-- แถบสีดำแสดงปุ่มเลือกสนาม (Tabs) -->
                 <div class="bk-sch-courts" id="bk-court-pills"></div>
             </div>
             <div class="sch-wrap">
@@ -1199,7 +1289,7 @@ html { scroll-behavior: smooth; }
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
                     <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">thata_homecourt
+                        <img class="icon-footer" src="https://128/174/174855.png" alt="">thata_homecourt
                     </a>
                     <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
@@ -1237,10 +1327,79 @@ html { scroll-behavior: smooth; }
 <script>
 const HERO_SLIDES = @json($heroSlides);
 
-// ─── COURTS DATA จาก DB ───
-const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
+/**
+ * แปลงข้อมูลสนามและดึงแป้นย่อย (Sections / ครึ่งสนาม) ของแต่ละสนามจากฐานข้อมูล
+ * เพื่อนำมาใช้สร้าง Tabs เลือกสนามและคอลัมน์ในตารางจอง
+ */
+@php
+    $courtsAllData = $courts->map(function($c) {
+        $sections = collect();
+        if (method_exists($c, 'sections') && $c->sections) {
+            $sections = $c->sections;
+        } elseif (method_exists($c, 'courtSections') && $c->courtSections) {
+            $sections = $c->courtSections;
+        } elseif (isset($c->sections)) {
+            $sections = $c->sections;
+        }
 
-// ─── HERO SLIDESHOW ───
+        $defaultSectionId = method_exists($c, 'defaultSection') && $c->defaultSection() ? $c->defaultSection()->id : null;
+
+        // กรองเอาเฉพาะครึ่งสนามหรือแป้นย่อยที่ไม่ใช่เต็มสนามหลัก
+        $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
+            $isActive = !isset($s->is_active) || $s->is_active;
+            return $s->id !== $defaultSectionId && $isActive;
+        });
+
+        // ถ้ามีข้อมูล Sections ให้ใช้ ถ้าไม่มีให้ใช้ค่าเริ่มต้น (ครึ่ง A / ครึ่ง B)
+        $sectionsList = $halfSections->isNotEmpty() 
+            ? $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values()
+            : collect([
+                ['id' => $c->id, 'section_id' => 'half_a', 'name' => $c->half_a_name ?? 'ครึ่ง A'],
+                ['id' => $c->id, 'section_id' => 'half_b', 'name' => $c->half_b_name ?? 'ครึ่ง B']
+            ]);
+
+        return [
+            'id' => $c->id,
+            'name' => $c->name,
+            'sections' => $sectionsList
+        ];
+    })->values();
+@endphp
+
+const COURTS_DATA = @json($courtsAllData);
+let currentCourtId = COURTS_DATA.length > 0 ? COURTS_DATA[0].id : null;
+
+/**
+ * ดึงรายการแป้นย่อย (2 แป้น) ของสนามที่ผู้ใช้งานกำลังเลือกดูอยู่ปัจจุบัน
+ */
+function getActiveCourts() {
+    const court = COURTS_DATA.find(c => c.id == currentCourtId);
+    if (!court) return [];
+    return court.sections.map(s => ({
+        id: court.id,
+        section_id: s.section_id,
+        name: s.name 
+    }));
+}
+
+/**
+ * ฟังก์ชันสำหรับเลื่อนหน้าจอไปยังส่วนตารางจองและเลือกสนามนั้นทันที
+ */
+function scrollToBookingAndSelect(courtId) {
+    currentCourtId = courtId;
+    buildCourtHeaders();
+    if (selDate) {
+        renderSch(selDate);
+    }
+    const bookingSection = document.getElementById('booking-section');
+    if (bookingSection) {
+        bookingSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+/**
+ * ระบบสลับภาพพื้นหลัง Hero Section อัตโนมัติ
+ */
 function initHeroSlideshow() {
     const hero = document.getElementById('hero-section');
     const fader = document.getElementById('hero-bg-fader');
@@ -1273,37 +1432,55 @@ function initHeroSlideshow() {
     }, rotationMs);
 }
 
-// ─── SCROLL TOP ───
+// ควบคุมการแสดงผลปุ่ม Scroll to Top
 window.addEventListener('scroll', () => {
     document.getElementById('scroll-top').classList.toggle('show', window.scrollY > 300);
 });
 
-// ─── BUILD COURT HEADERS (dynamic) ───
+/**
+ * สร้างปุ่มเลือกสนาม (Tabs) ด้านบน และหัวตารางคอลัมน์แป้นย่อย (2 แป้น) ตามสนามที่เลือก
+ */
 function buildCourtHeaders() {
     const pills = document.getElementById('bk-court-pills');
     const thead = document.getElementById('sch-thead');
+    
+    // 1. สร้างปุ่มแท็บรายชื่อสนามในแถบสีดำ
     let pillsHtml = '';
+    COURTS_DATA.forEach(c => {
+        const activeClass = c.id == currentCourtId ? 'active' : '';
+        pillsHtml += `<span class="bk-court-pill ${activeClass}" onclick="changeCourt(${c.id})">${c.name}</span>`;
+    });
+    pills.innerHTML = pillsHtml;
+
+    // 2. สร้าง Header คอลัมน์ตารางเฉพาะ 2 แป้นของสนามที่เลือก
+    let activeCourts = getActiveCourts();
     let theadHtml = '<tr><th>เวลา</th>';
-    COURTS.forEach(c => {
-        pillsHtml += `<span class="bk-court-pill">${c.name}</span>`;
+    activeCourts.forEach(c => {
         theadHtml += `<th>${c.name}</th>`;
     });
     theadHtml += '</tr>';
-    pills.innerHTML = pillsHtml;
     thead.innerHTML = theadHtml;
+}
+
+/**
+ * ฟังก์ชันทำงานเมื่อผู้ใช้คลิกเปลี่ยนสนามที่แท็บด้านบน
+ */
+function changeCourt(courtId) {
+    currentCourtId = courtId;
+    buildCourtHeaders();
+    if (selDate) {
+        renderSch(selDate); // โหลดตารางเวลาใหม่ตามสนามที่เปลี่ยน
+    }
 }
 
 // ─── CALENDAR ENGINE ───
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-const HOURS = [];
-for (let h = 6; h < 22; h++) HOURS.push(String(h).padStart(2,'0') + ':00');
-
 let calYear, calMonth, selDate = null;
-let monthStatus = {};   // { '2026-07-05':'full', '2026-07-06':'free', ... } จาก backend
+let monthStatus = {}; 
 
-// ดึงสรุปว่าง/เต็มของเดือนที่กำลังแสดง แล้ววาดปฏิทินใหม่
+// โหลดสถานะการจองรายเดือนจากระบบเพื่อทำจุดสีแสดงสถานะในปฏิทิน
 async function loadMonthStatus() {
     const m = calYear + '-' + String(calMonth + 1).padStart(2,'0');
     try {
@@ -1315,6 +1492,7 @@ async function loadMonthStatus() {
     renderCal();
 }
 
+// วาดปฏิทินรายเดือน
 function renderCal() {
     const dim = new Date(calYear, calMonth + 1, 0).getDate();
     const fd  = new Date(calYear, calMonth, 1).getDay();
@@ -1332,13 +1510,13 @@ function renderCal() {
         const isPast = new Date(calYear, calMonth, d) < new Date(td.getFullYear(), td.getMonth(), td.getDate());
         if (td.getFullYear()===calYear && td.getMonth()===calMonth && td.getDate()===d) cls += ' today';
         if (selDate === ds) cls += ' selected';
-        const dsStatus = monthStatus[ds];   // 'free' | 'full' | 'past' | undefined
+        const dsStatus = monthStatus[ds]; 
         if (isPast || dsStatus === 'past') {
-            /* วันผ่านแล้ว — ไม่มีจุด */
+            /* วันในอดีต */
         } else if (dsStatus === 'full') {
-            cls += ' is-full';    // จุดแดง = เต็มทุก slot
+            cls += ' is-full';    // จุดสีแดง (เต็ม)
         } else {
-            cls += ' has-free';   // จุดเขียว = ยังมีว่าง (default ระหว่างรอโหลด)
+            cls += ' has-free';   // จุดสีเขียว (มีว่าง)
         }
         el.className = cls; el.textContent = d;
         el.onclick = () => selectDate(ds, d);
@@ -1346,6 +1524,7 @@ function renderCal() {
     }
 }
 
+// เมื่อผู้ใช้เลือกวันที่ในปฏิทิน
 function selectDate(ds, d) {
     selDate = ds;
     renderCal();
@@ -1361,9 +1540,11 @@ function selectDate(ds, d) {
     renderSch(ds);
 }
 
+// สร้างตารางแสดงช่วงเวลาและสถานะการจองของแป้นในแต่ละวัน
 async function renderSch(ds) {
+    let activeCourts = getActiveCourts();
     const tb = document.getElementById('sch-tbody');
-    const colCount = COURTS.length + 1;
+    const colCount = activeCourts.length + 1;
     tb.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#adb5bd;font-size:13px;">กำลังโหลดข้อมูล...</td></tr>`;
 
     let slots = {};
@@ -1378,47 +1559,41 @@ async function renderSch(ds) {
 
     const now = new Date();
     const todayDs = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-
-    // แปลงเวลาปัจจุบันเป็นนาทีรวม (เช่น 10:30 = 10*60 + 30 = 630 นาที)
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
     tb.innerHTML = '';
 
-    // กำหนดเวลาเปิด-ปิดสนาม (สมมติว่าเริ่ม 06:00 ถึง 22:00)
-    // ถ้าเวลาเปิดปิดของคุณต่างไปจากนี้ สามารถแก้ตัวเลข 6 และ 22 ได้เลยครับ
-    const startDayMinutes = 6 * 60;
-    const endDayMinutes = 22 * 60;
+    const startDayMinutes = 6 * 60;  // เริ่มต้น 06:00 น.
+    const endDayMinutes = 22 * 60;   // สิ้นสุด 22:00 น.
 
-    // วนลูปทีละ 30 นาที
+    // วนลูปสร้างตารางทีละช่วง 30 นาที
     for (let m = startDayMinutes; m < endDayMinutes; m += 30) {
-        // คำนวณเวลาเริ่ม
         const startH = Math.floor(m / 60);
         const startM = m % 60;
-        // คำนวณเวลาจบ (+30 นาที)
         const endH = Math.floor((m + 30) / 60);
         const endM = (m + 30) % 60;
 
-        // แปลงเป็นสตริง HH:MM (เช่น 06:30)
         const startStr = String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
         const endStr = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
-
-        // รูปแบบเวลาสำหรับเช็ค key ในฐานข้อมูล/API (เช่น 06:30:00)
         const startTime = startStr + ':00';
 
         const tr = document.createElement('tr');
         let html = `<td><span class="hour-chip">${startStr} - ${endStr}</span></td>`;
-
-        // เช็กว่ารอบนี้เป็นรอบที่ผ่านมาแล้วหรือยัง (เช็คแบบละเอียดถึงระดับนาที)
         const isTimePast = (ds === todayDs) && (currentTotalMinutes >= m);
 
-        COURTS.forEach(c => {
-            let status = (slots[c.id] && slots[c.id][startTime]) || 'available';
+        activeCourts.forEach(c => {
+            let courtSlots = slots[c.id] || {};
+            let status = courtSlots[startTime] || 'available';
 
-            // ถ้าเวลาปัจจุบันเลยเวลาเริ่มรอบมาแล้ว ให้บังคับเป็นสถานะ 'past' ทันที
+            if (c.section_id && slots[c.section_id]) {
+                status = slots[c.section_id][startTime] || status;
+            }
+
             if (isTimePast) {
                 status = 'past';
             }
 
+            // แสดงสถานะรูปแบบปุ่มต่างๆ ตามเงื่อนไข
             if (status === 'pending_payment') {
                 html += '<td><span class="slot-badge slot-checkout"><span class="slot-dot"></span>กำลังจอง</span></td>';
             } else if (status === 'booked') {
@@ -1432,7 +1607,7 @@ async function renderSch(ds) {
             } else if (status === 'unavailable') {
                 html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
             } else {
-                html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
+                html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${c.section_id}','${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
         });
         tr.innerHTML = html;
@@ -1440,10 +1615,22 @@ async function renderSch(ds) {
     }
 }
 
-function bookSlot(h, courtId, ds) {
-    window.location.href = '{{ route("booking.index") }}?date=' + ds + '&hour=' + h + '&court_id=' + courtId;
+/**
+ * นำทางไปยังหน้าจองสนามเมื่อคลิกช่องเวลาที่ว่าง
+ */
+function bookSlot(h, courtId, sectionId, ds) {
+    let url = '{{ route("booking.index") }}?date=' + ds + '&hour=' + h + '&court_id=' + courtId;
+    if (sectionId && sectionId !== 'null' && sectionId !== 'undefined') {
+        if (!isNaN(sectionId)) {
+            url += '&court_section_id=' + sectionId;
+        } else {
+            url += '&type=' + sectionId;
+        }
+    }
+    window.location.href = url;
 }
 
+// ควบคุมการเปลี่ยนเดือนในปฏิทิน
 function calPrev() {
     const now = new Date();
     if (calYear === now.getFullYear() && calMonth === now.getMonth()) return;
@@ -1458,19 +1645,22 @@ function calNext() {
     calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } loadMonthStatus();
 }
 
+// เริ่มต้นโหลดระบบปฏิทินและตารางเมื่อหน้าเว็บโหลดเสร็จ
 const now2 = new Date();
 calYear = now2.getFullYear();
 calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
-loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
+loadMonthStatus();   
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 initHeroSlideshow();
 
+/**
+ * คัดลอกเบอร์โทรศัพท์พร้อมแสดงเอฟเฟกต์แจ้งเตือน
+ */
 function copyPhone(btn) {
     const phone = '081-246-0000';
-
     const doFeedback = () => {
         const label = btn.querySelector('.phone-num');
         const original = label.textContent;
