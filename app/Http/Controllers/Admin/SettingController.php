@@ -18,13 +18,10 @@ class SettingController extends Controller
      */
     public function edit()
     {
-        $courts = Court::all();
-        $facilities = Facility::orderBy('sort_order')->orderBy('name')->get();
-        $reviews = Review::with(['user:id,name,email', 'ratings.facility:id,name', 'images'])
-            ->latest()
-            ->paginate(10, ['*'], 'reviews_page');
-
-        $courtKeys = $courts->map(fn ($c) => 'court_img_'.$c->id)->all();
+        $courts = Court::all()->sortBy(function ($court) {
+            return $court->name;
+        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
+        $courtKeys = $courts->map(fn($c) => 'court_img_' . $c->id)->all();
         $settings = Setting::values(array_merge(array_keys(Setting::DEFAULTS), $courtKeys));
 
         return view('edit-text', compact('settings', 'courts', 'facilities', 'reviews'));
