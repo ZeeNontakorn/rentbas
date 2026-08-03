@@ -43,7 +43,7 @@
         </button>
 
         <!-- เมนูหลัก (Desktop) -->
-        <div class="hidden md:flex items-center gap-4 md:gap-6">
+        <div class="hidden md:flex flex-1 min-w-0 flex-nowrap justify-end items-center gap-5 lg:gap-8 whitespace-nowrap">
             @auth
                 @if($activeCheckout ?? false)
                     <a href="{{ route('checkout.show', $activeCheckout) }}" class="flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 transition">
@@ -57,34 +57,49 @@
                     $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
                 @endphp
                 @if($isAdminLike)
-                    <!-- เมนูสำหรับ Admin -->
+                    <!-- เมนูหลักสำหรับ Admin -->
                     <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
-                    </a>
-                    <a href="{{ route('admin.courts') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการสนาม
                     </a>
                     <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จัดการการจอง
                     </a>
-                    <a href="{{ route('admin.private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                       จัดการ Private Training
-                    </a>
-                    <a href="{{ route('admin.private-schedule.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตารางโค้ช
-                    </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
-                    </a>
-                    <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ดูประวัติการจอง
-                    <a href="{{ route('admin.courses') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์สเรียน
-                    </a>
+                    <!-- จัดการสนาม -->
+                    <div class="relative" data-admin-nav-dropdown>
+                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-2 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                            จัดการสนาม
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
+                            <a href="{{ route('admin.courts') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : '' }}">จัดการสนาม</a>
+                            <a href="{{ route('admin.pricing.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : '' }}">ตั้งราคา</a>
+                        </div>
+                    </div>
 
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        Dashboard
-                    </a>
+                    <!-- การสอน -->
+                    <div class="relative" data-admin-nav-dropdown>
+                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-2 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                            การสอน
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-56 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
+                            <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการ Private Training</a>
+                            <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">ตารางโค้ช</a>
+                            <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
+                        </div>
+                    </div>
+
+                    <!-- รายงานและภาพรวม -->
+                    <div class="relative" data-admin-nav-dropdown>
+                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-2 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('history', 'admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                            รายงานและภาพรวม
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-52 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
+                            <a href="{{ route('admin.dashboard') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : '' }}">Dashboard</a>
+                            <a href="{{ route('history') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : '' }}">ดูประวัติการจอง</a>
+                        </div>
+                    </div>
                 @else
                     <!-- จองสนาม สำหรับ User -->
                     <a href="{{ route('booking.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -460,6 +475,25 @@
         const mobileMenuIconOpen = document.getElementById('mobileMenuIconOpen');
         const mobileMenuIconClose = document.getElementById('mobileMenuIconClose');
 
+        // Dropdown ของเมนูผู้ดูแลในแถบหลัก
+        const adminNavDropdowns = document.querySelectorAll('[data-admin-nav-dropdown]');
+        adminNavDropdowns.forEach((menu) => {
+            const button = menu.querySelector('.admin-nav-dropdown-btn');
+            const dropdown = menu.querySelector('.admin-nav-dropdown');
+
+            button?.addEventListener('click', () => {
+                const isOpen = !dropdown?.classList.contains('hidden');
+                adminNavDropdowns.forEach((otherMenu) => {
+                    otherMenu.querySelector('.admin-nav-dropdown')?.classList.add('hidden');
+                    otherMenu.querySelector('.admin-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                });
+                if (!isOpen) {
+                    dropdown?.classList.remove('hidden');
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
         // เมื่อคลิกที่ปุ่มแจ้งเตือน ให้สลับการแสดงผลของ Dropdown
         notifBtn?.addEventListener('click', () => {
             notifDropdown?.classList.toggle('hidden');
@@ -487,6 +521,12 @@
             if (!adminMenuBtn?.contains(e.target) && !adminMenuDropdown?.contains(e.target)) {
                 adminMenuDropdown?.classList.add('hidden');
             }
+            adminNavDropdowns.forEach((menu) => {
+                if (!menu.contains(e.target)) {
+                    menu.querySelector('.admin-nav-dropdown')?.classList.add('hidden');
+                    menu.querySelector('.admin-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                }
+            });
         });
 
         // ปุ่มแจ้งเตือนในเมนูมือถือ: แสดงเนื้อหาเดียวกับ dropdown บน desktop
