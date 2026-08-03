@@ -16,7 +16,8 @@ class StaffSeeder extends Seeder
             [
                 'name' => 'โค้ชสมชาย สายเสมอ',
                 'password' => Hash::make('password'),
-                'role' => 'coach',
+                'role' => 'staff',
+                'membership_type' => 'coach',
             ]
         );
 
@@ -26,6 +27,7 @@ class StaffSeeder extends Seeder
                 'name' => 'ผู้ช่วยสมศรี ขยันยิ่ง',
                 'password' => Hash::make('password'),
                 'role' => 'staff',
+                'membership_type' => 'coach',
             ]
         );
 

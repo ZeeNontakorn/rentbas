@@ -78,6 +78,8 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     // Booking System
     Route::prefix('booking')->name('booking.')->group(function () {
         Route::get('/', [BookingController::class, 'index'])->name('index');
+        Route::get('/courts', [BookingController::class, 'courts'])->name('courts');
+        Route::get('/sections', [BookingController::class, 'sections'])->name('sections');
         Route::get('/calendar', [BookingController::class, 'calendar'])->name('calendar');
         Route::get('/court/{court}', [BookingController::class, 'show'])->name('show');
         Route::post('/', [BookingController::class, 'store'])->name('store');
