@@ -319,6 +319,7 @@ html { scroll-behavior: smooth; }
     background: var(--ore); color: #fff;
     font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 600;
     border-radius: 6px; text-align: center; transition: background .2s;
+    cursor: pointer;
 }
 .court-btn-book:hover { background: var(--ore-d); }
 .court-btn-disabled {
@@ -850,13 +851,6 @@ html { scroll-behavior: smooth; }
     margin: 14px 0 10px;
     border-top: 1px dashed rgba(255,255,255,.15);
 }
-.half-court-label {
-    font-size: 11px;
-    color: rgba(255,255,255,.5);
-    margin-bottom: 8px;
-    text-align: center;
-    font-family: 'Kanit', sans-serif;
-}
 .half-court-actions {
     display: flex;
     gap: 8px;
@@ -873,6 +867,7 @@ html { scroll-behavior: smooth; }
     text-align: center;
     border: 1px solid rgba(255,255,255,.1);
     transition: background .2s, color .2s, border-color .2s;
+    pointer-events: none; /* คลิกไม่ได้แต่โฮเวอร์สีติดเหมือนเดิม */
 }
 .court-btn-half:hover {
     background: var(--ore);
@@ -1008,10 +1003,10 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง (เต็มสนาม)</a>
+                        <!-- เปลี่ยนปุ่มเป็น "ดูช่วงเวลา" และคลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
+                        <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
                         
                         <div class="half-court-divider"></div>
-                        <div class="half-court-label">เลือกจองครึ่งสนาม (Half Court)</div>
                         <div class="half-court-actions">
                             @php
                                 $sections = collect();
@@ -1036,7 +1031,7 @@ html { scroll-behavior: smooth; }
                                 
                                 @if($halfSections->isNotEmpty())
                                     @foreach($halfSections as $section)
-                                        <a href="{{ route('booking.index', ['court_id' => $court->id, 'court_section_id' => $section->id]) }}" class="court-btn-half">
+                                        <a href="javascript:void(0);" class="court-btn-half">
                                             {{ $section->name ?? 'ครึ่งสนาม' }}
                                         </a>
                                     @endforeach
@@ -1045,10 +1040,10 @@ html { scroll-behavior: smooth; }
                                 @endif
 
                             @else
-                                <a href="{{ route('booking.index', ['court_id' => $court->id, 'type' => 'half_a']) }}" class="court-btn-half">
+                                <a href="javascript:void(0);" class="court-btn-half">
                                     {{ $court->half_a_name ?? 'ครึ่ง A' }}
                                 </a>
-                                <a href="{{ route('booking.index', ['court_id' => $court->id, 'type' => 'half_b']) }}" class="court-btn-half">
+                                <a href="javascript:void(0);" class="court-btn-half">
                                     {{ $court->half_b_name ?? 'ครึ่ง B' }}
                                 </a>
                             @endif
@@ -1063,7 +1058,7 @@ html { scroll-behavior: smooth; }
 </section>
 
 {{-- ═══ BOOKING CALENDAR ═══ --}}
-<section class="booking-section">
+<section class="booking-section" id="booking-section">
     <p class="booking-label">Check Courts Booking</p>
     <h2 class="booking-title">ดูตารางการจองสนาม</h2>
 
@@ -1385,6 +1380,21 @@ function getActiveCourts() {
         section_id: s.section_id,
         name: s.name 
     }));
+}
+
+/**
+ * ฟังก์ชันสำหรับเลื่อนหน้าจอไปยังส่วนตารางจองและเลือกสนามนั้นทันที
+ */
+function scrollToBookingAndSelect(courtId) {
+    currentCourtId = courtId;
+    buildCourtHeaders();
+    if (selDate) {
+        renderSch(selDate);
+    }
+    const bookingSection = document.getElementById('booking-section');
+    if (bookingSection) {
+        bookingSection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 /**
