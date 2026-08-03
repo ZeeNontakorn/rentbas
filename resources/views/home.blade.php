@@ -829,6 +829,41 @@ html { scroll-behavior: smooth; }
     background: rgba(255,255,255,.08);
     border-color: rgba(255,255,255,.6);
 }
+
+/* ─── ครึ่งสนาม ─── */
+.half-court-divider {
+    margin: 14px 0 10px;
+    border-top: 1px dashed rgba(255,255,255,.15);
+}
+.half-court-label {
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+    margin-bottom: 8px;
+    text-align: center;
+    font-family: 'Kanit', sans-serif;
+}
+.half-court-actions {
+    display: flex;
+    gap: 8px;
+}
+.court-btn-half {
+    flex: 1;
+    padding: 7px;
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.8);
+    font-family: 'Kanit', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,.1);
+    transition: background .2s, color .2s, border-color .2s;
+}
+.court-btn-half:hover {
+    background: var(--ore);
+    color: #fff;
+    border-color: var(--ore);
+}
 </style>
 
 <div class="home-content">
@@ -958,7 +993,58 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง</a>
+                        <!-- เปลี่ยนข้อความปุ่มหลักให้ชัดเจนขึ้นว่าเป็นเต็มสนาม -->
+                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง (เต็มสนาม)</a>
+                        
+                        <!-- เส้นแบ่งและปุ่มจองครึ่งสนามที่เพิ่มเข้ามา -->
+                        <div class="half-court-divider"></div>
+                        <div class="half-court-label">เลือกจองครึ่งสนาม (Half Court)</div>
+                        <div class="half-court-actions">
+                            @php
+                                // พยายามดึงข้อมูล Court Sections
+                                $sections = collect();
+                                if (method_exists($court, 'sections') && $court->sections) {
+                                    $sections = $court->sections;
+                                } elseif (method_exists($court, 'courtSections') && $court->courtSections) {
+                                    $sections = $court->courtSections;
+                                } elseif (isset($court->sections)) {
+                                    $sections = $court->sections;
+                                }
+                                
+                                // เช็คว่าระบบมีตาราง Sections จริงๆ หรือไม่
+                                $usesSectionSystem = $sections->isNotEmpty();
+                            @endphp
+
+                            @if($usesSectionSystem)
+                                @php
+                                    $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
+                                    // กรองเอาเฉพาะครึ่งสนามที่เปิดใช้งาน
+                                    $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
+                                        $isActive = !isset($s->is_active) || $s->is_active; 
+                                        return $s->id !== $defaultSectionId && $isActive;
+                                    });
+                                @endphp
+                                
+                                @if($halfSections->isNotEmpty())
+                                    @foreach($halfSections as $section)
+                                        <a href="{{ route('booking.index', ['court_id' => $court->id, 'court_section_id' => $section->id]) }}" class="court-btn-half">
+                                            {{ $section->name ?? 'ครึ่งสนาม' }}
+                                        </a>
+                                    @endforeach
+                                @else
+                                    <div class="court-btn-disabled" style="flex: 1; padding: 7px; font-size: 12px;">ครึ่งสนามปิดให้บริการ</div>
+                                @endif
+
+                            @else
+                                <!-- Fallback กรณีหา Relation ไม่เจอเลย -->
+                                <a href="{{ route('booking.index', ['court_id' => $court->id, 'type' => 'half_a']) }}" class="court-btn-half">
+                                    {{ $court->half_a_name ?? 'ครึ่ง A' }}
+                                </a>
+                                <a href="{{ route('booking.index', ['court_id' => $court->id, 'type' => 'half_b']) }}" class="court-btn-half">
+                                    {{ $court->half_b_name ?? 'ครึ่ง B' }}
+                                </a>
+                            @endif
+                        </div>
                     @else
                         <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
                     @endif
