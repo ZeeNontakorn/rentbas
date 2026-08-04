@@ -1498,7 +1498,7 @@ function scrollToBookingAndSelect(courtId) {
     }
     const bookingSection = document.getElementById('booking-section');
     if (bookingSection) {
-        bookingSection.scrollIntoView({ behavior: 'smooth' });
+        bookingSection.scrollIntoView({ behavior: 'smooth' , block: 'center'});
     }
 }
 
