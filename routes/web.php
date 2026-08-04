@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\PackageController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -200,6 +201,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
     Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
     Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
+
+    //จัดการ package
+    Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
+    Route::get('packages/create', [PackageController::class, 'create'])->name('packages.create');
+    Route::post('packages', [PackageController::class, 'store'])->name('packages.store');
+    Route::get('packages/{package}/edit', [PackageController::class, 'edit'])->name('packages.edit');
+    Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
+    Route::delete('packages/{package}', [PackageController::class, 'delete'])->name('packages.delete');
+    Route::patch('packages/{package}/toggle-status', [PackageController::class, 'toggleStatus'])->name('packages.toggleStatus');
 });
 
 // 6. Password Reset via OTP

@@ -966,6 +966,98 @@ html { scroll-behavior: smooth; }
     color: #fff;
     border-color: var(--ore);
 }
+
+/* ─── PACKAGES SECTION ─── */
+.packages-section {
+    background: var(--navy-d);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.packages-header { text-align: center; margin-bottom: 40px; }
+.packages-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.packages-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: #fff; margin-bottom: 8px; }
+.packages-subtitle { font-size: 13.5px; color: rgba(255,255,255,.45); }
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+@media (max-width: 768px) { .packages-grid { grid-template-columns: 1fr; } }
+
+.package-card2 {
+    background: var(--navy);
+    border-radius: 18px;
+    padding: 28px 24px;
+    border: 1px solid rgba(255,255,255,.07);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+    position: relative;
+}
+.package-card2:hover {
+    transform: translateY(-6px);
+    border-color: rgba(232,108,42,.4);
+    box-shadow: 0 20px 36px rgba(0,0,0,.28);
+}
+.package-card2.featured { border-color: var(--ore); }
+.package-badge-featured {
+    position: absolute; top: 12px; right: 12px; left: auto; z-index: 1;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px; letter-spacing: .03em;
+    box-shadow: 0 4px 10px rgba(232,108,42,.35);
+}
+.package-name {
+    font-family: 'Kanit', sans-serif; font-size: 19px; font-weight: 700;
+    color: #fff; margin-bottom: 8px;
+}
+.package-desc {
+    font-size: 12.5px; color: rgba(255,255,255,.45);
+    line-height: 1.7; margin-bottom: 22px;
+    min-height: 42px;
+}
+.package-price-block {
+    padding-top: 18px; padding-bottom: 22px;
+    border-top: 1px dashed rgba(255,255,255,.1);
+    margin-top: auto;
+}
+.package-price-label {
+    font-size: 10px; font-weight: 700; color: var(--ore);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+}
+.package-price {
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px;
+    color: #fff; letter-spacing: .02em; line-height: 1;
+}
+.package-price small { font-family: 'Sarabun', sans-serif; font-size: 13px; color: rgba(255,255,255,.4); font-weight: 400; }
+.package-btn {
+    display: block; text-align: center;
+    padding: 12px; border-radius: 9px;
+    background: var(--ore); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 13.5px; font-weight: 600;
+    transition: background .2s;
+}
+.package-btn:hover { background: var(--ore-d); }
+
+.packages-empty {
+    text-align: center; color: rgba(255,255,255,.35); padding: 56px 0; font-size: 13.5px;
+}
+.packages-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
+
+
+.package-thumb2 { height: 170px; margin: -28px -24px 20px; position: relative; overflow: hidden; border-radius: 18px 18px 0 0; }
+.package-thumb2 img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.package-card2:hover .package-thumb2 img { transform: scale(1.08); }
+.package-thumb2-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,15,30,.55) 0%, rgba(13,15,30,0) 45%);
+}
 </style>
 
 <div class="home-content">
@@ -1097,7 +1189,7 @@ html { scroll-behavior: smooth; }
                     @if($isOpen)
                         <!-- เปลี่ยนปุ่มเป็น "ดูช่วงเวลา" และคลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
                         <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
-                        
+
                         <div class="half-court-divider"></div>
                         <div class="half-court-actions">
                             @php
@@ -1116,11 +1208,11 @@ html { scroll-behavior: smooth; }
                                 @php
                                     $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
                                     $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
-                                        $isActive = !isset($s->is_active) || $s->is_active; 
+                                        $isActive = !isset($s->is_active) || $s->is_active;
                                         return $s->id !== $defaultSectionId && $isActive;
                                     });
                                 @endphp
-                                
+
                                 @if($halfSections->isNotEmpty())
                                     @foreach($halfSections as $section)
                                         <a href="javascript:void(0);" class="court-btn-half">
@@ -1324,6 +1416,43 @@ html { scroll-behavior: smooth; }
 @endif
 </section>
 
+@if($packages->isNotEmpty())
+    {{-- ═══ PACKAGES ═══ --}}
+    <section class="packages-section" data-aos="fade-up">
+        <div class="packages-header">
+            <p class="packages-label">Package</p>
+            <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
+            <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
+        </div>
+
+        @if($packages->isEmpty())
+            <div class="packages-empty">
+                <div class="packages-empty-icon">📦</div>
+                ขณะนี้ยังไม่มีแพ็กเกจเปิดให้บริการ
+            </div>
+        @else
+            <div class="packages-grid">
+                @foreach($packages as $package)
+                    <div class="package-card2 {{ $loop->first ? 'featured' : '' }}" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                        <div class="package-thumb2">
+                            <img src="{{ $package->image ? asset('storage/' . $package->image) : 'https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=800&auto=format&fit=crop' }}"
+                                 alt="{{ $package->name }}" {!! $imageFallback !!}>
+                            <div class="package-thumb2-overlay"></div>
+                        </div>
+                        <p class="package-name">{{ $package->name }}</p>
+                        <p class="package-desc">{{ $package->description }}</p>
+                        <div class="package-price-block">
+                            <p class="package-price-label">ราคา</p>
+                            <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
+                        </div>
+                        <a href="#" class="package-btn">เลือกแพ็กเกจนี้</a>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+@endif
+
 {{-- ═══ PROMOTIONS ═══ --}}
 <section class="promo-section" data-aos="fade-up">
     <div class="promo-header">
@@ -1446,7 +1575,7 @@ const HERO_SLIDES = @json($heroSlides);
         });
 
         // ถ้ามีข้อมูล Sections ให้ใช้ ถ้าไม่มีให้ใช้ค่าเริ่มต้น (ครึ่ง A / ครึ่ง B)
-        $sectionsList = $halfSections->isNotEmpty() 
+        $sectionsList = $halfSections->isNotEmpty()
             ? $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values()
             : collect([
                 ['id' => $c->id, 'section_id' => 'half_a', 'name' => $c->half_a_name ?? 'ครึ่ง A'],
@@ -1473,7 +1602,7 @@ function getActiveCourts() {
     return court.sections.map(s => ({
         id: court.id,
         section_id: s.section_id,
-        name: s.name 
+        name: s.name
     }));
 }
 
@@ -1548,7 +1677,7 @@ window.addEventListener('scroll', () => {
 function buildCourtHeaders() {
     const pills = document.getElementById('bk-court-pills');
     const thead = document.getElementById('sch-thead');
-    
+
     // 1. สร้างปุ่มแท็บรายชื่อสนามในแถบสีดำ
     let pillsHtml = '';
     COURTS_DATA.forEach(c => {
@@ -1583,7 +1712,7 @@ const MONTHS = ['มกราคม','กุมภาพันธ์','มีน
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 let calYear, calMonth, selDate = null;
-let monthStatus = {}; 
+let monthStatus = {};
 
 // โหลดสถานะการจองรายเดือนจากระบบเพื่อทำจุดสีแสดงสถานะในปฏิทิน
 async function loadMonthStatus() {
@@ -1615,7 +1744,7 @@ function renderCal() {
         const isPast = new Date(calYear, calMonth, d) < new Date(td.getFullYear(), td.getMonth(), td.getDate());
         if (td.getFullYear()===calYear && td.getMonth()===calMonth && td.getDate()===d) cls += ' today';
         if (selDate === ds) cls += ' selected';
-        const dsStatus = monthStatus[ds]; 
+        const dsStatus = monthStatus[ds];
         if (isPast || dsStatus === 'past') {
             /* วันในอดีต */
         } else if (dsStatus === 'full') {
@@ -1756,7 +1885,7 @@ calYear = now2.getFullYear();
 calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
-loadMonthStatus();   
+loadMonthStatus();
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 initHeroSlideshow();

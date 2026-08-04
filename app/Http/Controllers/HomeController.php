@@ -9,6 +9,7 @@ use App\Models\CourtClosure;
 use App\Models\Facility;
 use App\Models\Review;
 use App\Models\SiteVisit;
+use App\Models\Package;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
@@ -62,6 +63,10 @@ class HomeController extends Controller
             'count' => Review::published()->count(),
         ];
 
+        $packages = Package::where('is_active', true)
+            ->orderBy('price')
+            ->get();
+
         return view('home', compact(
             'courts',
             'trainingCourses',
@@ -70,6 +75,7 @@ class HomeController extends Controller
             'facilities',
             'reviews',
             'reviewSummary',
+            'packages',
         ));
     }
 
