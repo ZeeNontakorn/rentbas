@@ -25,7 +25,7 @@
                     </button>
                 @else
                     <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
-                        onclick="swalalert()">
+                        onclick="window.location.href='{{ route('credits.topup.index') }}'">
                         {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
                     </button>
                 @endif
@@ -265,6 +265,14 @@
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 แก้ไขเนื้อหาเว็บไซต์
                             </a>
+                            <a href="{{ route('admin.credit-topups.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                คำขอเติมเครดิต
+                            </a>
+                            <a href="{{ route('admin.credit-topup-packages.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4m16 0a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4a2 2 0 012-2m16 0a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v4a2 2 0 002 2m6 4h.01"></path></svg>
+                                แพ็กเกจเติมเครดิต
+                            </a>
                             <a href="{{ route('profile') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center border-t border-gray-700">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 ตั้งค่าโปรไฟล์
@@ -287,6 +295,11 @@
                         </button>
 
                 @else
+                {{-- credit --}}
+                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center"
+                    onclick="window.location.href='{{ route('credits.topup.index') }}'">
+                    {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                </button>
                     <div class="h-6 w-px bg-gray-600 mx-2"></div>
                     <div class="relative">
                         <button id="userMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none">
@@ -441,6 +454,8 @@
                     <div class="flex flex-col">
                         <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
+                        <a href="{{ route('admin.credit-topups.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">คำขอเติมเครดิต</a>
+                        <a href="{{ route('admin.credit-topup-packages.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แพ็กเกจเติมเครดิต</a>
                         <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
                     </div>
                 </div>
@@ -678,14 +693,5 @@ document.addEventListener('submit', function (e) {
     }
 });
 
-function swalalert() {
-    Swal.fire({
-        icon: 'info',
-        title: 'กำลังพัฒนา (WIP)',
-        text: 'กรุณาติดต่อผู้ดูแลระบบหากต้องการเติมเงินเครดิต',
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#f97316'
-    });
-}
     </script>
 </nav>
