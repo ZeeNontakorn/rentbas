@@ -18,6 +18,7 @@ class PackagePurchase extends Model
         'booking_source',
         'payment_method',
         'payment_status',
+        'remaining_use',
         'locked_until',
     ];
 

@@ -36,6 +36,7 @@ class PackageCheckoutController extends Controller
             'package_id' => $package->id,
             'price' => $priceSatang,
             'status' => 'pending_payment',
+            'remaining_use' => $package->num_of_use,
             'locked_until' => now()->addMinutes(self::LOCK_MINUTES),
         ]);
 
