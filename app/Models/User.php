@@ -72,6 +72,11 @@ class User extends Authenticatable
         return $this->hasMany(CreditTransaction::class);
     }
 
+    public function creditTopupRequests(): HasMany
+    {
+        return $this->hasMany(CreditTopupRequest::class);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
