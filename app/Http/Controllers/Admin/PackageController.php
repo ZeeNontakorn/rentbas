@@ -32,6 +32,7 @@ class PackageController extends Controller
             'description' => 'nullable|string',
             'price'       => 'required|numeric|min:0',
             'num_of_use'  => 'required|integer|min:0',
+            'day'         => 'nullable|integer|min:0',
             'is_active'   => 'boolean',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp',
         ]);
@@ -61,6 +62,7 @@ class PackageController extends Controller
             'description' => 'nullable|string',
             'price'       => 'required|numeric|min:0',
             'num_of_use'  => 'required|integer|min:0',
+            'day'         => 'nullable|integer|min:0',
             'is_active'   => 'boolean',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
