@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\CreditTransaction;
 use App\Models\PrivateTrainingBooking;
+use App\Models\PackagePurchase;  
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -124,6 +125,49 @@ class CreditService
                 'balance_after' => $lockedUser->fresh()->credit_balance,
                 'private_training_booking_id' => $booking->id,
                 'note' => $note ?? "คืนเครดิตค่า Private Training #{$booking->id}",
+            ]);
+        });
+    }
+    /**
+     * หักเครดิตเพื่อจ่ายค่าซื้อแพ็กเกจ — ต้องเรียกภายใน DB::transaction ของ flow checkout
+     * (ดู PackageCheckoutController::payWithCredit) แพทเทิร์นเดียวกับ deductForBooking
+     */
+    public function deductForPackage(User $user, PackagePurchase $purchase): CreditTransaction
+    {
+        $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
+
+        if ($lockedUser->credit_balance < $purchase->price) {
+            throw new RuntimeException('ยอดเครดิตไม่เพียงพอ');
+        }
+
+        $lockedUser->decrement('credit_balance', $purchase->price);
+
+        return CreditTransaction::create([
+            'user_id' => $lockedUser->id,
+            'type' => 'deduct',
+            'amount' => $purchase->price,
+            'balance_after' => $lockedUser->fresh()->credit_balance,
+            'package_purchase_id' => $purchase->id,
+            'note' => "ชำระค่าแพ็กเกจ #{$purchase->id}",
+        ]);
+    }
+
+    /**
+     * คืนเครดิต กรณีต้องยกเลิกการซื้อแพ็กเกจที่หักเงินไปแล้ว
+     */
+    public function refundPackage(PackagePurchase $purchase, ?string $note = null): CreditTransaction
+    {
+        return DB::transaction(function () use ($purchase, $note) {
+            $lockedUser = User::whereKey($purchase->user_id)->lockForUpdate()->first();
+            $lockedUser->increment('credit_balance', $purchase->price);
+
+            return CreditTransaction::create([
+                'user_id' => $lockedUser->id,
+                'type' => 'refund',
+                'amount' => $purchase->price,
+                'balance_after' => $lockedUser->fresh()->credit_balance,
+                'package_purchase_id' => $purchase->id,
+                'note' => $note ?? "คืนเครดิตค่าแพ็กเกจ #{$purchase->id}",
             ]);
         });
     }

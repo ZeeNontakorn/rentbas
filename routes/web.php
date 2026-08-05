@@ -18,6 +18,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PackageCheckoutController;   // ← เพิ่มบรรทัดนี้
 use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
@@ -111,6 +112,11 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
         Route::get('/{booking}', [CheckoutController::class, 'show'])->name('show');
         Route::post('/{booking}/pay/credit', [CheckoutController::class, 'payWithCredit'])->name('pay.credit');
         Route::post('/{booking}/pay/promptpay', [CheckoutController::class, 'payWithPromptpay'])->name('pay.promptpay');
+    });
+    Route::prefix('package-checkout')->name('package-checkout.')->group(function () {
+        Route::post('/{package}', [PackageCheckoutController::class, 'purchase'])->name('purchase');
+        Route::get('/purchase/{purchase}', [PackageCheckoutController::class, 'show'])->name('show');
+        Route::post('/purchase/{purchase}/pay/credit', [PackageCheckoutController::class, 'payWithCredit'])->name('pay.credit');
     });
 });
 

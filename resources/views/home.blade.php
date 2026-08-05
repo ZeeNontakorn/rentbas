@@ -1441,12 +1441,29 @@ html { scroll-behavior: smooth; }
                         </div>
                         <p class="package-name">{{ $package->name }}</p>
                         <p class="package-desc">{{ $package->description }}</p>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                ใช้ได้ <strong style="color:#fff;">{{ $package->num_of_use }}</strong> ครั้ง
+                            </span>
+                        </div>
                         <div class="package-price-block">
                             <p class="package-price-label">ราคา</p>
                             <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
                         </div>
-                        <a href="#" class="package-btn">เลือกแพ็กเกจนี้</a>
-                    </div>
+                        @guest
+                        <a href="{{ route('login') }}" class="package-btn">เข้าสู่ระบบเพื่อซื้อ</a>
+                        @else
+                        <form action="{{ route('package-checkout.purchase', $package) }}" method="POST" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="package-btn" style="width:100%;border:none;cursor:pointer;font:inherit;">
+                                เลือกแพ็กเกจนี้
+                            </button>
+                        </form>
+                        @endguest
+                        </div>
                 @endforeach
             </div>
         @endif
