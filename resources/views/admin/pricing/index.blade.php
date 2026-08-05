@@ -4,15 +4,15 @@
 
 @php
     $dayTypeLabel = [
-        'everyday' => 'ทุกวัน (Sunset Time)',
-        'weekday' => 'จันทร์-ศุกร์ (Weekday Time)',
-        'weekend' => 'เสาร์-อาทิตย์',
-        'holiday' => 'วันหยุดนักขัตฤกษ์ (Holiday Time)',
+        'weekday'  => 'วันจันทร์–วันศุกร์',
+        'weekend'  => 'วันเสาร์–วันอาทิตย์',
+        'holiday'  => 'วันหยุดนักขัตฤกษ์',
+        'everyday' => 'ทุกวัน (ช่วงค่ำ)',
     ];
     $categoryLabel = [
         'personal' => 'Personal Shooting (2 ชั่วโมง)',
-        'group' => 'Group Court (3 ชั่วโมง)',
-        'private' => 'Private Group',
+        'group'    => 'Group Court (3 ชั่วโมง)',
+        'private'  => 'Private Group',
     ];
     $rulesByDayType = $pricingRules->groupBy('day_type');
     $packagesByCategory = $promotionPackages->groupBy('category');
@@ -52,30 +52,39 @@
                 <div class="px-6 py-3 border-b border-gray-100 bg-slate-50">
                     <h3 class="font-medium text-gray-700 text-sm">{{ $dayTypeLabel[$dayType] ?? $dayType }}</h3>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-3 font-medium">รายการ</th>
-                                <th class="px-6 py-3 font-medium">ช่วงเวลา</th>
-                                <th class="px-6 py-3 font-medium">ประเภทสนาม</th>
-                                <th class="px-6 py-3 font-medium">ราคา/ชั่วโมง (บาท)</th>
-                                <th class="px-6 py-3 font-medium">เปิดใช้งาน</th>
-                                <th class="px-6 py-3 font-medium">บันทึก</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @foreach ($rules as $rule)
+
+                {{-- One form per card: all rows submit together, single save button at the bottom --}}
+                <form method="POST" action="{{ route('admin.pricing.rules.bulkUpdate') }}"
+                      class="rules-card-form" id="rules-form-{{ $dayType }}">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                                 <tr>
-                                    <form method="POST" action="{{ route('admin.pricing.rules.update', $rule) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <td class="px-6 py-3 text-gray-800 font-medium">{{ $rule->label }}</td>
+                                    <th class="px-6 py-3 font-medium">รายการ</th>
+                                    <th class="px-6 py-3 font-medium">ช่วงเวลา</th>
+                                    <th class="px-6 py-3 font-medium">ประเภทสนาม</th>
+                                    <th class="px-6 py-3 font-medium">ราคา/ชั่วโมง (บาท)</th>
+                                    <th class="px-6 py-3 font-medium">เปิดใช้งาน</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach ($rules as $rule)
+                                    <tr>
+                                        <td class="px-6 py-3 text-gray-800 font-medium max-w-[200px]">
+                                            {{ $rule->label }}
+                                        </td>
                                         <td class="px-6 py-3">
                                             <div class="flex items-center gap-2">
-                                                <input type="text" name="start_time" value="{{ substr($rule->start_time, 0, 5) }}" class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                                                <input type="text" name="rules[{{ $rule->id }}][start_time]"
+                                                       value="{{ substr($rule->start_time, 0, 5) }}"
+                                                       class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                                 <span class="text-gray-400">–</span>
-                                                <input type="text" name="end_time" value="{{ substr($rule->end_time, 0, 5) }}" class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                                                <input type="text" name="rules[{{ $rule->id }}][end_time]"
+                                                       value="{{ substr($rule->end_time, 0, 5) }}"
+                                                       class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                             </div>
                                         </td>
                                         <td class="px-6 py-3">
@@ -86,29 +95,34 @@
                                         <td class="px-6 py-3">
                                             <div class="flex items-center gap-1">
                                                 <span class="text-gray-400">฿</span>
-                                                <input type="number" step="0.01" min="0" name="price_per_hour"
+                                                <input type="number" step="0.01" min="0" name="rules[{{ $rule->id }}][price_per_hour]"
                                                        value="{{ number_format($rule->price_per_hour / 100, 2, '.', '') }}"
                                                        class="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                             </div>
                                         </td>
-                                        <td class="px-6 py-3">
+                                        <td class="px-6 py-3 text-center">
                                             <label class="inline-flex items-center cursor-pointer">
-                                                <input type="hidden" name="is_active" value="0">
-                                                <input type="checkbox" name="is_active" value="1" @checked($rule->is_active)
+                                                <input type="hidden" name="rules[{{ $rule->id }}][is_active]" value="0">
+                                                <input type="checkbox" name="rules[{{ $rule->id }}][is_active]" value="1" @checked($rule->is_active)
                                                        class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                             </label>
                                         </td>
-                                        <td class="px-6 py-3 text-right">
-                                            <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-3.5 py-1.5 transition">
-                                                บันทึก
-                                            </button>
-                                        </td>
-                                    </form>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-slate-50">
+                        <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 transition"
+                                data-target="rules-form-{{ $dayType }}">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 transition">
+                            บันทึก
+                        </button>
+                    </div>
+                </form>
             </div>
         @endforeach
 
@@ -213,7 +227,7 @@
                              sits OUTSIDE normal document flow entirely. Growing/shrinking
                              this panel can never push any card, above or below, in either
                              column. --}}
-                        <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
+                        <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[50%] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
                             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
                                 <h3 class="font-semibold text-gray-800 text-[15px]">แก้ไข: {{ $package->label }}</h3>
                                 <button type="button" onclick="closePkgDrawer('{{ $editId }}')"
@@ -248,6 +262,24 @@
                 dateFormat: "H:i",
                 time_24hr: true,
                 defaultDate: input.value
+            });
+        });
+
+        // ─── Pricing rules card: cancel button reverts all fields in that card ───
+        document.querySelectorAll('.rules-cancel-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var form = document.getElementById(btn.getAttribute('data-target'));
+                if (!form) return;
+
+                form.reset(); // reverts every field back to its page-load value
+
+                // flatpickr keeps its own internal state, so re-sync the visible
+                // value after a native reset
+                form.querySelectorAll('.time-picker').forEach(function (input) {
+                    if (input._flatpickr) {
+                        input._flatpickr.setDate(input.value, true);
+                    }
+                });
             });
         });
     });

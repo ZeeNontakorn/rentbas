@@ -1034,8 +1034,8 @@ html { scroll-behavior: smooth; }
             {{ $site['about_desc'] }}
         </p>
         <div class="about-checks">
-            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 4 สนาม</div>
-            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอ ระบบ LED</div>
+            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 2 สนาม</div>
+            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอด้วยระบบ LED</div>
             <div class="check-row"><div class="check-icon">✓</div>บริการลูกค้าตลอด 7 วัน</div>
             <div class="check-row"><div class="check-icon">✓</div>จองออนไลน์ได้ 24 ชั่วโมง</div>
         </div>
@@ -1097,7 +1097,7 @@ html { scroll-behavior: smooth; }
                     @if($isOpen)
                         <!-- คลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
                         <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
-                        
+
                         <div class="half-court-divider"></div>
                         <div class="half-court-actions">
                             @php
@@ -1116,11 +1116,11 @@ html { scroll-behavior: smooth; }
                                 @php
                                     $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
                                     $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
-                                        $isActive = !isset($s->is_active) || $s->is_active; 
+                                        $isActive = !isset($s->is_active) || $s->is_active;
                                         return $s->id !== $defaultSectionId && $isActive;
                                     });
                                 @endphp
-                                
+
                                 @if($halfSections->isNotEmpty())
                                     @foreach($halfSections as $section)
                                         <a href="javascript:void(0);" class="court-btn-half">
@@ -1445,7 +1445,7 @@ const HERO_SLIDES = @json($heroSlides);
             return $s->id !== $defaultSectionId && $isActive;
         });
 
-        // ถ้ามีข้อมูล Sections ให้ใช้ 
+        // ถ้ามีข้อมูล Sections ให้ใช้
         if ($halfSections->isNotEmpty()) {
             $sectionsList = $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values();
         } else {
@@ -1483,7 +1483,7 @@ function getActiveCourts() {
     return court.sections.map(s => ({
         id: court.id,
         section_id: s.section_id,
-        name: s.name 
+        name: s.name
     }));
 }
 
@@ -1558,7 +1558,7 @@ window.addEventListener('scroll', () => {
 function buildCourtHeaders() {
     const pills = document.getElementById('bk-court-pills');
     const thead = document.getElementById('sch-thead');
-    
+
     // 1. สร้างปุ่มแท็บรายชื่อสนามในแถบสีดำ
     let pillsHtml = '';
     COURTS_DATA.forEach(c => {
@@ -1593,7 +1593,7 @@ const MONTHS = ['มกราคม','กุมภาพันธ์','มีน
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 let calYear, calMonth, selDate = null;
-let monthStatus = {}; 
+let monthStatus = {};
 
 // โหลดสถานะการจองรายเดือนจากระบบเพื่อทำจุดสีแสดงสถานะในปฏิทิน
 async function loadMonthStatus() {
@@ -1625,7 +1625,7 @@ function renderCal() {
         const isPast = new Date(calYear, calMonth, d) < new Date(td.getFullYear(), td.getMonth(), td.getDate());
         if (td.getFullYear()===calYear && td.getMonth()===calMonth && td.getDate()===d) cls += ' today';
         if (selDate === ds) cls += ' selected';
-        const dsStatus = monthStatus[ds]; 
+        const dsStatus = monthStatus[ds];
         if (isPast || dsStatus === 'past') {
             /* วันในอดีต */
         } else if (dsStatus === 'full') {
@@ -1766,7 +1766,7 @@ calYear = now2.getFullYear();
 calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
-loadMonthStatus();   
+loadMonthStatus();
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 initHeroSlideshow();

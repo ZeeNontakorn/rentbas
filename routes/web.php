@@ -219,6 +219,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/credit-topup-packages/line-url', [CreditTopupPackageController::class, 'updateLineUrl'])->name('credit-topup-packages.line-url');
 
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
+    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
+    Route::put('/pricing/rules/bulk-update', [PricingController::class, 'bulkUpdateRules'])->name('pricing.rules.bulkUpdate');
+    Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
+    Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
+    Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
+    Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
     Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
     Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
     Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
