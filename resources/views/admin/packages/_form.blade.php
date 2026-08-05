@@ -51,6 +51,14 @@
                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400">
             @error('day')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
+        <div>
+            <label for="type" class="mb-1.5 block text-sm font-medium text-gray-700">ประเภทแพ็กเกจ <span class="text-red-500">*</span></label>
+            <select id="type" name="type" required
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                <option value="private" {{ old('type', $package->type ?? 'private') == 'private' ? 'selected' : '' }}>เทรนเนอร์ส่วนตัว</option>
+            </select>
+            @error('type')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
     </div>
 
     <!-- รูปภาพแพ็กเกจ -->

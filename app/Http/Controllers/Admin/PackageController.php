@@ -29,6 +29,7 @@ class PackageController extends Controller
     {
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
+            'type'        => 'required|in:private',
             'description' => 'nullable|string',
             'price'       => 'required|numeric|min:0',
             'num_of_use'  => 'required|integer|min:0',
@@ -59,6 +60,7 @@ class PackageController extends Controller
     {
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
+            'type'        => 'required|in:private',
             'description' => 'nullable|string',
             'price'       => 'required|numeric|min:0',
             'num_of_use'  => 'required|integer|min:0',
