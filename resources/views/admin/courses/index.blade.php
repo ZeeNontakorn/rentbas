@@ -3,8 +3,8 @@
     Module : การจัดการคอร์สเรียน (ของ Admin)
     Description :
     - แสดงรายการคอร์สทั้งหมด
-    - ค้นหาชื่อคอร์ส 
-    - เปิด/ปิดการใช้งาน คอร์สเรียน 
+    - ค้นหาชื่อคอร์ส
+    - เปิด/ปิดการใช้งาน คอร์สเรียน
     - แก้ไข / ลบ / เพิ่มคอร์ส
 
     Author : Pimonphan
@@ -57,12 +57,12 @@
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
                             <th class="px-7 py-4 font-medium">ภาพ</th>
-                            <th class="px-5 py-4 font-medium">ชื่อคลาส / กลุ่มเป้าหมาย</th>
+                            <th class="px-5 py-4 font-medium">ชื่อคอร์ส / กลุ่มเป้าหมาย</th>
                             <th class="px-5 py-4 font-medium">ช่วงอายุ</th>
-                            <th class="px-5 py-4 font-medium">วันเรียนและเวลา</th>
+                            <th class="px-5 py-4 font-medium">วันและเวลาเรียน</th>
                             <th class="px-5 py-4 font-medium">แพ็กเกจ</th>
                             <th class="px-5 py-4 font-medium">สถานะ</th>
-                            <th class="px-5 py-4 text-center font-medium">จัดการ</th>
+                            <th class="px-5 py-4 font-medium">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -317,13 +317,13 @@
 
 <script>
 function confirmDeleteCourse(courseId, courseName) {
-    Swal.fire({ title: 'ยืนยันลบคอร์สนี้ใช่ไหม?', 
-    text: `เมื่อลบคอร์ส "${courseName}" แล้วจะไม่สามารถกู้คืนข้อมูลได้ (รวมถึงรอบเวลาเรียนและแพ็กเกจทั้งหมดของคอร์สนี้)`, 
-    icon: 'warning', 
-    showCancelButton: true, 
-    confirmButtonColor: '#ef4444', 
-    cancelButtonColor: '#3085d6', 
-    confirmButtonText: 'ยืนยันการลบ', 
+    Swal.fire({ title: 'ยืนยันลบคอร์สนี้ใช่ไหม?',
+    text: `เมื่อลบคอร์ส "${courseName}" แล้วจะไม่สามารถกู้คืนข้อมูลได้ (รวมถึงรอบเวลาเรียนและแพ็กเกจทั้งหมดของคอร์สนี้)`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'ยืนยันการลบ',
     cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) document.getElementById('deleteForm-' + courseId).submit();
     });

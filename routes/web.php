@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\Admin\CourtController as AdminCourtController;
 use App\Http\Controllers\Admin\CreditController;
+use App\Http\Controllers\Admin\CreditTopupController as AdminCreditTopupController;
+use App\Http\Controllers\Admin\CreditTopupPackageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\Admin\PricingController;
@@ -16,6 +18,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CreditTopupController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PrivateTrainingController;
@@ -111,6 +114,13 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
         Route::post('/{booking}/pay/credit', [CheckoutController::class, 'payWithCredit'])->name('pay.credit');
         Route::post('/{booking}/pay/promptpay', [CheckoutController::class, 'payWithPromptpay'])->name('pay.promptpay');
     });
+
+    // เติมเครดิต (ฝั่งผู้ใช้) — เลือกแพ็กเกจ/กรอกจำนวนเงินเอง -> QR mock + แจ้งช่องทางชำระเงิน -> ส่งคำขอรออนุมัติ
+    Route::prefix('credits/topup')->name('credits.topup.')->group(function () {
+        Route::get('/', [CreditTopupController::class, 'index'])->name('index');
+        Route::get('/checkout', [CreditTopupController::class, 'checkout'])->name('checkout');
+        Route::post('/', [CreditTopupController::class, 'store'])->name('store');
+    });
 });
 
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
@@ -194,6 +204,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
     Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
+
+    // คำขอเติมเครดิตที่ผู้ใช้ยื่นเอง (แนบสลิป/แจ้งช่องทางชำระเงิน) — แอดมินตรวจสอบและอนุมัติ/ปฏิเสธ
+    Route::get('/credit-topups', [AdminCreditTopupController::class, 'index'])->name('credit-topups.index');
+    Route::get('/credit-topups/{creditTopupRequest}', [AdminCreditTopupController::class, 'show'])->name('credit-topups.show');
+    Route::post('/credit-topups/{creditTopupRequest}/approve', [AdminCreditTopupController::class, 'approve'])->name('credit-topups.approve');
+    Route::post('/credit-topups/{creditTopupRequest}/reject', [AdminCreditTopupController::class, 'reject'])->name('credit-topups.reject');
+
+    // แพ็กเกจเติมเครดิต (ราคา/โปรโมชั่นโบนัส) + ลิงก์ LINE สำหรับปุ่ม "เติมผ่าน LINE ไวกว่า"
+    Route::get('/credit-topup-packages', [CreditTopupPackageController::class, 'index'])->name('credit-topup-packages.index');
+    Route::post('/credit-topup-packages', [CreditTopupPackageController::class, 'store'])->name('credit-topup-packages.store');
+    Route::put('/credit-topup-packages/{creditTopupPackage}', [CreditTopupPackageController::class, 'update'])->name('credit-topup-packages.update');
+    Route::delete('/credit-topup-packages/{creditTopupPackage}', [CreditTopupPackageController::class, 'destroy'])->name('credit-topup-packages.destroy');
+    Route::post('/credit-topup-packages/line-url', [CreditTopupPackageController::class, 'updateLineUrl'])->name('credit-topup-packages.line-url');
 
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
     Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
