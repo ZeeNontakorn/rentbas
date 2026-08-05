@@ -101,24 +101,28 @@
                         </div>
                     </div>
                 @else
+                    <!-- หน้าแรก user -->
+                    <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        หน้าแรก
+                    </a>
                     <!-- จองสนาม สำหรับ User -->
-                    <a href="{{ route('booking.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    <a href="{{ route('booking.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('booking.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
                     </a>
 
                     <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
                     @if($user->role === 'staff' && $user->membership_type === 'coach')
-                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             ตาราง Private ของฉัน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
-                        <a href="{{ route('admin.private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('admin.private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
                         </a>
                     @else
                         <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
-                        <a href="{{ route('private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('private-training.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
                         </a>
                     @endif
