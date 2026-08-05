@@ -276,6 +276,7 @@ class CourtController extends Controller
         $data = $request->validate([
             'name_a' => ['nullable', 'string', 'max:100'],
             'name_b' => ['nullable', 'string', 'max:100'],
+            'name_full' => ['nullable', 'string', 'max:100'],
             'return_date' => ['nullable', 'date'],
         ]);
 
@@ -287,15 +288,26 @@ class CourtController extends Controller
                 'name' => 'เต็มสนาม',
                 'is_active' => true,
             ]);
+        } elseif (!empty($data['name_full'])) {
+            $full->update(['name' => $data['name_full']]);
         }
 
+        // อัปเดต/สร้าง ครึ่ง A (เช็คว่ามีการส่งค่าเปิดใช้งานมาหรือไม่)
         $a = CourtSection::updateOrCreate(
             ['court_id' => $court->id, 'code' => 'a'],
-            ['name' => $data['name_a'] ?: 'ครึ่ง A', 'is_active' => true]
+            [
+                'name' => $data['name_a'] ?: 'ครึ่ง A',
+                'is_active' => $request->has('is_active_a'),
+            ]
         );
+
+        // อัปเดต/สร้าง ครึ่ง B (เช็คว่ามีการส่งค่าเปิดใช้งานมาหรือไม่)
         $b = CourtSection::updateOrCreate(
             ['court_id' => $court->id, 'code' => 'b'],
-            ['name' => $data['name_b'] ?: 'ครึ่ง B', 'is_active' => true]
+            [
+                'name' => $data['name_b'] ?: 'ครึ่ง B',
+                'is_active' => $request->has('is_active_b'),
+            ]
         );
 
         $this->syncHalfCourtBlockingMatrix($full, $a, $b);
@@ -303,7 +315,7 @@ class CourtController extends Controller
         return redirect()->route('admin.courts', [
             'court_id' => $court->id,
             'date' => $data['return_date'] ?? now()->toDateString(),
-        ])->with('success', 'แบ่งครึ่งสนามเรียบร้อยแล้ว (' . $a->name . ' / ' . $b->name . ')');
+        ])->with('success', 'บันทึกข้อมูลส่วนของสนามเรียบร้อยแล้ว');
     }
 
     /**
