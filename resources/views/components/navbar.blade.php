@@ -75,18 +75,6 @@
                             <a href="{{ route('admin.pricing.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : '' }}">ตั้งราคา</a>
                         </div>
                     </div>
-                    <a href="{{ route('admin.private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                       จัดการ Private Training
-                    </a>
-                    <a href="{{ route('admin.private-schedule.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตารางโค้ช
-                    </a>
-                    <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ดูประวัติการจอง
-                    </a>
-                    <a href="{{ route('admin.courses') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์สเรียน
-                    </a>
 
                     <!-- การสอน -->
                     <div class="relative" data-admin-nav-dropdown>
