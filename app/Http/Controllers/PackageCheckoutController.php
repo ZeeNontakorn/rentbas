@@ -109,7 +109,7 @@ class PackageCheckoutController extends Controller
 
         // TODO: ถ้ามีอีเมลยืนยันซื้อแพ็กเกจ/แจ้งแอดมิน ให้เพิ่มตรงนี้เหมือน CheckoutController::payWithCredit
 
-        return redirect()->route('history')
+        return redirect()->route('private-training.index')
             ->with('success', "ยืนยันการซื้อแพ็กเกจ \"{$packageName}\" สำเร็จ!");
     }
 }
