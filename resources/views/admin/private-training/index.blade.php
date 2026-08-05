@@ -3,20 +3,22 @@
 @section('title', 'จัดการเทรนเนอร์ส่วนตัว')
 
 @php
-    // เก็บ Config ข้อมูล Status ไว้รวมกันเพื่อให้แก้ไขจุดเดียว
+    // Config ข้อมูล Status
     $statusMap = [
         'pending' => ['label' => 'รออนุมัติ', 'bg' => 'bg-orange-100', 'text' => 'text-orange-500', 'pill' => 'bg-orange-500'],
         'awaiting_court' => ['label' => 'รอจัดสนาม', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600', 'pill' => 'bg-purple-500'],
         'confirmed' => ['label' => 'ยืนยันแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600', 'pill' => 'bg-green-500'],
         'rejected' => ['label' => 'ปฏิเสธแล้ว', 'bg' => 'bg-red-100', 'text' => 'text-red-500', 'pill' => 'bg-red-500'],
         'cancelled' => ['label' => 'ยกเลิกแล้ว', 'bg' => 'bg-gray-100', 'text' => 'text-gray-500', 'pill' => 'bg-gray-500'],
+        'expired' => ['label' => 'เลยกำหนด', 'bg' => 'bg-gray-100', 'text' => 'text-gray-700', 'pill' => 'bg-gray-500'],
     ];
 
-    // ลดความซ้ำซ้อนของ Array สำหรับวนลูปแสดง Tabs ด้านบน
+    // แสดง Tabs ด้านบน
     $tabs = [
         'pending' => 'รออนุมัติ',
         'awaiting_court' => 'รอจัดสนาม',
         'confirmed' => 'ยืนยันแล้ว',
+        'expired' => 'เลยกำหนด',
         'rejected' => 'ปฏิเสธแล้ว',
         'all' => 'ทั้งหมด',
     ];
@@ -44,7 +46,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="divide-y divide-gray-100">
                     @forelse($bookings as $b)
-                        @php $sInfo = $statusMap[$b->status] ?? $statusMap['pending']; @endphp
+                        @php $effectiveStatus = $b->effective_status; $sInfo = $statusMap[$effectiveStatus] ?? $statusMap['pending']; @endphp
                         <div class="p-5">
                             <div class="flex justify-between items-start flex-wrap gap-3">
                                 <div>
@@ -79,7 +81,11 @@
                                     @endif
                                 </div>
 
-                                @if($b->status === 'pending')
+                                @if($effectiveStatus === 'expired')
+                                    <span class="rounded bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700">
+                                        เลยกำหนดแล้ว
+                                    </span>
+                                @elseif($b->status === 'pending')
                                     <div class="flex gap-2">
                                         <button type="button"
                                             onclick="openRejectModal('{{ route('admin.private-training.reject', $b) }}')"
@@ -95,13 +101,13 @@
                                     <div class="flex gap-2">
                                         <button type="button"
                                             onclick="openRejectModal('{{ route('admin.private-training.reject', $b) }}')"
-                                            class="rounded bg-red-500 px-3 py-1.5 text-xs text-white transition hover:bg-red-600">ปฏิเสธ</button>
+                                            class="rounded bg-red-500 px-3 py-1.5 text-xs text-white transition hover:bg-red-600 cursor-pointer">ปฏิเสธ</button>
                                         <button type="button"
                                             data-action="{{ route('admin.private-training.assign-court', $b) }}"
                                             data-date="{{ $b->date->format('d/m/Y') }}"
                                             data-time="{{ substr($b->start_time, 0, 5) }}–{{ substr($b->end_time, 0, 5) }}"
                                             onclick="openCourtModal(this)"
-                                            class="rounded bg-purple-600 px-3 py-1.5 text-xs text-white transition hover:bg-purple-700">
+                                            class="rounded bg-purple-600 px-3 py-1.5 text-xs text-white transition hover:bg-purple-700 cursor-pointer">
                                             จัดสนาม
                                         </button>
                                     </div>
@@ -154,9 +160,9 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeCourtModal()"
-                        class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
+                        class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 cursor-pointer">ยกเลิก</button>
                     <button type="submit"
-                        class="w-1/2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">ยืนยันจัดสนาม</button>
+                        class="w-1/2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 cursor-pointer">ยืนยันจัดสนาม</button>
                 </div>
             </form>
         </div>
