@@ -4,15 +4,15 @@
 
 @php
     $dayTypeLabel = [
-        'everyday' => 'ทุกวัน (Sunset Time)',
-        'weekday' => 'จันทร์-ศุกร์ (Weekday Time)',
-        'weekend' => 'เสาร์-อาทิตย์',
-        'holiday' => 'วันหยุดนักขัตฤกษ์ (Holiday Time)',
+        'weekday'  => 'วันจันทร์–วันศุกร์',
+        'weekend'  => 'วันเสาร์–วันอาทิตย์',
+        'holiday'  => 'วันหยุดนักขัตฤกษ์',
+        'everyday' => 'ทุกวัน (ช่วงค่ำ)',
     ];
     $categoryLabel = [
         'personal' => 'Personal Shooting (2 ชั่วโมง)',
-        'group' => 'Group Court (3 ชั่วโมง)',
-        'private' => 'Private Group',
+        'group'    => 'Group Court (3 ชั่วโมง)',
+        'private'  => 'Private Group',
     ];
     $rulesByDayType = $pricingRules->groupBy('day_type');
     $packagesByCategory = $promotionPackages->groupBy('category');
