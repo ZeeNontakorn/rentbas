@@ -103,4 +103,56 @@ class PrivateTrainingBooking extends Model
         // ->isPast() รีเทิร์นค่า true หากเวลาที่ได้ เป็นอดีตหรือเท่ากับปัจจุบัน (now)
         return $this->date->copy()->setTimeFromTimeString($this->start_time)->isPast();
     }
+
+    /**
+     * แสดงสถานะที่ผู้ใช้เห็น
+     */
+    public function getEffectiveStatusAttribute(): string
+    {
+        if (! in_array($this->status, ['pending', 'awaiting_court', 'confirmed'], true)) {
+            return $this->status;
+        }
+
+        return $this->isStarted() ? 'expired' : $this->status;
+    }
+
+    public function scopeExpired(Builder $query): Builder
+    {
+        $today = now()->toDateString();
+        $currentTime = now()->toTimeString();
+
+        return $query->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
+            ->where(function (Builder $q) use ($today, $currentTime): void {
+                self::applyExpiredDateConstraint($q, $today, $currentTime);
+            });
+    }
+
+    public function scopeNotExpired(Builder $query): Builder
+    {
+        $today = now()->toDateString();
+        $currentTime = now()->toTimeString();
+
+        return $query->where(function (Builder $q) use ($today, $currentTime): void {
+            $q->whereNotIn('status', ['pending', 'awaiting_court', 'confirmed'])
+                ->orWhere(function (Builder $qq) use ($today, $currentTime): void {
+                    $qq->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
+                        ->where(function (Builder $q2) use ($today, $currentTime): void {
+                            $q2->whereDate('date', '>', $today)
+                                ->orWhere(function (Builder $q3) use ($today, $currentTime): void {
+                                    $q3->whereDate('date', $today)
+                                        ->where('start_time', '>', $currentTime);
+                                });
+                        });
+                });
+        });
+    }
+
+    private static function applyExpiredDateConstraint(Builder $query, string $today, string $currentTime): void
+    {
+        $query->whereDate('date', '<', $today)
+            ->orWhere(function (Builder $q) use ($today, $currentTime): void {
+                $q->whereDate('date', $today)
+                    ->where('start_time', '<=', $currentTime);
+            });
+    }
 }
