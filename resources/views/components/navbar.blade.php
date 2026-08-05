@@ -101,7 +101,7 @@
                         </div>
                     </div>
                 @else
-                    <!-- หน้าแรก user -->
+                    <!-- หน้าแรก User -->
                     <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
                     </a>
