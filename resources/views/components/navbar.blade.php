@@ -43,7 +43,7 @@
         </button>
 
         <!-- เมนูหลัก (Desktop / จอกว้าง xl ขึ้นไป) -->
-        <div class="hidden xl:flex flex-1 min-w-0 flex-nowrap justify-end items-center gap-3 2xl:gap-6 whitespace-nowrap overflow-x-auto">
+        <div class="hidden xl:flex flex-1 min-w-0 flex-nowrap justify-end items-center gap-3 2xl:gap-6 whitespace-nowrap overflow-visible">
             @auth
                 @if($activeCheckout ?? false)
                     <a href="{{ route('checkout.show', $activeCheckout) }}" class="flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 transition flex-shrink-0">
