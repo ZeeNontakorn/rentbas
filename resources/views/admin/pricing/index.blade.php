@@ -61,7 +61,7 @@
                                 <th class="px-6 py-3 font-medium">ประเภทสนาม</th>
                                 <th class="px-6 py-3 font-medium">ราคา/ชั่วโมง (บาท)</th>
                                 <th class="px-6 py-3 font-medium">เปิดใช้งาน</th>
-                                <th class="px-6 py-3 font-medium text-right">บันทึก</th>
+                                <th class="px-6 py-3 font-medium">บันทึก</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -136,7 +136,10 @@
                     {{ $categoryLabel[$category] ?? $category }}
                 </p>
 
-                <div class="grid md:grid-cols-2 gap-4">
+                {{-- CSS multi-column layout instead of grid: cards flow independently
+                     per column, so expanding one card's edit panel only pushes
+                     cards below it in the SAME column, not the card beside it. --}}
+                <div class="columns-1 md:columns-2 gap-4">
                     @foreach ($packages as $package)
                         @php
                             $dayLabelsMap = ['weekday' => 'จ-ศ', 'weekend' => 'ส-อา', 'holiday' => 'วันหยุดนักขัตฤกษ์'];
@@ -153,7 +156,7 @@
                             $editId = 'pkg-edit-' . $package->id;
                         @endphp
 
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3 break-inside-avoid mb-4">
                             <div class="flex items-start justify-between gap-2">
                                 <div>
                                     <h3 class="font-semibold text-gray-800 text-[15px]">{{ $package->label }}</h3>
@@ -191,7 +194,7 @@
                             </div>
 
                             <div class="flex justify-end gap-2 pt-1 border-t border-gray-100">
-                                <button type="button" onclick="document.getElementById('{{ $editId }}').classList.toggle('hidden')"
+                                <button type="button" onclick="openPkgDrawer('{{ $editId }}')"
                                         class="text-xs font-medium text-blue-600 hover:text-blue-800 rounded-lg px-3 py-1.5 transition">
                                     แก้ไข
                                 </button>
@@ -204,8 +207,21 @@
                                     </button>
                                 </form>
                             </div>
+                        </div>
 
-                            <div id="{{ $editId }}" class="hidden pt-3 border-t border-gray-100">
+                        {{-- Edit drawer: fixed to the viewport (position: fixed), so it
+                             sits OUTSIDE normal document flow entirely. Growing/shrinking
+                             this panel can never push any card, above or below, in either
+                             column. --}}
+                        <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                <h3 class="font-semibold text-gray-800 text-[15px]">แก้ไข: {{ $package->label }}</h3>
+                                <button type="button" onclick="closePkgDrawer('{{ $editId }}')"
+                                        class="text-gray-400 hover:text-gray-600 rounded-lg p-1 transition">
+                                    ✕
+                                </button>
+                            </div>
+                            <div class="p-5">
                                 @include('admin.pricing._package-form', ['package' => $package, 'formId' => $editId])
                             </div>
                         </div>
@@ -214,6 +230,8 @@
             </div>
         @endforeach
 
+        {{-- Shared backdrop for the edit drawer --}}
+        <div id="pkg-drawer-backdrop" class="hidden fixed inset-0 bg-black/30 z-40" onclick="closeAllPkgDrawers()"></div>
     </div>
 </div>
 @endsection
@@ -232,5 +250,33 @@
                 defaultDate: input.value
             });
         });
+    });
+
+    // ─── Package edit drawer (fixed panel, outside document flow) ───
+    function closeAllPkgDrawers() {
+        document.querySelectorAll('.pkg-drawer').forEach(function(el) {
+            el.classList.add('hidden');
+        });
+        var backdrop = document.getElementById('pkg-drawer-backdrop');
+        if (backdrop) backdrop.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function openPkgDrawer(id) {
+        closeAllPkgDrawers();
+        var panel = document.getElementById(id);
+        var backdrop = document.getElementById('pkg-drawer-backdrop');
+        if (panel) panel.classList.remove('hidden');
+        if (backdrop) backdrop.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden'); // lock page scroll while drawer is open
+    }
+
+    function closePkgDrawer(id) {
+        closeAllPkgDrawers();
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeAllPkgDrawers();
     });
 </script>
