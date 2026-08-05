@@ -6,6 +6,8 @@ use App\Models\Booking;
 use App\Models\Course;
 use App\Models\Court;
 use App\Models\CourtClosure;
+use App\Models\Facility;
+use App\Models\Review;
 use App\Models\SiteVisit;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -38,7 +40,37 @@ class HomeController extends Controller
         $scheduleCourses = $trainingCourses->where('course_type', 'schedule')->values();
         $sessionCourses = $trainingCourses->where('course_type', 'session')->values();
 
-        return view('home', compact('courts', 'trainingCourses', 'scheduleCourses', 'sessionCourses'));
+        $facilities = Facility::where('is_active', true)
+            ->withAvg(['ratings as average_rating' => function ($query) {
+                $query->whereHas('review', fn ($reviewQuery) => $reviewQuery->published());
+            }], 'rating')
+            ->withCount(['ratings as ratings_count' => function ($query) {
+                $query->whereHas('review', fn ($reviewQuery) => $reviewQuery->published());
+            }])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $reviews = Review::published()
+            ->with(['user:id,name', 'ratings.facility:id,name', 'images'])
+            ->latest('published_at')
+            ->take(12)
+            ->get();
+
+        $reviewSummary = [
+            'average' => round((float) Review::published()->avg('overall_rating'), 1),
+            'count' => Review::published()->count(),
+        ];
+
+        return view('home', compact(
+            'courts',
+            'trainingCourses',
+            'scheduleCourses',
+            'sessionCourses',
+            'facilities',
+            'reviews',
+            'reviewSummary',
+        ));
     }
 
     /**

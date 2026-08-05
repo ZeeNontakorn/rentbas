@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Court;
+use App\Models\Facility;
+use App\Models\Review;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,12 +18,13 @@ class SettingController extends Controller
      */
     public function edit()
     {
-        $courts = \App\Models\Court::all();
-
+        $courts = Court::all()->sortBy(function ($court) {
+            return $court->name;
+        }, SORT_NATURAL | SORT_FLAG_CASE)->values();
         $courtKeys = $courts->map(fn($c) => 'court_img_' . $c->id)->all();
         $settings = Setting::values(array_merge(array_keys(Setting::DEFAULTS), $courtKeys));
 
-        return view('edit-text', compact('settings', 'courts'));
+        return view('edit-text', compact('settings', 'courts', 'facilities', 'reviews'));
     }
 
     /**
@@ -29,33 +33,33 @@ class SettingController extends Controller
     public function update(Request $request)
     {
         $data = $request->validate([
-            'about_title'      => ['nullable', 'string', 'max:255'],
-            'about_desc'       => ['nullable', 'string', 'max:1000'],
-            'promo_subtitle'   => ['nullable', 'string', 'max:255'],
-            'promo_title'      => ['nullable', 'string', 'max:255'],
+            'about_title' => ['nullable', 'string', 'max:255'],
+            'about_desc' => ['nullable', 'string', 'max:1000'],
+            'promo_subtitle' => ['nullable', 'string', 'max:255'],
+            'promo_title' => ['nullable', 'string', 'max:255'],
             'promo_card_title' => ['nullable', 'string', 'max:255'],
-            'promo_card_sub'   => ['nullable', 'string', 'max:255'],
+            'promo_card_sub' => ['nullable', 'string', 'max:255'],
             'promo_image_file' => ['nullable', 'image', 'max:5120'],
-            'hero_img_1_file'  => ['nullable', 'image', 'max:5120'],
-            'hero_img_2_file'  => ['nullable', 'image', 'max:5120'],
-            'hero_img_3_file'  => ['nullable', 'image', 'max:5120'],
+            'hero_img_1_file' => ['nullable', 'image', 'max:5120'],
+            'hero_img_2_file' => ['nullable', 'image', 'max:5120'],
+            'hero_img_3_file' => ['nullable', 'image', 'max:5120'],
             'about_img_1_file' => ['nullable', 'image', 'max:5120'],
             'about_img_2_file' => ['nullable', 'image', 'max:5120'],
             'about_img_3_file' => ['nullable', 'image', 'max:5120'],
-            'courts_bg_file'   => ['nullable', 'image', 'max:10240'],
-            'community_img_file'=> ['nullable', 'image', 'max:5120'],
+            'courts_bg_file' => ['nullable', 'image', 'max:10240'],
+            'community_img_file' => ['nullable', 'image', 'max:5120'],
         ]);
 
         $imageFields = [
             'promo_image_file' => 'promo_image',
-            'hero_img_1_file'  => 'hero_img_1',
-            'hero_img_2_file'  => 'hero_img_2',
-            'hero_img_3_file'  => 'hero_img_3',
+            'hero_img_1_file' => 'hero_img_1',
+            'hero_img_2_file' => 'hero_img_2',
+            'hero_img_3_file' => 'hero_img_3',
             'about_img_1_file' => 'about_img_1',
             'about_img_2_file' => 'about_img_2',
             'about_img_3_file' => 'about_img_3',
-            'courts_bg_file'   => 'courts_bg',
-            'community_img_file'=>'community_img',
+            'courts_bg_file' => 'courts_bg',
+            'community_img_file' => 'community_img',
         ];
 
         foreach ($imageFields as $fileInput => $settingKey) {
@@ -65,7 +69,7 @@ class SettingController extends Controller
 
                 $path = $request->file($fileInput)->store('site', 'public');
                 // Store the path that can be used with asset() or Storage::url()
-                $data[$settingKey] = 'media/' . $path;
+                $data[$settingKey] = 'media/'.$path;
             }
             unset($data[$fileInput]);
         }
@@ -97,7 +101,7 @@ class SettingController extends Controller
     {
         $old = Setting::where('key', $settingKey)->value('value');
 
-        if (!$old) {
+        if (! $old) {
             return;
         }
 
