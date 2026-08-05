@@ -20,12 +20,16 @@ class PackagePurchase extends Model
         'payment_status',
         'remaining_use',
         'locked_until',
+        'paid_at',
+        'expired_at',
     ];
 
     protected function casts(): array
     {
         return [
             'locked_until' => 'datetime',
+            'paid_at'      => 'datetime',
+            'expired_at'   => 'datetime',
         ];
     }
 

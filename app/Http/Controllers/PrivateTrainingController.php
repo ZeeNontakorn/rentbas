@@ -13,6 +13,7 @@ use App\Models\PromotionPackage;
 use App\Models\User;
 use App\Services\CreditService;
 use App\Services\PricingService;
+use App\Models\PackagePurchase;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,16 +36,25 @@ class PrivateTrainingController extends Controller
     {
         $search = $request->query('search');
 
-        $coaches = User::where('role', 'staff')
-            ->where('membership_type', 'coach')
-            ->with('staffProfile')
-            // ใช้ nested closure (fn($q) และ fn($qq)) เพื่อสร้างวงเล็บคลุมเงื่อนไข OR ป้องกันการคลาดเคลื่อนกับเงื่อนไขหลักด้านบน
-            ->when($search, fn($q) => $q->where(
-                fn($qq) => $qq->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-            ))
-            ->orderBy('name')
-            ->get();
+        $hasValidPackage = PackagePurchase::where('user_id', $request->user()->id)
+            ->where('status', 'approved')   // ← เปลี่ยนจาก 'paid' เป็น 'approved'
+            ->where('remaining_use', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
+            })
+            ->exists();
+
+        $coaches = $hasValidPackage
+            ? User::where('role', 'staff')
+                ->where('membership_type', 'coach')
+                ->with('staffProfile')
+                ->when($search, fn($q) => $q->where(
+                    fn($qq) => $qq->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                ))
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         $myRequests = PrivateTrainingBooking::with('coach')
             ->where('user_id', $request->user()->id)
@@ -52,7 +62,7 @@ class PrivateTrainingController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('private-training.index', compact('coaches', 'search', 'myRequests'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage'));
     }
 
     public function show(User $coach)
@@ -234,6 +244,22 @@ class PrivateTrainingController extends Controller
 
         // ใช้ DB::transaction เพื่อทำ Atomic Operation ถ้ามีข้อผิดพลาดระบบจะ Rollback สิ่งที่ query ไว้ทั้งหมด ป้องกันข้อมูลขยะ
         $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data, $promotionPackageId) {
+
+            // ล็อกแพ็กเกจที่ใช้ได้ของ user (เลือกอันที่ใกล้หมดอายุก่อน)
+            $packagePurchase = PackagePurchase::where('user_id', $request->user()->id)
+                ->where('status', 'approved')
+                ->where('remaining_use', '>', 0)
+                ->where(function ($q) {
+                    $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
+                })
+                ->orderByRaw('expired_at IS NULL, expired_at ASC')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $packagePurchase) {
+                return 'คุณไม่มีแพ็กเกจที่ใช้จองเทรนเนอร์ได้ กรุณาซื้อแพ็กเกจก่อน';
+            }
+
             $isWithinAvailableSchedule = Availability::where('user_id', $coach->id)
                 ->whereDate('date', $date)
                 ->where('status', 'available')
@@ -254,8 +280,6 @@ class PrivateTrainingController extends Controller
             if ($isBusy)
                 return 'ช่วงเวลานี้โค้ชติดภารกิจอื่นอยู่ ไม่สามารถจองได้';
 
-            // lockForUpdate() คือ Pessimistic Locking ล็อก row ในฐานข้อมูลจนกว่า Transaction จะจบ
-            // ป้องกัน Race Condition กรณีที่มีผู้ใช้ 2 คนกดจองเวลาเดียวกันเป๊ะในระดับเสี้ยววินาที
             $overlap = PrivateTrainingBooking::overlapping($coach->id, $date, $startDb, $endDb)
                 ->lockForUpdate()
                 ->exists();
@@ -263,7 +287,9 @@ class PrivateTrainingController extends Controller
             if ($overlap)
                 return 'ช่วงเวลานี้มีการจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น';
 
-            // array_merge รวม array ก้อนที่ส่งมาจาก Request เข้ากับข้อมูลที่ถูกบังคับใส่ (ป้องกันการถูก Inject ข้อมูลผิดๆ ผ่านฟอร์ม)
+            // หักสิทธิ์แพ็กเกจตอนส่งคำขอเลย (กันชนกันถ้าส่งหลายคำขอพร้อมกัน)
+            $packagePurchase->decrement('remaining_use');
+
             PrivateTrainingBooking::create(array_merge($data, [
                 'user_id' => $request->user()->id,
                 'date' => $date,
@@ -271,6 +297,7 @@ class PrivateTrainingController extends Controller
                 'end_time' => $endDb,
                 'status' => 'pending',
                 'promotion_package_id' => $promotionPackageId,
+                'package_purchase_id' => $packagePurchase->id,
             ]));
 
             return null;
@@ -297,7 +324,16 @@ class PrivateTrainingController extends Controller
             return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการที่ถึงเวลาแล้วได้']);
         }
 
-        $privateTrainingBooking->update(['status' => 'cancelled']);
+        DB::transaction(function () use ($privateTrainingBooking) {
+            if ($privateTrainingBooking->package_purchase_id) {
+                PackagePurchase::whereKey($privateTrainingBooking->package_purchase_id)
+                    ->lockForUpdate()
+                    ->increment('remaining_use');
+            }
+
+            $privateTrainingBooking->update(['status' => 'cancelled']);
+        });
+
         return back()->with('success', 'ยกเลิกคำขอจองเรียบร้อย');
     }
 
@@ -417,20 +453,20 @@ class PrivateTrainingController extends Controller
                 return 'คำนวณราคาไม่สำเร็จ: ' . $e->getMessage();
             }
 
-            // ตั้งค่าราคาลงบน instance ในหน่วยความจำก่อน (ยังไม่ save) เพราะ deductForPrivateTraining()
-            // อ่านค่าจาก $booking->price โดยตรง — ถ้าไม่ตั้งก่อน ค่านี้จะยังเป็น null (แถวเดิมใน DB
-            // ที่ยังไม่เคยมีการจัดสนาม) แล้วไปเรียก decrement('credit_balance', null) ทำให้เกิด
-            // InvalidArgumentException: Non-numeric value passed to decrement method
+            // ตั้งค่าราคาลงบน instance ก่อน (ยังไว้เก็บไว้เป็นข้อมูลอ้างอิง แม้จะไม่หักเครดิตจริงก็ตาม)
             $booking->price = $priceResult['total'];
             $booking->price_breakdown = $priceResult['breakdown'];
             $booking->pricing_rule_id = $priceResult['pricing_rule_id'];
 
-            // หักเครดิตลูกค้าทันทีตอนจัดสนาม (ถ้าเครดิตไม่พอ จะ throw RuntimeException
-            // แล้ว rollback ทั้ง transaction — แอดมินจะเห็น error กลับไปแก้ไข/แจ้งลูกค้าเติมเครดิตก่อน)
-            try {
-                $this->creditService->deductForPrivateTraining($booking->user, $booking);
-            } catch (RuntimeException $e) {
-                return $e->getMessage();
+            // ถ้าจองผ่านแพ็กเกจ ถือว่าจ่ายครบแล้วตอนซื้อแพ็กเกจ ไม่ต้องหักเครดิตซ้ำ
+            $paidByPackage = (bool) $booking->package_purchase_id;
+
+            if (! $paidByPackage) {
+                try {
+                    $this->creditService->deductForPrivateTraining($booking->user, $booking);
+                } catch (RuntimeException $e) {
+                    return $e->getMessage();
+                }
             }
 
             $booking->update([
@@ -442,7 +478,7 @@ class PrivateTrainingController extends Controller
                 'price' => $priceResult['total'],
                 'price_breakdown' => $priceResult['breakdown'],
                 'pricing_rule_id' => $priceResult['pricing_rule_id'],
-                'payment_status' => 'paid',
+                'payment_status' => $paidByPackage ? 'paid_by_package' : 'paid',
             ]);
 
 
@@ -467,7 +503,7 @@ class PrivateTrainingController extends Controller
             "โค้ช {$privateTrainingBooking->coach->name} | {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name} | "
                 . "{$privateTrainingBooking->date->toDateString()} {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}",
             $privateTrainingBooking->price,
-            'credit'
+            $privateTrainingBooking->package_purchase_id ? 'package' : 'credit'
         );
 
         return back()->with('success', 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว (หักเครดิตลูกค้าเรียบร้อย)');
@@ -481,10 +517,18 @@ class PrivateTrainingController extends Controller
 
         $data = $request->validate(['reject_reason' => ['required', 'string', 'max:500']]);
 
-        $privateTrainingBooking->update([
-            'status' => 'rejected',
-            'reject_reason' => $data['reject_reason'],
-        ]);
+        DB::transaction(function () use ($privateTrainingBooking, $data) {
+            if ($privateTrainingBooking->package_purchase_id) {
+                PackagePurchase::whereKey($privateTrainingBooking->package_purchase_id)
+                    ->lockForUpdate()
+                    ->increment('remaining_use');
+            }
+
+            $privateTrainingBooking->update([
+                'status' => 'rejected',
+                'reject_reason' => $data['reject_reason'],
+            ]);
+        });
 
         $timeLabel = $this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time);
         $this->notifyUser(

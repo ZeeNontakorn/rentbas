@@ -85,6 +85,10 @@ class PackageCheckoutController extends Controller
                     'payment_method' => 'credit',
                     'payment_status' => 'paid',
                     'locked_until' => null,
+                    'paid_at' => now(),
+                    'expired_at' => $locked->package->day
+                        ? now()->addDays($locked->package->day)
+                        : null,
                 ]);
 
                 return $locked->fresh();

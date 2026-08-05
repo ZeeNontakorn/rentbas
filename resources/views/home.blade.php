@@ -1418,7 +1418,7 @@ html { scroll-behavior: smooth; }
 
 @if($packages->isNotEmpty())
     {{-- ═══ PACKAGES ═══ --}}
-    <section class="packages-section" data-aos="fade-up">
+    <section class="packages-section" id="packages" data-aos="fade-up">
         <div class="packages-header">
             <p class="packages-label">Package</p>
             <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
