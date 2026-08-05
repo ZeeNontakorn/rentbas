@@ -307,42 +307,12 @@ class PrivateTrainingController extends Controller
     public function adminIndex(Request $request)
     {
         $status = $request->query('status', 'pending');
-        
-        // เก็บค่าเวลาปัจจุบันเพื่อใช้เปรียบเทียบ
-        $now = now();
-        $currentDate = $now->toDateString();
-        $currentTime = $now->toTimeString();
 
         $bookings = PrivateTrainingBooking::with(['user', 'coach', 'court', 'courtSection'])
-            ->when($status && $status !== 'all', function ($q) use ($status, $currentDate, $currentTime) {
-                if ($status === 'overdue') {
-                    // กรณีดูแท็บ "เลยกำหนด": ดึงรายการที่ค้างอยู่ (pending, awaiting_court) และเวลาล่วงเลยมาแล้ว
-                    $q->whereIn('status', ['pending', 'awaiting_court'])
-                      ->where(function ($query) use ($currentDate, $currentTime) {
-                          $query->where('date', '<', $currentDate)
-                                ->orWhere(function ($sq) use ($currentDate, $currentTime) {
-                                    $sq->where('date', '=', $currentDate)
-                                       ->where('start_time', '<', $currentTime);
-                                });
-                      });
-                } else {
-                    // กรณีดูแท็บอื่นๆ: กรองตาม status ที่ส่งมาปกติ
-                    $q->where('status', $status);
-                    
-                    // แต่ถ้าเป็นแท็บที่ยังต้องรอดำเนินการ จะต้อง "ยังไม่เลยกำหนดเวลา" เท่านั้น
-                    if (in_array($status, ['pending', 'awaiting_court'])) {
-                        $q->where(function ($query) use ($currentDate, $currentTime) {
-                            $query->where('date', '>', $currentDate)
-                                  ->orWhere(function ($sq) use ($currentDate, $currentTime) {
-                                      $sq->where('date', '=', $currentDate)
-                                         ->where('start_time', '>=', $currentTime);
-                                  });
-                        });
-                    }
-                }
-            })
-            ->oldest()// oldest() มีค่าเท่ากับ orderBy('created_at', 'asc')
+            ->when($status && $status !== 'all', fn($q) => $q->where('status', $status))
+            ->oldest()// oldest() มีค่าเท่ากับ orderBy('created_at', 'asc') คือคิวที่มาก่อนจะอยู่บนสุด (First In, First Out)
             ->paginate(15)
+            // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
         $courts = Court::with(['sections' => fn ($query) => $query->where('is_active', true)])
