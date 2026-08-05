@@ -81,7 +81,6 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     // Booking System
     Route::prefix('booking')->name('booking.')->group(function () {
         Route::get('/', [BookingController::class, 'index'])->name('index');
-        Route::get('/courts', [BookingController::class, 'courts'])->name('courts');
         Route::get('/sections', [BookingController::class, 'sections'])->name('sections');
         Route::get('/calendar', [BookingController::class, 'calendar'])->name('calendar');
         Route::get('/court/{court}', [BookingController::class, 'show'])->name('show');
@@ -227,8 +226,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
     Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
     Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
-    Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
-    Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
 });
 
 // 6. Password Reset via OTP
