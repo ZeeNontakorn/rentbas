@@ -36,9 +36,9 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-[1180px] w-full table-fixed text-left text-sm">
+                <table class="min-w-[1280px] w-full table-fixed text-left text-sm">
                     <colgroup>
-                        <col class="w-[100px]"><col class="w-[220px]"><col class="w-[300px]"><col class="w-[120px]"><col class="w-[150px]"><col class="w-[140px]"><col class="w-[175px]">
+                        <col class="w-[100px]"><col class="w-[200px]"><col class="w-[270px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[175px]">
                     </colgroup>
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
@@ -47,6 +47,7 @@
                             <th class="px-5 py-4 font-medium">รายละเอียด</th>
                             <th class="px-5 py-4 font-medium">ราคา</th>
                             <th class="px-5 py-4 font-medium">จำนวนครั้งที่ใช้ได้</th>
+                            <th class="px-5 py-4 font-medium">จำนวนวัน</th>
                             <th class="px-5 py-4 font-medium">สถานะ</th>
                             <th class="px-5 py-4 text-center font-medium">จัดการ</th>
                         </tr>
@@ -76,6 +77,13 @@
                                 </td>
                                 <td class="px-5 py-6">
                                     <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $package->num_of_use }} ครั้ง</span>
+                                </td>
+                                <td class="px-5 py-6">
+                                    @if (! is_null($package->day))
+                                        <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $package->day }} วัน</span>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-6">
                                     <form action="{{ route('admin.packages.toggleStatus', $package) }}" method="POST" class="inline-flex items-center gap-2.5">
@@ -109,7 +117,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-6 py-16 text-center text-gray-400">
+                            <tr><td colspan="8" class="px-6 py-16 text-center text-gray-400">
                                 <p class="font-medium text-sm">ยังไม่มีแพ็กเกจในระบบ</p>
                                 <a href="{{ route('admin.packages.create') }}" class="mt-3 inline-block text-sm font-medium text-blue-500 hover:text-blue-600">+ เพิ่มแพ็กเกจแรกของคุณ</a>
                             </td></tr>

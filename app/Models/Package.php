@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Package extends Model
 {
     protected $fillable = [
-        'name', 'description', 'price', 'num_of_use', 'is_active', 'image'
+        'name', 'description', 'price', 'num_of_use', 'day', 'is_active', 'image'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'day' => 'integer',
         'is_active' => 'boolean',
     ];
 
