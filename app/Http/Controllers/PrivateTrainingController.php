@@ -80,20 +80,25 @@ class PrivateTrainingController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        // แพ็กเกจโปรโมชั่นที่เปิดใช้งาน ให้ลูกค้าเลือกตอนส่งคำขอ — filter เฉพาะหมวดหมู่ 'private'
-        // เพราะเป็นแพ็กเกจที่ตั้งใจไว้สำหรับ Private Training เท่านั้น (แพ็กเกจหมวด personal/group
-        // เป็นของการจองสนามปกติ ไม่เกี่ยวข้องกับ flow นี้ ไม่ควรเอามาให้เลือกปนกัน)
-        // ส่วนเงื่อนไขระยะเวลา (duration_hours) จะเช็คแบบ real-time ฝั่ง client ตอนลูกค้าลากเลือก
-        // ช่วงเวลาในปฏิทิน (ดู select() ใน <script> ด้านล่างของหน้านี้) เพราะยังไม่รู้ระยะเวลาจนกว่า
-        // จะเลือกช่วงเวลา และจะเช็คเงื่อนไขทั้งหมดอีกครั้งจริงจังตอนแอดมินจัดสนามให้ ณ ตอนที่รู้
-        // court_type แล้ว — ดู PrivateTrainingController::assignCourt())
+        // แพ็กเกจที่ user ซื้อไว้และยังใช้ได้ (type = private) — ดึงมาแสดงให้ลูกค้าเห็นว่า
+        // เหลือสิทธิ์กี่ครั้ง จะถูกใช้อัตโนมัติตอนส่งคำขอ (เลือกอันใกล้หมดอายุก่อนใน store())
+        $myPackagePurchases = PackagePurchase::with('package')
+            ->where('user_id', auth()->id())
+            ->where('status', 'approved')
+            ->where('remaining_use', '>', 0)
+            ->whereHas('package', fn($q) => $q->where('type', 'private'))
+            ->where(function ($q) {
+                $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
+            })
+            ->orderByRaw('expired_at IS NULL, expired_at ASC')
+            ->get();
+
         $promotionPackages = PromotionPackage::where('is_active', true)
             ->where('category', 'private')
             ->orderBy('label')
             ->get();
 
-        // ใช้เครื่องหมาย + (Array Union) เพื่อนำ array ธรรมดาไปต่อท้ายผลลัพธ์ที่ได้จากฟังก์ชัน compact()
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }
@@ -198,7 +203,7 @@ class PrivateTrainingController extends Controller
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'note' => ['nullable', 'string', 'max:500'],
-            'promotion_code' => ['nullable', 'string'],
+            'package_purchase_id' => ['required', 'integer', 'exists:package_purchases,id'],
         ]);
 
         $coach = User::findOrFail($data['coach_id']);
@@ -227,37 +232,21 @@ class PrivateTrainingController extends Controller
         $startDb = $data['start_time'] . ':00';
         $endDb = $data['end_time'] . ':00';
 
-        // เช็คแค่ว่า code นี้มีอยู่จริงและเปิดใช้งาน (ยังไม่เช็ค court_type/duration/วันที่ ณ
-        // จุดนี้ เพราะยังไม่รู้ court_type จนกว่าแอดมินจะจัดสนามให้ — จะเช็คเงื่อนไขที่เหลือ
-        // ทั้งหมดอีกทีตอน assignCourt() ผ่าน PricingService::calculate() ให้ถูกต้องตรงกับ
-        // สนามที่ถูกจัดจริง ถ้าใช้ไม่ได้ตอนนั้นแอดมินจะเห็น error แทนการ silently ignore)
-        $promotionPackageId = null;
-        if (! empty($data['promotion_code'])) {
-            $promotionPackageId = PromotionPackage::where('code', $data['promotion_code'])
-                ->where('is_active', true)
-                ->value('id');
+        $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
 
-            if (! $promotionPackageId) {
-                return back()->withErrors(['promotion_code' => 'รหัสโปรโมชั่นนี้ไม่ถูกต้องหรือถูกปิดใช้งานแล้ว']);
-            }
-        }
-
-        // ใช้ DB::transaction เพื่อทำ Atomic Operation ถ้ามีข้อผิดพลาดระบบจะ Rollback สิ่งที่ query ไว้ทั้งหมด ป้องกันข้อมูลขยะ
-        $error = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data, $promotionPackageId) {
-
-            // ล็อกแพ็กเกจที่ใช้ได้ของ user (เลือกอันที่ใกล้หมดอายุก่อน)
-            $packagePurchase = PackagePurchase::where('user_id', $request->user()->id)
+            // ล็อกแพ็กเกจที่ลูกค้าเลือกเอง ต้องเป็นของ user นี้จริง และยังใช้ได้อยู่ ณ ขณะนี้
+            $packagePurchase = PackagePurchase::where('id', $data['package_purchase_id'])
+                ->where('user_id', $request->user()->id)
                 ->where('status', 'approved')
                 ->where('remaining_use', '>', 0)
                 ->where(function ($q) {
                     $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
                 })
-                ->orderByRaw('expired_at IS NULL, expired_at ASC')
                 ->lockForUpdate()
                 ->first();
 
             if (! $packagePurchase) {
-                return 'คุณไม่มีแพ็กเกจที่ใช้จองเทรนเนอร์ได้ กรุณาซื้อแพ็กเกจก่อน';
+                return 'แพ็กเกจที่เลือกไม่สามารถใช้ได้แล้ว (อาจถูกใช้หมดหรือหมดอายุไปแล้ว) กรุณาเลือกแพ็กเกจอื่น';
             }
 
             $isWithinAvailableSchedule = Availability::where('user_id', $coach->id)
@@ -287,18 +276,18 @@ class PrivateTrainingController extends Controller
             if ($overlap)
                 return 'ช่วงเวลานี้มีการจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น';
 
-            // หักสิทธิ์แพ็กเกจตอนส่งคำขอเลย (กันชนกันถ้าส่งหลายคำขอพร้อมกัน)
             $packagePurchase->decrement('remaining_use');
 
-            PrivateTrainingBooking::create(array_merge($data, [
+            PrivateTrainingBooking::create([
                 'user_id' => $request->user()->id,
+                'coach_id' => $coach->id,
                 'date' => $date,
                 'start_time' => $startDb,
                 'end_time' => $endDb,
+                'note' => $data['note'] ?? null,
                 'status' => 'pending',
-                'promotion_package_id' => $promotionPackageId,
                 'package_purchase_id' => $packagePurchase->id,
-            ]));
+            ]);
 
             return null;
         });
