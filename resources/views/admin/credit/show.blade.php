@@ -14,6 +14,8 @@
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-6 max-w-4xl">
 
+        @include('components.mail-loading-overlay')
+
         {{-- Breadcrumb --}}
         <a href="{{ route('admin.users.show', $user) }}"
            class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
@@ -58,19 +60,41 @@
             <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 class="font-medium text-gray-700 text-sm mb-4">เติมเครดิตให้ผู้ใช้รายนี้</h2>
 
-                <form method="POST" action="{{ route('admin.credits.topup', $user) }}" class="flex flex-col sm:flex-row items-end gap-3">
+                <form method="POST" action="{{ route('admin.credits.topup', $user) }}" class="flex flex-col sm:flex-row items-end gap-3"
+                      onsubmit="showMailLoadingOverlay('กำลังเติมเครดิตและส่งอีเมลใบเสร็จให้ลูกค้า...'); this.querySelector('button[type=submit]').disabled = true;">
                     @csrf
-                    <div class="flex-1 w-full">
-                        <label class="block text-xs font-medium text-gray-500 mb-1">จำนวนเงิน (บาท)</label>
-                        <input type="number" step="0.01" min="1" name="amount" required
-                               placeholder="เช่น 500"
-                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                    <div class="flex flex-col sm:flex-row gap-6 w-full">
+                        <div>
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">จำนวนเงิน (บาท)</label>
+                                <input type="number" step="0.01" min="1" name="amount" required
+                                    placeholder="เช่น 500"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">หมายเหตุ (ถ้ามี)</label>
+                                <input type="text" name="note" maxlength="255" placeholder="เช่น เติมเงินสดหน้าเคาน์เตอร์"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                        </div>
+                        <div class="flex-1 w-full">
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">ช่องทางชำระเงิน</label>
+                                <select name="payment_method" required
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                                    <option value="">-- เลือกช่องทาง --</option>
+                                    <option value="line">LINE / QR Code</option>
+                                    <option value="cash_counter">ชำระเงินสดที่เคาน์เตอร์</option>
+                                </select>
+                            </div>
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">ชื่อ-นามสกุลผู้ดำเนินการ </label>
+                                <input type="text" name="processed_by_name" required maxlength="100" placeholder="เช่น สมชาย ใจดี"
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex-1 w-full">
-                        <label class="block text-xs font-medium text-gray-500 mb-1">หมายเหตุ (ถ้ามี)</label>
-                        <input type="text" name="note" maxlength="255" placeholder="เช่น เติมเงินสดหน้าเคาน์เตอร์"
-                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
-                    </div>
+
                     <button type="submit"
                             class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition whitespace-nowrap">
                         เติมเครดิต
@@ -119,6 +143,8 @@
                                     {{ $tx->note ?? '—' }}
                                     @if($tx->admin)
                                         <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->name }}</span>
+                                        <span class="block text-[11px] text-gray-400">ช่องทาง: {{ $tx->payment_method ?? '—' }}</span>
+                                        <span class="block text-[11px] text-gray-400">ดำเนินการโดย: {{ $tx->processed_by_name ?? '—' }}</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 text-right font-medium {{ $meta['text'] }}">

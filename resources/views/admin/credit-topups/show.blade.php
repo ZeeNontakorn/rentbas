@@ -1,0 +1,123 @@
+@extends('layouts.app')
+
+@section('title', 'คำขอเติมเครดิต #' . $topupRequest->id)
+
+@php
+    $statusMeta = [
+        'pending' => ['label' => 'รอตรวจสอบ', 'bg' => 'bg-amber-100', 'text' => 'text-amber-700'],
+        'approved' => ['label' => 'อนุมัติแล้ว', 'bg' => 'bg-emerald-100', 'text' => 'text-emerald-700'],
+        'rejected' => ['label' => 'ปฏิเสธแล้ว', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
+    ];
+    $meta = $statusMeta[$topupRequest->status];
+@endphp
+
+@section('content')
+<div class="bg-slate-50 text-gray-900 min-h-screen py-8">
+    <div class="container mx-auto px-6 max-w-3xl">
+
+        @include('components.mail-loading-overlay')
+
+        <a href="{{ route('admin.credit-topups.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
+            <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            กลับไปหน้ารายการคำขอ
+        </a>
+
+        @if (session('success'))
+            <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm">{{ session('success') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                @foreach ($errors->all() as $err)<div>• {{ $err }}</div>@endforeach
+            </div>
+        @endif
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-5">
+                <h1 class="font-semibold text-gray-800 text-lg">คำขอเติมเครดิต #{{ $topupRequest->id }}</h1>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $meta['bg'] }} {{ $meta['text'] }}">{{ $meta['label'] }}</span>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-x-6 gap-y-4 text-sm mb-6">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">ผู้ใช้</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
+                    <p class="text-xs text-gray-400">{{ $topupRequest->user->email }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">เติมโดย (ชื่อ-นามสกุลที่แจ้ง)</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->topper_name }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">ยอดชำระ / เครดิตที่ได้รับ</p>
+                    <p class="font-medium text-gray-800">฿{{ number_format($topupRequest->price_satang / 100, 2) }} → <span class="text-emerald-600">฿{{ number_format($topupRequest->credit_satang / 100, 2) }}</span></p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">ช่องทางการชำระเงิน</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->payment_method_label }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">วันที่ยื่นคำขอ</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->created_at->format('d/m/Y H:i') }}</p>
+                </div>
+                @if($topupRequest->approver)
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">ดำเนินการโดย</p>
+                        <p class="font-medium text-gray-800">{{ $topupRequest->approver->name }} · {{ $topupRequest->approved_at?->format('d/m/Y H:i') }}</p>
+                    </div>
+                @endif
+            </div>
+
+            @if($topupRequest->status === 'rejected' && $topupRequest->rejected_reason)
+                <div class="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">เหตุผลที่ปฏิเสธ: {{ $topupRequest->rejected_reason }}</div>
+            @endif
+
+            {{-- สลิป --}}
+            <div class="mb-6">
+                <p class="text-xs text-gray-400 mb-2">สลิปการโอนเงิน</p>
+                @if($topupRequest->slip_url)
+                    <a href="{{ $topupRequest->slip_url }}" target="_blank" rel="noopener">
+                        <img src="{{ $topupRequest->slip_url }}" alt="สลิป" class="max-w-[280px] rounded-lg border border-gray-200">
+                    </a>
+                @else
+                    <p class="text-sm text-gray-400">ไม่มีสลิปแนบมา (ช่องทาง {{ $topupRequest->payment_method_label }})</p>
+                @endif
+            </div>
+
+            @if($topupRequest->status === 'pending')
+                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
+                    <form method="POST" action="{{ route('admin.credit-topups.approve', $topupRequest) }}" class="flex-1"
+                          onsubmit="showMailLoadingOverlay('กำลังอนุมัติและส่งอีเมลใบเสร็จให้ลูกค้า...'); this.querySelector('button').disabled = true;">
+                        @csrf
+                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 transition">
+                            ✓ อนุมัติและเติมเครดิต
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('admin.credit-topups.reject', $topupRequest) }}" class="flex-1 flex gap-2" onsubmit="return promptRejectReason(this)">
+                        @csrf
+                        <input type="hidden" name="reason" class="reject-reason-input">
+                        <button type="submit" class="w-full text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 transition">
+                            ✕ ปฏิเสธคำขอ
+                        </button>
+                    </form>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function promptRejectReason(form) {
+    const reason = prompt('ระบุเหตุผลที่ปฏิเสธคำขอนี้:');
+    if (!reason || !reason.trim()) return false;
+    form.querySelector('.reject-reason-input').value = reason.trim();
+    showMailLoadingOverlay('กำลังปฏิเสธคำขอและส่งอีเมลแจ้งลูกค้า...');
+    form.querySelector('button').disabled = true;
+    return true;
+}
+</script>
+@endpush
+@endsection
