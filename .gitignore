@@ -29,3 +29,5 @@ Homestead.json
 .phpactor.json
 auth.json
 .DS_Store
+/playwright-report/
+/test-results/
