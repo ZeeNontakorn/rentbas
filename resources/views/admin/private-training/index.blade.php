@@ -10,6 +10,7 @@
         'confirmed' => ['label' => 'ยืนยันแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600', 'pill' => 'bg-green-500'],
         'rejected' => ['label' => 'ปฏิเสธแล้ว', 'bg' => 'bg-red-100', 'text' => 'text-red-500', 'pill' => 'bg-red-500'],
         'cancelled' => ['label' => 'ยกเลิกแล้ว', 'bg' => 'bg-gray-100', 'text' => 'text-gray-500', 'pill' => 'bg-gray-500'],
+        'overdue' => ['label' => 'เลยกำหนด', 'bg' => 'bg-rose-100', 'text' => 'text-rose-600', 'pill' => 'bg-rose-500'],
     ];
 
     // ลดความซ้ำซ้อนของ Array สำหรับวนลูปแสดง Tabs ด้านบน
@@ -18,6 +19,7 @@
         'awaiting_court' => 'รอจัดสนาม',
         'confirmed' => 'ยืนยันแล้ว',
         'rejected' => 'ปฏิเสธแล้ว',
+        'overdue' => 'เลยกำหนด',
         'all' => 'ทั้งหมด',
     ];
 @endphp
@@ -44,7 +46,17 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="divide-y divide-gray-100">
                     @forelse($bookings as $b)
-                        @php $sInfo = $statusMap[$b->status] ?? $statusMap['pending']; @endphp
+                        @php 
+                            $currentStatus = $b->status;
+                            
+                            // ตรวจสอบว่าถ้ายังรอการจัดการ แต่เวลาปัจจุบันเลยเวลาเริ่มจองไปแล้ว ให้แสดงเป็นสถานะ "เลยกำหนด"
+                            $bookingDateTime = \Carbon\Carbon::parse($b->date->format('Y-m-d') . ' ' . $b->start_time);
+                            if (in_array($currentStatus, ['pending', 'awaiting_court']) && $bookingDateTime->isPast()) {
+                                $currentStatus = 'overdue';
+                            }
+                            
+                            $sInfo = $statusMap[$currentStatus] ?? $statusMap['pending']; 
+                        @endphp
                         <div class="p-5">
                             <div class="flex justify-between items-start flex-wrap gap-3">
                                 <div>
@@ -60,8 +72,6 @@
                                     <p class="text-sm font-medium text-gray-800">ลูกค้า: {{ $b->user->name }}
                                         ({{ $b->user->email }})</p>
                                     <p class="text-xs text-gray-500 mt-1">
-                                        {{-- ใช้ประโยชน์จาก Model Casts ($b->date เป็น Carbon Object อัตโนมัติแล้ว จึงเรียก
-                                        format() ได้เลย) --}}
                                         วันที่ {{ $b->date->format('d/m/Y') }}
                                         &nbsp;•&nbsp; เวลา {{ substr($b->start_time, 0, 5) }} - {{ substr($b->end_time, 0, 5) }}
                                         น.
@@ -79,7 +89,14 @@
                                     @endif
                                 </div>
 
-                                @if($b->status === 'pending')
+                                {{-- ตรวจสอบจาก $currentStatus ที่คำนวณใหม่แทน $b->status --}}
+                                @if($currentStatus === 'overdue')
+                                    <div class="flex gap-2">
+                                        <span class="inline-flex items-center rounded-md bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 ring-1 ring-inset ring-rose-500/10">
+                                            ไม่สามารถดำเนินการได้ (เลยกำหนดเวลา)
+                                        </span>
+                                    </div>
+                                @elseif($currentStatus === 'pending')
                                     <div class="flex gap-2">
                                         <button type="button"
                                             onclick="openRejectModal('{{ route('admin.private-training.reject', $b) }}')"
@@ -91,7 +108,7 @@
                                                 class="bg-green-500 text-white text-xs px-3 py-1.5 rounded cursor-pointer transition duration-200 hover:scale-105 hover:bg-green-600">อนุมัติ</button>
                                         </form>
                                     </div>
-                                @elseif($b->status === 'awaiting_court')
+                                @elseif($currentStatus === 'awaiting_court')
                                     <div class="flex gap-2">
                                         <button type="button"
                                             onclick="openRejectModal('{{ route('admin.private-training.reject', $b) }}')"
@@ -115,50 +132,12 @@
                     @endforelse
                 </div>
 
-                {{-- Pagination จะแสดงก็ต่อเมื่อมีหลายหน้าเท่านั้น ($bookings->hasPages()) --}}
                 @if($bookings->hasPages())
                     <div class="px-6 py-4 border-t border-gray-100 bg-slate-50">
                         {{ $bookings->links() }}
                     </div>
                 @endif
             </div>
-        </div>
-    </div>
-
-    <div id="courtModal"
-        class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
-        <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
-            <div class="border-b border-gray-100 bg-gray-50 px-6 py-4">
-                <h3 class="text-sm font-bold text-gray-800">จัดสนามสำหรับ Private Training</h3>
-            </div>
-            <form id="courtForm" method="POST" class="space-y-4 p-6">
-                @csrf
-                <div class="rounded-lg border border-purple-100 bg-purple-50 p-3 text-center">
-                    <p id="courtBookingDate" class="text-sm font-semibold text-purple-800"></p>
-                    <p id="courtBookingTime" class="text-lg font-bold text-purple-700"></p>
-                </div>
-                <div>
-                    <label class="mb-1.5 block text-xs font-semibold text-gray-700">เลือกสนามและส่วนสนาม</label>
-                    <select name="court_section_id" required
-                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-purple-500">
-                        <option value="">กรุณาเลือกสนาม</option>
-                        @foreach($courts as $court)
-                            <optgroup label="{{ $court->name }}">
-                                @foreach($court->sections as $section)
-                                    <option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-gray-400">ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน</p>
-                </div>
-                <div class="flex gap-2">
-                    <button type="button" onclick="closeCourtModal()"
-                        class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
-                    <button type="submit"
-                        class="w-1/2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700">ยืนยันจัดสนาม</button>
-                </div>
-            </form>
         </div>
     </div>
 
