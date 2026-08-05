@@ -199,8 +199,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/website/facilities/{facility}', [WebsiteReviewController::class, 'destroyFacility'])->name('website.facilities.destroy');
     Route::patch('/website/reviews/{review}/status', [WebsiteReviewController::class, 'updateReviewStatus'])->name('website.reviews.status');
     Route::delete('/website/reviews/{review}', [WebsiteReviewController::class, 'destroyReview'])->name('website.reviews.destroy');
-    Route::post('/admin/courts/images', [CourtController::class, 'updateImages'])
-        ->name('admin.courts.images.update');
+    Route::post('/courts/images', [CourtController::class, 'updateImages'])
+        ->name('courts.images.update');
 
     Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
     Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
@@ -236,9 +236,6 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/reset-password', 'showResetPasswordForm')->name('password.reset.form');
     Route::post('/reset-password', 'resetPassword')->name('password.reset');
 });
-
-Route::post('/admin/courts/images', [CourtController::class, 'updateImages'])
-    ->name('admin.courts.images.update');
 
 // จัดการการจองได้ต้องเป็น admin และ staff ที่เป็น พนักงานประจำ นักศึกษาฝึกงาน พนักงานชั่วคราว
 Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->group(function () {
