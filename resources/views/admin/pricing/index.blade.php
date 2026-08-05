@@ -73,7 +73,9 @@
                             <tbody class="divide-y divide-gray-100">
                                 @foreach ($rules as $rule)
                                     <tr>
-                                        <td class="px-6 py-3 text-gray-800 font-medium">{{ $rule->label }}</td>
+                                        <td class="px-6 py-3 text-gray-800 font-medium max-w-[200px]">
+                                            {{ $rule->label }}
+                                        </td>
                                         <td class="px-6 py-3">
                                             <div class="flex items-center gap-2">
                                                 <input type="text" name="rules[{{ $rule->id }}][start_time]"
@@ -98,7 +100,7 @@
                                                        class="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                             </div>
                                         </td>
-                                        <td class="px-6 py-3">
+                                        <td class="px-6 py-3 text-center">
                                             <label class="inline-flex items-center cursor-pointer">
                                                 <input type="hidden" name="rules[{{ $rule->id }}][is_active]" value="0">
                                                 <input type="checkbox" name="rules[{{ $rule->id }}][is_active]" value="1" @checked($rule->is_active)
