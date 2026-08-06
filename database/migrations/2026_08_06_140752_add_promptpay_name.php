@@ -12,16 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-            $exists = DB::table('settings')->where('key', 'promptpay_number')->exists();
+        $exists = DB::table('settings')->where('key', 'promptpay_name')->exists();
 
         if (!$exists) {
             // ถ้ายังไม่มี ให้ทำการ Insert ข้อมูลใหม่
             DB::table('settings')->insert([
-                'key' => 'promptpay_number',
-                'value' => '0000000000', // กำหนดเบอร์พร้อมเพย์เริ่มต้นที่นี่
+                'key' => 'promptpay_name',
+                'value' => 'ชื่อบัญชี PromptPay', // กำหนดชื่อบัญชี PromptPay เริ่มต้นที่นี่
             ]);
         }
-
     }
 
     /**
@@ -31,7 +30,7 @@ return new class extends Migration
     {
         // ลบข้อมูลออกเมื่อสั่ง Rollback (เพื่อคืนค่าฐานข้อมูลให้กลับไปเหมือนก่อนรัน Migration)
         DB::table('settings')
-            ->where('key', 'promptpay_number')
+            ->where('key', 'promptpay_name')
             ->delete();
     }
 };

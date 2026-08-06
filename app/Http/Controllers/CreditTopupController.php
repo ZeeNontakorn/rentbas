@@ -65,6 +65,7 @@ class CreditTopupController extends Controller
             'creditSatang' => $creditSatang,
             'lineUrl' => Setting::getVal('line_topup_url'),
             'promptpayNumber' => Setting::getVal('promptpay_number'),
+            'promptpayName' => Setting::getVal('promptpay_name'),
         ]);
     }
 

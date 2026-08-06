@@ -11,7 +11,7 @@ class CreditTopupPackage extends Model
     use HasFactory;
 
     protected $fillable = [
-        'label', 'price_satang', 'credit_satang', 'is_active', 'sort_order','promptpay_number'
+        'label', 'price_satang', 'credit_satang', 'is_active', 'sort_order', 'promptpay_number', 'promptpay_name'
     ];
 
     protected function casts(): array
