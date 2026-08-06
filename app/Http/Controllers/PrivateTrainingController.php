@@ -37,14 +37,26 @@ class PrivateTrainingController extends Controller
         $search = $request->query('search');
 
         $hasValidPackage = PackagePurchase::where('user_id', $request->user()->id)
-            ->where('status', 'approved')   // ← เปลี่ยนจาก 'paid' เป็น 'approved'
+            ->where('status', 'approved')
             ->where('remaining_use', '>', 0)
             ->where(function ($q) {
                 $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
             })
             ->exists();
 
-        $coaches = $hasValidPackage
+        $myRequests = PrivateTrainingBooking::with('coach')
+            ->where('user_id', $request->user()->id)
+            ->whereDate('date', '>=', now()->toDateString())
+            ->orderByDesc('created_at')
+            ->get();
+
+        // เคยมีคำขอจองมาก่อนไหม (ไม่จำกัดแค่อนาคต เอาทุกสถานะทุกช่วงเวลา เพื่อตัดสินว่าควรให้เห็นหน้ารายชื่อโค้ชไหม)
+        $hasAnyBookingHistory = PrivateTrainingBooking::where('user_id', $request->user()->id)->exists();
+
+        // แสดงรายชื่อโค้ชได้ถ้า (มีแพ็กเกจเหลือใช้ได้) หรือ (เคยมีคำขอจองมาก่อน)
+        $canViewCoaches = $hasValidPackage || $hasAnyBookingHistory;
+
+        $coaches = $canViewCoaches
             ? User::where('role', 'staff')
                 ->where('membership_type', 'coach')
                 ->with('staffProfile')
@@ -56,13 +68,7 @@ class PrivateTrainingController extends Controller
                 ->get()
             : collect();
 
-        $myRequests = PrivateTrainingBooking::with('coach')
-            ->where('user_id', $request->user()->id)
-            ->whereDate('date', '>=', now()->toDateString())
-            ->orderByDesc('created_at')
-            ->get();
-
-        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches'));
     }
 
     public function show(User $coach)
