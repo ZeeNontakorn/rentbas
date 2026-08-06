@@ -79,6 +79,33 @@
         });
     </script>
 
+    {{-- Loading overlay ตอน submit ฟอร์มที่ต้องรอส่งอีเมล (SMTP บางทีตอบช้ามาก) เพื่อไม่ให้ผู้ใช้คิดว่า
+         หน้าเว็บค้าง — ใส่ attribute data-loading-form ในฟอร์มไหนก็ได้เพื่อเปิดใช้งาน พร้อม
+         data-loading-message กำหนดข้อความเองได้ (ถ้าไม่ใส่จะใช้ข้อความ default) --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form[data-loading-form]').forEach((form) => {
+                form.addEventListener('submit', function (event) {
+                    if (form.dataset.loadingSkip === '1') return;
+                    if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const message = form.dataset.loadingMessage || 'กำลังบันทึกข้อมูลและส่งอีเมลแจ้งเตือน อาจใช้เวลาสักครู่ (ไม่ต้องปิดหรือรีเฟรชหน้านี้)...';
+                    Swal.fire({
+                        title: 'กำลังดำเนินการ',
+                        text: message,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => Swal.showLoading(),
+                    });
+                });
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
 

@@ -61,7 +61,7 @@ class ReviewController extends Controller
                 'user_id' => $request->user()->id,
                 'overall_rating' => $data['overall_rating'],
                 'comment' => $data['comment'],
-                'status' => 'pending',
+                'status' => 'published', // ให้รีวิวแสดงผลทันที แต่ยังไม่แจ้งเตือนแอดมิน
                 'published_at' => null,
             ]);
 

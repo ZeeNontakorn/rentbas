@@ -334,7 +334,15 @@ class PrivateTrainingController extends Controller
         $status = $request->query('status', 'pending');
 
         $bookings = PrivateTrainingBooking::with(['user', 'coach', 'court', 'courtSection'])
-            ->when($status && $status !== 'all', fn($q) => $q->where('status', $status))
+            ->when($status && $status !== 'all', function ($q) use ($status): void {
+                if ($status === 'expired') {
+                    $q->expired();
+                    return;
+                }
+
+                $q->where('status', $status)
+                    ->notExpired();
+            })
             ->oldest()// oldest() มีค่าเท่ากับ orderBy('created_at', 'asc') คือคิวที่มาก่อนจะอยู่บนสุด (First In, First Out)
             ->paginate(15)
             // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
@@ -475,6 +483,13 @@ class PrivateTrainingController extends Controller
         });
 
         if ($error) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => $error,
+                    'errors' => ['court' => [$error]],
+                ], 422);
+            }
+
             return back()->withErrors(['court' => $error]);
         }
 
@@ -494,6 +509,12 @@ class PrivateTrainingController extends Controller
             $privateTrainingBooking->price,
             $privateTrainingBooking->package_purchase_id ? 'package' : 'credit'
         );
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว (หักเครดิตลูกค้าเรียบร้อย)',
+            ]);
+        }
 
         return back()->with('success', 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว (หักเครดิตลูกค้าเรียบร้อย)');
     }

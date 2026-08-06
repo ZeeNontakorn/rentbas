@@ -23,13 +23,6 @@
     gap: 10px;
     margin-bottom: 28px;
 }
-.auth-brand-ball {
-    width: 44px; height: 44px;
-    background: #e86c2a;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-}
 .auth-brand-name {
     font-family: 'Kanit', sans-serif;
     font-size: 18px;
@@ -126,6 +119,23 @@
     border-color: #e86c2a;
     box-shadow: 0 0 0 3px rgba(232,108,42,0.12);
 }
+.form-input.invalid {
+    border-color: #dc2626;
+}
+.form-input.invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.field-error {
+    display: none;
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+.field-error.show {
+    display: block;
+}
 
 .form-footer {
     display: flex;
@@ -184,7 +194,6 @@
 
     {{-- Brand --}}
     <div class="auth-brand">
-        <div class="auth-brand-ball">🏀</div>
         <span class="auth-brand-name">Basketball Court Booking</span>
     </div>
 
@@ -215,22 +224,24 @@
             <div class="auth-error">{{ $errors->first() }}</div>
         @endif
 
-
-        <form method="POST" action="{{ route('login') }}">
+        {{-- novalidate: ปิด HTML5 validation ของ browser เพื่อใช้ข้อความแจ้งเตือนของระบบเองแทน --}}
+        <form method="POST" action="{{ route('login') }}" id="loginForm" novalidate>
             @csrf
 
             <div class="form-group">
                 <label class="form-label">อีเมล</label>
-                <input type="email" name="email" value="{{ old('email') }}"
-                    placeholder="example@email.com" required autofocus
+                <input type="email" name="email" id="loginEmail" value="{{ old('email') }}"
+                    placeholder="example@email.com" autofocus
                     class="form-input">
+                <span class="field-error" id="error-email"></span>
             </div>
 
             <div class="form-group">
                 <label class="form-label">รหัสผ่าน</label>
-                <input type="password" name="password"
-                    placeholder="••••••••" required
+                <input type="password" name="password" id="loginPassword"
+                    placeholder="••••••••"
                     class="form-input">
+                <span class="field-error" id="error-password"></span>
             </div>
 
             <div class="form-footer">
@@ -244,8 +255,87 @@
             <button type="submit" class="btn-submit">เข้าสู่ระบบ</button>
         </form>
 
-        
     </div>
 
 </div>
+
+<script>
+(function () {
+    const form = document.getElementById('loginForm');
+
+    // ผูก field key กับ input element
+    const fields = {
+        email: document.getElementById('loginEmail'),
+        password: document.getElementById('loginPassword'),
+    };
+
+    function showError(key, message) {
+        const input = fields[key];
+        const errorEl = document.getElementById('error-' + key);
+        input.classList.add('invalid');
+        errorEl.textContent = message;
+        errorEl.classList.add('show');
+    }
+
+    function clearError(key) {
+        const input = fields[key];
+        const errorEl = document.getElementById('error-' + key);
+        input.classList.remove('invalid');
+        errorEl.textContent = '';
+        errorEl.classList.remove('show');
+    }
+
+    function clearAllErrors() {
+        Object.keys(fields).forEach(clearError);
+    }
+
+    // ล้าง error ของช่องนั้นๆ ทันทีที่ผู้ใช้เริ่มพิมพ์แก้ไข
+    Object.keys(fields).forEach(function (key) {
+        fields[key].addEventListener('input', function () {
+            clearError(key);
+        });
+    });
+
+    function validateForm() {
+        clearAllErrors();
+        let isValid = true;
+        let firstInvalid = null;
+
+        const email = fields.email.value.trim();
+        const password = fields.password.value;
+
+        // อีเมล
+        if (email === '') {
+            showError('email', 'กรุณากรอกอีเมล');
+            isValid = false; firstInvalid = firstInvalid || 'email';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showError('email', 'รูปแบบอีเมลไม่ถูกต้อง');
+            isValid = false; firstInvalid = firstInvalid || 'email';
+        }
+
+        // รหัสผ่าน
+        if (password === '') {
+            showError('password', 'กรุณากรอกรหัสผ่าน');
+            isValid = false; firstInvalid = firstInvalid || 'password';
+        }
+
+        if (firstInvalid) {
+            fields[firstInvalid].focus();
+        }
+
+        return isValid;
+    }
+
+    // ทุกครั้งที่กด submit: preventDefault เสมอ แล้วค่อยตัดสินใจตามผล validate
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        if (!validateForm()) {
+            return; // มีช่องไม่ถูกต้อง ไม่ submit
+        }
+
+        form.submit();
+    });
+})();
+</script>
 @endsection
