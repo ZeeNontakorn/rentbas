@@ -158,9 +158,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageInput = document.getElementById('review-images');
     const previews = document.getElementById('image-previews');
     const imageError = document.getElementById('image-error');
+    let selectedImages = [];
+
+    const syncImageInput = () => {
+        const transfer = new DataTransfer();
+        selectedImages.forEach(file => transfer.items.add(file));
+        imageInput.files = transfer.files;
+    };
+
+    const renderImagePreviews = () => {
+        previews.innerHTML = '';
+
+        selectedImages.forEach((file, index) => {
+            const preview = document.createElement('div');
+            preview.className = 'relative';
+
+            const image = document.createElement('img');
+            const imageUrl = URL.createObjectURL(file);
+            image.src = imageUrl;
+            image.alt = `ตัวอย่างรูปรีวิว ${index + 1}`;
+            image.className = 'aspect-[4/3] w-full rounded-xl object-cover';
+            image.addEventListener('load', () => URL.revokeObjectURL(imageUrl), { once: true });
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-lg leading-none text-white shadow transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2';
+            removeButton.setAttribute('aria-label', `ลบรูปที่ ${index + 1}`);
+            removeButton.textContent = '×';
+            removeButton.addEventListener('click', () => {
+                selectedImages.splice(index, 1);
+                syncImageInput();
+                renderImagePreviews();
+            });
+
+            preview.append(image, removeButton);
+            previews.appendChild(preview);
+        });
+    };
 
     imageInput.addEventListener('change', () => {
-        previews.innerHTML = '';
         imageError.classList.add('hidden');
         const files = Array.from(imageInput.files || []);
 
@@ -168,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
             imageError.textContent = 'เลือกได้สูงสุด 3 รูป';
             imageError.classList.remove('hidden');
             imageInput.value = '';
+            selectedImages = [];
+            renderImagePreviews();
             return;
         }
 
@@ -176,15 +214,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 imageError.textContent = `รูป ${file.name} มีขนาดเกิน 5 MB`;
                 imageError.classList.remove('hidden');
                 imageInput.value = '';
-                previews.innerHTML = '';
+                selectedImages = [];
+                renderImagePreviews();
                 return;
             }
-            const image = document.createElement('img');
-            image.src = URL.createObjectURL(file);
-            image.alt = 'ตัวอย่างรูปรีวิว';
-            image.className = 'aspect-[4/3] w-full rounded-xl object-cover';
-            previews.appendChild(image);
         }
+
+        selectedImages = files;
+        renderImagePreviews();
     });
 });
 </script>
