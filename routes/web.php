@@ -217,6 +217,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/credit-topup-packages/{creditTopupPackage}', [CreditTopupPackageController::class, 'update'])->name('credit-topup-packages.update');
     Route::delete('/credit-topup-packages/{creditTopupPackage}', [CreditTopupPackageController::class, 'destroy'])->name('credit-topup-packages.destroy');
     Route::post('/credit-topup-packages/line-url', [CreditTopupPackageController::class, 'updateLineUrl'])->name('credit-topup-packages.line-url');
+    Route::post('/credit-topup-packages/promptpay', [CreditTopupPackageController::class, 'updatePromptPayNumber'])->name('credit-topup-packages.promptpay');
 
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');

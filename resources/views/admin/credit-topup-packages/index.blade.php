@@ -13,7 +13,7 @@
             กลับไปหน้าคำขอเติมเครดิต
         </a>
 
-        <h1 class="text-xl font-bold text-gray-800 mb-1">แพ็กเกจเติมเครดิต &amp; โปรโมชั่น</h1>
+        <h1 class="text-xl font-bold text-gray-800 mb-1">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
         <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
 
         @if (session('success'))
@@ -22,6 +22,17 @@
         @if ($errors->any())
             <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
                 @foreach ($errors->all() as $err)<div>• {{ $err }}</div>@endforeach
+            </div>
+        @endif
+        @if (auth()->user()->role === 'superadmin')
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <p class="mb-2">ตั้งค่าเบอร์มือถือ PromptPay เพื่อรับเงิน</p>
+                <form method="POST" action="{{ route('admin.credit-topup-packages.promptpay') }}">
+                    @csrf
+                    <input type="text" name="promptpay_number" value="{{ $promptpayNumber }}" placeholder="เช่น 0123456789"
+                           class="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                    <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 transition whitespace-nowrap">บันทึกเบอร์ PromptPay</button>
+                </form>
             </div>
         @endif
 
