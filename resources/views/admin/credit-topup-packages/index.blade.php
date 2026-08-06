@@ -109,7 +109,8 @@
                                 </td>
                                 <td class="px-6 py-3 text-right whitespace-nowrap">
                                     <button type="submit" form="editPkg{{ $pkg->id }}" class="text-emerald-600 hover:text-emerald-700 font-medium text-xs mr-3">บันทึก</button>
-                                    <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline" onsubmit="return confirm('ลบแพ็กเกจนี้?')">
+                                    <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline"
+                                          data-package-label="{{ $pkg->label }}" onsubmit="confirmDeleteCreditPackage(event, this)">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
@@ -133,6 +134,7 @@
 </div>
 
 @push('scripts')
+<<<<<<< HEAD
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script>
 (function () {
@@ -178,6 +180,38 @@
         }
     });
 })();
+
+function confirmDeleteCreditPackage(event, form) {
+    event.preventDefault();
+
+    const packageLabel = form.dataset.packageLabel;
+    Swal.fire({
+        title: 'ลบแพ็กเกจเครดิตนี้?',
+        text: `แพ็กเกจ “${packageLabel}” จะถูกลบและไม่สามารถกู้คืนได้`,
+        icon: 'warning',
+        iconColor: '#dc2626',
+        showCancelButton: true,
+        reverseButtons: true,
+        focusCancel: true,
+        confirmButtonText: 'ลบแพ็กเกจ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        buttonsStyling: true,
+        allowOutsideClick: false,
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-xl px-5 py-2.5',
+            cancelButton: 'rounded-xl px-5 py-2.5'
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            form.querySelector('button[type="submit"]').disabled = true;
+            form.submit();
+        }
+    });
+}
+
 </script>
 @endpush
 @endsection

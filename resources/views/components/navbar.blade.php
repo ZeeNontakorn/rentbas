@@ -86,6 +86,7 @@
                             <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการ Private Training</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">ตารางโค้ช</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
+                             <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
                         </div>
                     </div>
 
@@ -189,8 +190,12 @@
                             {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
                                 @php
                                     $notifTarget = in_array($n->title, $historyOnlyTitles) ? route('history') : $defaultNotifTarget;
-                                    if ($n->title === 'มีรีวิวใหม่รอตรวจสอบ') {
+                                    if (in_array($n->title, ['มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ'])) {
                                         $notifTarget = route('admin.edit.text').'#review-moderation';
+                                    } elseif ($n->title === 'มีคำขอเติมเครดิตใหม่') {
+                                        $notifTarget = route('admin.credit-topups.index');
+                                    } elseif ($n->title === 'มีการจองสนามบาสใหม่') {
+                                        $notifTarget = route('admin.bookings');
                                     }
 
                                     // สีประจำประเภทแจ้งเตือน ให้แยกอนุมัติ/ปฏิเสธออกจากกันชัดเจน

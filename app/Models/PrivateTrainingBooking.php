@@ -28,6 +28,7 @@ class PrivateTrainingBooking extends Model
         'note',
         'reject_reason',
         'promotion_package_id',
+        'package_purchase_id',
         'price',
         'price_breakdown',
         'pricing_rule_id',
@@ -48,6 +49,11 @@ class PrivateTrainingBooking extends Model
     public function promotionPackage(): BelongsTo
     {
         return $this->belongsTo(PromotionPackage::class);
+    }
+
+    public function packagePurchase(): BelongsTo
+    {
+        return $this->belongsTo(PackagePurchase::class);
     }
 
     public function user(): BelongsTo

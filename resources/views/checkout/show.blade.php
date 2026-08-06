@@ -171,7 +171,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('checkout.pay.credit', $booking) }}">
+                <form method="POST" action="{{ route('checkout.pay.credit', $booking) }}" data-credit-payment-form>
                     @csrf
                     <button type="submit" class="btn-pay credit" {{ $sufficient ? '' : 'disabled' }}>
                         ชำระด้วยเครดิต ฿{{ number_format($price / 100, 0) }}
@@ -205,6 +205,14 @@
 
 @push('scripts')
 <script>
+document.querySelector('[data-credit-payment-form]')?.addEventListener('submit', function () {
+    const button = this.querySelector('button[type="submit"]');
+    if (!button || button.disabled) return;
+
+    button.disabled = true;
+    button.textContent = 'กำลังชำระเงิน...';
+});
+
 (function () {
     const timerBox = document.getElementById('coTimer');
     const clockEl = document.getElementById('coClock');

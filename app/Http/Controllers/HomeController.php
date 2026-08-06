@@ -9,6 +9,7 @@ use App\Models\CourtClosure;
 use App\Models\Facility;
 use App\Models\Review;
 use App\Models\SiteVisit;
+use App\Models\Package;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
@@ -53,7 +54,7 @@ class HomeController extends Controller
 
         $reviews = Review::published()
             ->with(['user:id,name', 'ratings.facility:id,name', 'images'])
-            ->latest('published_at')
+            ->orderByRaw('COALESCE(published_at, created_at) DESC')
             ->take(12)
             ->get();
 
@@ -61,6 +62,10 @@ class HomeController extends Controller
             'average' => round((float) Review::published()->avg('overall_rating'), 1),
             'count' => Review::published()->count(),
         ];
+
+        $packages = Package::where('is_active', true)
+            ->orderBy('price')
+            ->get();
 
         return view('home', compact(
             'courts',
@@ -70,6 +75,7 @@ class HomeController extends Controller
             'facilities',
             'reviews',
             'reviewSummary',
+            'packages',
         ));
     }
 

@@ -95,16 +95,17 @@
                 <p id="booking-time-label" class="text-lg font-extrabold text-blue-700"></p>
             </div>
             <div>
-                <label class="mb-1.5 block text-xs font-semibold text-gray-700">แพ็กเกจโปรโมชั่น (ถ้ามี)</label>
-                <select name="promotion_code" id="promotion-code-select" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">ไม่ใช้โปรโมชั่น (คิดราคาตามช่วงเวลาปกติ)</option>
-                    @foreach ($promotionPackages as $p)
-                        <option value="{{ $p->code }}" data-duration-hours="{{ $p->duration_hours ?? '' }}">
-                            {{ $p->label }}{{ $p->duration_hours !== null ? " ({$p->duration_hours} ชม.)" : '' }}
+                <label class="mb-1.5 block text-xs font-semibold text-gray-700">เลือกแพ็กเกจที่ต้องการใช้ <span class="text-red-500">*</span></label>
+                <select name="package_purchase_id" id="package-purchase-select" required
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- กรุณาเลือกแพ็กเกจ --</option>
+                    @foreach ($myPackagePurchases as $pp)
+                        <option value="{{ $pp->id }}">
+                            {{ $pp->package->name }} (เหลือ {{ $pp->remaining_use }} ครั้ง{{ $pp->expired_at ? ' · หมดอายุ ' . $pp->expired_at->format('d/m/Y') : '' }})
                         </option>
                     @endforeach
                 </select>
-                <p id="promotion-hint" class="mt-1 text-[11px] text-gray-400">ระบบจะเช็คเงื่อนไข (เต็ม/ครึ่งสนาม, ระยะเวลา, วันที่) อีกครั้งตอนแอดมินจัดสนามให้ ถ้าใช้ไม่ได้จะแจ้งแอดมินให้ทราบ</p>
+                <p class="mt-1 text-[11px] text-gray-400">ระบบจะหักสิทธิ์จากแพ็กเกจที่คุณเลือกทันทีที่ส่งคำขอ</p>
             </div>
             <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-700">รายละเอียดที่ต้องการฝึก (ถ้ามี)</label>
@@ -139,35 +140,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // เช็คว่าแพ็กเกจโปรโมชั่นแต่ละตัวใช้ได้กับช่วงเวลาที่ลูกค้าเพิ่งลากเลือกหรือไม่ (เฉพาะเงื่อนไข
     // ระยะเวลา — duration_hours) แล้ว disable ตัวเลือกที่ไม่เข้าเงื่อนไข พร้อมโชว์คำอธิบายไว้ในตัวเลือก
     // (เงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ จะถูกเช็คจริงจังอีกทีตอนแอดมินจัดสนามให้)
-    const promotionSelect = document.getElementById('promotion-code-select');
-    const promotionHint = document.getElementById('promotion-hint');
-
-    function updatePromotionAvailability(start, end) {
-        if (!promotionSelect) return;
-        const selectedHours = (end - start) / (1000 * 60 * 60);
-        let selectedBecameInvalid = false;
-
-        Array.from(promotionSelect.options).forEach(option => {
-            if (!option.value) return; // ตัวเลือก "ไม่ใช้โปรโมชั่น" ใช้ได้เสมอ
-
-            const durationAttr = option.dataset.durationHours;
-            const requiredHours = durationAttr ? parseFloat(durationAttr) : null;
-            const matches = requiredHours === null || Math.abs(requiredHours - selectedHours) < 0.01;
-
-            option.disabled = !matches;
-            option.classList.toggle('text-gray-300', !matches);
-
-            if (!matches && option.selected) {
-                selectedBecameInvalid = true;
-            }
-        });
-
-        if (selectedBecameInvalid) {
-            promotionSelect.value = '';
-        }
-
-        promotionHint.textContent = `ช่วงเวลาที่เลือก ${selectedHours} ชม. — แพ็กเกจที่ระยะเวลาไม่ตรงจะถูกปิดใช้งานให้อัตโนมัติ (ระบบจะเช็คเงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ อีกครั้งตอนแอดมินจัดสนามให้)`;
-    }
 
     // จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
@@ -225,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 info.start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             document.getElementById('booking-time-label').textContent =
                 `${localTime(info.start)}–${localTime(info.end)} น.`;
-            updatePromotionAvailability(info.start, info.end);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         },
