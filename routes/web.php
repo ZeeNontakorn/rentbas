@@ -120,7 +120,7 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
         Route::post('/{package}', [PackageCheckoutController::class, 'purchase'])->name('purchase');
         Route::get('/purchase/{purchase}', [PackageCheckoutController::class, 'show'])->name('show');
         Route::post('/purchase/{purchase}/pay/credit', [PackageCheckoutController::class, 'payWithCredit'])->name('pay.credit');
-
+    });
     // เติมเครดิต (ฝั่งผู้ใช้) — เลือกแพ็กเกจ/กรอกจำนวนเงินเอง -> QR mock + แจ้งช่องทางชำระเงิน -> ส่งคำขอรออนุมัติ
     Route::prefix('credits/topup')->name('credits.topup.')->group(function () {
         Route::get('/', [CreditTopupController::class, 'index'])->name('index');
