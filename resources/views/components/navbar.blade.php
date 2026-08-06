@@ -86,6 +86,7 @@
                             <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการ Private Training</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">ตารางโค้ช</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
+                             <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
                         </div>
                     </div>
 
