@@ -1341,7 +1341,7 @@ html { scroll-behavior: smooth; }
     <div class="courses-grid">
         @foreach($trainingCourses as $tCourse)
             @php
-                $tPackage = $tCourse->packages->first();
+                $tPackage = $tCourse->packages->sortBy(fn ($package) => (float) $package->total_price)->first();
                 $courseType = $tCourse->course_type;
             @endphp
             <div class="course-card2" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
