@@ -95,11 +95,7 @@
                                             </span>
                                             @if($isSuperadmin && $u->id !== auth()->id())
                                                 <button type="button"
-                                                        data-user-id="{{ $u->id }}"
-                                                        data-name="{{ $u->name }}"
-                                                        data-role="{{ $u->role }}"
-                                                        data-url="{{ route('admin.users.updateRole', $u) }}"
-                                                        onclick="openRoleModal(this.dataset.userId, this.dataset.name, this.dataset.role, this.dataset.url)"
+                                                        onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
                                                         class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -126,11 +122,7 @@
                                             </span>
                                             @if($u->id !== auth()->id())
                                                 <button type="button"
-                                                        data-user-id="{{ $u->id }}"
-                                                        data-name="{{ $u->name }}"
-                                                        data-role="{{ $u->role }}"
-                                                        data-url="{{ route('admin.users.updateRole', $u) }}"
-                                                        onclick="openRoleModal(this.dataset.userId, this.dataset.name, this.dataset.role, this.dataset.url)"
+                                                        onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
                                                         class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
