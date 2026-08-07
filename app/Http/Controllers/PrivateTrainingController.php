@@ -14,7 +14,6 @@ use App\Models\PromotionPackage;
 use App\Models\User;
 use App\Services\CreditService;
 use App\Services\PricingService;
-use App\Services\PrivateTrainingCourtAvailabilityService;
 use App\Models\PackagePurchase;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -31,7 +30,6 @@ class PrivateTrainingController extends Controller
     public function __construct(
         protected PricingService $pricingService,
         protected CreditService $creditService,
-        protected PrivateTrainingCourtAvailabilityService $courtAvailabilityService,
     ) {
     }
 
@@ -362,16 +360,7 @@ class PrivateTrainingController extends Controller
             ->orderBy('name')
             ->get();
 
-        $availableSectionMap = [];
-        foreach ($bookings as $booking) {
-            if ($booking->status !== 'awaiting_court') {
-                continue;
-            }
-
-            $availableSectionMap[$booking->id] = $this->courtAvailabilityService->getAvailableSections($booking);
-        }
-
-        return view('admin.private-training.index', compact('bookings', 'status', 'courts', 'availableSectionMap'));
+        return view('admin.private-training.index', compact('bookings', 'status', 'courts'));
     }
     public function approve(PrivateTrainingBooking $privateTrainingBooking)
     {
