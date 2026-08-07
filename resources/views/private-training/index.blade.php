@@ -24,7 +24,7 @@
                     <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
                 </div>
 
-                {{-- ค้นหา --}}
+                @if($hasValidPackage)
                 <form method="GET" action="{{ route('private-training.index') }}"
                     class="flex w-full md:w-110 flex-shrink-0 md:ml-auto">
                     <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="ค้นหาชื่อโค้ช..."
@@ -38,8 +38,10 @@
                         ค้นหา
                     </button>
                 </form>
+                @endif
             </div>
 
+            @if($hasValidPackage)
             {{-- รายชื่อโค้ช (ซ้าย) + ประวัติคำขอของฉัน --}}
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 
@@ -145,11 +147,33 @@
                 </div>
 
             </div>
+            @else
+            {{-- ไม่มีแพ็กเกจที่ใช้ได้ --}}
+            <div class="bg-white rounded-xl border border-gray-200 py-20 text-center">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
+                    <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <p class="text-gray-700 font-medium">คุณยังไม่มีแพ็กเกจที่ใช้จองเทรนเนอร์ได้</p>
+                <p class="text-sm text-gray-400 mt-1">กรุณาซื้อแพ็กเกจก่อนเพื่อเริ่มจองเวลากับเทรนเนอร์</p>
+                <button type="button" id="btn-need-package"
+                        class="mt-5 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600">
+                    ซื้อแพ็กเกจ
+                </button>
+            </div>
+            @endif
+
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        document.getElementById('btn-need-package')?.addEventListener('click', function () {
+            window.location.href = "{{ route('home') }}#packages";
+        });
+
         document.querySelectorAll('.btn-cancel-request').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 const form = this.closest('form');

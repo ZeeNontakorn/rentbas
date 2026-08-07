@@ -43,6 +43,34 @@ class PricingController extends Controller
     }
 
     /**
+     * แก้ไขราคาต่อชั่วโมงของ pricing rule หลายรายการพร้อมกัน (การ์ดเดียว = 1 form = 1 ปุ่มบันทึก)
+     * ใช้แทน updateRule ในหน้า index ที่รวมทุกแถวในการ์ดเดียวกันไว้ในฟอร์มเดียว
+     */
+    public function bulkUpdateRules(Request $request)
+    {
+        $data = $request->validate([
+            'rules' => ['required', 'array'],
+            'rules.*.start_time' => ['required', 'date_format:H:i'],
+            'rules.*.end_time' => ['required', 'date_format:H:i', 'after:rules.*.start_time'],
+            'rules.*.price_per_hour' => ['required', 'numeric', 'min:0', 'max:100000'], // หน่วยบาท
+            'rules.*.is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        foreach ($data['rules'] as $ruleId => $fields) {
+            $pricingRule = PricingRule::findOrFail($ruleId);
+
+            $pricingRule->update([
+                'start_time' => $fields['start_time'],
+                'end_time' => $fields['end_time'],
+                'price_per_hour' => (int) round($fields['price_per_hour'] * 100),
+                'is_active' => $request->boolean("rules.{$ruleId}.is_active", $pricingRule->is_active),
+            ]);
+        }
+
+        return back()->with('success', 'บันทึกราคาตามช่วงเวลาเรียบร้อยแล้ว');
+    }
+
+    /**
      * กฎ validation ที่ใช้ร่วมกันทั้งตอนสร้างและแก้ไขแพ็กเกจ
      * (แยกเป็น method ให้เรียกซ้ำได้ ป้องกัน store/update เพี้ยนไปจากกัน)
      */

@@ -15,6 +15,9 @@ class CreditTransaction extends Model
     'booking_id', 'admin_id', 'note',
     'private_training_booking_id',
     'package_purchase_id',
+    'credit_topup_request_id',
+    'payment_method',
+    'processed_by_name',
 ];
 
     public function user(): BelongsTo
@@ -30,5 +33,10 @@ class CreditTransaction extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function topupRequest(): BelongsTo
+    {
+        return $this->belongsTo(CreditTopupRequest::class);
     }
 }

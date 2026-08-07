@@ -86,7 +86,7 @@
                 @endif
 
                 <div class="mt-4 rounded-xl border-l-4 border-[#f36f21] bg-orange-50 p-4 text-sm leading-6 text-stone-600">
-                    ตอนนี้ยังไม่มีระบบชำระเงินออนไลน์ แอดไลน์เพื่อสอบถามรอบที่ว่าง ราคา และสมัครเรียนกับทีมงานได้โดยตรง
+                    แอดไลน์เพื่อสอบถามรอบที่ว่าง ราคา และสมัครเรียนกับทีมงานได้โดยตรง
                 </div>
                 <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener"
                    class="mt-4 flex w-full items-center justify-center rounded-xl bg-[#f36f21] px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-[#d95512]">

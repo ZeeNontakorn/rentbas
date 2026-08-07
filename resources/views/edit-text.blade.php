@@ -47,7 +47,7 @@
         <div class="space-y-6">
 
             {{-- ─── Section 1: About Court ─── --}}
-            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
                 @csrf
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
@@ -399,10 +399,10 @@
                 <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">6. รีวิวจากสมาชิก</h3>
-                        <p class="text-xs text-gray-400">รีวิวใหม่จะรอตรวจสอบ และจะแสดงบนหน้า Home หลัง Admin กดเผยแพร่เท่านั้น</p>
+                        <p class="text-xs text-gray-400">รีวิวใหม่จะแสดงบนหน้า Home ทันที โดย Admin สามารถซ่อนหรือเผยแพร่รีวิวได้จากส่วนนี้</p>
                     </div>
                     <div class="flex gap-2 text-xs">
-                        <span class="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700">รอตรวจ {{ $reviews->where('status', 'pending')->count() }}</span>
+                        <span class="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">รีวิวทั้งหมด {{ $reviews->total() }}</span>
                     </div>
                 </div>
 

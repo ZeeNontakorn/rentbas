@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Package extends Model
 {
     protected $fillable = [
-        'name', 'description', 'price', 'num_of_use', 'day', 'is_active', 'image'
+        'name', 'type', 'description', 'price', 'num_of_use', 'day', 'is_active', 'image'
     ];
 
     protected $casts = [
@@ -19,5 +19,10 @@ class Package extends Model
     public function getImageUrlAttribute(): ?string
     {
         return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
+    public function getTypeLabelAttribute(): string
+    {
+        return $this->type === 'private' ? 'Private Training (ส่วนตัว)' : $this->type;
     }
 }

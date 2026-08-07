@@ -3,8 +3,8 @@
     Module : การจัดการคอร์สเรียน (ของ Admin)
     Description :
     - แสดงรายการคอร์สทั้งหมด
-    - ค้นหาชื่อคอร์ส 
-    - เปิด/ปิดการใช้งาน คอร์สเรียน 
+    - ค้นหาชื่อคอร์ส
+    - เปิด/ปิดการใช้งาน คอร์สเรียน
     - แก้ไข / ลบ / เพิ่มคอร์ส
 
     Author : Pimonphan
@@ -57,17 +57,21 @@
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
                             <th class="px-7 py-4 font-medium">ภาพ</th>
-                            <th class="px-5 py-4 font-medium">ชื่อคลาส / กลุ่มเป้าหมาย</th>
+                            <th class="px-5 py-4 font-medium">ชื่อคอร์ส / กลุ่มเป้าหมาย</th>
                             <th class="px-5 py-4 font-medium">ช่วงอายุ</th>
-                            <th class="px-5 py-4 font-medium">วันเรียนและเวลา</th>
+                            <th class="px-5 py-4 font-medium">วันและเวลาเรียน</th>
                             <th class="px-5 py-4 font-medium">แพ็กเกจ</th>
                             <th class="px-5 py-4 font-medium">สถานะ</th>
-                            <th class="px-5 py-4 text-center font-medium">จัดการ</th>
+                            <th class="px-5 py-4 font-medium">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($courses as $course)
-                            @php $package = $course->packages->first(); @endphp
+                            @php
+                                $package = $course->packages->first();
+                                $courseIsActive = $course->packages->contains('is_active', true);
+                                $courseIsFeatured = $course->packages->contains('is_featured', true);
+                            @endphp
                             <tr class="align-top transition hover:bg-slate-50/80">
                                 <td class="px-7 py-6">
                                     @if ($course->image_url)
@@ -81,7 +85,7 @@
                                 <td class="px-5 py-6">
                                     <p class="font-semibold leading-6 text-gray-800">
                                         {{ $course->course_name }}
-                                        @if ($package && $package->is_featured)<span class="ml-1" title="แพ็กเกจแนะนำ">⭐</span>@endif
+                                        @if ($courseIsFeatured)<span class="ml-1" title="แพ็กเกจแนะนำ">⭐</span>@endif
                                     </p>
                                     <div class="mt-1.5 flex items-center gap-2 text-xs leading-5">
                                         <span class="text-gray-400">{{ $course->targetGroups->pluck('target_group')->implode(', ') ?: '—' }}</span>
@@ -127,8 +131,8 @@
                                     @if ($package)
                                         <form action="{{ route('admin.courses.toggleStatus', $course) }}" method="POST" class="inline-flex items-center gap-2.5">
                                             @csrf @method('PATCH')
-                                            <label class="switch" title="คลิกเพื่อ{{ $package->is_active ? 'ปิด' : 'เปิด' }}ใช้งานคอร์สนี้">
-                                                <input type="checkbox" {{ $package->is_active ? 'checked' : '' }} onchange="this.form.submit()">
+                                            <label class="switch" title="คลิกเพื่อ{{ $courseIsActive ? 'ปิด' : 'เปิด' }}ใช้งานคอร์สนี้">
+                                                <input type="checkbox" {{ $courseIsActive ? 'checked' : '' }} onchange="this.form.submit()">
                                                 <div class="slider">
                                                     <div class="circle">
                                                         <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -144,8 +148,8 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                            <span class="text-xs font-medium {{ $package->is_active ? 'text-green-700' : 'text-gray-400' }}">
-                                                {{ $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
+                                            <span class="text-xs font-medium {{ $courseIsActive ? 'text-green-700' : 'text-gray-400' }}">
+                                                {{ $courseIsActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
                                             </span>
                                         </form>
                                     @else
@@ -317,13 +321,13 @@
 
 <script>
 function confirmDeleteCourse(courseId, courseName) {
-    Swal.fire({ title: 'ยืนยันลบคอร์สนี้ใช่ไหม?', 
-    text: `เมื่อลบคอร์ส "${courseName}" แล้วจะไม่สามารถกู้คืนข้อมูลได้ (รวมถึงรอบเวลาเรียนและแพ็กเกจทั้งหมดของคอร์สนี้)`, 
-    icon: 'warning', 
-    showCancelButton: true, 
-    confirmButtonColor: '#ef4444', 
-    cancelButtonColor: '#3085d6', 
-    confirmButtonText: 'ยืนยันการลบ', 
+    Swal.fire({ title: 'ยืนยันลบคอร์สนี้ใช่ไหม?',
+    text: `เมื่อลบคอร์ส "${courseName}" แล้วจะไม่สามารถกู้คืนข้อมูลได้ (รวมถึงรอบเวลาเรียนและแพ็กเกจทั้งหมดของคอร์สนี้)`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'ยืนยันการลบ',
     cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) document.getElementById('deleteForm-' + courseId).submit();
     });

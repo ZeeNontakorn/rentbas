@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Package;
 use App\Models\PackagePurchase;
+use App\Models\Notification;
 use App\Services\CreditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,7 @@ class PackageCheckoutController extends Controller
             'package_id' => $package->id,
             'price' => $priceSatang,
             'status' => 'pending_payment',
+            'remaining_use' => $package->num_of_use,
             'locked_until' => now()->addMinutes(self::LOCK_MINUTES),
         ]);
 
@@ -84,6 +86,10 @@ class PackageCheckoutController extends Controller
                     'payment_method' => 'credit',
                     'payment_status' => 'paid',
                     'locked_until' => null,
+                    'paid_at' => now(),
+                    'expired_at' => $locked->package->day
+                        ? now()->addDays($locked->package->day)
+                        : null,
                 ]);
 
                 return $locked->fresh();
@@ -92,9 +98,18 @@ class PackageCheckoutController extends Controller
             return back()->withErrors(['payment' => $e->getMessage()]);
         }
 
+        $packageName = $confirmed->package->name;
+
+        // แจ้งเตือนในกระดิ่ง (bell notification) ให้ผู้ใช้เห็นว่าซื้อแพ็กเกจสำเร็จ
+        Notification::create([
+            'user_id' => $confirmed->user_id,
+            'title' => 'ยืนยันการซื้อแพ็กเกจ',
+            'message' => "คุณได้ซื้อแพ็กเกจ \"{$packageName}\" สำเร็จแล้ว ใช้ได้ {$confirmed->package->num_of_use} ครั้ง",
+        ]);
+
         // TODO: ถ้ามีอีเมลยืนยันซื้อแพ็กเกจ/แจ้งแอดมิน ให้เพิ่มตรงนี้เหมือน CheckoutController::payWithCredit
 
-        return redirect()->route('history')
-            ->with('success', "ชำระเงินสำเร็จ! การซื้อแพ็กเกจ #{$confirmed->id} เสร็จสมบูรณ์");
+        return redirect()->route('private-training.index')
+            ->with('success', "ยืนยันการซื้อแพ็กเกจ \"{$packageName}\" สำเร็จ!");
     }
 }

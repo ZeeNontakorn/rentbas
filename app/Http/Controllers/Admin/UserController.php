@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Booking;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -16,7 +16,7 @@ class UserController extends Controller
     {
         $search = $request->query('search');
 
-        $users = User::whereIn('role', ['admin','user','staff', 'superadmin'])
+        $users = User::whereIn('role', ['admin', 'user', 'staff', 'superadmin'])
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
@@ -31,21 +31,33 @@ class UserController extends Controller
     // หน้าแสดงข้อมูลเชิงลึกของผู้ใช้ 1 คน (ประวัติ/คำขอปัจจุบัน)
     public function show(User $user)
     {
-        $today = now()->toDateString();
+        $now = now();
+        $today = $now->toDateString();
+        $currentTime = $now->format('H:i:s');
 
         $currentBookings = Booking::with('court')
             ->where('user_id', $user->id)
             ->whereIn('status', ['pending', 'approved'])
-            ->whereDate('booking_date', '>=', $today)
+            ->where(function ($query) use ($today, $currentTime) {
+                $query->whereDate('booking_date', '>', $today)
+                    ->orWhere(function ($todayQuery) use ($today, $currentTime) {
+                        $todayQuery->whereDate('booking_date', $today)
+                            ->whereTime('end_time', '>', $currentTime);
+                    });
+            })
             ->orderBy('booking_date')
             ->orderBy('start_time')
             ->get();
 
         $pastBookings = Booking::with('court')
             ->where('user_id', $user->id)
-            ->where(function($q) use ($today) {
+            ->where(function ($q) use ($today, $currentTime) {
                 $q->whereIn('status', ['rejected', 'cancelled'])
-                  ->orWhereDate('booking_date', '<', $today);
+                    ->orWhereDate('booking_date', '<', $today)
+                    ->orWhere(function ($todayQuery) use ($today, $currentTime) {
+                        $todayQuery->whereDate('booking_date', $today)
+                            ->whereTime('end_time', '<=', $currentTime);
+                    });
             })
             ->orderByDesc('booking_date')
             ->orderByDesc('start_time')
@@ -59,6 +71,8 @@ class UserController extends Controller
     {
         $actor = $request->user();
         $actorIsSuperadmin = $actor->role === 'superadmin';
+
+        abort_if($user->id === $actor->id, 403, 'ไม่สามารถเปลี่ยน Role ของบัญชีตนเองได้');
 
         if (! $actorIsSuperadmin && $user->role === 'superadmin') {
             abort(403, 'ไม่สามารถแก้ไข role ของ superadmin ได้');
@@ -86,7 +100,7 @@ class UserController extends Controller
                 ? array_keys(User::STAFF_TYPES)
                 : array_keys(User::MEMBERSHIP_TYPES);
 
-            if (!in_array($user->membership_type, $validTypesForNewRole, true)) {
+            if (! in_array($user->membership_type, $validTypesForNewRole, true)) {
                 $updates['membership_type'] = $newRole === 'staff' ? 'permanent' : 'customer';
             }
         }

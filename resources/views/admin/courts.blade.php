@@ -250,58 +250,107 @@
                                 $fullSec = $sections->firstWhere('code', 'full');
                                 $aSec = $sections->firstWhere('code', 'a');
                                 $bSec = $sections->firstWhere('code', 'b');
-                                $isSplit = $aSec && $aSec->is_active && $bSec && $bSec->is_active;
+                                $isSplit = ($aSec && $aSec->is_active) || ($bSec && $bSec->is_active);
                             @endphp
 
-                            {{-- รายการ section ปัจจุบัน --}}
-                            <div class="flex flex-col gap-3 mb-6">
-                                @foreach ($sections as $sec)
-                                    <form method="POST" action="{{ route('admin.court-sections.update', $sec->id) }}"
-                                        class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 flex-wrap sm:flex-nowrap">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="return_date" value="{{ $date }}">
-                                        <span class="text-xs font-bold px-2 py-1 rounded {{ $sec->code === 'full' ? 'bg-gray-900 text-white' : 'bg-[#eef2ff] text-[#5271ff]' }}">
-                                            {{ strtoupper($sec->code) }}
-                                        </span>
-                                        <input type="text" name="name" value="{{ $sec->name }}" maxlength="100"
-                                            class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
-
-                                        @if ($sec->code === 'full')
-                                            <span class="text-[12px] text-gray-400 px-2">เปิดใช้งานเสมอ</span>
-                                        @else
-                                            <label class="inline-flex items-center gap-2 text-sm text-gray-600 px-1">
-                                                <input type="checkbox" name="is_active" value="1" @checked($sec->is_active)
-                                                    class="rounded border-gray-300 text-[#5271ff] focus:ring-[#5271ff]">
-                                                เปิดใช้งาน
-                                            </label>
-                                        @endif
-
-                                        <button type="submit"
-                                            class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-3 py-1.5 transition">
-                                            บันทึก
-                                        </button>
-                                    </form>
-                                @endforeach
-                            </div>
-
                             @if ($isSplit)
-                                {{-- ยกเลิกการแบ่งครึ่ง --}}
+                                {{-- ---------------------------------------------------- --}}
+                                {{-- กรณีที่ 1: กำลังแบ่งครึ่งสนามอยู่ (ปรับเปลี่ยนสถานะ A/B ได้) --}}
+                                {{-- ---------------------------------------------------- --}}
+                                <form method="POST" action="{{ route('admin.courts.sections.split', $selectedCourt->id) }}" class="mb-4">
+                                    @csrf
+                                    <input type="hidden" name="return_date" value="{{ $date }}">
+
+                                    <div class="flex flex-col gap-3 mb-4">
+                                        {{-- เต็มสนาม (FULL) --}}
+                                        <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3">
+                                            <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">FULL</span>
+                                            <input type="text" name="name_full" value="{{ $fullSec->name ?? 'เต็มสนาม' }}" maxlength="100"
+                                                class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                            <div class="shrink-0 w-[115px] text-right px-1">
+                                                <span class="text-[12px] text-gray-400 whitespace-nowrap">เปิดใช้งานเสมอ</span>
+                                            </div>
+                                        </div>
+
+                                        {{-- ครึ่ง A --}}
+                                        <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3">
+                                            <span class="text-xs font-bold px-2 py-1 rounded bg-[#eef2ff] text-[#5271ff]">A</span>
+                                            <input type="text" name="name_a" value="{{ $aSec->name ?? 'ครึ่ง A' }}" maxlength="100"
+                                                class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+
+                                            <!-- Toggle Switch สำหรับ ครึ่ง A -->
+                                            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-1 py-1 rounded-lg hover:bg-gray-50 transition shrink-0 w-[115px] justify-end">
+                                                <input type="checkbox" name="is_active_a" value="1" {{ ($aSec && $aSec->is_active) ? 'checked' : '' }} class="sr-only peer">
+                                                <div class="w-8 h-4.5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                                                <span class="w-[62px] text-left text-xs font-medium text-emerald-600 hidden peer-checked:inline-block whitespace-nowrap shrink-0">เปิดใช้งาน</span>
+                                                <span class="w-[62px] text-left text-xs font-medium text-gray-400 inline-block peer-checked:hidden whitespace-nowrap shrink-0">ปิดใช้งาน</span>
+                                            </label>
+                                        </div>
+
+                                        {{-- ครึ่ง B --}}
+                                        <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3">
+                                            <span class="text-xs font-bold px-2 py-1 rounded bg-[#eef2ff] text-[#5271ff]">B</span>
+                                            <input type="text" name="name_b" value="{{ $bSec->name ?? 'ครึ่ง B' }}" maxlength="100"
+                                                class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+
+                                            <!-- Toggle Switch สำหรับ ครึ่ง B -->
+                                            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-1 py-1 rounded-lg hover:bg-gray-50 transition shrink-0 w-[115px] justify-end">
+                                                <input type="checkbox" name="is_active_b" value="1" {{ ($bSec && $bSec->is_active) ? 'checked' : '' }} class="sr-only peer">
+                                                <div class="w-8 h-4.5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                                                <span class="w-[62px] text-left text-xs font-medium text-emerald-600 hidden peer-checked:inline-block whitespace-nowrap shrink-0">เปิดใช้งาน</span>
+                                                <span class="w-[62px] text-left text-xs font-medium text-gray-400 inline-block peer-checked:hidden whitespace-nowrap shrink-0">ปิดใช้งาน</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- ปุ่มบันทึก -->
+                                    <button type="submit"
+                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3">
+                                        บันทึก
+                                    </button>
+                                </form>
+
+                                {{-- ปุ่มยกเลิกการแบ่งครึ่งสนาม --}}
                                 <form method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}"
                                     onsubmit="return confirm('ยกเลิกการแบ่งครึ่งสนาม {{ $selectedCourt->name }}? (ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)');">
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
                                     <button type="submit"
-                                        class="text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition">
+                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center">
                                         ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
                                     </button>
                                 </form>
+
                             @else
-                                {{-- แบ่งครึ่งสนาม --}}
+                                {{-- ---------------------------------------------------- --}}
+                                {{-- กรณีที่ 2: ยกเลิกการแบ่งสนามแล้ว / จองเฉพาะเต็มสนาม   --}}
+                                {{-- ---------------------------------------------------- --}}
+                                
+                                {{-- แก้ไขชื่อเต็มสนาม --}}
+                                @if ($fullSec)
+                                    <form method="POST" action="{{ route('admin.court-sections.update', $fullSec->id) }}"
+                                        class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 mb-4">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="return_date" value="{{ $date }}">
+                                        <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">FULL</span>
+                                        <input type="text" name="name" value="{{ $fullSec->name }}" maxlength="100"
+                                            class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        <span class="text-[12px] text-gray-400 px-2 whitespace-nowrap">เปิดใช้งานเสมอ</span>
+                                        <button type="submit"
+                                            class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-1.5 transition whitespace-nowrap">
+                                            บันทึก
+                                        </button>
+                                    </form>
+                                @endif
+
+                                {{-- ฟอร์มแบ่งครึ่งสนามใหม่ --}}
                                 <form method="POST" action="{{ route('admin.courts.sections.split', $selectedCourt->id) }}"
                                     class="border-t border-gray-100 pt-4 flex flex-col sm:flex-row items-end gap-3">
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <input type="hidden" name="is_active_a" value="1">
+                                    <input type="hidden" name="is_active_b" value="1">
                                     <div class="flex-1 w-full">
                                         <label class="block text-xs font-medium text-gray-700 mb-1">ชื่อครึ่ง A</label>
                                         <input type="text" name="name_a" value="{{ $aSec->name ?? 'ครึ่ง A' }}" maxlength="100"

@@ -1126,8 +1126,8 @@ html { scroll-behavior: smooth; }
             {{ $site['about_desc'] }}
         </p>
         <div class="about-checks">
-            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 4 สนาม</div>
-            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอ ระบบ LED</div>
+            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 2 สนาม</div>
+            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอด้วยระบบ LED</div>
             <div class="check-row"><div class="check-icon">✓</div>บริการลูกค้าตลอด 7 วัน</div>
             <div class="check-row"><div class="check-icon">✓</div>จองออนไลน์ได้ 24 ชั่วโมง</div>
         </div>
@@ -1187,7 +1187,7 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <!-- เปลี่ยนปุ่มเป็น "ดูช่วงเวลา" และคลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
+                        <!-- คลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
                         <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
 
                         <div class="half-court-divider"></div>
@@ -1341,7 +1341,7 @@ html { scroll-behavior: smooth; }
     <div class="courses-grid">
         @foreach($trainingCourses as $tCourse)
             @php
-                $tPackage = $tCourse->packages->first();
+                $tPackage = $tCourse->packages->sortBy(fn ($package) => (float) $package->total_price)->first();
                 $courseType = $tCourse->course_type;
             @endphp
             <div class="course-card2" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
@@ -1418,7 +1418,7 @@ html { scroll-behavior: smooth; }
 
 @if($packages->isNotEmpty())
     {{-- ═══ PACKAGES ═══ --}}
-    <section class="packages-section" data-aos="fade-up">
+    <section class="packages-section" id="packages" data-aos="fade-up">
         <div class="packages-header">
             <p class="packages-label">Package</p>
             <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
@@ -1591,13 +1591,23 @@ const HERO_SLIDES = @json($heroSlides);
             return $s->id !== $defaultSectionId && $isActive;
         });
 
-        // ถ้ามีข้อมูล Sections ให้ใช้ ถ้าไม่มีให้ใช้ค่าเริ่มต้น (ครึ่ง A / ครึ่ง B)
-        $sectionsList = $halfSections->isNotEmpty()
-            ? $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values()
-            : collect([
-                ['id' => $c->id, 'section_id' => 'half_a', 'name' => $c->half_a_name ?? 'ครึ่ง A'],
-                ['id' => $c->id, 'section_id' => 'half_b', 'name' => $c->half_b_name ?? 'ครึ่ง B']
-            ]);
+        // ถ้ามีข้อมูล Sections ให้ใช้
+        if ($halfSections->isNotEmpty()) {
+            $sectionsList = $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values();
+        } else {
+            // เช็คว่าเคยแบ่งครึ่งสนามแบบระบบเดิม (มีชื่อครึ่ง A/B) ไว้หรือไม่
+            if (!empty($c->half_a_name) || !empty($c->half_b_name)) {
+                $sectionsList = collect([
+                    ['id' => $c->id, 'section_id' => 'half_a', 'name' => $c->half_a_name ?? 'ครึ่ง A'],
+                    ['id' => $c->id, 'section_id' => 'half_b', 'name' => $c->half_b_name ?? 'ครึ่ง B']
+                ]);
+            } else {
+                // กรณียังไม่มีการแบ่งสนามเลย ให้แสดงเป็นแบบเต็มสนาม (1 คอลัมน์)
+                $sectionsList = collect([
+                    ['id' => $c->id, 'section_id' => null, 'name' => 'เต็มสนาม']
+                ]);
+            }
+        }
 
         return [
             'id' => $c->id,
@@ -1634,7 +1644,7 @@ function scrollToBookingAndSelect(courtId) {
     }
     const bookingSection = document.getElementById('booking-section');
     if (bookingSection) {
-        bookingSection.scrollIntoView({ behavior: 'smooth' });
+        bookingSection.scrollIntoView({ behavior: 'smooth' , block: 'center'});
     }
 }
 
