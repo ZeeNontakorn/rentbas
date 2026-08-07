@@ -81,7 +81,7 @@ class PrivateTrainingController extends Controller
 
         $myUpcoming = PrivateTrainingBooking::where('coach_id', $coach->id)
             ->where('user_id', auth()->id())
-            ->whereDate('date', '>=', $today)
+            ->whereDate('date', '>=', now()->subDays(7)->toDateString())
             ->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
             ->orderBy('date')
             ->orderBy('start_time')
