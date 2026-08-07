@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class ManageCourseController extends Controller
 {
@@ -21,7 +20,6 @@ class ManageCourseController extends Controller
      * เปิดหน้าเพิ่มคอร์ส
      */
     const MAX_PACKAGE_PRICE = 1000000;
-
     public function create()
     {
         return view('admin.courses.create', [
@@ -161,26 +159,11 @@ class ManageCourseController extends Controller
                 CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
             }
 
-            // อัปเดตแพ็กเกจเดิมเพื่อรักษาสถานะ/คอร์สแนะนำ/ลำดับเอาไว้
-            // และลบเฉพาะแพ็กเกจที่ผู้ใช้เอาออกจากฟอร์ม
-            $keptPackageIds = [];
+            // สร้างแพ็กเกจใหม่จากรายการในฟอร์มทั้งหมด
+            $course->packages()->delete();
             foreach ($data['packages'] as $package) {
-                $packageId = $package['id'] ?? null;
-                unset($package['id']);
-
-                $existingPackage = $packageId
-                    ? $course->packages()->whereKey($packageId)->first()
-                    : null;
-
-                if ($existingPackage) {
-                    $existingPackage->update($package);
-                    $keptPackageIds[] = $existingPackage->id;
-                } else {
-                    $keptPackageIds[] = $course->packages()->create($package)->id;
-                }
+                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
             }
-
-            $course->packages()->whereNotIn('id', $keptPackageIds)->delete();
         });
 
         return redirect()
@@ -212,19 +195,17 @@ class ManageCourseController extends Controller
      */
     public function toggleStatus(Course $course)
     {
-        $packages = $course->packages()->get();
+        $package = $course->packages()->first();
 
-        if ($packages->isEmpty()) {
+        if (! $package) {
             return redirect()
                 ->route('admin.courses')
                 ->with('error', 'คอร์ส "'.$course->course_name.'" ยังไม่มีแพ็กเกจ ไม่สามารถเปิด/ปิดใช้งานได้');
         }
 
-        // ถ้ามีอย่างน้อยหนึ่งแพ็กเกจเปิดอยู่ ให้ถือว่าคอร์สกำลังเปิด และปิดทั้งหมดพร้อมกัน
-        $newStatus = ! $packages->contains('is_active', true);
-        $course->packages()->update(['is_active' => $newStatus]);
+        $package->update(['is_active' => ! $package->is_active]);
 
-        $statusText = $newStatus ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+        $statusText = $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
 
         return redirect()
             ->route('admin.courses')
@@ -252,12 +233,7 @@ class ManageCourseController extends Controller
     private function validated(Request $request): array
     {
         $validated = $request->validate([
-            'course_name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('courses', 'course_name')->ignore($request->route('course')),
-            ],
+            'course_name' => ['required', 'string', 'max:255'],
             'min_age' => ['required', 'integer', 'min:0'],
             'max_age' => ['nullable', 'integer', 'min:0', 'gte:min_age'],
             'description' => ['nullable', 'string'],
@@ -278,16 +254,9 @@ class ManageCourseController extends Controller
             'schedules.*.capacity' => ['nullable', 'required_if:schedules.*.is_limited_spots,1', 'integer', 'min:1'],
 
             'packages' => ['required', 'array', 'min:1'],
-            'packages.*.id' => [
-                'nullable',
-                'integer',
-                Rule::exists('course_packages', 'id')->where(
-                    fn ($query) => $query->where('course_id', $request->route('course')?->id ?? 0)
-                ),
-            ],
             'packages.*.package_type' => ['required', 'in:group,private'],
             'packages.*.total_sessions' => ['required', 'integer', 'min:1'],
-            'packages.*.total_price' => ['required', 'numeric', 'min:0', 'max:'.self::MAX_PACKAGE_PRICE],
+            'packages.*.total_price' => ['required', 'numeric', 'min:0.01', 'max:'.self::MAX_PACKAGE_PRICE],
             'packages.*.validity_value' => ['required', 'integer', 'min:1'],
             'packages.*.validity_unit' => ['required', 'in:days,hours'],
             'packages.*.recommendation_text' => ['nullable', 'string', 'max:255'],
@@ -295,7 +264,6 @@ class ManageCourseController extends Controller
             // --- ข้อมูลทั่วไป ---
             'course_name.required' => 'กรุณากรอกชื่อคลาสเรียน',
             'course_name.max' => 'ชื่อคลาสเรียนต้องไม่เกิน 255 ตัวอักษร',
-            'course_name.unique' => 'มีชื่อคลาสเรียนนี้อยู่แล้ว กรุณาใช้ชื่ออื่น',
 
             'min_age.required' => 'กรุณากรอกอายุขั้นต่ำ',
             'min_age.integer' => 'กรุณากรอกอายุขั้นต่ำเป็นตัวเลขเท่านั้น',
@@ -324,7 +292,7 @@ class ManageCourseController extends Controller
 
             'packages.*.total_price.required' => 'กรุณากรอกราคาแพ็กเกจ',
             'packages.*.total_price.numeric' => 'ราคาต้องเป็นตัวเลข',
-            'packages.*.total_price.min' => 'ราคาต้องไม่น้อยกว่า 0',
+            'packages.*.total_price.min' => 'ราคาต้องมากกว่า 0',
             'packages.*.total_price.max' => 'ราคาต้องไม่เกิน '.number_format(self::MAX_PACKAGE_PRICE).' บาท',
 
             'packages.*.validity_value.required' => 'กรุณากรอกอายุแพ็กเกจ',
@@ -351,7 +319,6 @@ class ManageCourseController extends Controller
 
         $packages = array_map(function ($package) {
             return [
-                'id' => isset($package['id']) ? (int) $package['id'] : null,
                 'package_type' => $package['package_type'],
                 'total_sessions' => (int) $package['total_sessions'],
                 'total_price' => $package['total_price'],

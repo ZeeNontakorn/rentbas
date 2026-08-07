@@ -86,14 +86,6 @@
                 color: #fff;
             }
 
-            /* ช่วงเวลาที่มีลูกค้าจองอยู่แล้ว — แก้ไขสถานะทับไม่ได้ ต้องไปจัดการที่หน้ารายการจอง */
-            .slot-card.booking_pending,
-            .slot-card.booking_pending_payment,
-            .slot-card.booking_approved,
-            .slot-card.booked {
-                cursor: not-allowed;
-            }
-
             .court-item {
                 padding: 8px 12px;
                 cursor: pointer;
@@ -841,32 +833,43 @@
                 });
 
                 function selectAdminTime(start, end, status, el) {
-                    // ห้ามแก้สถานะทับช่วงที่มีลูกค้าจองอยู่แล้วโดยเด็ดขาด (ล็อกไว้ทั้ง client และ server)
-                    // ต้องไปจัดการผ่านหน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) เท่านั้น
+                    const applySelection = () => {
+                        if (selEl) {
+                            selEl.classList.remove('selected');
+                        }
+
+                        el.classList.add('selected');
+                        selEl = el;
+
+                        document.getElementById('st_val').value = start;
+                        document.getElementById('en_val').value = end;
+                        document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end
+                            .substring(0, 5);
+
+                        document.getElementById('statusBox').classList.remove('hidden');
+                    };
+
+                    // Check if it's booked by user, maybe warn before allowing override
                     if (status.includes('book')) {
                         Swal.fire({
-                            icon: 'info',
-                            title: 'แก้ไขสถานะไม่ได้',
-                            text: 'ช่วงเวลานี้มีลูกค้าจองอยู่แล้ว ไม่สามารถแก้ไขสถานะทับได้ กรุณาไปจัดการที่หน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) ก่อน',
-                            confirmButtonText: 'เข้าใจแล้ว',
+                            icon: 'warning',
+                            title: 'ยืนยันการแก้ไขสถานะ?',
+                            text: 'ช่วงเวลานี้มีการจองโดยผู้ใช้งานอยู่แล้ว ต้องการแก้ไขสถานะทับซ้อนหรือไม่? (ระบบจะนับเฉพาะสถานะใหม่ที่คุณเลือก)',
+                            showCancelButton: true,
+                            confirmButtonText: 'ยืนยัน',
+                            cancelButtonText: 'ยกเลิก',
                             confirmButtonColor: '#5271ff',
+                            cancelButtonColor: '#6b7280',
+                            reverseButtons: true,
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                applySelection();
+                            }
                         });
                         return;
                     }
 
-                    if (selEl) {
-                        selEl.classList.remove('selected');
-                    }
-
-                    el.classList.add('selected');
-                    selEl = el;
-
-                    document.getElementById('st_val').value = start;
-                    document.getElementById('en_val').value = end;
-                    document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end
-                        .substring(0, 5);
-
-                    document.getElementById('statusBox').classList.remove('hidden');
+                    applySelection();
                 }
 
                 setInterval(() => {

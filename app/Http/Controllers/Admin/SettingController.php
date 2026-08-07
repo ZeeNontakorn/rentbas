@@ -29,8 +29,9 @@ class SettingController extends Controller
         $reviews = Review::with(['user:id,name,email', 'ratings.facility:id,name', 'images'])
             ->latest()
             ->paginate(10);
+        $pendingReviewsCount = Review::where('status', 'pending')->count();
 
-        return view('edit-text', compact('settings', 'courts', 'facilities', 'reviews'));
+        return view('edit-text', compact('settings', 'courts', 'facilities', 'reviews', 'pendingReviewsCount'));
     }
 
     /**

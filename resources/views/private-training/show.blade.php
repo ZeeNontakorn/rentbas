@@ -290,7 +290,6 @@ document.addEventListener('DOMContentLoaded', function () {
         selectAllow(info) {
             return calendar.view.type !== 'dayGridMonth'
                 && info.start >= new Date()
-                && info.start <= maxSelectableDate
                 && (info.end - info.start) <= 4 * 60 * 60 * 1000;
         },
         dateClick(info) {

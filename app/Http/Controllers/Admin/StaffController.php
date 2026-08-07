@@ -31,6 +31,7 @@ class StaffController extends Controller
             ->when($search, fn ($query) => $query->where(
                 fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")
             ))
+            ->with('staffProfile')
             ->paginate(10)
             ->withQueryString();
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PrivateTrainingConfirmedMail;
+use App\Mail\PrivateTrainingRejectedMail;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\CalendarEvent;
@@ -36,14 +38,26 @@ class PrivateTrainingController extends Controller
         $search = $request->query('search');
 
         $hasValidPackage = PackagePurchase::where('user_id', $request->user()->id)
-            ->where('status', 'approved')   // ← เปลี่ยนจาก 'paid' เป็น 'approved'
+            ->where('status', 'approved')
             ->where('remaining_use', '>', 0)
             ->where(function ($q) {
                 $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
             })
             ->exists();
 
-        $coaches = $hasValidPackage
+        $myRequests = PrivateTrainingBooking::with('coach')
+            ->where('user_id', $request->user()->id)
+            ->whereDate('date', '>=', now()->toDateString())
+            ->orderByDesc('created_at')
+            ->get();
+
+        // เคยมีคำขอจองมาก่อนไหม (ไม่จำกัดแค่อนาคต เอาทุกสถานะทุกช่วงเวลา เพื่อตัดสินว่าควรให้เห็นหน้ารายชื่อโค้ชไหม)
+        $hasAnyBookingHistory = PrivateTrainingBooking::where('user_id', $request->user()->id)->exists();
+
+        // แสดงรายชื่อโค้ชได้ถ้า (มีแพ็กเกจเหลือใช้ได้) หรือ (เคยมีคำขอจองมาก่อน)
+        $canViewCoaches = $hasValidPackage || $hasAnyBookingHistory;
+
+        $coaches = $canViewCoaches
             ? User::where('role', 'staff')
                 ->where('membership_type', 'coach')
                 ->with('staffProfile')
@@ -61,7 +75,7 @@ class PrivateTrainingController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches'));
     }
 
     public function show(User $coach)
@@ -616,8 +630,19 @@ class PrivateTrainingController extends Controller
             "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
             route('private-training.index'),
         );
-
+        
         $successMessage = 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว ไม่มีการหักเครดิตลูกค้า';
+        // ส่งอีเมลแจ้งยืนยันไปหาลูกค้าโดยตรง (ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วทำให้
+        // การจัดสนามที่สำเร็จไปแล้วจริงพังไปด้วย เหมือนที่ทำไว้กับ notifyAdminsOfPayment)
+        try {
+            if ($privateTrainingBooking->user?->email) {
+                Mail::to($privateTrainingBooking->user->email)
+                    ->send(new PrivateTrainingConfirmedMail($privateTrainingBooking));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ส่งอีเมลยืนยันการจองให้ลูกค้าไม่สำเร็จ: ' . $e->getMessage());
+        }
+
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
@@ -656,6 +681,15 @@ class PrivateTrainingController extends Controller
             "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
             route('private-training.index'),
         );
+
+        try {
+            if ($privateTrainingBooking->user?->email) {
+                Mail::to($privateTrainingBooking->user->email)
+                    ->send(new PrivateTrainingRejectedMail($privateTrainingBooking, $data['reject_reason']));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ส่งอีเมลปฏิเสธ Private Training ไม่สำเร็จ: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
     }

@@ -17,9 +17,8 @@ class CreditTopupPackageController extends Controller
         $packages = CreditTopupPackage::orderBy('sort_order')->orderBy('price_satang')->get();
         $lineUrl = Setting::getVal('line_topup_url');
         $promptpayNumber = Setting::getVal('promptpay_number');
-        $promptpayName = Setting::getVal('promptpay_name');
 
-        return view('admin.credit-topup-packages.index', compact('packages', 'lineUrl', 'promptpayNumber', 'promptpayName'));
+        return view('admin.credit-topup-packages.index', compact('packages', 'lineUrl', 'promptpayNumber'));
     }
 
     protected function rules(): array
@@ -86,26 +85,6 @@ class CreditTopupPackageController extends Controller
     }
 
     /**
-     * บันทึกลำดับแพ็กเกจใหม่จากการลาก-วาง (drag handle) ในหน้าแอดมิน — รับ array ของ id
-     * เรียงตามลำดับที่ลากวางแล้ว จากนั้น map เป็น sort_order 0,1,2,... ตามตำแหน่ง
-     * ฝั่งผู้ใช้ (CreditTopupController::index) เรียง orderBy('sort_order') อยู่แล้ว จึงเห็นผลทันที
-     * โดยไม่ต้องแก้อะไรเพิ่มฝั่ง user
-     */
-    public function reorder(Request $request)
-    {
-        $data = $request->validate([
-            'order' => ['required', 'array', 'min:1'],
-            'order.*' => ['integer', 'distinct', 'exists:credit_topup_packages,id'],
-        ]);
-
-        foreach ($data['order'] as $index => $id) {
-            CreditTopupPackage::whereKey($id)->update(['sort_order' => $index]);
-        }
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
      * บันทึกลิงก์ LINE OA ที่ใช้กับปุ่ม "เติมผ่าน LINE ไวกว่า" ในหน้าเติมเครดิตของผู้ใช้
      */
     public function updateLineUrl(Request $request)
@@ -124,7 +103,7 @@ class CreditTopupPackageController extends Controller
         return back()->with('success', 'บันทึกลิงก์ LINE เรียบร้อยแล้ว');
     }
 
-    public function updatePromptpay(Request $request)
+    public function updatePromptpayNumber(Request $request)
     {
         $data = $request->validateWithBag('promptpay', [
             // เบอร์มือถือไทย: ขึ้นต้นด้วย 0 ตามด้วยเลข 9 หลัก (รวม 10 หลัก) ไม่รับขีด/วงเล็บ/เว้นวรรค
@@ -139,14 +118,8 @@ class CreditTopupPackageController extends Controller
         Setting::updateOrCreate(
             ['key' => 'promptpay_number'],
             ['value' => $data['promptpay_number']]
-
         );
 
-        Setting::updateOrCreate(
-            ['key' => 'promptpay_name'],
-            ['value' => $data['promptpay_name']]
-        );
-
-        return back()->with('success', 'บันทึกข้อมูล PromptPay เรียบร้อยแล้ว');
+        return back()->with('success', 'บันทึกเบอร์ PromptPay เรียบร้อยแล้ว');
     }
 }
