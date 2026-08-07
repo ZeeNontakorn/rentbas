@@ -303,20 +303,20 @@
             @endauth
 
             @guest
-                <a href="{{ route('login') }}" class="flex items-center hover:text-gray-300 transition">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Login
-                </a>
-                <a href="{{ route('register') }}" class="flex items-center hover:text-gray-300 transition">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 21v-2c0-2.21 3.58-4 6-4s6 1.79 6 4v2H6z"></path>
-                    </svg>
-                    Register
-                </a>
+               <a href="{{ route('login') }}" class="flex items-center hover:text-gray-300 transition">
+    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+    </svg>
+    เข้าสู่ระบบ
+</a>
+<a href="{{ route('register') }}" class="flex items-center hover:text-gray-300 transition">
+    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+    </svg>
+    สมัครสมาชิก
+</a>
             @endguest
         </div>
     </div>
