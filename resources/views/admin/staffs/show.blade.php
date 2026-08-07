@@ -93,12 +93,12 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-start gap-6">
                     <div
-                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
+                        class="w-20 h-20 rounded-full {{ $isCoach ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600' }} flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
                         @if($staffProfile?->profile_image)
                             <img src="{{ $staffProfile->profile_image_url }}"
                                 alt="รูปโปรไฟล์ของ {{ $staff->name }}" class="h-full w-full object-cover">
                         @else
-                            <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
+                            <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($staff->name, 0, 1)) }}</span>
                         @endif
                     </div>
 

@@ -14,7 +14,7 @@
         </a>
 
         <h1 class="text-xl font-bold text-gray-800 mb-1">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
-        <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ ลากไอคอน <span class="inline-block">⠿</span> เพื่อจัดลำดับการแสดงผล (ลำดับจะซิงก์ไปหน้าเติมเครดิตของผู้ใช้ทันที)</p>
+        <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
 
         @if (session('success'))
             <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm">{{ session('success') }}</div>
@@ -139,7 +139,6 @@
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                         <tr>
-                            <th class="px-3 py-3 font-medium w-8"></th>
                             <th class="px-6 py-3 font-medium">ป้ายชื่อ</th>
                             <th class="px-6 py-3 font-medium text-right">ราคา</th>
                             <th class="px-6 py-3 font-medium text-right">เครดิตที่ได้</th>
@@ -148,7 +147,7 @@
                             <th class="px-6 py-3 font-medium"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100" id="packageRows">
+                    <tbody class="divide-y divide-gray-100">
                         @forelse($packages as $pkg)
                             @php
                                 $rowErrors = $errors->{"editPkg{$pkg->id}"};
@@ -193,8 +192,7 @@
                                 </td>
                                 <td class="px-6 py-3 text-right whitespace-nowrap">
                                     <button type="submit" form="editPkg{{ $pkg->id }}" class="text-emerald-600 hover:text-emerald-700 font-medium text-xs mr-3">บันทึก</button>
-                                    <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline"
-                                          data-package-label="{{ $pkg->label }}" onsubmit="confirmDeleteCreditPackage(event, this)">
+                                    <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline" onsubmit="return confirm('ลบแพ็กเกจนี้?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
@@ -206,96 +204,12 @@
                                 @method('PUT')
                             </form>
                         @empty
-                            <tr><td colspan="7" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
+                            <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-
-        <div id="reorderToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
     </div>
 </div>
-
-@push('scripts')
-<<<<<<< HEAD
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
-<script>
-(function () {
-    const tbody = document.getElementById('packageRows');
-    if (!tbody || typeof Sortable === 'undefined') return;
-
-    const toast = document.getElementById('reorderToast');
-    function showToast(text, isError) {
-        toast.textContent = text;
-        toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
-        toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
-        clearTimeout(showToast._t);
-        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
-    }
-
-    Sortable.create(tbody, {
-        handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'opacity-40',
-        // เฉพาะแถวที่มี data-id (กัน empty-state row หลุดเข้ามาโดนลากด้วย)
-        filter: 'tr:not([data-id])',
-        onEnd: function () {
-            const order = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => parseInt(tr.dataset.id, 10));
-            if (order.length === 0) return;
-
-            fetch('{{ route('admin.credit-topup-packages.reorder') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-                        || document.querySelector('input[name="_token"]')?.value,
-                },
-                body: JSON.stringify({ order }),
-            }).then(res => {
-                if (!res.ok) throw new Error('reorder failed');
-                showToast('บันทึกลำดับใหม่แล้ว');
-            }).catch(err => {
-                console.error(err);
-                showToast('บันทึกลำดับไม่สำเร็จ กำลังโหลดหน้าใหม่...', true);
-                setTimeout(() => window.location.reload(), 1200);
-            });
-        }
-    });
-})();
-
-function confirmDeleteCreditPackage(event, form) {
-    event.preventDefault();
-
-    const packageLabel = form.dataset.packageLabel;
-    Swal.fire({
-        title: 'ลบแพ็กเกจเครดิตนี้?',
-        text: `แพ็กเกจ “${packageLabel}” จะถูกลบและไม่สามารถกู้คืนได้`,
-        icon: 'warning',
-        iconColor: '#dc2626',
-        showCancelButton: true,
-        reverseButtons: true,
-        focusCancel: true,
-        confirmButtonText: 'ลบแพ็กเกจ',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#64748b',
-        buttonsStyling: true,
-        allowOutsideClick: false,
-        customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-xl px-5 py-2.5',
-            cancelButton: 'rounded-xl px-5 py-2.5'
-        }
-    }).then(result => {
-        if (result.isConfirmed) {
-            form.querySelector('button[type="submit"]').disabled = true;
-            form.submit();
-        }
-    });
-}
-
-</script>
-@endpush
 @endsection
