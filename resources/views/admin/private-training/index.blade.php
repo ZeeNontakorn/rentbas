@@ -134,8 +134,8 @@
     {{-- Modal จัดสนาม --}}
     <div id="courtModal"
         class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
-        <div class="w-full max-w-lg sm:max-w-xl overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
-            <div class="border-b border-gray-100 bg-gray-50 px-8 py-5">
+        <div class="w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-100 bg-white shadow-2xl">
+            <div class="border-b border-gray-100 bg-gray-50 px-8 py-5 sticky top-0 z-10">
                 <h3 class="text-base sm:text-lg font-bold text-gray-800">จัดสนามสำหรับ Private Training</h3>
             </div>
             <form id="courtForm" method="POST" class="space-y-6 p-8"
@@ -147,20 +147,26 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">เลือกสนามและส่วนสนาม</label>
-                    <select name="court_section_id" required
-                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
-                        <option value="">กรุณาเลือกสนาม</option>
-                        @foreach($courts as $court)
-                            <optgroup label="{{ $court->name }}">
-                                @foreach($court->sections as $section)
-                                    <option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
-                    </select>
+                    <div class="relative">
+                        <select name="court_section_id" required
+                            class="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-base text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none cursor-pointer">
+                            <option value="">กรุณาเลือกสนาม</option>
+                            @foreach($courts as $court)
+                                <optgroup label="{{ $court->name }}">
+                                    @foreach($court->sections as $section)
+                                        <option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                        <svg class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
                     <p class="mt-2 text-xs sm:text-sm text-gray-400">ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน</p>
                 </div>
-                <div class="flex gap-3 pt-2">
+                <div class="flex gap-3 pt-2 sticky bottom-0 bg-white pb-2">
                     <button type="button" onclick="closeCourtModal()"
                         class="w-1/2 rounded-xl bg-gray-100 px-5 py-3 text-base font-medium text-gray-600 hover:bg-gray-200 transition cursor-pointer">ยกเลิก</button>
                     <button type="submit"
