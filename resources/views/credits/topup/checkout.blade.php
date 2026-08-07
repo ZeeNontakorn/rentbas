@@ -10,8 +10,25 @@
 .tu-main h1, .tu-main h2, .tu-main h3 { font-family: 'Kanit', sans-serif; }
 
 .tu-card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 26px; }
-.tu-qr-box { width: 200px; height: 200px; margin: 0 auto 14px; padding: 10px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; }
+
+/* ปรับ tu-qr-box ให้รองรับการวางโลโก้ทับตรงกลาง */
+.tu-qr-box {
+    position: relative;
+    width: 200px; height: 200px; margin: 0 auto 14px; padding: 10px;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+}
 .tu-qr-box canvas { width: 100% !important; height: 100% !important; }
+
+/* CSS สำหรับโลโก้พร้อมเพย์ตรงกลาง */
+.qr-logo-overlay {
+    position: absolute;
+    width: 45px; /* ขนาดโลโก้ตรงกลาง (ห้ามใหญ่เกินไปเดี๋ยวสแกนไม่ได้) */
+    height: auto;
+    background-color: white;
+    padding: 3px;
+    border-radius: 8px;
+}
 
 .method-option {
     display: flex; align-items: center; gap: 10px; border: 1.5px solid #e5e7eb; border-radius: 10px;
@@ -51,7 +68,7 @@
     @endif
 
     <form method="POST" action="{{ route('credits.topup.store') }}" enctype="multipart/form-data" id="topupForm" class="flex flex-col gap-6"
-          onsubmit="showMailLoadingOverlay('กำลังส่งคำขอเติมเครดิตและแจ้งเตือนแอดมิน...'); document.getElementById('submitBtn').disabled = true;">
+        onsubmit="showMailLoadingOverlay('กำลังส่งคำขอเติมเครดิตและแจ้งเตือนแอดมิน...'); document.getElementById('submitBtn').disabled = true;">
         @csrf
         <input type="hidden" name="package_id" value="{{ $package?->id }}">
         <input type="hidden" name="price_satang" value="{{ $priceSatang }}">
@@ -59,17 +76,30 @@
 
         {{-- ช่องทางชำระเงิน --}}
         <div>
-                    <span>สแกน QR PromptPay แล้วแนบสลิป</span>
+            <span>สแกน QR PromptPay แล้วแนบสลิป</span>
         </div>
 
-        {{-- QR PromptPay (mock) --}}
+        {{-- QR PromptPay --}}
         <div id="promptpayPanel" class="tu-card text-center">
-            <div class="tu-qr-box"><canvas id="qrCanvas"></canvas></div>
-            <p class="text-sm text-gray-600 mb-0.5">พร้อมเพย์: <span class="font-bold text-gray-900">099-999-9999</span></p>
-            <p class="text-sm text-gray-600 mb-4">ชื่อบัญชี: <span class="font-bold text-gray-900">THATA HOMECOURT</span></p>
 
-            <label for="slipInput" class="tu-upload block" id="uploadLabel">
-                📎 แตะเพื่อแนบสลิปการโอนเงิน
+            {{-- พื้นที่แสดง QR Code พร้อมโลโก้ตรงกลาง --}}
+            <div class="tu-qr-box">
+                <canvas id="qrCanvas"></canvas>
+                <!-- โลโก้พร้อมเพย์ที่จะแสดงทับตรงกลาง -->
+                <img src="https://www.bot.or.th/content/dam/bot/icons/icon-thaiqr.png" class="qr-logo-overlay" alt="PromptPay">
+            </div>
+
+            {{-- จัดรูปแบบเบอร์ให้สวยงาม (ถ้าเป็นเบอร์โทรให้ใส่ขีดดเพื่อให้ดูง่าย) --}}
+            <p class="text-sm text-gray-600 mb-0.5">พร้อมเพย์: <span class="font-bold text-gray-900">{{ $promptpayNumber ?? 'ยังไม่ได้ตั้งค่าเบอร์' }}</span></p>
+
+            {{-- แนะนำให้ส่ง $promptpayName มาจาก Controller ด้วยวิธีเดียวกับเบอร์ครับ --}}
+            <p class="text-sm text-gray-600 mb-4">ชื่อบัญชี: <span class="font-bold text-gray-900">{{ $promptpayName ?? 'THATA HOMECOURT' }}</span></p>
+
+            <label for="slipInput" class="tu-upload block relative" id="uploadLabel">
+                <span id="uploadText">📎 แตะเพื่อแนบสลิปการโอนเงิน</span>
+
+                {{-- ส่วนสำหรับแสดง Preview รูปภาพ (ถูกซ่อนไว้เป็นค่าเริ่มต้น) --}}
+                <img id="slipPreview" src="" alt="Slip Preview" class="hidden mt-3 mx-auto max-h-[300px] w-auto object-contain rounded-lg shadow-sm border border-gray-200">
             </label>
             <input type="file" name="slip" id="slipInput" accept="image/*" class="hidden" onchange="onSlipChange(this)">
         </div>
@@ -81,24 +111,44 @@
 </div>
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-(function () {
-    // mock QR payload — ไม่ใช่ QR PromptPay จริง แค่ตัวอย่างสำหรับ mockup หน้าจอ
-    const payload = 'MOCK-TOPUP|amount={{ $priceSatang }}|ref={{ now()->timestamp }}';
-    new QRCode(document.getElementById('qrCanvas'), {
-        text: payload, width: 180, height: 180, colorDark: '#111827', colorLight: '#ffffff'
-    });
-})();
+document.addEventListener("DOMContentLoaded", function() {
+    // กำหนดข้อมูล
+    const mobileNumber = '{{ $promptpayNumber ?? "" }}';
+    const amount = {{ $priceSatang / 100 }}; // แปลงสตางค์เป็นบาท
+    const canvas = document.getElementById('qrCanvas');
+
+    // ตรวจสอบว่ามีเบอร์หรือไม่ และเรียกใช้ฟังก์ชันที่ Bundle มาจาก Vite
+    if (mobileNumber && typeof window.generatePromptPayQR === 'function') {
+        window.generatePromptPayQR(mobileNumber, amount, canvas);
+    }
+});
 
 function onSlipChange(input) {
     const label = document.getElementById('uploadLabel');
+    const textSpan = document.getElementById('uploadText');
+    const previewImg = document.getElementById('slipPreview');
+
     if (input.files && input.files[0]) {
-        label.textContent = '✅ แนบไฟล์แล้ว: ' + input.files[0].name;
+        const file = input.files[0];
+
+        // 1. เปลี่ยนข้อความแจ้งเตือน
+        textSpan.innerHTML = `✅ แนบไฟล์แล้ว: <span class="font-semibold">${file.name}</span> <br><span class="text-xs text-gray-500">(แตะที่รูปเพื่อเปลี่ยนไฟล์)</span>`;
         label.classList.add('has-file');
+        label.classList.remove('py-22'); // อาจจะลด padding ลงนิดหน่อยถ้ามีรูป
+
+        // 2. สร้าง URL จำลองของรูปภาพและนำไปแสดงผล
+        previewImg.src = URL.createObjectURL(file);
+        previewImg.classList.remove('hidden');
+        previewImg.classList.add('block');
     } else {
-        label.textContent = '📎 แตะเพื่อแนบสลิปการโอนเงิน';
+        // กรณีที่ผู้ใช้กดยกเลิกการเลือกไฟล์ ให้คืนค่าทุกอย่างกลับเป็นเหมือนเดิม
+        textSpan.textContent = '📎 แตะเพื่อแนบสลิปการโอนเงิน';
         label.classList.remove('has-file');
+
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+        previewImg.classList.remove('block');
     }
 }
 </script>

@@ -61,8 +61,8 @@ class ReviewController extends Controller
                 'user_id' => $request->user()->id,
                 'overall_rating' => $data['overall_rating'],
                 'comment' => $data['comment'],
-                'status' => 'pending',
-                'published_at' => null,
+                'status' => 'published', // ให้รีวิวแสดงผลทันที แต่ยังไม่แจ้งเตือนแอดมิน
+                'published_at' => now(),
             ]);
 
             foreach ($data['ratings'] as $facilityId => $rating) {
@@ -87,8 +87,8 @@ class ReviewController extends Controller
             ->each(function ($adminId) use ($request, $review) {
                 Notification::create([
                     'user_id' => $adminId,
-                    'title' => 'มีรีวิวใหม่รอตรวจสอบ',
-                    'message' => "รีวิว #{$review->id} จาก {$request->user()->name} |คะแนนรวม {$review->overall_rating}/5 กรุณาตรวจสอบก่อนเผยแพร่",
+                    'title' => 'มีรีวิวใหม่เข้ามา',
+                    'message' => "รีวิว #{$review->id} จาก {$request->user()->name} | คะแนนรวม {$review->overall_rating}/5",
                 ]);
             });
 

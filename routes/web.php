@@ -21,9 +21,11 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CreditTopupController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PackageCheckoutController;   // ← เพิ่มบรรทัดนี้
 use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\PackageController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -113,7 +115,11 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
         Route::post('/{booking}/pay/credit', [CheckoutController::class, 'payWithCredit'])->name('pay.credit');
         Route::post('/{booking}/pay/promptpay', [CheckoutController::class, 'payWithPromptpay'])->name('pay.promptpay');
     });
-
+    Route::prefix('package-checkout')->name('package-checkout.')->group(function () {
+        Route::post('/{package}', [PackageCheckoutController::class, 'purchase'])->name('purchase');
+        Route::get('/purchase/{purchase}', [PackageCheckoutController::class, 'show'])->name('show');
+        Route::post('/purchase/{purchase}/pay/credit', [PackageCheckoutController::class, 'payWithCredit'])->name('pay.credit');
+    });
     // เติมเครดิต (ฝั่งผู้ใช้) — เลือกแพ็กเกจ/กรอกจำนวนเงินเอง -> QR mock + แจ้งช่องทางชำระเงิน -> ส่งคำขอรออนุมัติ
     Route::prefix('credits/topup')->name('credits.topup.')->group(function () {
         Route::get('/', [CreditTopupController::class, 'index'])->name('index');
@@ -198,8 +204,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/website/facilities/{facility}', [WebsiteReviewController::class, 'destroyFacility'])->name('website.facilities.destroy');
     Route::patch('/website/reviews/{review}/status', [WebsiteReviewController::class, 'updateReviewStatus'])->name('website.reviews.status');
     Route::delete('/website/reviews/{review}', [WebsiteReviewController::class, 'destroyReview'])->name('website.reviews.destroy');
-    Route::post('/admin/courts/images', [CourtController::class, 'updateImages'])
-        ->name('admin.courts.images.update');
+    Route::post('/courts/images', [CourtController::class, 'updateImages'])
+        ->name('courts.images.update');
 
     Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
     Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
@@ -215,7 +221,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/credit-topup-packages', [CreditTopupPackageController::class, 'store'])->name('credit-topup-packages.store');
     Route::put('/credit-topup-packages/{creditTopupPackage}', [CreditTopupPackageController::class, 'update'])->name('credit-topup-packages.update');
     Route::delete('/credit-topup-packages/{creditTopupPackage}', [CreditTopupPackageController::class, 'destroy'])->name('credit-topup-packages.destroy');
+    Route::post('/credit-topup-packages/reorder', [CreditTopupPackageController::class, 'reorder'])->name('credit-topup-packages.reorder');
     Route::post('/credit-topup-packages/line-url', [CreditTopupPackageController::class, 'updateLineUrl'])->name('credit-topup-packages.line-url');
+    Route::post('/credit-topup-packages/promptpay', [CreditTopupPackageController::class, 'updatePromptpay'])->name('credit-topup-packages.promptpay');
 
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
@@ -226,6 +234,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
     Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
     Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
+    Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
+    Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
+
+    //จัดการ package
+    Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
+    Route::get('packages/create', [PackageController::class, 'create'])->name('packages.create');
+    Route::post('packages', [PackageController::class, 'store'])->name('packages.store');
+    Route::get('packages/{package}/edit', [PackageController::class, 'edit'])->name('packages.edit');
+    Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
+    Route::delete('packages/{package}', [PackageController::class, 'delete'])->name('packages.delete');
+    Route::patch('packages/{package}/toggle-status', [PackageController::class, 'toggleStatus'])->name('packages.toggleStatus');
 });
 
 // 6. Password Reset via OTP
@@ -239,9 +258,6 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/reset-password', 'showResetPasswordForm')->name('password.reset.form');
     Route::post('/reset-password', 'resetPassword')->name('password.reset');
 });
-
-Route::post('/admin/courts/images', [CourtController::class, 'updateImages'])
-    ->name('admin.courts.images.update');
 
 // จัดการการจองได้ต้องเป็น admin และ staff ที่เป็น พนักงานประจำ นักศึกษาฝึกงาน พนักงานชั่วคราว
 Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->group(function () {

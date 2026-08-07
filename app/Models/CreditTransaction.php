@@ -11,9 +11,14 @@ class CreditTransaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'amount', 'balance_after',
-        'booking_id', 'admin_id', 'credit_topup_request_id', 'note', 'payment_method', 'processed_by_name',
-    ];
+    'user_id', 'type', 'amount', 'balance_after',
+    'booking_id', 'admin_id', 'note',
+    'private_training_booking_id',
+    'package_purchase_id',
+    'credit_topup_request_id',
+    'payment_method',
+    'processed_by_name',
+];
 
     public function user(): BelongsTo
     {

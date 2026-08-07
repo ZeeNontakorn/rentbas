@@ -23,6 +23,12 @@ class SettingController extends Controller
         }, SORT_NATURAL | SORT_FLAG_CASE)->values();
         $courtKeys = $courts->map(fn($c) => 'court_img_' . $c->id)->all();
         $settings = Setting::values(array_merge(array_keys(Setting::DEFAULTS), $courtKeys));
+        $facilities = Facility::orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        $reviews = Review::with(['user:id,name,email', 'ratings.facility:id,name', 'images'])
+            ->latest()
+            ->paginate(10);
 
         return view('edit-text', compact('settings', 'courts', 'facilities', 'reviews'));
     }
