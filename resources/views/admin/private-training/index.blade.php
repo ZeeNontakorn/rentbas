@@ -177,7 +177,8 @@
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
                 <h3 class="text-sm font-bold text-gray-800">ระบุเหตุผลที่ปฏิเสธ</h3>
             </div>
-            <form id="rejectForm" method="POST" class="p-6 space-y-4">
+            <form id="rejectForm" method="POST" class="p-6 space-y-4"
+                  onsubmit="showMailLoadingOverlay('กำลังดำเนินการปฏิเสธและส่งอีเมลแจ้งลูกค้า...'); this.querySelector('button[type=submit]').disabled = true;">
                 @csrf
                 <textarea name="reject_reason" rows="3" required placeholder="เช่น โค้ชไม่ว่างในช่วงเวลานี้"
                     class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 bg-white resize-none"></textarea>
