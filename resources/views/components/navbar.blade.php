@@ -157,7 +157,8 @@
                     </button>
 
                     {{-- Dropdown สำหรับแสดงรายการแจ้งเตือน --}}
-                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto max-h-96 z-50">
+                    {{-- FIX: เพิ่ม overflow-x-hidden + max-w-[90vw] + whitespace-normal กัน dropdown เกิด scroll แนวนอน/ข้อความไม่ตัดคำ (เพราะสืบทอด whitespace-nowrap มาจากเมนูหลัก) --}}
+                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto overflow-x-hidden max-h-96 z-50 whitespace-normal">
                         <div id="notifDropdownHeader" class="flex justify-between items-center px-3 py-2 border-b border-gray-700 sticky top-0 bg-gray-800 z-10 {{ $notifications->isEmpty() ? 'hidden' : '' }}">
                             <span class="text-xs text-gray-400 font-medium">แจ้งเตือนล่าสุด</span>
                             <form class="mark-all-read-form" method="POST" action="{{ route('notifications.readAll') }}">
@@ -197,19 +198,22 @@
                                         $accentIcon = ['bg' => 'bg-red-500/15', 'color' => 'text-red-400', 'path' => 'M6 18L18 6M6 6l12 12'];
                                     }
                                 @endphp
-                                <div class="notif-item p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start cursor-pointer"
+                                {{-- FIX: เพิ่ม gap-2 กันปุ่ม "อ่านแล้ว" ชิดกับข้อความเกินไปตอนบรรทัดข้อความยาว --}}
+                                <div class="notif-item p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start gap-2 cursor-pointer"
                                      data-notif-id="{{ $n->id }}"
                                      onclick="window.location.href='{{ $notifTarget }}'">
-                                    <div class="flex-1 pr-2">
+                                    {{-- FIX: เพิ่ม min-w-0 กันข้อความยาว/ไม่มีช่องว่างดันความกว้าง flex item จนล้น container --}}
+                                    <div class="flex-1 min-w-0 pr-2">
                                         <div class="flex items-center gap-2">
                                             @if($accentIcon)
                                                 <span class="w-5 h-5 rounded-full {{ $accentIcon['bg'] }} {{ $accentIcon['color'] }} flex items-center justify-center flex-shrink-0">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="{{ $accentIcon['path'] }}"></path></svg>
                                                 </span>
                                             @endif
-                                            <div class="font-semibold text-[15px] truncate">{{ $n->title ?? 'การจอง' }}</div>
+                                            <div class="font-semibold text-[15px] truncate min-w-0">{{ $n->title ?? 'การจอง' }}</div>
                                         </div>
-                                        <div class="text-[13px] text-gray-300 mt-1 leading-tight">
+                                        {{-- FIX: เพิ่ม break-words กันคำ/ข้อความยาวไม่มีช่องว่างดันความกว้าง --}}
+                                        <div class="text-[13px] text-gray-300 mt-1 leading-tight break-words">
                                             @php
                                             // แยกข้อความโดยใช้ '|' เป็นตัวแบ่ง
                                                 $msgParts = explode('|', $n->message ?? ($n->data['message'] ?? ''));
@@ -220,14 +224,14 @@
 
                                             {{-- แสดงส่วนที่สองของข้อความ (ถ้ามี) — แปลง \n เป็นขึ้นบรรทัดใหม่จริง --}}
                                             @if(isset($msgParts[1]) && trim($msgParts[1]) !== '')
-                                                <div class="mt-1 font-medium {{ $accentText }}">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
+                                                <div class="mt-1 font-medium {{ $accentText }} break-words">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
                                             @endif
                                         </div>
                                         {{-- แสดงวันที่สร้างแจ้งเตือน --}}
                                         <div class="text-[11px] text-gray-400 mt-2">{{ $n->created_at->format('d M Y H:i') }}</div>
                                     </div>
                                     {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) — กันไม่ให้คลิกทะลุไปเปิดหน้าปลายทางด้วย --}}
-                                    <form class="mark-read-form" method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
+                                    <form class="mark-read-form flex-shrink-0" method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
                                         @csrf
                                         <button type="submit" class="text-[11px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition whitespace-nowrap">อ่านแล้ว</button>
                                     </form>
@@ -414,7 +418,8 @@
                 <span id="notifBadgeMobile" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full {{ $mUnreadCount ? '' : 'hidden' }}">{{ $mUnreadCount > 99 ? '99+' : $mUnreadCount }}</span>
             </button>
             {{-- ใช้ dropdown เดียวกับ desktop โดยอ้างอิงผ่าน id เดิม --}}
-            <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto max-h-80"></div>
+            {{-- FIX: เพิ่ม overflow-x-hidden + whitespace-normal ให้ dropdown บนมือถือด้วยเช่นกัน --}}
+            <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto overflow-x-hidden max-h-80 whitespace-normal"></div>
 
             @if($isAdminLike)
                 <div class="border-t border-gray-800 pt-2 mt-1">
