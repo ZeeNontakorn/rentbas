@@ -108,16 +108,111 @@
     </div>
 </div>
 
+{{-- Modal ปฏิเสธคำขอเติมเครดิต --}}
+<div id="creditRejectModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="creditRejectModalTitle">
+    <button type="button" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" aria-label="ปิดหน้าต่าง" onclick="closeCreditRejectModal()"></button>
+
+    <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/70 bg-white shadow-2xl">
+        <div class="flex items-start gap-4 border-b border-red-100 bg-gradient-to-br from-red-50 to-orange-50 px-6 py-5">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+                <h2 id="creditRejectModalTitle" class="text-lg font-bold text-gray-900">ปฏิเสธคำขอเติมเครดิต</h2>
+                <p class="mt-1 text-sm leading-6 text-gray-500">ระบุเหตุผลเพื่อแจ้งให้ลูกค้าทราบก่อนยืนยันการปฏิเสธ</p>
+            </div>
+            <button type="button" onclick="closeCreditRejectModal()" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="ปิดหน้าต่าง">
+                <span class="text-2xl font-light leading-none">×</span>
+            </button>
+        </div>
+
+        <form class="space-y-5 px-6 py-6" onsubmit="submitCreditRejection(event)">
+            <div>
+                <label for="creditRejectReason" class="mb-2 block text-sm font-semibold text-gray-700">เหตุผลที่ปฏิเสธ <span class="text-red-500">*</span></label>
+                <textarea id="creditRejectReason" rows="4" maxlength="255" required
+                    class="w-full resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-400 focus:bg-white focus:ring-4 focus:ring-red-100"
+                    placeholder="เช่น ยอดเงินไม่ตรงกับคำขอ หรือไม่พบรายการโอนเงิน"></textarea>
+                <div class="mt-2 flex items-center justify-between gap-3">
+                    <p id="creditRejectError" class="hidden text-xs font-medium text-red-600">กรุณาระบุเหตุผลที่ปฏิเสธ</p>
+                    <p class="ml-auto text-xs text-gray-400"><span id="creditRejectCount">0</span>/255</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onclick="closeCreditRejectModal()" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                    ยกเลิก
+                </button>
+                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-red-200 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100">
+                    ยืนยันการปฏิเสธ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+let pendingCreditRejectForm = null;
+
 function promptRejectReason(form) {
-    const reason = prompt('ระบุเหตุผลที่ปฏิเสธคำขอนี้:');
-    if (!reason || !reason.trim()) return false;
-    form.querySelector('.reject-reason-input').value = reason.trim();
+    pendingCreditRejectForm = form;
+
+    const modal = document.getElementById('creditRejectModal');
+    const reasonInput = document.getElementById('creditRejectReason');
+    reasonInput.value = '';
+    updateCreditRejectCount();
+    document.getElementById('creditRejectError').classList.add('hidden');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.classList.add('overflow-hidden');
+    window.setTimeout(() => reasonInput.focus(), 50);
+
+    return false;
+}
+
+function closeCreditRejectModal() {
+    const modal = document.getElementById('creditRejectModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.classList.remove('overflow-hidden');
+    pendingCreditRejectForm = null;
+}
+
+function submitCreditRejection(event) {
+    event.preventDefault();
+
+    const reasonInput = document.getElementById('creditRejectReason');
+    const reason = reasonInput.value.trim();
+    if (!reason || !pendingCreditRejectForm) {
+        document.getElementById('creditRejectError').classList.remove('hidden');
+        reasonInput.focus();
+        return;
+    }
+
+    const form = pendingCreditRejectForm;
+    form.querySelector('.reject-reason-input').value = reason;
     showMailLoadingOverlay('กำลังปฏิเสธคำขอและส่งอีเมลแจ้งลูกค้า...');
     form.querySelector('button').disabled = true;
-    return true;
+    form.submit();
 }
+
+function updateCreditRejectCount() {
+    const reasonInput = document.getElementById('creditRejectReason');
+    document.getElementById('creditRejectCount').textContent = reasonInput.value.length;
+    if (reasonInput.value.trim()) {
+        document.getElementById('creditRejectError').classList.add('hidden');
+    }
+}
+
+document.getElementById('creditRejectReason').addEventListener('input', updateCreditRejectCount);
+document.addEventListener('keydown', event => {
+    const modal = document.getElementById('creditRejectModal');
+    if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+        closeCreditRejectModal();
+    }
+});
 </script>
 @endpush
 @endsection

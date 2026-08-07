@@ -190,8 +190,12 @@
                             {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
                                 @php
                                     $notifTarget = in_array($n->title, $historyOnlyTitles) ? route('history') : $defaultNotifTarget;
-                                    if ($n->title === 'มีรีวิวใหม่รอตรวจสอบ') {
+                                    if (in_array($n->title, ['มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ'])) {
                                         $notifTarget = route('admin.edit.text').'#review-moderation';
+                                    } elseif ($n->title === 'มีคำขอเติมเครดิตใหม่') {
+                                        $notifTarget = route('admin.credit-topups.index');
+                                    } elseif ($n->title === 'มีการจองสนามบาสใหม่') {
+                                        $notifTarget = route('admin.bookings');
                                     }
 
                                     // สีประจำประเภทแจ้งเตือน ให้แยกอนุมัติ/ปฏิเสธออกจากกันชัดเจน

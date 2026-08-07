@@ -98,7 +98,7 @@ class WebsiteReviewController extends Controller
                 : $review->published_at,
         ]);
 
-        Notification::where('title', 'มีรีวิวใหม่รอตรวจสอบ')
+        Notification::whereIn('title', ['มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ'])
             ->where('message', 'like', "รีวิว #{$review->id} จาก%")
             ->update(['is_read' => true]);
 
@@ -119,7 +119,7 @@ class WebsiteReviewController extends Controller
             }
         }
 
-        Notification::where('title', 'มีรีวิวใหม่รอตรวจสอบ')
+        Notification::whereIn('title', ['มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ'])
             ->where('message', 'like', "รีวิว #{$review->id} จาก%")
             ->delete();
 
