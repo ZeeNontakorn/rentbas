@@ -148,10 +148,9 @@ class CourtController extends Controller
                                 ->where('locked_until', '>', now());
                         });
                 })
-              
+
                 ->with('user:id,name')
                 ->get(['id', 'court_section_id', 'start_time', 'end_time', 'status', 'user_id']);
-                ->get(['court_section_id', 'start_time', 'end_time', 'status']);
 
             for ($h = 6; $h < 22; $h++) {
                 $start = sprintf('%02d:00:00', $h);
