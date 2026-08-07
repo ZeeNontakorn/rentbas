@@ -107,6 +107,7 @@
                                             data-action="{{ route('admin.private-training.assign-court', $b) }}"
                                             data-date="{{ $b->date->format('d/m/Y') }}"
                                             data-time="{{ substr($b->start_time, 0, 5) }}–{{ substr($b->end_time, 0, 5) }}"
+                                            data-sections='@json($availableSectionMap[$b->id] ?? [])'
                                             onclick="openCourtModal(this)"
                                             class="rounded bg-purple-600 px-3 py-1.5 text-xs text-white transition hover:bg-purple-700 cursor-pointer">
                                             จัดสนาม
@@ -147,18 +148,11 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">เลือกสนามและส่วนสนาม</label>
-                    <select name="court_section_id" required
+                    <select id="courtSectionSelect" name="court_section_id" required
                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
                         <option value="">กรุณาเลือกสนาม</option>
-                        @foreach($courts as $court)
-                            <optgroup label="{{ $court->name }}">
-                                @foreach($court->sections as $section)
-                                    <option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
                     </select>
-                    <p class="mt-2 text-xs sm:text-sm text-gray-400">ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน</p>
+                    <p id="courtSectionHint" class="mt-2 text-xs sm:text-sm text-gray-400">ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน</p>
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeCourtModal()"
@@ -210,9 +204,37 @@
         }
 
         function openCourtModal(button) {
-            document.getElementById('courtForm').action = button.dataset.action;
+            const form = document.getElementById('courtForm');
+            const select = document.getElementById('courtSectionSelect');
+            const hint = document.getElementById('courtSectionHint');
+
+            form.action = button.dataset.action;
             document.getElementById('courtBookingDate').textContent = 'วันที่ ' + button.dataset.date;
             document.getElementById('courtBookingTime').textContent = button.dataset.time + ' น.';
+
+            const availableSections = JSON.parse(button.dataset.sections || '[]');
+            select.innerHTML = '<option value="">กรุณาเลือกสนาม</option>';
+
+            if (availableSections.length === 0) {
+                hint.textContent = 'ไม่มีสนามว่างในช่วงเวลานี้';
+                hint.classList.remove('text-gray-400');
+                hint.classList.add('text-red-500');
+                select.disabled = true;
+                return;
+            }
+
+            availableSections.forEach((item) => {
+                const option = document.createElement('option');
+                option.value = item.section_id;
+                option.textContent = `${item.court_name} — ${item.section_name}`;
+                select.appendChild(option);
+            });
+
+            hint.textContent = 'ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน';
+            hint.classList.remove('text-red-500');
+            hint.classList.add('text-gray-400');
+            select.disabled = false;
+
             const modal = document.getElementById('courtModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -220,6 +242,15 @@
 
         function closeCourtModal() {
             const modal = document.getElementById('courtModal');
+            const select = document.getElementById('courtSectionSelect');
+            const hint = document.getElementById('courtSectionHint');
+
+            select.innerHTML = '<option value="">กรุณาเลือกสนาม</option>';
+            select.disabled = false;
+            hint.textContent = 'ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน';
+            hint.classList.remove('text-red-500');
+            hint.classList.add('text-gray-400');
+
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
