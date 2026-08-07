@@ -1,8 +1,5 @@
 {{--
-    Partial ฟอร์มแพ็กเกจโปรโมชั่น ใช้ร่วมกันทั้งตอน "เพิ่มใหม่" และ "แก้ไข"
-    ตัวแปรที่ต้องส่งเข้ามา:
-      $package  : PromotionPackage|null  (null = โหมดสร้างใหม่)
-      $formId   : string  id ของฟอร์ม (ใช้ผูกกับปุ่ม toggle)
+    Shared form for creating and editing promotion packages.
 --}}
 @php
     $isEdit = $package !== null;
@@ -19,7 +16,6 @@
         <label class="block text-[11px] font-medium text-gray-500 mb-1">รหัสแพ็กเกจ (ใช้ผูกกับระบบจอง, a-z 0-9 _ -)</label>
         <input type="text" name="code" required maxlength="50"
                value="{{ old('code', $isEdit ? $package->code : '') }}"
-               {{ $isEdit ? '' : '' }}
                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
     </div>
 
@@ -157,7 +153,7 @@
 
     <div class="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-gray-100 mt-1">
         @if($isEdit)
-            <button type="button" onclick="document.getElementById('{{ $formId }}').classList.add('hidden')"
+            <button type="button" onclick="resetPkgForm(this.closest('form')); closePkgDrawer('{{ $formId ?? null }}')"
                     class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-2 transition">
                 ยกเลิก
             </button>

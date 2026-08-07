@@ -132,7 +132,7 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <h2 class="font-medium text-gray-700 text-sm">แพ็กเกจโปรโมชั่น</h2>
             </div>
-            <button type="button" onclick="document.getElementById('pkg-create-form').classList.toggle('hidden')"
+            <button type="button" onclick="toggleCreatePkgForm()"
                     class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 transition">
                 + เพิ่มแพ็กเกจใหม่
             </button>
@@ -284,6 +284,30 @@
         });
     });
 
+    // ─── Package create panel (inline, not a drawer) ───
+    function toggleCreatePkgForm() {
+        // Any open edit drawer would otherwise sit on top of (and block clicks to)
+        // the create panel, so close drawers whenever the create panel is toggled.
+        closeAllPkgDrawers();
+        document.getElementById('pkg-create-form').classList.toggle('hidden');
+    }
+
+    // Reverts a package form's fields back to their page-load values.
+    // Used by the edit-drawer "ยกเลิก" button so re-opening a drawer after
+    // cancelling doesn't show whatever was typed before.
+    function resetPkgForm(form) {
+        if (!form) return;
+        form.reset();
+
+        // flatpickr keeps its own internal state, so re-sync the visible
+        // value after a native reset
+        form.querySelectorAll('.time-picker').forEach(function (input) {
+            if (input._flatpickr) {
+                input._flatpickr.setDate(input.value, true);
+            }
+        });
+    }
+
     // ─── Package edit drawer (fixed panel, outside document flow) ───
     function closeAllPkgDrawers() {
         document.querySelectorAll('.pkg-drawer').forEach(function(el) {
@@ -296,6 +320,11 @@
 
     function openPkgDrawer(id) {
         closeAllPkgDrawers();
+        // The inline "create new" panel isn't a .pkg-drawer, so it survives
+        // closeAllPkgDrawers() above — hide it explicitly so it can't sit open
+        // behind the edit drawer/backdrop.
+        document.getElementById('pkg-create-form').classList.add('hidden');
+
         var panel = document.getElementById(id);
         var backdrop = document.getElementById('pkg-drawer-backdrop');
         if (panel) panel.classList.remove('hidden');
@@ -304,7 +333,11 @@
     }
 
     function closePkgDrawer(id) {
-        closeAllPkgDrawers();
+        var panel = document.getElementById(id);
+        if (panel) panel.classList.add('hidden');
+        var backdrop = document.getElementById('pkg-drawer-backdrop');
+        if (backdrop) backdrop.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
     }
 
     // Close on Escape key
