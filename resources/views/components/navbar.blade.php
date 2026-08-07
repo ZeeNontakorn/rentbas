@@ -61,9 +61,6 @@
                      <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
                     </a>
-                    <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการการจอง
-                    </a>
                     <!-- จัดการสนาม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
                         <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
@@ -261,13 +258,17 @@
                     <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
                     <div class="relative flex-shrink-0">
                         <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap">
+                        <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
                             {{ auth()->user()->name }}
-                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                        <svg class="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
                         </button>
                         <div id="adminMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
                             <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
                                 <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
-                                <div class="font-bold truncate text-orange-500">{{ auth()->user()->name }}</div>
+                                <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                             </div>
                             <a href="{{ route('admin.users.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -309,8 +310,10 @@
                     {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                 </button>
                     <div class="h-6 w-px bg-gray-600 mx-2 flex-shrink-0"></div>
-                    <a href="{{ route('profile') }}" class="flex items-center text-gray-300 font-medium hover:text-orange-500 transition flex-shrink-0">
-                        {{ auth()->user()->name }}
+                     <a href="{{ route('profile') }}" class="flex min-w-0 items-center text-gray-300 font-medium hover:text-orange-500 transition flex-shrink-0">
+                        <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
+                            {{ auth()->user()->name }}
+                        </span>
                     </a>
                     <!-- Logout -->
                 <form method="POST" action="{{ route('logout') }}" class="ml-2 flex-shrink-0">
@@ -441,7 +444,7 @@
             @if($isAdminLike)
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
-                    <div class="font-bold text-orange-500 mb-2">{{ auth()->user()->name }}</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                     <div class="flex flex-col">
                         <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
@@ -451,8 +454,10 @@
                     </div>
                 </div>
             @else
-                <a href="{{ route('profile') }}" class="block py-2 text-gray-300 font-medium hover:text-orange-500 transition border-t border-gray-800 mt-1">
-                    {{ auth()->user()->name }}
+                <a href="{{ route('profile') }}" class="flex min-w-0 items-center text-gray-300 font-medium hover:text-orange-500 transition">
+                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
+                        {{ auth()->user()->name }}
+                    </span>
                 </a>
             @endif
 
