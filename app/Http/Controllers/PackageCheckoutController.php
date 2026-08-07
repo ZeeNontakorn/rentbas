@@ -80,17 +80,49 @@ class PackageCheckoutController extends Controller
 
                 $this->creditService->deductForPackage($request->user(), $locked);
 
-                $locked->update([
-                    'status' => 'approved',
-                    'booking_source' => 'credit',
-                    'payment_method' => 'credit',
-                    'payment_status' => 'paid',
-                    'locked_until' => null,
-                    'paid_at' => now(),
-                    'expired_at' => $locked->package->day
-                        ? now()->addDays($locked->package->day)
-                        : null,
-                ]);
+                // 1. ค้นหาแพ็กเกจแบบเดียวกันของลูกค้ารายนี้ ที่สถานะอนุมัติแล้วและยังใช้งานได้
+                $existing = PackagePurchase::where('user_id', $request->user()->id)
+                    ->where('package_id', $locked->package_id)
+                    ->where('status', 'approved')
+                    ->where('remaining_use', '>', 0)
+                    ->where(function ($q) {
+                        $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
+                    })
+                    ->lockForUpdate()
+                    ->first();
+
+                // 2. คำนวณวันหมดอายุใหม่
+                $newExpiryDate = $locked->package->day ? now()->addDays($locked->package->day) : null;
+
+                if ($existing) {
+                    // 3A. กรณีมีแพ็กเกจเดิม: นำจำนวนครั้งไปบวกเพิ่ม และทับวันหมดอายุใหม่
+                    $existing->remaining_use += $locked->package->num_of_use;
+                    $existing->expired_at = $newExpiryDate;
+                    $existing->save();
+
+                    // อัปเดตรายการซื้อรอบนี้ให้สมบูรณ์ แต่ตั้ง remaining_use เป็น 0 (เพื่อเป็นแค่ใบเสร็จ)
+                    $locked->update([
+                        'status' => 'approved',
+                        'booking_source' => 'credit',
+                        'payment_method' => 'credit',
+                        'payment_status' => 'paid',
+                        'locked_until' => null,
+                        'paid_at' => now(),
+                        'remaining_use' => 0, // ป้องกันไม่ให้ไปแสดงซ้ำใน Dropdown
+                        'expired_at' => $newExpiryDate,
+                    ]);
+                } else {
+                    // 3B. กรณีไม่มีแพ็กเกจเดิม: ใช้รายการนี้เป็นตัวตั้งต้นเก็บโควต้าตามปกติ
+                    $locked->update([
+                        'status' => 'approved',
+                        'booking_source' => 'credit',
+                        'payment_method' => 'credit',
+                        'payment_status' => 'paid',
+                        'locked_until' => null,
+                        'paid_at' => now(),
+                        'expired_at' => $newExpiryDate,
+                    ]);
+                }
 
                 return $locked->fresh();
             });
