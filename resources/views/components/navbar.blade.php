@@ -61,9 +61,6 @@
                      <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
                     </a>
-                    <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการการจอง
-                    </a>
                     <!-- จัดการสนาม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
                         <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
@@ -168,7 +165,8 @@
                     </button>
 
                     {{-- Dropdown สำหรับแสดงรายการแจ้งเตือน --}}
-                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto max-h-96 z-50">
+                    {{-- FIX: เพิ่ม overflow-x-hidden + max-w-[90vw] + whitespace-normal กัน dropdown เกิด scroll แนวนอน/ข้อความไม่ตัดคำ (เพราะสืบทอด whitespace-nowrap มาจากเมนูหลัก) --}}
+                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-gray-800 text-gray-100 rounded-xl shadow-lg overflow-y-auto overflow-x-hidden max-h-96 z-50 whitespace-normal">
                         <div id="notifDropdownHeader" class="flex justify-between items-center px-3 py-2 border-b border-gray-700 sticky top-0 bg-gray-800 z-10 {{ $notifications->isEmpty() ? 'hidden' : '' }}">
                             <span class="text-xs text-gray-400 font-medium">แจ้งเตือนล่าสุด</span>
                             <form class="mark-all-read-form" method="POST" action="{{ route('notifications.readAll') }}">
@@ -208,19 +206,22 @@
                                         $accentIcon = ['bg' => 'bg-red-500/15', 'color' => 'text-red-400', 'path' => 'M6 18L18 6M6 6l12 12'];
                                     }
                                 @endphp
-                                <div class="notif-item p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start cursor-pointer"
+                                {{-- FIX: เพิ่ม gap-2 กันปุ่ม "อ่านแล้ว" ชิดกับข้อความเกินไปตอนบรรทัดข้อความยาว --}}
+                                <div class="notif-item p-3 border-b {{ $accentBorder }} hover:bg-gray-700 flex justify-between items-start gap-2 cursor-pointer"
                                      data-notif-id="{{ $n->id }}"
                                      onclick="window.location.href='{{ $notifTarget }}'">
-                                    <div class="flex-1 pr-2">
+                                    {{-- FIX: เพิ่ม min-w-0 กันข้อความยาว/ไม่มีช่องว่างดันความกว้าง flex item จนล้น container --}}
+                                    <div class="flex-1 min-w-0 pr-2">
                                         <div class="flex items-center gap-2">
                                             @if($accentIcon)
                                                 <span class="w-5 h-5 rounded-full {{ $accentIcon['bg'] }} {{ $accentIcon['color'] }} flex items-center justify-center flex-shrink-0">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="{{ $accentIcon['path'] }}"></path></svg>
                                                 </span>
                                             @endif
-                                            <div class="font-semibold text-[15px] truncate">{{ $n->title ?? 'การจอง' }}</div>
+                                            <div class="font-semibold text-[15px] truncate min-w-0">{{ $n->title ?? 'การจอง' }}</div>
                                         </div>
-                                        <div class="text-[13px] text-gray-300 mt-1 leading-tight">
+                                        {{-- FIX: เพิ่ม break-words กันคำ/ข้อความยาวไม่มีช่องว่างดันความกว้าง --}}
+                                        <div class="text-[13px] text-gray-300 mt-1 leading-tight break-words">
                                             @php
                                             // แยกข้อความโดยใช้ '|' เป็นตัวแบ่ง
                                                 $msgParts = explode('|', $n->message ?? ($n->data['message'] ?? ''));
@@ -231,14 +232,14 @@
 
                                             {{-- แสดงส่วนที่สองของข้อความ (ถ้ามี) — แปลง \n เป็นขึ้นบรรทัดใหม่จริง --}}
                                             @if(isset($msgParts[1]) && trim($msgParts[1]) !== '')
-                                                <div class="mt-1 font-medium {{ $accentText }}">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
+                                                <div class="mt-1 font-medium {{ $accentText }} break-words">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
                                             @endif
                                         </div>
                                         {{-- แสดงวันที่สร้างแจ้งเตือน --}}
                                         <div class="text-[11px] text-gray-400 mt-2">{{ $n->created_at->format('d M Y H:i') }}</div>
                                     </div>
                                     {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) — กันไม่ให้คลิกทะลุไปเปิดหน้าปลายทางด้วย --}}
-                                    <form class="mark-read-form" method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
+                                    <form class="mark-read-form flex-shrink-0" method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
                                         @csrf
                                         <button type="submit" class="text-[11px] bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition whitespace-nowrap">อ่านแล้ว</button>
                                     </form>
@@ -253,13 +254,17 @@
                     <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
                     <div class="relative flex-shrink-0">
                         <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap">
+                        <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
                             {{ auth()->user()->name }}
-                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                        <svg class="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
                         </button>
                         <div id="adminMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
                             <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
                                 <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
-                                <div class="font-bold truncate text-orange-500">{{ auth()->user()->name }}</div>
+                                <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                             </div>
                             <a href="{{ route('admin.users.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -301,8 +306,10 @@
                     {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                 </button>
                     <div class="h-6 w-px bg-gray-600 mx-2 flex-shrink-0"></div>
-                    <a href="{{ route('profile') }}" class="flex items-center text-gray-300 font-medium hover:text-orange-500 transition flex-shrink-0">
-                        {{ auth()->user()->name }}
+                     <a href="{{ route('profile') }}" class="flex min-w-0 items-center text-gray-300 font-medium hover:text-orange-500 transition flex-shrink-0">
+                        <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
+                            {{ auth()->user()->name }}
+                        </span>
                     </a>
                     <!-- Logout -->
                 <form method="POST" action="{{ route('logout') }}" class="ml-2 flex-shrink-0">
@@ -315,20 +322,20 @@
             @endauth
 
             @guest
-                <a href="{{ route('login') }}" class="flex items-center hover:text-gray-300 transition">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Login
-                </a>
-                <a href="{{ route('register') }}" class="flex items-center hover:text-gray-300 transition">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 21v-2c0-2.21 3.58-4 6-4s6 1.79 6 4v2H6z"></path>
-                    </svg>
-                    Register
-                </a>
+               <a href="{{ route('login') }}" class="flex items-center hover:text-gray-300 transition">
+    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+    </svg>
+    เข้าสู่ระบบ
+</a>
+<a href="{{ route('register') }}" class="flex items-center hover:text-gray-300 transition">
+    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+    </svg>
+    สมัครสมาชิก
+</a>
             @endguest
         </div>
     </div>
@@ -427,12 +434,13 @@
                 <span id="notifBadgeMobile" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full {{ $mUnreadCount ? '' : 'hidden' }}">{{ $mUnreadCount > 99 ? '99+' : $mUnreadCount }}</span>
             </button>
             {{-- ใช้ dropdown เดียวกับ desktop โดยอ้างอิงผ่าน id เดิม --}}
-            <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto max-h-80"></div>
+            {{-- FIX: เพิ่ม overflow-x-hidden + whitespace-normal ให้ dropdown บนมือถือด้วยเช่นกัน --}}
+            <div id="notifDropdownMobile" class="hidden bg-gray-800 rounded-xl mt-1 mb-2 overflow-y-auto overflow-x-hidden max-h-80 whitespace-normal"></div>
 
             @if($isAdminLike)
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
-                    <div class="font-bold text-orange-500 mb-2">{{ auth()->user()->name }}</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                     <div class="flex flex-col">
                         <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
@@ -442,8 +450,10 @@
                     </div>
                 </div>
             @else
-                <a href="{{ route('profile') }}" class="block py-2 text-gray-300 font-medium hover:text-orange-500 transition border-t border-gray-800 mt-1">
-                    {{ auth()->user()->name }}
+                <a href="{{ route('profile') }}" class="flex min-w-0 items-center text-gray-300 font-medium hover:text-orange-500 transition">
+                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
+                        {{ auth()->user()->name }}
+                    </span>
                 </a>
             @endif
 

@@ -407,6 +407,11 @@
                                         onclick="selectAdminTime('{{ $slot['start'] }}', '{{ $slot['end'] }}', '{{ $slot['status'] }}', this)">
                                         <div class="slot-time">{{ $slot['label'] }}</div>
                                         <div class="slot-btn">{{ $sLabel }}</div>
+                                        @if(!empty($slot['customer_name']))
+                                            <div class="text-[11px] text-gray-600 mt-1.5 truncate" title="{{ $slot['customer_name'] }}">
+                                                {{ $slot['customer_name'] }}
+                                            </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
