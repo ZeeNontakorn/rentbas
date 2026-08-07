@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\AdminPaymentReceivedMail;
+use App\Mail\PrivateTrainingConfirmedMail;
+use App\Mail\PrivateTrainingRejectedMail;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Court;
@@ -37,14 +38,26 @@ class PrivateTrainingController extends Controller
         $search = $request->query('search');
 
         $hasValidPackage = PackagePurchase::where('user_id', $request->user()->id)
-            ->where('status', 'approved')   // ← เปลี่ยนจาก 'paid' เป็น 'approved'
+            ->where('status', 'approved')
             ->where('remaining_use', '>', 0)
             ->where(function ($q) {
                 $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
             })
             ->exists();
 
-        $coaches = $hasValidPackage
+        $myRequests = PrivateTrainingBooking::with('coach')
+            ->where('user_id', $request->user()->id)
+            ->whereDate('date', '>=', now()->toDateString())
+            ->orderByDesc('created_at')
+            ->get();
+
+        // เคยมีคำขอจองมาก่อนไหม (ไม่จำกัดแค่อนาคต เอาทุกสถานะทุกช่วงเวลา เพื่อตัดสินว่าควรให้เห็นหน้ารายชื่อโค้ชไหม)
+        $hasAnyBookingHistory = PrivateTrainingBooking::where('user_id', $request->user()->id)->exists();
+
+        // แสดงรายชื่อโค้ชได้ถ้า (มีแพ็กเกจเหลือใช้ได้) หรือ (เคยมีคำขอจองมาก่อน)
+        $canViewCoaches = $hasValidPackage || $hasAnyBookingHistory;
+
+        $coaches = $canViewCoaches
             ? User::where('role', 'staff')
                 ->where('membership_type', 'coach')
                 ->with('staffProfile')
@@ -56,13 +69,7 @@ class PrivateTrainingController extends Controller
                 ->get()
             : collect();
 
-        $myRequests = PrivateTrainingBooking::with('coach')
-            ->where('user_id', $request->user()->id)
-            ->whereDate('date', '>=', now()->toDateString())
-            ->orderByDesc('created_at')
-            ->get();
-
-        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches'));
     }
 
     public function show(User $coach)
@@ -500,15 +507,17 @@ class PrivateTrainingController extends Controller
             "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}\nยอดชำระ: " . number_format($privateTrainingBooking->price / 100, 2) . ' บาท (หักจากเครดิต)'
         );
 
-        $this->notifyAdminsOfPayment(
-            'Private Training',
-            $privateTrainingBooking->id,
-            $privateTrainingBooking->user->name ?? '-',
-            "โค้ช {$privateTrainingBooking->coach->name} | {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name} | "
-                . "{$privateTrainingBooking->date->toDateString()} {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}",
-            $privateTrainingBooking->price,
-            $privateTrainingBooking->package_purchase_id ? 'package' : 'credit'
-        );
+        // ส่งอีเมลแจ้งยืนยันไปหาลูกค้าโดยตรง (ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วทำให้
+        // การจัดสนามที่สำเร็จไปแล้วจริงพังไปด้วย เหมือนที่ทำไว้กับ notifyAdminsOfPayment)
+        try {
+            if ($privateTrainingBooking->user?->email) {
+                Mail::to($privateTrainingBooking->user->email)
+                    ->send(new PrivateTrainingConfirmedMail($privateTrainingBooking));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ส่งอีเมลยืนยันการจองให้ลูกค้าไม่สำเร็จ: ' . $e->getMessage());
+        }
+
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
@@ -546,6 +555,15 @@ class PrivateTrainingController extends Controller
             'การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ',
             "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}"
         );
+
+        try {
+            if ($privateTrainingBooking->user?->email) {
+                Mail::to($privateTrainingBooking->user->email)
+                    ->send(new PrivateTrainingRejectedMail($privateTrainingBooking, $data['reject_reason']));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ส่งอีเมลปฏิเสธ Private Training ไม่สำเร็จ: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
     }
@@ -605,24 +623,4 @@ class PrivateTrainingController extends Controller
      * แจ้งเตือนแอดมินทุกคนทางอีเมล เมื่อมีการชำระเงินสำเร็จ (ครอบ try/catch กันเมล
      * เซิร์ฟเวอร์ล่มแล้วดึงหน้าเว็บพัง ทั้งที่หักเครดิต/ยืนยันสำเร็จไปแล้วจริง)
      */
-    private function notifyAdminsOfPayment(
-        string $refType,
-        int $refId,
-        string $customerName,
-        string $detailLine,
-        int $amountSatang,
-        string $paymentMethod
-    ): void {
-        try {
-            $adminEmails = User::whereIn('role', ['admin', 'superadmin'])->pluck('email')->filter();
-
-            foreach ($adminEmails as $email) {
-                Mail::to($email)->send(new AdminPaymentReceivedMail(
-                    $refType, $refId, $customerName, $detailLine, $amountSatang, $paymentMethod
-                ));
-            }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('ส่งอีเมลแจ้งเตือนแอดมินไม่สำเร็จ: ' . $e->getMessage());
-        }
-    }
 }

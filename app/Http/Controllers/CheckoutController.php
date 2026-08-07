@@ -181,17 +181,10 @@ class CheckoutController extends Controller
     public function payWithCredit(Booking $booking, Request $request)
     {
         try {
-            $paymentResult = DB::transaction(function () use ($booking, $request) {
+            $confirmed = DB::transaction(function () use ($booking, $request) {
                 $locked = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
 
                 if ($locked->status !== 'pending_payment') {
-                    if ($locked->user_id === $request->user()->id
-                        && $locked->status === 'approved'
-                        && $locked->payment_status === 'paid'
-                        && $locked->payment_method === 'credit') {
-                        return ['booking' => $locked->fresh(), 'processed' => false];
-                    }
-
                     throw new RuntimeException('รายการนี้ไม่ได้อยู่ในสถานะรอชำระเงิน (อาจหมดเวลาไปแล้ว)');
                 }
 
@@ -214,37 +207,16 @@ class CheckoutController extends Controller
 
                 $this->rejectOverlappingManualBookings($locked);
 
-                return ['booking' => $locked->fresh(), 'processed' => true];
+                return $locked->fresh();
             });
         } catch (RuntimeException $e) {
             return back()->withErrors(['payment' => $e->getMessage()]);
-        }
-
-        $confirmed = $paymentResult['booking'];
-
-        // คำขอซ้ำจากการกดปุ่มหลายครั้ง: รายการแรกชำระสำเร็จแล้ว จึงพาไปประวัติทันที
-        // โดยไม่ส่งอีเมล/แจ้งเตือนซ้ำและไม่แสดงข้อความเหมือนรายการถูกยกเลิก
-        if (! $paymentResult['processed']) {
-            return redirect()->route('history')
-                ->with('success', "การจอง #{$confirmed->id} ชำระเงินสำเร็จแล้ว");
         }
 
         if ($confirmed->user?->email) {
             Mail::to($confirmed->user->email)->send(new BookingConfirmedCreditMail($confirmed));
             Mail::to($confirmed->user->email)->send(new BookingReceiptMail($confirmed));
         }
-
-        User::whereIn('role', ['admin', 'superadmin'])
-            ->pluck('id')
-            ->each(function ($adminId) use ($confirmed) {
-                Notification::create([
-                    'user_id' => $adminId,
-                    'title' => 'มีการจองสนามบาสใหม่',
-                    'message' => "การจอง #{$confirmed->id} จาก {$confirmed->user->name} |{$confirmed->court->name} — {$confirmed->courtSection->name}\nวันที่ {$confirmed->booking_date->toDateString()} เวลา ".
-                        substr($confirmed->start_time, 0, 5).'-'.substr($confirmed->end_time, 0, 5).
-                        "\nยอดชำระ ฿".number_format($confirmed->price / 100, 2).' ผ่านเครดิต',
-                ]);
-            });
 
         $this->notifyAdminsOfPayment(
             'การจองสนาม',

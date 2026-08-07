@@ -144,7 +144,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
     // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
-    const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
 
     const calendar = new FullCalendar.Calendar(document.getElementById('private-calendar'), {
         initialView: 'timeGridWeek',
@@ -162,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function () {
         slotMaxTime: '22:00:00',
         slotDuration: '00:30:00',
         snapDuration: '00:30:00',
-        validRange: { start: @js($today), end: @js(\Carbon\Carbon::parse($maxDate)->addDay()->toDateString()) },
+
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -186,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function () {
             );
             return insideAvailableSchedule
                 && info.start >= new Date()
-                && info.start <= maxSelectableDate
                 && (info.end - info.start) <= 4 * 60 * 60 * 1000;
         },
         select(info) {

@@ -66,7 +66,7 @@
 
                         @if(in_array($user->role, ['admin', 'superadmin'], true))
                             <span class="inline-flex items-center gap-1 text-gray-500 font-semibold">
-                                {{ $user->role === 'superadmin' ? 'ซูเปอร์แอดมิน' : 'แอดมิน' }}
+                                {{ $user->role === 'superadmin' ? 'แอดมิน' : 'แอดมิน' }}
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1 text-orange-600 font-medium">
