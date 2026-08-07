@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-            $exists = DB::table('settings')->where('key', 'promptpay_number')->exists();
+            $exists = DB::table('settings')->where('key', 'credit_topup_promptpay_number')->exists();
 
         if (!$exists) {
             // ถ้ายังไม่มี ให้ทำการ Insert ข้อมูลใหม่
@@ -31,7 +31,7 @@ return new class extends Migration
     {
         // ลบข้อมูลออกเมื่อสั่ง Rollback (เพื่อคืนค่าฐานข้อมูลให้กลับไปเหมือนก่อนรัน Migration)
         DB::table('settings')
-            ->where('key', 'promptpay_number')
+            ->where('key', 'credit_topup_promptpay_number')
             ->delete();
     }
 };
