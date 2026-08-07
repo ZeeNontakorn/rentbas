@@ -57,4 +57,35 @@
     .private-calendar-theme .fc-popover-title {
         color: #334155 !important;
     }
+
+    .private-calendar-theme .fc-button {
+        min-height: 2.5rem;
+        font-size: 0.8rem !important;
+    }
+
+    .private-calendar-theme .fc-event-title,
+    .private-calendar-theme .fc-event-time {
+        overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 640px) {
+        .private-calendar-theme .fc-header-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .private-calendar-theme .fc-toolbar-chunk {
+            display: flex;
+            justify-content: center;
+        }
+
+        .private-calendar-theme .fc-toolbar-title {
+            font-size: 1.05rem !important;
+        }
+
+        .private-calendar-theme .fc-button {
+            padding: 0.45rem 0.65rem !important;
+        }
+    }
 </style>

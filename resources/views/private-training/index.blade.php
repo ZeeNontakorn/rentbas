@@ -124,6 +124,9 @@
                                         <span class="text-gray-300 mx-1">•</span>
                                         {{ substr($r->start_time, 0, 5) }} - {{ substr($r->end_time, 0, 5) }} น.
                                     </p>
+                                    @if($r->assistant_requested)
+                                        <p class="mt-1 text-xs text-blue-600">ผู้ช่วยสนาม: {{ $r->courtAssistant?->name ?? 'รอดำเนินการ' }}</p>
+                                    @endif
                                     <div class="flex items-center justify-between mt-2">
                                         <span
                                             class="text-xs px-2.5 py-1 rounded-full font-medium {{ $sInfo['bg'] }} {{ $sInfo['text'] }}">{{ $sInfo['label'] }}</span>
