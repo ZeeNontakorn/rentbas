@@ -236,7 +236,7 @@
                     <span><i style="background:#fff;border:1px solid #d1d5db;"></i>ว่าง (ลาก/แตะเพื่อเลือก)</span>
                     <span><i style="background:#87D068;"></i>ที่เลือกไว้</span>
                     <span><i style="background:#fef3c7;border:1px solid #fde68a;"></i>รออนุมัติ</span>
-                    <span><i style="background:#fee2e2;border:1px solid #fecaca;"></i>จองแล้ว</span>
+                    <span><i style="background:#fee2e2;border:1px solid #fecaca;"></i>ไม่ว่าง</span>
                     <span><i style="background:#f3f4f6;border:1px solid #e5e7eb;"></i>ปิด/ผ่านมาแล้ว</span>
                 </div>
             </div>
@@ -472,7 +472,7 @@ document.querySelectorAll('.cal-lane').forEach(lane => {
         const top = (timeToMin(ROWS[i].start) - OPEN) * PX_PER_MIN;
         const height = (timeToMin(ROWS[j].end) - timeToMin(ROWS[i].start)) * PX_PER_MIN;
         const div = document.createElement('div');
-        const labelMap = { pending: 'รออนุมัติ', approved: 'จองแล้ว', closed: 'ปิดบริการ', past: 'ผ่านมาแล้ว' };
+        const labelMap = { pending: 'รออนุมัติ', approved: 'ไม่ว่าง', closed: 'ปิดบริการ', past: 'ผ่านมาแล้ว' };
         div.className = 'cal-block st-' + st;
         div.style.top = top + 'px';
         div.style.height = Math.max(height, 16) + 'px';
