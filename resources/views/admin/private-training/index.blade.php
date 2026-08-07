@@ -80,6 +80,9 @@
                                             สนาม: {{ $b->court->name }}{{ $b->courtSection ? ' — '.$b->courtSection->name : '' }}
                                         </p>
                                     @endif
+                                    <p class="mt-1 text-xs {{ $b->assistant_requested ? 'font-medium text-blue-700' : 'text-gray-400' }}">
+                                        ผู้ช่วยสนาม: {{ $b->assistant_requested ? ($b->courtAssistant?->name ?? 'รอเลือกผู้ช่วย') : 'ไม่ใช้บริการ' }}
+                                    </p>
                                 </div>
 
                                 @if($effectiveStatus === 'expired')
@@ -105,6 +108,14 @@
                                             class="rounded bg-red-500 px-3 py-1.5 text-xs text-white transition hover:bg-red-600 cursor-pointer">ปฏิเสธ</button>
                                         <button type="button"
                                             data-action="{{ route('admin.private-training.assign-court', $b) }}"
+                                            data-courts-url="{{ route('admin.private-training.available-courts', $b) }}"
+                                            data-assistants-url="{{ route('private-training.available-assistants') }}"
+                                            data-booking-id="{{ $b->id }}"
+                                            data-date-iso="{{ $b->date->toDateString() }}"
+                                            data-start="{{ substr($b->start_time, 0, 5) }}"
+                                            data-end="{{ substr($b->end_time, 0, 5) }}"
+                                            data-assistant-requested="{{ $b->assistant_requested ? '1' : '0' }}"
+                                            data-assistant-id="{{ $b->court_assistant_id }}"
                                             data-date="{{ $b->date->format('d/m/Y') }}"
                                             data-time="{{ substr($b->start_time, 0, 5) }}–{{ substr($b->end_time, 0, 5) }}"
                                             onclick="openCourtModal(this)"
@@ -147,29 +158,26 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">เลือกสนามและส่วนสนาม</label>
-                    <div class="relative">
-                        <select name="court_section_id" required
-                            class="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-10 text-base text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none cursor-pointer">
-                            <option value="">กรุณาเลือกสนาม</option>
-                            @foreach($courts as $court)
-                                <optgroup label="{{ $court->name }}">
-                                    @foreach($court->sections as $section)
-                                        <option value="{{ $section->id }}">{{ $court->name }} — {{ $section->name }}</option>
-                                    @endforeach
-                                </optgroup>
-                            @endforeach
-                        </select>
-                        <svg class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    <p class="mt-2 text-xs sm:text-sm text-gray-400">ระบบจะตรวจสอบเวลาชนอีกครั้งก่อนยืนยัน</p>
+                    <select name="court_section_id" required
+                        id="court-section-select" disabled
+                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+                        <option value="">กำลังตรวจสอบสนามว่าง...</option>
+                    </select>
+                    <p id="court-availability-message" class="mt-2 text-xs sm:text-sm text-gray-400">ระบบแสดงเฉพาะสนามที่ว่าง และจะตรวจซ้ำอีกครั้งก่อนยืนยัน</p>
+                </div>
+                <div id="court-assistant-wrap" class="hidden">
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">ผู้ช่วยสนามเก็บบาส</label>
+                    <select name="court_assistant_id" id="court-assistant-select" disabled
+                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">กำลังตรวจสอบผู้ช่วยที่ว่าง...</option>
+                    </select>
+                    <p id="assistant-availability-message" class="mt-2 text-xs sm:text-sm text-gray-400">เปลี่ยนผู้ช่วยได้ก่อนยืนยันการจัดสนาม</p>
                 </div>
                 <div class="flex gap-3 pt-2 sticky bottom-0 bg-white pb-2">
                     <button type="button" onclick="closeCourtModal()"
                         class="w-1/2 rounded-xl bg-gray-100 px-5 py-3 text-base font-medium text-gray-600 hover:bg-gray-200 transition cursor-pointer">ยกเลิก</button>
                     <button type="submit"
+                        id="confirm-court-button" disabled
                         class="w-1/2 rounded-xl bg-purple-600 px-5 py-3 text-base font-semibold text-white hover:bg-purple-700 transition cursor-pointer shadow-md">ยืนยันจัดสนาม</button>
                 </div>
             </form>
@@ -215,13 +223,83 @@
             modal.classList.remove('flex');
         }
 
-        function openCourtModal(button) {
+        async function openCourtModal(button) {
             document.getElementById('courtForm').action = button.dataset.action;
             document.getElementById('courtBookingDate').textContent = 'วันที่ ' + button.dataset.date;
             document.getElementById('courtBookingTime').textContent = button.dataset.time + ' น.';
+            const courtSelect = document.getElementById('court-section-select');
+            const assistantSelect = document.getElementById('court-assistant-select');
+            const assistantWrap = document.getElementById('court-assistant-wrap');
+            const confirmButton = document.getElementById('confirm-court-button');
+            const courtMessage = document.getElementById('court-availability-message');
+            const assistantMessage = document.getElementById('assistant-availability-message');
+            const assistantRequested = button.dataset.assistantRequested === '1';
+
+            courtSelect.disabled = true;
+            courtSelect.innerHTML = '<option value="">กำลังตรวจสอบสนามว่าง...</option>';
+            courtMessage.textContent = 'กำลังเทียบกับรายการจองและกำหนดการทั้งหมด...';
+            courtMessage.className = 'mt-2 text-xs sm:text-sm text-gray-400';
+            confirmButton.disabled = true;
+            confirmButton.classList.add('opacity-50', 'cursor-not-allowed');
+            assistantWrap.classList.toggle('hidden', !assistantRequested);
+            assistantSelect.disabled = true;
+
             const modal = document.getElementById('courtModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+
+            try {
+                const courtResponse = await fetch(button.dataset.courtsUrl, {headers: {'Accept': 'application/json'}});
+                if (!courtResponse.ok) throw new Error('ตรวจสอบสนามว่างไม่สำเร็จ');
+                const courtResult = await courtResponse.json();
+                const sections = courtResult.sections || [];
+                courtSelect.innerHTML = '<option value="">กรุณาเลือกสนาม</option>' + sections
+                    .map(section => `<option value="${section.id}">${escapeHtml(section.label)}</option>`)
+                    .join('');
+                courtSelect.disabled = sections.length === 0;
+                courtMessage.textContent = sections.length
+                    ? `พบสนามว่าง ${sections.length} ตัวเลือก`
+                    : 'ไม่มีสนามว่างตรงกับวันและเวลานี้';
+                courtMessage.className = `mt-2 text-xs sm:text-sm ${sections.length ? 'text-green-600' : 'font-medium text-red-600'}`;
+
+                let assistantsReady = true;
+                if (assistantRequested) {
+                    const params = new URLSearchParams({
+                        date: button.dataset.dateIso,
+                        start_time: button.dataset.start,
+                        end_time: button.dataset.end,
+                        ignore_booking_id: button.dataset.bookingId
+                    });
+                    const assistantResponse = await fetch(`${button.dataset.assistantsUrl}?${params}`, {headers: {'Accept':'application/json'}});
+                    if (!assistantResponse.ok) throw new Error('ตรวจสอบผู้ช่วยสนามไม่สำเร็จ');
+                    const assistantResult = await assistantResponse.json();
+                    const assistants = assistantResult.assistants || [];
+                    assistantSelect.innerHTML = '<option value="">กรุณาเลือกผู้ช่วยสนาม</option>' + assistants
+                        .map(assistant => `<option value="${assistant.id}" ${String(assistant.id) === button.dataset.assistantId ? 'selected' : ''}>${escapeHtml(assistant.name)}</option>`)
+                        .join('');
+                    assistantSelect.disabled = assistants.length === 0;
+                    assistantsReady = assistants.length > 0;
+                    assistantMessage.textContent = assistantsReady
+                        ? `พบผู้ช่วยที่ว่าง ${assistants.length} คน`
+                        : 'ไม่มีผู้ช่วยสนามว่างตรงกับเวลานี้';
+                    assistantMessage.className = `mt-2 text-xs sm:text-sm ${assistantsReady ? 'text-blue-600' : 'font-medium text-red-600'}`;
+                }
+
+                if (sections.length && assistantsReady) {
+                    confirmButton.disabled = false;
+                    confirmButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } catch (error) {
+                courtSelect.innerHTML = '<option value="">โหลดข้อมูลไม่สำเร็จ</option>';
+                courtMessage.textContent = error.message;
+                courtMessage.className = 'mt-2 text-xs sm:text-sm font-medium text-red-600';
+            }
+        }
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value ?? '';
+            return element.innerHTML;
         }
 
         function closeCourtModal() {

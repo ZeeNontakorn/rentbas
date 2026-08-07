@@ -14,6 +14,7 @@ class Notification extends Model
         'user_id',
         'title',
         'message',
+        'action_url',
         'is_read',
     ];
 
