@@ -41,15 +41,20 @@
                 <h2 class="mb-2 text-sm font-bold text-blue-700">คำขอของคุณกับโค้ชคนนี้</h2>
                 <div class="grid gap-2 sm:grid-cols-2">
                     @foreach($myUpcoming as $booking)
+                        @php
+                            $isPast = \Illuminate\Support\Carbon::parse($booking->date->format('Y-m-d') . ' ' . $booking->end_time)->isPast();
+                        @endphp
                         <div class="rounded-lg bg-white/80 px-3 py-2 text-sm text-blue-800">
                             {{ $booking->date->format('d/m/Y') }}
                             {{ substr($booking->start_time, 0, 5) }}–{{ substr($booking->end_time, 0, 5) }} น.
-                            <span class="ml-1 text-xs font-semibold">
-                                {{ match($booking->status) {
-                                    'confirmed' => 'ยืนยันแล้ว',
-                                    'awaiting_court' => 'รอจัดสนาม',
-                                    default => 'รออนุมัติ',
-                                } }}
+                            <span class="ml-1 text-xs font-semibold {{ $isPast ? 'text-gray-400' : '' }}">
+                                {{ $isPast
+                                    ? 'เลยกำหนด'
+                                    : match($booking->status) {
+                                        'confirmed' => 'ยืนยันแล้ว',
+                                        'awaiting_court' => 'รอจัดสนาม',
+                                        default => 'รออนุมัติ',
+                                    } }}
                             </span>
                             @if($booking->courtAssistant)
                                 <span class="ml-1 text-xs text-blue-600">· ผู้ช่วย {{ $booking->courtAssistant->name }}</span>
@@ -80,6 +85,15 @@
         </section>
     </div>
 </div>
+
+<style>
+    /* เปิดให้กล่องไฮไลต์ (ช่วงเวลาที่ค้างรอยืนยัน) รับคลิกได้ ปกติ FullCalendar ปิดไว้ (pointer-events: none) */
+    #private-calendar .fc-highlight {
+        pointer-events: auto;
+        cursor: pointer;
+        z-index: 5;
+    }
+</style>
 
 <div id="bookTrainingModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
     <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
@@ -148,9 +162,35 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('bookTrainingModal');
+    const calendarEl = document.getElementById('private-calendar');
     const pad = value => String(value).padStart(2, '0');
     const localDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     const localTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+    const maxDurationMs = 5 * 60 * 60 * 1000; // ลากได้สูงสุด 5 ชั่วโมง
+
+    let pendingSelection = null;
+    let needsConfirmClick = false;
+    let isProgrammaticSelect = false;
+
+    const programmaticSelect = (start, end) => {
+        isProgrammaticSelect = true;
+        calendar.select(start, end);
+        isProgrammaticSelect = false;
+    };
+
+    const openBookingModal = (start, end) => {
+        document.getElementById('booking-date').value = localDate(start);
+        document.getElementById('booking-start').value = localTime(start);
+        document.getElementById('booking-end').value = localTime(end);
+        document.getElementById('booking-date-label').textContent =
+            start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('booking-time-label').textContent =
+            `${localTime(start)}–${localTime(end)} น.`;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    };
+
     const assistantRequested = document.getElementById('assistant-requested');
     const assistantWrap = document.getElementById('assistant-select-wrap');
     const assistantSelect = document.getElementById('court-assistant-select');
@@ -159,6 +199,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeModal = () => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        pendingSelection = null;
+        needsConfirmClick = false;
         calendar.unselect();
     };
 
@@ -256,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const calendar = new FullCalendar.Calendar(document.getElementById('private-calendar'), {
+    const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         locale: 'th',
         firstDay: 1,
@@ -264,7 +306,42 @@ document.addEventListener('DOMContentLoaded', function () {
         nowIndicator: true,
         selectable: true,
         selectMirror: true,
-        selectOverlap: false,
+        unselectAuto: false,
+
+        eventClassNames(arg) {
+            // ทำให้ช่วงเวลาที่ว่างแต่ผ่านไปแล้วดูจางลง ไม่ให้เข้าใจผิดว่ายังจองได้
+            if (arg.event.extendedProps.kind === 'available' && arg.event.end <= new Date()) {
+                return ['opacity-40'];
+            }
+            return [];
+        },
+
+        eventDidMount(arg) {
+            const props = arg.event.extendedProps;
+            const isPastAvailable = props.kind === 'available' && arg.event.end <= new Date();
+            if (!isPastAvailable) return;
+
+            arg.el.style.backgroundColor = '#e5e7eb';
+
+            const label = document.createElement('div');
+            label.textContent = 'เลยกำหนด';
+            label.style.cssText = `
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 600;
+                color: #6b7280;
+                pointer-events: none;
+            `;
+            arg.el.appendChild(label);
+        },
+
+        selectOverlap(event) {
+            return event.extendedProps.kind === 'available';
+        },
         allDaySlot: false,
         slotMinTime: '08:00:00',
         slotMaxTime: '22:00:00',
@@ -288,9 +365,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         selectAllow(info) {
-            return calendar.view.type !== 'dayGridMonth'
-                && info.start >= new Date()
-                && (info.end - info.start) <= 4 * 60 * 60 * 1000;
+            const insideAvailableSchedule = calendar.getEvents().some(event =>
+                event.extendedProps.kind === 'available'
+                && info.start >= event.start
+                && info.end <= event.end
+            );
+            // ไม่เช็คระยะเวลาตรงนี้ เพื่อให้กล่องไฮไลต์โตต่อได้ตอนลาก ไม่หายไปกลางทาง
+            return insideAvailableSchedule && info.start >= new Date();
         },
         dateClick(info) {
             if (info.date > maxSelectableDate) {
@@ -303,32 +384,90 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         select(info) {
-            document.getElementById('booking-date').value = localDate(info.start);
-            document.getElementById('booking-start').value = localTime(info.start);
-            document.getElementById('booking-end').value = localTime(info.end);
-            document.getElementById('booking-date-label').textContent =
-                info.start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            document.getElementById('booking-time-label').textContent =
-                `${localTime(info.start)}–${localTime(info.end)} น.`;
-            assistantRequested.value = '0';
-            assistantWrap.classList.add('hidden');
-            assistantSelect.required = false;
-            assistantSelect.value = '';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        },
-        eventClick(info) {
-            const props = info.event.extendedProps;
-            if (props.isMine) {
-                showPrivateTrainingDetails(info.event);
+            if (isProgrammaticSelect) {
+                pendingSelection = { start: info.start, end: info.end };
                 return;
             }
 
-            showUnavailableDetails(info.event);
+            const start = info.start;
+            const end = info.end;
+            const duration = end - start;
+
+            if (duration > maxDurationMs) {
+                const clampedEnd = new Date(start.getTime() + maxDurationMs);
+                pendingSelection = { start, end: clampedEnd };
+                needsConfirmClick = false;
+                programmaticSelect(start, clampedEnd);
+                return;
+            }
+
+            pendingSelection = { start, end };
+            needsConfirmClick = false;
+            openBookingModal(start, end);
+        },
+        dateClick(info) {
+            if (!pendingSelection) {
+                return;
+            }
+
+            const clickedTime = info.date;
+            const selectionStart = pendingSelection.start;
+            const selectionEnd = pendingSelection.end;
+
+            if (clickedTime >= selectionStart && clickedTime < selectionEnd) {
+                if (needsConfirmClick) {
+                    needsConfirmClick = false;
+                    openBookingModal(selectionStart, selectionEnd);
+                } else {
+                    needsConfirmClick = true;
+                }
+            }
+        },
+        eventClick(info) {
+            const props = info.event.extendedProps;
+
+            if (props.kind === 'available') {
+                const isPast = info.event.end <= new Date();
+                Swal.fire({
+                    title: isPast ? 'เลยกำหนด' : 'เปิดรับจอง',
+                    text: isPast
+                        ? 'ช่วงเวลานี้ผ่านไปแล้ว ไม่สามารถจองได้'
+                        : 'ลากเลือกช่วงเวลานี้เพื่อทำการจอง',
+                    icon: 'info'
+                });
+                return;
+            }
+
+            const isPast = info.event.end <= new Date();
+            const statusLabel = isPast ? 'เลยกำหนด' : props.statusLabel;
+
+            Swal.fire({
+                title: info.event.title,
+                text: [statusLabel, props.court].filter(Boolean).join(' · ') || 'ช่วงเวลานี้ไม่ว่าง',
+                icon: 'info'
+            });
         }
     });
 
     calendar.render();
+
+    calendarEl.addEventListener('click', (event) => {
+        if (!pendingSelection) return;
+
+        const target = event.target;
+        const interactiveTarget = target.closest('.fc-timegrid-slot, .fc-highlight, .fc-timegrid-bg, .fc-timegrid-col');
+        if (!interactiveTarget) return;
+
+        if (needsConfirmClick) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            needsConfirmClick = false;
+            openBookingModal(pendingSelection.start, pendingSelection.end);
+        } else {
+            needsConfirmClick = true;
+        }
+    }, true);
+
     document.getElementById('cancel-booking-modal').addEventListener('click', closeModal);
     assistantRequested.addEventListener('change', loadAvailableAssistants);
     modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
