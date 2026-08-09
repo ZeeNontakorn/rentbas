@@ -748,8 +748,7 @@ function renderPricingBox() {
 
     matched.forEach(p => {
         const priceBaht = (p.base_price / 100).toLocaleString('th-TH');
-        let sub = `${p.duration_hours} ชั่วโมง${p.max_people ? ' · สูงสุด ' + p.max_people + ' คน' : ''} · เริ่มต้น ฿${priceBaht}`;
-        html += `
+    let sub = `${p.duration_hours == null ? 'ไม่จำกัดชั่วโมง' : p.duration_hours + ' ชั่วโมง'}${p.max_people ? ' · สูงสุด ' + p.max_people + ' คน' : ''} · เริ่มต้น ฿${priceBaht}`;        html += `
         <label class="price-option" data-code="${p.code}">
             <input type="radio" name="pricingOption" value="${p.code}" onchange="onPricingOptionChange(this)">
             <div>

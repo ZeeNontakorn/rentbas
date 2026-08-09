@@ -56,6 +56,9 @@
                                         default => 'รออนุมัติ',
                                     } }}
                             </span>
+                            @if($booking->courtAssistant)
+                                <span class="ml-1 text-xs text-blue-600">· ผู้ช่วย {{ $booking->courtAssistant->name }}</span>
+                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -65,18 +68,18 @@
         <section class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
             <div class="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                 <div>
-                    <h2 class="text-lg font-bold text-gray-800">เลือกวันและเวลาที่โค้ชว่าง</h2>
-                    <p class="mt-1 text-xs text-gray-500">ลากเลือกช่วงเวลาในปฏิทินรายสัปดาห์ เวลา 08:00–22:00 น.</p>
+                    <h2 class="text-lg font-bold text-gray-800">เลือกวันและเวลาฝึก</h2>
+                    <p class="mt-1 text-xs text-gray-500">ลากเลือกพื้นที่ว่างในปฏิทิน เวลา 08:00–22:00 น. ช่วงที่มี Schedule หรือมีรายการจองแล้วจะเลือกไม่ได้</p>
+                    <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
+                    </p>
                 </div>
                 <div class="flex flex-wrap gap-3 text-xs text-gray-600">
-                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-blue-500"></i>คำขอของคุณ</span>
-                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-slate-400"></i>ไม่ว่าง</span>
+                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-blue-500"></i>รออนุมัติ</span>
+                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-purple-600"></i>รอจัดสนาม</span>
                     <span><i class="mr-1 inline-block h-3 w-3 rounded bg-green-600"></i>ยืนยันแล้ว</span>
+                    <span><i class="mr-1 inline-block h-3 w-3 rounded bg-slate-500"></i>โค้ชไม่ว่าง</span>
                 </div>
-            </div>
-            <div id="no-available-schedule"
-                class="mb-4 hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                โค้ชยังไม่ได้เปิดช่วงเวลารับจอง กรุณารอผู้ดูแลระบบกำหนดตารางก่อน
             </div>
             <div id="private-calendar" class="private-calendar-theme"></div>
         </section>
@@ -122,11 +125,27 @@
                 <p class="mt-1 text-[11px] text-gray-400">ระบบจะหักสิทธิ์จากแพ็กเกจที่คุณเลือกทันทีที่ส่งคำขอ</p>
             </div>
             <div>
+                <label for="assistant-requested" class="mb-1.5 block text-xs font-semibold text-gray-700">บริการผู้ช่วยสนามเก็บบาส</label>
+                <select name="assistant_requested" id="assistant-requested" required
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                    <option value="0">ไม่ต้องการ</option>
+                    <option value="1">ต้องการผู้ช่วยสนาม</option>
+                </select>
+            </div>
+            <div id="assistant-select-wrap" class="hidden rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                <label for="court-assistant-select" class="mb-1.5 block text-xs font-semibold text-blue-800">เลือกผู้ช่วยที่ว่าง <span class="text-red-500">*</span></label>
+                <select name="court_assistant_id" id="court-assistant-select"
+                    class="w-full rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <option value="">กรุณาเลือกผู้ช่วยสนาม</option>
+                </select>
+                <p id="assistant-status" class="mt-2 text-[11px] text-blue-600">ระบบจะแสดงเฉพาะผู้ช่วยที่ว่างตรงกับเวลานี้</p>
+            </div>
+            <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-700">รายละเอียดที่ต้องการฝึก (ถ้ามี)</label>
                 <textarea name="note" rows="3" maxlength="500" placeholder="เช่น ฝึกการยิงสามแต้ม"
                     class="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
-            <p class="text-xs text-gray-500">ราคาและการหักเครดิตจะเกิดขึ้นตอนแอดมินจัดสนามให้เท่านั้น (ยังไม่หักตอนส่งคำขอ)</p>
+            <p class="text-xs text-gray-500">ระบบใช้สิทธิ์แพ็กเกจ 1 ครั้งตอนส่งคำขอ และจะไม่หักเครดิตเพิ่มตอนแอดมินจัดสนาม หากคำขอถูกยกเลิกหรือปฏิเสธ ระบบจะคืนสิทธิ์ให้</p>
             <div class="flex gap-2 pt-2">
                 <button type="button" id="cancel-booking-modal"
                     class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
@@ -137,6 +156,7 @@
     </div>
 </div>
 
+@include('private-training._booking-details-script')
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
 <script>
@@ -171,6 +191,11 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.add('flex');
     };
 
+    const assistantRequested = document.getElementById('assistant-requested');
+    const assistantWrap = document.getElementById('assistant-select-wrap');
+    const assistantSelect = document.getElementById('court-assistant-select');
+    const assistantStatus = document.getElementById('assistant-status');
+    const assistantsApi = @js(route('private-training.available-assistants'));
     const closeModal = () => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
@@ -179,6 +204,53 @@ document.addEventListener('DOMContentLoaded', function () {
         calendar.unselect();
     };
 
+    async function loadAvailableAssistants() {
+        if (assistantRequested.value !== '1') {
+            assistantWrap.classList.add('hidden');
+            assistantSelect.required = false;
+            assistantSelect.value = '';
+            return;
+        }
+
+        assistantWrap.classList.remove('hidden');
+        assistantSelect.required = true;
+        assistantSelect.disabled = true;
+        assistantSelect.innerHTML = '<option value="">กำลังตรวจสอบผู้ช่วยที่ว่าง...</option>';
+        assistantStatus.textContent = 'กำลังตรวจสอบ Schedule ของผู้ช่วยสนาม...';
+        assistantStatus.className = 'mt-2 text-[11px] text-blue-600';
+
+        const params = new URLSearchParams({
+            date: document.getElementById('booking-date').value,
+            start_time: document.getElementById('booking-start').value,
+            end_time: document.getElementById('booking-end').value
+        });
+
+        try {
+            const response = await fetch(`${assistantsApi}?${params}`, {headers: {'Accept':'application/json'}});
+            if (!response.ok) throw new Error('โหลดรายชื่อผู้ช่วยไม่สำเร็จ');
+            const result = await response.json();
+            const assistants = result.assistants || [];
+            assistantSelect.innerHTML = '<option value="">กรุณาเลือกผู้ช่วยสนาม</option>' + assistants
+                .map(assistant => `<option value="${assistant.id}">${escapeHtml(assistant.name)}</option>`)
+                .join('');
+            assistantSelect.disabled = assistants.length === 0;
+            assistantStatus.textContent = assistants.length
+                ? `มีผู้ช่วยว่าง ${assistants.length} คน`
+                : 'ไม่มีผู้ช่วยสนามว่างในช่วงเวลานี้ กรุณาเลือกไม่ใช้บริการหรือเปลี่ยนเวลา';
+            assistantStatus.className = `mt-2 text-[11px] ${assistants.length ? 'text-blue-600' : 'font-medium text-red-600'}`;
+        } catch (error) {
+            assistantSelect.innerHTML = '<option value="">โหลดข้อมูลไม่สำเร็จ</option>';
+            assistantStatus.textContent = error.message;
+            assistantStatus.className = 'mt-2 text-[11px] font-medium text-red-600';
+        }
+    }
+
+    function escapeHtml(value) {
+        const element = document.createElement('div');
+        element.textContent = value ?? '';
+        return element.innerHTML;
+    }
+
     // เช็คว่าแพ็กเกจโปรโมชั่นแต่ละตัวใช้ได้กับช่วงเวลาที่ลูกค้าเพิ่งลากเลือกหรือไม่ (เฉพาะเงื่อนไข
     // ระยะเวลา — duration_hours) แล้ว disable ตัวเลือกที่ไม่เข้าเงื่อนไข พร้อมโชว์คำอธิบายไว้ในตัวเลือก
     // (เงื่อนไขอื่น เช่น เต็ม/ครึ่งสนาม, วันที่ จะถูกเช็คจริงจังอีกทีตอนแอดมินจัดสนามให้)
@@ -186,6 +258,45 @@ document.addEventListener('DOMContentLoaded', function () {
     // จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
     // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
+    const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
+    const advanceLimitMessage = @js('สามารถจอง Private Training ล่วงหน้าได้สูงสุด '.\App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS.' วัน');
+
+    function showAdvanceLimitMessage() {
+        Swal.fire({
+            icon: 'info',
+            title: 'วันที่นี้ยังจองไม่ได้',
+            text: advanceLimitMessage,
+            confirmButtonText: 'เข้าใจแล้ว',
+            confirmButtonColor: '#f97316'
+        });
+    }
+
+    function showUnavailableDetails(event) {
+        const props = event.extendedProps || {};
+        const dateLabel = event.start
+            ? event.start.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'})
+            : '—';
+        const timeLabel = event.start
+            ? `${localTime(event.start)}${event.end ? `–${localTime(event.end)}` : ''} น.`
+            : '—';
+
+        Swal.fire({
+            icon: 'info',
+            title: 'ช่วงเวลานี้จองไม่ได้',
+            html: `
+                <div class="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left">
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><p class="text-xs text-slate-400">วันที่</p><p class="mt-1 font-semibold text-slate-700">${escapeHtml(dateLabel)}</p></div>
+                        <div><p class="text-xs text-slate-400">เวลา</p><p class="mt-1 font-semibold text-slate-700">${escapeHtml(timeLabel)}</p></div>
+                    </div>
+                    <div class="mt-3 rounded-xl bg-slate-200/70 px-3 py-2.5 text-sm font-medium text-slate-700">
+                        ${escapeHtml(props.unavailableReason || 'โค้ชไม่ว่างในช่วงเวลานี้')}
+                    </div>
+                </div>`,
+            confirmButtonText: 'ปิด',
+            confirmButtonColor: '#64748b'
+        });
+    }
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
@@ -236,21 +347,22 @@ document.addEventListener('DOMContentLoaded', function () {
         slotMaxTime: '22:00:00',
         slotDuration: '00:30:00',
         snapDuration: '00:30:00',
-
+        validRange: { start: @js($today) },
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'timeGridWeek,timeGridDay'
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        buttonText: { today: 'วันนี้', week: 'สัปดาห์', day: 'วัน' },
+        buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', day: 'วัน' },
+        dayMaxEvents: true,
+        eventMaxStack: 3,
+        slotEventOverlap: false,
         events: @js(route('private-training.schedule', $coach)),
-        eventSourceSuccess(events) {
-            const hasAvailableSchedule = events.some(event =>
-                event.extendedProps?.kind === 'available'
-            );
-            document.getElementById('no-available-schedule')
-                .classList.toggle('hidden', hasAvailableSchedule);
-            return events;
+        dayCellDidMount(info) {
+            if (info.date > maxSelectableDate) {
+                info.el.title = advanceLimitMessage;
+                info.el.setAttribute('aria-label', `${info.el.getAttribute('aria-label') || ''} ${advanceLimitMessage}`.trim());
+            }
         },
         selectAllow(info) {
             const insideAvailableSchedule = calendar.getEvents().some(event =>
@@ -260,6 +372,16 @@ document.addEventListener('DOMContentLoaded', function () {
             );
             // ไม่เช็คระยะเวลาตรงนี้ เพื่อให้กล่องไฮไลต์โตต่อได้ตอนลาก ไม่หายไปกลางทาง
             return insideAvailableSchedule && info.start >= new Date();
+        },
+        dateClick(info) {
+            if (info.date > maxSelectableDate) {
+                showAdvanceLimitMessage();
+                return;
+            }
+
+            if (info.view.type === 'dayGridMonth') {
+                calendar.changeView('timeGridDay', info.date);
+            }
         },
         select(info) {
             if (isProgrammaticSelect) {
@@ -347,6 +469,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, true);
 
     document.getElementById('cancel-booking-modal').addEventListener('click', closeModal);
+    assistantRequested.addEventListener('change', loadAvailableAssistants);
     modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
 
     @if(session('success'))

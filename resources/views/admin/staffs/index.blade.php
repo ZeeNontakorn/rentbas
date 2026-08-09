@@ -99,13 +99,20 @@
                                 $themeClass = $isCoach ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600';
                                 $badgeClass = $isCoach ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
                                 $roleLabel = $isCoach ? 'ผู้ฝึกสอน (Coach)' : 'ผู้ช่วยสนาม (Staff)';
+                                $staffProfile = $s->staffProfile;
                             @endphp
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $s->id }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs {{ $themeClass }}">
-                                            {{ mb_strtoupper(mb_substr($s->name, 0, 1)) }}
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs overflow-hidden {{ $themeClass }}">
+                                            @if($staffProfile?->profile_image)
+                                                <img src="{{ $staffProfile->profile_image_url }}"
+                                                    alt="รูปโปรไฟล์ของ {{ $s->name }}"
+                                                    class="h-full w-full object-cover">
+                                            @else
+                                                <span>{{ mb_strtoupper(mb_substr($s->name, 0, 1)) }}</span>
+                                            @endif
                                         </div>
                                         <div>
                                             <p>{{ $s->name }}</p>

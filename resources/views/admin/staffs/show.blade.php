@@ -93,12 +93,12 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-start gap-6">
                     <div
-                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
+                        class="w-20 h-20 rounded-full {{ $isCoach ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600' }} flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
                         @if($staffProfile?->profile_image)
                             <img src="{{ $staffProfile->profile_image_url }}"
                                 alt="รูปโปรไฟล์ของ {{ $staff->name }}" class="h-full w-full object-cover">
                         @else
-                            <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
+                            <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($staff->name, 0, 1)) }}</span>
                         @endif
                     </div>
 
@@ -163,16 +163,13 @@
                         <h3 class="font-bold text-gray-800 text-lg">{{ $roleTitle }} Schedule Calendar</h3>
                         <p class="text-xs text-gray-500 mt-0.5">ตารางงานของ {{ $staff->name }} แบบรายเดือน รายสัปดาห์ และรายวัน</p>
                     </div>
-                    @if($isCoach)
-                        <a href="{{ route('admin.private-schedule.index', ['coach_id' => $staff->id]) }}"
-                            class="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-700">
-                            จัดการ Private Schedule
-                        </a>
-                    @endif
+                    <a href="{{ route('admin.private-schedule.index', ['staff_id' => $staff->id]) }}"
+                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
+                        จัดการ Schedule
+                    </a>
                 </div>
 
                 <div class="mb-4 flex flex-wrap gap-4 text-xs text-gray-600">
-                    <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-emerald-500"></i>ว่าง</span>
                     <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-slate-500"></i>ไม่ว่าง</span>
                     @if($isCoach)
                         <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-orange-500"></i>คำขอ Private</span>
@@ -207,28 +204,13 @@
                 <input type="hidden" name="court_id" id="modal-court-id">
                 <input type="hidden" name="start_time" id="modal-time-start">
                 <input type="hidden" name="end_time" id="modal-time-end">
+                <input type="hidden" name="status" id="status-booked" value="booked">
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-2">สถานะผู้ช่วยสนาม/โค้ช</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="available" id="status-available" class="peer sr-only"
-                                required>
-                            <div
-                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
-                                <span class="w-2.5 h-2.5 inline-block bg-[#10b981] rounded-sm mr-1"></span>
-                                <span class="text-gray-700">ว่าง</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="booked" id="status-booked" class="peer sr-only"
-                                required>
-                            <div
-                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
-                                <span class="w-2.5 h-2.5 inline-block bg-[#f97316] rounded-sm mr-1"></span>
-                                <span class="text-gray-700">ไม่ว่าง</span>
-                            </div>
-                        </label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-2">สถานะ</label>
+                    <div class="flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
+                        <span class="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-slate-500"></span>
+                        ช่วงเวลานี้ไม่ว่าง
                     </div>
                 </div>
 
@@ -386,7 +368,7 @@
                 firstDay: 1,
                 height: 'auto',
                 nowIndicator: true,
-                selectable: true,
+                selectable: @js(!$isCoach),
                 selectMirror: true,
                 allDaySlot: false,
                 slotMinTime: '08:00:00',
@@ -406,6 +388,10 @@
                 },
                 events: @js(route('admin.staffs.schedule-events', $staff)),
                 select(info) {
+                    @if($isCoach)
+                        staffScheduleCalendar.unselect();
+                        return;
+                    @endif
                     const pad = value => String(value).padStart(2, '0');
                     const formatDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
                     const formatTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -417,8 +403,7 @@
                     document.getElementById('modal-court-name').textContent =
                         info.start.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
                     document.getElementById('modal-court-id').value = '';
-                    document.getElementById('status-available').checked = true;
-                    toggleDetailInput('available');
+                    toggleDetailInput('booked');
                     toggleModal('dragActionModal', true);
                     staffScheduleCalendar.unselect();
                 },
@@ -589,7 +574,7 @@
                 const detailText = this.getAttribute('data-detail');
                 globalTooltip.querySelector('#tt-title').innerText = `${this.getAttribute('data-court-name')} (${this.getAttribute('data-status')})`;
                 globalTooltip.querySelector('#tt-time').innerText = `เวลา: ${this.getAttribute('data-time-start')} - ${this.getAttribute('data-time-end')} น.`;
-                globalTooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่มีรายละเอียด/งานว่าง';
+                globalTooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่ระบุรายละเอียด';
             });
 
             slot.addEventListener('mouseleave', function () {
@@ -612,19 +597,9 @@
                 document.getElementById('modal-time-start').value = firstSlot.getAttribute('data-time-start');
                 document.getElementById('modal-time-end').value = lastSlot.getAttribute('data-time-end');
 
-                const isBooked = firstSlot.classList.contains('bg-[#f97316]');
-                document.getElementById('status-booked').checked = isBooked;
-                document.getElementById('status-available').checked = !isBooked;
-
-                toggleDetailInput(isBooked ? 'booked' : 'available');
+                toggleDetailInput('booked');
                 toggleModal('dragActionModal', true);
             }
-        });
-
-        document.querySelectorAll('input[name="status"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                toggleDetailInput(this.value);
-            });
         });
 
         document.addEventListener('click', function (e) {
