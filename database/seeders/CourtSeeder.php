@@ -9,7 +9,7 @@ class CourtSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (range(1, 4) as $i) {
+        foreach (range(1, 5) as $i) {
             Court::updateOrCreate(
                 ['name' => "Court {$i}"],
                 ['court_status' => 'open']

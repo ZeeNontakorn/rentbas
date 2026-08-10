@@ -31,6 +31,7 @@ class ProfileController extends Controller
             'name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . Auth::id(),
             'phone' => 'sometimes|nullable|max:10',
+            'profile_image' => 'prohibited',
             'current_password' => 'required_with:password|string',
             'password' => 'nullable|required_with:current_password|string|min:6|confirmed',
             'otp' => 'nullable|string|size:6'
@@ -40,6 +41,7 @@ class ProfileController extends Controller
             'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
             'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
             'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'profile_image.prohibited' => 'รูปโปรไฟล์สามารถจัดการได้โดยผู้ดูแลระบบเท่านั้น',
             'current_password.required_with' => 'กรุณากรอกรหัสผ่านเดิมเพื่อเปลี่ยนรหัสผ่านใหม่',
             'current_password.string' => 'กรุณากรอกรหัสผ่านเดิมให้ถูกต้อง',
             'password.required_with' => 'กรุณากรอกรหัสผ่านใหม่',

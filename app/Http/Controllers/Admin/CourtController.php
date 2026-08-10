@@ -12,7 +12,9 @@ use App\Models\Setting;
 use App\Models\Notification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
@@ -35,6 +37,25 @@ class CourtController extends Controller
             'court_status' => $data['court_status'],
             'min_booking_minutes' => 30, // default
             'slot_interval_minutes' => 30, // default
+        ]);
+
+        // สร้าง section "เต็มสนาม" (code = full) ให้อัตโนมัติเสมอทุกครั้งที่เพิ่มสนามใหม่
+        // ถ้าไม่มี section นี้ หน้าเลือกเวลาจะหา section ไม่เจอเลย แล้วโชว์
+        // "สนามนี้ยังไม่เปิดให้จอง" ทั้งที่ยังไม่ได้ปิดอะไรจริง (ดู buildAvailabilityMatrix())
+        $fullSection = CourtSection::create([
+            'court_id' => $court->id,
+            'code' => 'full',
+            'name' => 'เต็มสนาม',
+            'is_active' => true,
+        ]);
+
+        // เต็มสนามต้องบล็อกตัวเอง (กันจองซ้อนช่วงเวลาเดียวกัน) — จะเพิ่มการบล็อกกับ
+        // ครึ่ง a/b ทีหลังตอนแอดมินไปสร้าง section เหล่านั้นเพิ่มเอง
+        DB::table('court_section_blocks')->insert([
+            'court_section_id' => $fullSection->id,
+            'blocks_section_id' => $fullSection->id,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         if ($request->wantsJson()) {
@@ -108,40 +129,59 @@ class CourtController extends Controller
 
         $slots = [];
         if ($selectedCourt) {
-            $dateCarbon = Carbon::parse($date);
+            $now = now();
 
             // Check if court is globally closed
             $isGloballyClosed = ($selectedCourt->court_status === 'closed');
 
-            for ($h = 6; $h < 22; $h++) {
-                $start = sprintf('%02d:00:00', $h);
-                $end = sprintf('%02d:00:00', $h + 1);
+            $fullSection = $selectedCourt->defaultSection();
+            $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
 
-                $booking = Booking::where('court_id', $selectedCourt->id)
-                    ->whereDate('booking_date', $date)
-                    ->whereIn('status', ['pending', 'approved'])
-                    ->where('start_time', $start)
-                    ->where('end_time', $end)
-                    ->first();
+            // สำคัญ: ต้องใช้ interval ของสนามนี้จริงๆ (slot_interval_minutes) ไม่ใช่ค่า 30 นาทีตายตัว
+            // เพราะหน้าลูกค้า (BookingController::buildAvailabilityMatrix) ใช้ค่านี้เป็นตัวแบ่งกริดเวลา
+            // ถ้า hardcode 30 ไว้ตรงนี้ พอสนามไหนตั้ง interval เป็น 15/60 นาที กริดของหน้าแอดมินจะไม่ตรง
+            // กับกริดจริงที่ลูกค้าเห็น ทำให้ข้อมูลดูเพี้ยน/ไม่สัมพันธ์กัน
+            $interval = max(5, (int) ($selectedCourt->slot_interval_minutes ?? 30));
 
-                $closure = CourtClosure::where('court_id', $selectedCourt->id)
-                    ->whereDate('date', $date)
-                    ->where('start_time', '<', $end)
-                    ->where('end_time', '>', $start)
-                    ->first();
+            // ดึงการจองของวันนี้ทั้งหมดมาครั้งเดียว แล้วเช็ค overlap เอง (แทนการ query แบบ exact-match ต่อชั่วโมง
+            // ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง และไม่รู้จัก court_section conflict)
+            $dayBookings = Booking::where('court_id', $selectedCourt->id)
+                ->whereDate('booking_date', $date)
+                ->where(function ($query) {
+                    $query->whereIn('status', ['pending', 'approved'])
+                        ->orWhere(function ($lockQuery) {
+                            $lockQuery->where('status', 'pending_payment')
+                                ->where('locked_until', '>', now());
+                        });
+                })
+                ->get(['court_section_id', 'start_time', 'end_time', 'status']);
+
+            for ($m = 6 * 60; $m < 22 * 60; $m += $interval) {
+                $start = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
+                $endM = $m + $interval;
+                $end = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
+
+                $booking = $dayBookings->first(function ($b) use ($conflictIds, $start, $end) {
+                    return in_array($b->court_section_id, $conflictIds, true)
+                        && $b->start_time < $end && $b->end_time > $start;
+                });
+
+                $closureType = $selectedCourt->getClosureType($start, $end, $date, $fullSection);
 
                 $status = 'available';
 
                 if ($isGloballyClosed) {
                     $status = 'unavailable'; // Or a specific 'closed' status
-                } elseif ($closure) {
-                    $status = $closure->type; // 'maintenance' or 'unavailable'
                 } elseif ($booking) {
-                    $status = 'booking_' . $booking->status; // 'booking_pending' or 'booking_approved'
+                    // เช็คการจองจริงของลูกค้าก่อนเสมอ (สำคัญกว่า closure ที่แอดมินตั้งไว้) กันเคสข้อมูล
+                    // เก่าที่แอดมินเคยตั้งปิดทับช่วงที่มีคนจองอยู่แล้วซ่อนสถานะการจองจริงไป
+                    $status = 'booking_' . $booking->status; // 'booking_pending' | 'booking_approved' | 'booking_pending_payment'
+                } elseif ($closureType) {
+                    $status = $closureType; // 'maintenance' or 'unavailable'
                 }
 
                 $slots[] = [
-                    'label' => sprintf('%02d:00 - %02d:00', $h, $h + 1),
+                    'label' => sprintf('%02d:%02d - %02d:%02d', intdiv($m, 60), $m % 60, intdiv($endM, 60), $endM % 60),
                     'start' => $start,
                     'end'   => $end,
                     'status' => $status,
@@ -175,13 +215,48 @@ class CourtController extends Controller
             'status' => ['required', 'in:available,unavailable,maintenance'],
         ]);
 
+        // ห้ามแก้สถานะทับช่วงเวลาที่มีลูกค้าจองอยู่แล้ว (รออนุมัติ/กำลังชำระเงิน/อนุมัติแล้ว) — ต้องไปจัดการ
+        // ผ่านหน้าอนุมัติ/ยกเลิกการจองโดยตรงก่อน กันแอดมินตั้งสถานะทับจนข้อมูลไม่ตรงกับของจริงที่ลูกค้าเห็น
+        $court = Court::findOrFail($data['court_id']);
+        $fullSection = $court->defaultSection();
+        $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
+
+        $protectedBooking = Booking::where('court_id', $data['court_id'])
+            ->whereDate('booking_date', $data['date'])
+            ->whereIn('court_section_id', $conflictIds)
+            ->where('start_time', '<', $data['end_time'])
+            ->where('end_time', '>', $data['start_time'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
+            ->first();
+
+        if ($protectedBooking) {
+            $statusLabelMap = [
+                'pending_payment' => 'กำลังจอง (รอชำระเงิน)',
+                'pending' => 'รออนุมัติ',
+                'approved' => 'ถูกจองแล้ว',
+            ];
+            $label = $statusLabelMap[$protectedBooking->status] ?? $protectedBooking->status;
+
+            return back()->withErrors([
+                'status' => "ไม่สามารถแก้ไขสถานะช่วงเวลานี้ได้ เนื่องจากมีการจองอยู่แล้ว (สถานะ: {$label}) "
+                    . 'กรุณาอนุมัติ/ปฏิเสธ/ยกเลิกการจองนี้จากหน้ารายการจองก่อน',
+            ]);
+        }
+
         $statusLabel = match ($data['status']) {
             'unavailable' => 'ไม่ว่าง',
             'maintenance' => 'ปิดปรับปรุง',
             default => 'ว่าง',
         };
 
-        // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved)
+        // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved) — ถึงจุดนี้จะเหลือแต่เคสที่ไม่มีการจองจริง
+        // อยู่แล้ว (ผ่านการเช็ค $protectedBooking ด้านบนมาแล้ว) แต่คงโค้ดเดิมไว้เผื่อ edge case อื่นๆ
         $overlappingBookings = Booking::where('court_id', $data['court_id'])
             ->whereDate('booking_date', $data['date'])
             ->whereIn('status', ['pending', 'approved'])
@@ -245,6 +320,7 @@ class CourtController extends Controller
         $data = $request->validate([
             'name_a' => ['nullable', 'string', 'max:100'],
             'name_b' => ['nullable', 'string', 'max:100'],
+            'name_full' => ['nullable', 'string', 'max:100'],
             'return_date' => ['nullable', 'date'],
         ]);
 
@@ -256,15 +332,26 @@ class CourtController extends Controller
                 'name' => 'เต็มสนาม',
                 'is_active' => true,
             ]);
+        } elseif (!empty($data['name_full'])) {
+            $full->update(['name' => $data['name_full']]);
         }
 
+        // อัปเดต/สร้าง ครึ่ง A (เช็คว่ามีการส่งค่าเปิดใช้งานมาหรือไม่)
         $a = CourtSection::updateOrCreate(
             ['court_id' => $court->id, 'code' => 'a'],
-            ['name' => $data['name_a'] ?: 'ครึ่ง A', 'is_active' => true]
+            [
+                'name' => $data['name_a'] ?: 'ครึ่ง A',
+                'is_active' => $request->has('is_active_a'),
+            ]
         );
+
+        // อัปเดต/สร้าง ครึ่ง B (เช็คว่ามีการส่งค่าเปิดใช้งานมาหรือไม่)
         $b = CourtSection::updateOrCreate(
             ['court_id' => $court->id, 'code' => 'b'],
-            ['name' => $data['name_b'] ?: 'ครึ่ง B', 'is_active' => true]
+            [
+                'name' => $data['name_b'] ?: 'ครึ่ง B',
+                'is_active' => $request->has('is_active_b'),
+            ]
         );
 
         $this->syncHalfCourtBlockingMatrix($full, $a, $b);
@@ -272,7 +359,7 @@ class CourtController extends Controller
         return redirect()->route('admin.courts', [
             'court_id' => $court->id,
             'date' => $data['return_date'] ?? now()->toDateString(),
-        ])->with('success', 'แบ่งครึ่งสนามเรียบร้อยแล้ว (' . $a->name . ' / ' . $b->name . ')');
+        ])->with('success', 'บันทึกข้อมูลส่วนของสนามเรียบร้อยแล้ว');
     }
 
     /**
@@ -396,10 +483,21 @@ class CourtController extends Controller
                 continue;
             }
 
+            $settingKey = 'court_img_' . $court->id;
+            $old = Setting::where('key', $settingKey)->value('value');
+
+            if ($old && !preg_match('#^https?://#i', $old)) {
+                $relativePath = Setting::normalizeStoragePath($old);
+
+                if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+                    Storage::disk('public')->delete($relativePath);
+                }
+            }
+
             $path = $file->store('site', 'public');
 
             Setting::updateOrCreate(
-                ['key' => 'court_img_' . $court->id],
+                ['key' => $settingKey],
                 ['value' => 'media/' . $path]
             );
         }

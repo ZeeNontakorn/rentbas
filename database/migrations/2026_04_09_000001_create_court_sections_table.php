@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('court_sections', function (Blueprint $table) {
             $table->id()->autoIncrement();
-            $table->foreignId('court_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('court_id')->default(null)->constrained()->cascadeOnDelete();
             $table->string('code', 20);   // 'full' | 'a' | 'b' | ... (ขยายได้ในอนาคตถ้าแบ่งมากกว่า 2 ส่วน)
             $table->string('name');       // ชื่อที่แสดงผล เช่น "เต็มสนาม", "ครึ่งซ้าย"
             $table->boolean('is_active')->default(true);

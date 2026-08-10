@@ -24,17 +24,6 @@
     margin-bottom: 28px;
 }
 
-.auth-brand-ball {
-    width: 44px;
-    height: 44px;
-    background: #e86c2a;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-}
-
 .auth-brand-name {
     font-family: 'Kanit', sans-serif;
     font-size: 18px;
@@ -329,7 +318,6 @@
 
     {{-- Brand --}}
     <div class="auth-brand">
-        <div class="auth-brand-ball">🏀</div>
         <span class="auth-brand-name">Basketball Court Booking</span>
     </div>
 
@@ -441,7 +429,7 @@
 
     let hasConsented = false;
 
-    // ผูก field key กับ input element 
+    // ผูก field key กับ input element
     const fields = {
         name: document.getElementById('regName'),
         email: document.getElementById('regEmail'),
@@ -564,10 +552,10 @@
     });
 
     confirmBtn.addEventListener('click', function () {
-        if (!checkbox.checked) return; 
+        if (!checkbox.checked) return;
         hasConsented = true;
         modal.classList.remove('show');
-        form.submit(); 
+        form.submit();
     });
 
     cancelBtn.addEventListener('click', function () {

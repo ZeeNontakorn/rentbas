@@ -4,6 +4,7 @@
 
 @section('content')
 @php
+    // ดึงค่าการตั้งค่าเว็บไซต์จากฐานข้อมูล
     $site = \App\Models\Setting::values([
         'hero_img_1',
         'hero_img_2',
@@ -24,6 +25,7 @@
 @endphp
 
 @php
+    // กรองรูปภาพสำหรับทำ Hero Slider
     $heroSlides = array_values(array_filter([
         $site['hero_img_1'] ?? null,
         $site['hero_img_2'] ?? null,
@@ -265,13 +267,11 @@ html { scroll-behavior: smooth; }
 
 /* ─── COURTS SECTION ─── */
 .courts-section {
-    /* ใส่ Overlay สีดำจางๆ ทับรูปสนามบาส */
     background: linear-gradient(rgba(0, 31, 63, 0.8), rgba(0, 17, 34, 0.8)),
                 url('{{ $site['courts_bg'] }}');
-    background-size: cover;      /* ให้รูปขยายเต็มพื้นที่ */
+    background-size: cover;
     background-position: center;
-    background-attachment: fixed; /* (Optional) ทำเอฟเฟกต์ Parallax ให้รูปนิ่งขณะเลื่อน */
-
+    background-attachment: fixed;
     padding-top: 60px;
     padding-bottom: 60px;
 }
@@ -319,6 +319,7 @@ html { scroll-behavior: smooth; }
     background: var(--ore); color: #fff;
     font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 600;
     border-radius: 6px; text-align: center; transition: background .2s;
+    cursor: pointer;
 }
 .court-btn-book:hover { background: var(--ore-d); }
 .court-btn-disabled {
@@ -327,6 +328,122 @@ html { scroll-behavior: smooth; }
     font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 600;
     border-radius: 6px; text-align: center; cursor: not-allowed;
 }
+
+/* ─── COURSES / BASKETBALL SCHOOL SECTION ─── */
+.courses-section {
+    background: var(--cream);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.courses-header { text-align: center; margin-bottom: 40px; }
+.courses-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.courses-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.courses-subtitle { font-size: 13.5px; color: #868e96; }
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+.courses-group + .courses-group { margin-top: 48px; }
+.courses-group-title { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; color: var(--ink); font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 700; }
+.courses-group-title::before { width: 5px; height: 26px; border-radius: 8px; background: var(--ore); content: ''; }
+.session-chip { display: inline-flex; width: fit-content; margin-bottom: 14px; background: #ede9fe; color: #6d28d9; }
+
+/* card */
+.course-card2 {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #edeff2;
+    box-shadow: 0 2px 10px rgba(13,15,30,.04);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+.course-card2:hover { transform: translateY(-6px); box-shadow: 0 20px 36px rgba(13,15,30,.12); }
+
+/* image + overlay title */
+.course-thumb2 { height: 190px; position: relative; overflow: hidden; }
+.course-thumb2 img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.course-card2:hover .course-thumb2 img { transform: scale(1.08); }
+.course-thumb2-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,15,30,.92) 0%, rgba(13,15,30,.15) 55%, rgba(13,15,30,0) 100%);
+}
+.course-badge-featured {
+    position: absolute; top: 12px; right: 12px; z-index: 1;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 5px 11px; border-radius: 20px; letter-spacing: .03em;
+    box-shadow: 0 4px 10px rgba(232,108,42,.35);
+}
+.course-name2 {
+    position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 1;
+    font-family: 'Kanit', sans-serif; font-size: 18px; font-weight: 700;
+    color: #fff; line-height: 1.25;
+}
+
+/* body */
+.course-body2 { padding: 16px 18px 20px; display: flex; flex-direction: column; flex: 1; }
+.course-meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.course-chip {
+    font-size: 10.5px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; background: #f1f3f5; color: #495057;
+}
+.course-chip-age { background: rgba(232,108,42,.1); color: var(--ore-d); }
+
+.course-desc2 {
+    font-size: 12.5px; color: #868e96; line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.course-info-block {
+    background: #f8f9fa; border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 16px;
+}
+.course-info-line {
+    font-size: 12px; color: #495057; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 0;
+}
+.course-info-line + .course-info-line { border-top: 1px dashed #e9ecef; }
+.course-info-icon { width: 13px; height: 13px; flex-shrink: 0; color: var(--ore); }
+.course-info-muted { color: #adb5bd; }
+.course-spots-tag {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    padding: 2px 9px; border-radius: 20px;
+    background: #fff4e6; color: #e67700; white-space: nowrap;
+}
+
+.course-price-row {
+    margin-top: auto; padding-top: 16px; border-top: 1px solid #f1f3f5;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
+}
+.course-price { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--ink); line-height: 1; letter-spacing: .02em; }
+.course-price-tag {
+    font-size: 10px; font-weight: 700; color: var(--ore);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px;
+}
+.course-price-sub { font-size: 10.5px; color: #adb5bd; margin-top: 3px; }
+.course-btn-enroll {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 16px; background: var(--ink); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 12.5px; font-weight: 600;
+    border-radius: 9px; transition: background .2s, transform .2s; white-space: nowrap;
+}
+.course-btn-enroll:hover { background: var(--ore); }
+.course-btn-arrow { width: 14px; height: 14px; transition: transform .2s; }
+.course-btn-enroll:hover .course-btn-arrow { transform: translateX(3px); }
+
+.courses-empty {
+    text-align: center; color: #adb5bd; padding: 56px 0; font-size: 13.5px;
+}
+.courses-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
 
 /* ─── BOOKING / CALENDAR SECTION ─── */
 .booking-section {
@@ -441,12 +558,27 @@ html { scroll-behavior: smooth; }
     font-size: 15px; font-weight: 700; color: #fff;
 }
 .bk-sch-time { font-size: 12px; color: rgba(255,255,255,.45); }
-.bk-sch-courts { display: flex; gap: 6px; }
+.bk-sch-courts { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ─── ปุ่มแท็บรายชื่อสนามในแถบสีดำ (Tab เลือกสนาม) ─── */
 .bk-court-pill {
-    font-size: 10px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 11px; font-weight: 600;
+    padding: 6px 14px; border-radius: 6px;
     background: rgba(255,255,255,.1); color: rgba(255,255,255,.7);
-    letter-spacing: .04em;
+    letter-spacing: .04em; cursor: pointer;
+    transition: all .2s ease;
+    border: 1px solid transparent;
+}
+.bk-court-pill:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+.bk-court-pill.active {
+    background: var(--ore);
+    color: #fff;
+    border-color: rgba(255,255,255,.3);
+    box-shadow: 0 2px 8px rgba(232,108,42,.4);
 }
 
 .sch-wrap { overflow-y: auto; max-height: 380px; }
@@ -494,6 +626,10 @@ html { scroll-behavior: smooth; }
     background: #fff5f5; color: #c92a2a; cursor: default;
     border: 1px solid #ffc9c9;
 }
+.slot-checkout {
+    background: #fff3bf; color: #e67700; cursor: default;
+    border: 1px solid #ffe066;
+}
 .slot-past {
     background: #f1f3f5; color: #adb5bd; cursor: default;
     border: 1px solid #dee2e6;
@@ -514,6 +650,7 @@ html { scroll-behavior: smooth; }
 .slot-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .slot-free .slot-dot { background: #2f9e44; }
 .slot-booked .slot-dot { background: #c92a2a; }
+.slot-checkout .slot-dot { background: #e67700; }
 .slot-past .slot-dot { background: #adb5bd; }
 .slot-closed .slot-dot { background: #e67700; }
 .slot-maintenance .slot-dot { background: #f29c41; }
@@ -524,6 +661,91 @@ html { scroll-behavior: smooth; }
 .sch-empty-icon { font-size: 32px; margin-bottom: 8px; opacity: .5; }
 
 /* ─── COMMUNITY ─── */
+.facilities-section {
+    background: var(--cream);
+    color: var(--ink);
+    overflow: hidden;
+    padding: 72px max(40px, calc((100% - var(--max-w)) / 2)) 0;
+}
+.facilities-head, .reviews-head {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+}
+.facilities-label, .reviews-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.facilities-title { font-size: clamp(30px, 4vw, 44px); font-weight: 800; line-height: 1.15; color: var(--ink); }
+.facilities-sub { margin-top: 9px; max-width: 650px; color: #6b7280; font-size: 13px; line-height: 1.7; }
+.slider-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.slider-btn {
+    width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(13,15,30,.16); background: transparent;
+    color: var(--ink); cursor: pointer; font-size: 18px; transition: .2s; display: flex; align-items: center; justify-content: center;
+}
+.slider-btn:hover { background: var(--ore); border-color: var(--ore); color: #fff; }
+.facility-track, .review-track {
+    display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    scrollbar-width: none; padding: 26px 0 16px;
+}
+.facility-track::-webkit-scrollbar, .review-track::-webkit-scrollbar { display: none; }
+.facility-card {
+    flex: 0 0 min(72vw, 420px); height: 380px; border-radius: 16px; overflow: hidden; position: relative;
+    scroll-snap-align: start; background: var(--navy-d); color: #fff;
+}
+.facility-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s; }
+.facility-card:hover img { transform: scale(1.04); }
+.facility-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(13,15,30,.95), rgba(13,15,30,.06) 72%); }
+.facility-index {
+    position: absolute; top: 16px; left: 16px; z-index: 2; padding: 6px 10px; border: 1px solid rgba(255,255,255,.22);
+    border-radius: 20px; background: rgba(13,15,30,.5); font-size: 10px; letter-spacing: .1em;
+}
+.facility-card-body { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 22px; }
+.facility-card-title { font-size: 24px; font-weight: 700; color: #fff; }
+.facility-card-desc { margin-top: 5px; color: rgba(255,255,255,.62); font-size: 12px; line-height: 1.6; }
+.facility-score { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+.facility-stars, .review-stars { color: #fbbf24; letter-spacing: 1px; }
+.facility-score strong { font-size: 17px; }
+.facility-score small { color: rgba(255,255,255,.5); }
+.reviews-wrap {
+    position: relative; margin: 48px 0 72px; padding: 8px 0 0; color: var(--ink);
+    background: transparent;
+}
+.reviews-wrap::before { display: none; }
+.reviews-head { align-items: center; }
+.reviews-heading-row { display: flex; align-items: center; gap: 20px; }
+.reviews-title { font-size: clamp(26px, 3vw, 38px); font-weight: 800; line-height: 1.2; color: var(--ink); }
+.reviews-summary { color: #7b746e; font-size: 12px; margin-top: 7px; }
+.reviews-score {
+    display: flex; align-items: center; gap: 12px; min-width: 130px; padding: 11px 14px; border: 1px solid #f1dfd1;
+    border-radius: 14px; background: rgba(255,247,240,.9);
+}
+.reviews-score strong { color: var(--ink); font-size: 25px; line-height: 1; }
+.reviews-score-stars { color: #fbbf24; font-size: 12px; letter-spacing: 1px; }
+.reviews-score small { display: block; margin-top: 2px; color: #92877d; font-size: 9px; }
+.write-review-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 19px; border-radius: 12px;
+    background: var(--ore); box-shadow: 0 10px 25px rgba(232,108,42,.25); color: #fff !important; font-size: 13px; font-weight: 700; transition: .2s;
+}
+.write-review-btn:hover { background: var(--ore-d); transform: translateY(-1px); }
+.review-track { gap: 14px; padding: 28px 2px 2px; }
+.review-card {
+    position: relative; flex: 0 0 min(82vw, 460px); padding: 22px; border: 0; border-radius: 18px;
+    background: #fff; box-shadow: 0 14px 38px rgba(67,45,28,.11); scroll-snap-align: start;
+}
+.review-user-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.review-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.review-avatar {
+    width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ff8a4c, var(--ore)); color: #fff; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.review-name { color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.review-member { color: #18976b; font-size: 10px; margin-top: 2px; }
+.review-comment { margin-top: 20px; min-height: 54px; color: #5e5a56; font-size: 13.5px; line-height: 1.8; }
+.review-ratings { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.review-rating-chip { padding: 5px 9px; border: 1px solid #f3ded0; border-radius: 20px; background: #fff5ee; color: #c85e25; font-size: 10px; }
+.review-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 12px; }
+.review-images img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 7px; }
+.review-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; color: #aaa19a; font-size: 10px; }
+.reviews-empty { width: 100%; padding: 34px; border: 1px dashed #e5d8ce; border-radius: 14px; color: #9a918a; text-align: center; font-size: 13px; }
+
 .community-section {
     background: var(--navy-d);
     padding-top: 64px;
@@ -653,9 +875,19 @@ html { scroll-behavior: smooth; }
     .community-img-wrap { margin-bottom: 36px; }
     .hero-stats { display: none; }
     .courts-grid { grid-template-columns: repeat(2,1fr); }
+    .courses-section { padding-left: 20px !important; padding-right: 20px !important; }
+    .courses-grid { grid-template-columns: repeat(2,1fr); }
+    .facilities-section { padding-left: 20px; padding-right: 20px; }
+    .facilities-head, .reviews-head { align-items: flex-start; flex-direction: column; }
+    .facility-card { flex-basis: 84vw; height: 350px; }
+    .reviews-wrap { margin: 36px 0 52px; padding: 4px 0 0; }
+    .reviews-heading-row { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .reviews-score { min-width: 0; }
+    .review-card { flex-basis: 88vw; }
 }
 @media (max-width: 480px) {
     .courts-grid { grid-template-columns: 1fr; }
+    .courses-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 52px; }
 }
 
@@ -704,6 +936,127 @@ html { scroll-behavior: smooth; }
 .home-content .btn-white:hover {
     background: rgba(255,255,255,.08);
     border-color: rgba(255,255,255,.6);
+}
+
+/* ─── ครึ่งสนาม ─── */
+.half-court-divider {
+    margin: 14px 0 10px;
+    border-top: 1px dashed rgba(255,255,255,.15);
+}
+.half-court-actions {
+    display: flex;
+    gap: 8px;
+}
+.court-btn-half {
+    flex: 1;
+    padding: 7px;
+    background: rgba(255,255,255,.05);
+    color: rgba(255,255,255,.8);
+    font-family: 'Kanit', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,.1);
+    transition: background .2s, color .2s, border-color .2s;
+    pointer-events: none; /* คลิกไม่ได้แต่โฮเวอร์สีติดเหมือนเดิม */
+}
+.court-btn-half:hover {
+    background: var(--ore);
+    color: #fff;
+    border-color: var(--ore);
+}
+
+/* ─── PACKAGES SECTION ─── */
+.packages-section {
+    background: var(--navy-d);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.packages-header { text-align: center; margin-bottom: 40px; }
+.packages-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.packages-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: #fff; margin-bottom: 8px; }
+.packages-subtitle { font-size: 13.5px; color: rgba(255,255,255,.45); }
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+@media (max-width: 768px) { .packages-grid { grid-template-columns: 1fr; } }
+
+.package-card2 {
+    background: var(--navy);
+    border-radius: 18px;
+    padding: 28px 24px;
+    border: 1px solid rgba(255,255,255,.07);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+    position: relative;
+}
+.package-card2:hover {
+    transform: translateY(-6px);
+    border-color: rgba(232,108,42,.4);
+    box-shadow: 0 20px 36px rgba(0,0,0,.28);
+}
+.package-card2.featured { border-color: var(--ore); }
+.package-badge-featured {
+    position: absolute; top: 12px; right: 12px; left: auto; z-index: 1;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px; letter-spacing: .03em;
+    box-shadow: 0 4px 10px rgba(232,108,42,.35);
+}
+.package-name {
+    font-family: 'Kanit', sans-serif; font-size: 19px; font-weight: 700;
+    color: #fff; margin-bottom: 8px;
+}
+.package-desc {
+    font-size: 12.5px; color: rgba(255,255,255,.45);
+    line-height: 1.7; margin-bottom: 22px;
+    min-height: 42px;
+}
+.package-price-block {
+    padding-top: 18px; padding-bottom: 22px;
+    border-top: 1px dashed rgba(255,255,255,.1);
+    margin-top: auto;
+}
+.package-price-label {
+    font-size: 10px; font-weight: 700; color: var(--ore);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+}
+.package-price {
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px;
+    color: #fff; letter-spacing: .02em; line-height: 1;
+}
+.package-price small { font-family: 'Sarabun', sans-serif; font-size: 13px; color: rgba(255,255,255,.4); font-weight: 400; }
+.package-btn {
+    display: block; text-align: center;
+    padding: 12px; border-radius: 9px;
+    background: var(--ore); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 13.5px; font-weight: 600;
+    transition: background .2s;
+}
+.package-btn:hover { background: var(--ore-d); }
+
+.packages-empty {
+    text-align: center; color: rgba(255,255,255,.35); padding: 56px 0; font-size: 13.5px;
+}
+.packages-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
+
+
+.package-thumb2 { height: 170px; margin: -28px -24px 20px; position: relative; overflow: hidden; border-radius: 18px 18px 0 0; }
+.package-thumb2 img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.package-card2:hover .package-thumb2 img { transform: scale(1.08); }
+.package-thumb2-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,15,30,.55) 0%, rgba(13,15,30,0) 45%);
 }
 </style>
 
@@ -773,8 +1126,8 @@ html { scroll-behavior: smooth; }
             {{ $site['about_desc'] }}
         </p>
         <div class="about-checks">
-            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 4 สนาม</div>
-            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอ ระบบ LED</div>
+            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 2 สนาม</div>
+            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอด้วยระบบ LED</div>
             <div class="check-row"><div class="check-icon">✓</div>บริการลูกค้าตลอด 7 วัน</div>
             <div class="check-row"><div class="check-icon">✓</div>จองออนไลน์ได้ 24 ชั่วโมง</div>
         </div>
@@ -834,7 +1187,51 @@ html { scroll-behavior: smooth; }
                         </span>
                     </div>
                     @if($isOpen)
-                        <a href="{{ route('booking.index', ['court_id' => $court->id]) }}" class="court-btn-book">จอง</a>
+                        <!-- คลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
+                        <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
+
+                        <div class="half-court-divider"></div>
+                        <div class="half-court-actions">
+                            @php
+                                $sections = collect();
+                                if (method_exists($court, 'sections') && $court->sections) {
+                                    $sections = $court->sections;
+                                } elseif (method_exists($court, 'courtSections') && $court->courtSections) {
+                                    $sections = $court->courtSections;
+                                } elseif (isset($court->sections)) {
+                                    $sections = $court->sections;
+                                }
+                                $usesSectionSystem = $sections->isNotEmpty();
+                            @endphp
+
+                            @if($usesSectionSystem)
+                                @php
+                                    $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
+                                    $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
+                                        $isActive = !isset($s->is_active) || $s->is_active;
+                                        return $s->id !== $defaultSectionId && $isActive;
+                                    });
+                                @endphp
+
+                                @if($halfSections->isNotEmpty())
+                                    @foreach($halfSections as $section)
+                                        <a href="javascript:void(0);" class="court-btn-half">
+                                            {{ $section->name ?? 'ครึ่งสนาม' }}
+                                        </a>
+                                    @endforeach
+                                @else
+                                    <div class="court-btn-disabled" style="flex: 1; padding: 7px; font-size: 12px;">ครึ่งสนามปิดให้บริการ</div>
+                                @endif
+
+                            @else
+                                <a href="javascript:void(0);" class="court-btn-half">
+                                    {{ $court->half_a_name ?? 'ครึ่ง A' }}
+                                </a>
+                                <a href="javascript:void(0);" class="court-btn-half">
+                                    {{ $court->half_b_name ?? 'ครึ่ง B' }}
+                                </a>
+                            @endif
+                        </div>
                     @else
                         <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
                     @endif
@@ -845,7 +1242,7 @@ html { scroll-behavior: smooth; }
 </section>
 
 {{-- ═══ BOOKING CALENDAR ═══ --}}
-<section class="booking-section">
+<section class="booking-section" id="booking-section">
     <p class="booking-label">Check Courts Booking</p>
     <h2 class="booking-title">ดูตารางการจองสนาม</h2>
 
@@ -881,6 +1278,7 @@ html { scroll-behavior: smooth; }
                     <div class="bk-sch-date" id="bk-date-label">เลือกวันที่เพื่อดูตาราง</div>
                     <div class="bk-sch-time" id="bk-time-label"></div>
                 </div>
+                <!-- แถบสีดำแสดงปุ่มเลือกสนาม (Tabs) -->
                 <div class="bk-sch-courts" id="bk-court-pills"></div>
             </div>
             <div class="sch-wrap">
@@ -926,6 +1324,152 @@ html { scroll-behavior: smooth; }
     </div>
 </section>
 
+{{-- ═══ COURSES / BASKETBALL SCHOOL ═══ --}}
+<section class="courses-section" data-aos="fade-up">
+    <div class="courses-header">
+        <p class="courses-label">Basketball Clinic</p>
+        <h2 class="courses-title">โรงเรียนสอนบาสเกตบอล</h2>
+        <p class="courses-subtitle">คอร์สเรียนบาสเกตบอลกับโค้ชมืออาชีพ เลือกคอร์สที่ใช่สำหรับคุณ</p>
+    </div>
+
+@if(($trainingCourses ?? collect())->isEmpty())
+    <div class="courses-empty">
+        <div class="courses-empty-icon">🏀</div>
+        ขณะนี้ยังไม่มีคอร์สเปิดรับสมัคร
+    </div>
+@else
+    <div class="courses-grid">
+        @foreach($trainingCourses as $tCourse)
+            @php
+                $tPackage = $tCourse->packages->sortBy(fn ($package) => (float) $package->total_price)->first();
+                $courseType = $tCourse->course_type;
+            @endphp
+            <div class="course-card2" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                <div class="course-thumb2">
+                    <img src="{{ $tCourse->image_url ?: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop' }}"
+                         alt="{{ $tCourse->course_name }}" {!! $imageFallback !!}>
+                    <div class="course-thumb2-overlay"></div>
+                    @if($tPackage && $tPackage->is_featured)
+                        <span class="course-badge-featured">⭐ แนะนำ</span>
+                    @endif
+                    <div class="course-name2">{{ $tCourse->course_name }}</div>
+                </div>
+                <div class="course-body2">
+                    @if($courseType === 'schedule')
+                    <div class="course-meta-row">
+                        @foreach($tCourse->targetGroups as $group)
+                            <span class="course-chip">{{ $group->target_group }}</span>
+                        @endforeach
+                        <span class="course-chip course-chip-age">อายุ {{ $tCourse->age_range_label }}</span>
+                    </div>
+
+                    @if($tCourse->description)
+                        <p class="course-desc2">{{ $tCourse->description }}</p>
+                    @endif
+                    @endif
+
+                    @if($courseType === 'schedule')
+                    <div class="course-info-block">
+                        @forelse($tCourse->schedules as $tSchedule)
+                            <div class="course-info-line">
+                                <svg class="course-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>{{ $tSchedule->day_type_label }} · {{ \Illuminate\Support\Carbon::parse($tSchedule->start_time)->format('H:i') }}-{{ \Illuminate\Support\Carbon::parse($tSchedule->end_time)->format('H:i') }} น.</span>
+                                @if($tSchedule->is_limited_spots)
+                                    <span class="course-spots-tag">{{ $tSchedule->spots_label }}</span>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="course-info-line course-info-muted">ยังไม่กำหนดรอบเวลาเรียน</div>
+                        @endforelse
+                    </div>
+                    @else
+                        <span class="course-chip session-chip">Session Course</span>
+                        <p class="course-desc2">คอร์สรายครั้ง ดูรายละเอียดเพิ่มเติมจากภาพประกอบ</p>
+                    @endif
+
+                    @if($tPackage)
+                        @if($tCourse->packages->count() > 1)
+                            <div class="mb-3 flex flex-wrap gap-2">
+                                @foreach($tCourse->packages as $coursePackage)
+                                    <span class="course-chip">{{ $coursePackage->total_sessions }} ครั้ง · {{ number_format($coursePackage->total_price, 0) }} บาท</span>
+                                @endforeach
+                            </div>
+                        @endif
+                        <div class="course-price-row">
+                            <div>
+                                <div class="course-price-tag">เริ่มต้น</div>
+                                <div class="course-price">฿{{ number_format($tPackage->total_price, 0) }}</div>
+                                <div class="course-price-sub">
+                                    {{ $tPackage->total_sessions }} ครั้ง ({{ number_format($tPackage->price_per_session, 0) }} บาท/ครั้ง) · {{ $tPackage->validity_label }}
+                                </div>
+                            </div>
+                            <a href="{{ route('courses.show', $tCourse) }}" class="course-btn-enroll">
+                                สมัครเรียนเลย
+                                <svg class="course-btn-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+@endif
+</section>
+
+@if($packages->isNotEmpty())
+    {{-- ═══ PACKAGES ═══ --}}
+    <section class="packages-section" id="packages" data-aos="fade-up">
+        <div class="packages-header">
+            <p class="packages-label">Package</p>
+            <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
+            <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
+        </div>
+
+        @if($packages->isEmpty())
+            <div class="packages-empty">
+                <div class="packages-empty-icon">📦</div>
+                ขณะนี้ยังไม่มีแพ็กเกจเปิดให้บริการ
+            </div>
+        @else
+            <div class="packages-grid">
+                @foreach($packages as $package)
+                    <div class="package-card2 {{ $loop->first ? 'featured' : '' }}" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                        <div class="package-thumb2">
+                            <img src="{{ $package->image ? asset('storage/' . $package->image) : 'https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=800&auto=format&fit=crop' }}"
+                                 alt="{{ $package->name }}" {!! $imageFallback !!}>
+                            <div class="package-thumb2-overlay"></div>
+                        </div>
+                        <p class="package-name">{{ $package->name }}</p>
+                        <p class="package-desc">{{ $package->description }}</p>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                ใช้ได้ <strong style="color:#fff;">{{ $package->num_of_use }}</strong> ครั้ง
+                            </span>
+                        </div>
+                        <div class="package-price-block">
+                            <p class="package-price-label">ราคา</p>
+                            <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
+                        </div>
+                        @guest
+                        <a href="{{ route('login') }}" class="package-btn">เข้าสู่ระบบเพื่อซื้อ</a>
+                        @else
+                        <form action="{{ route('package-checkout.purchase', $package) }}" method="POST" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="package-btn" style="width:100%;border:none;cursor:pointer;font:inherit;">
+                                เลือกแพ็กเกจนี้
+                            </button>
+                        </form>
+                        @endguest
+                        </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+@endif
+
 {{-- ═══ PROMOTIONS ═══ --}}
 <section class="promo-section" data-aos="fade-up">
     <div class="promo-header">
@@ -958,6 +1502,9 @@ html { scroll-behavior: smooth; }
     </a>
 </section>
 
+{{-- ═══ FACILITIES & MEMBER REVIEWS ═══ --}}
+@include('partials.home-facilities')
+
 {{-- ═══ FOOTER ═══ --}}
 <footer class="footer" data-aos="fade-in">
     <div class="footer-grid">
@@ -983,7 +1530,7 @@ html { scroll-behavior: smooth; }
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
                     <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">thata_homecourt
+                        <img class="icon-footer" src="https://128/174/174855.png" alt="">thata_homecourt
                     </a>
                     <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
@@ -1021,10 +1568,89 @@ html { scroll-behavior: smooth; }
 <script>
 const HERO_SLIDES = @json($heroSlides);
 
-// ─── COURTS DATA จาก DB ───
-const COURTS = @json($courts->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values());
+/**
+ * แปลงข้อมูลสนามและดึงแป้นย่อย (Sections / ครึ่งสนาม) ของแต่ละสนามจากฐานข้อมูล
+ * เพื่อนำมาใช้สร้าง Tabs เลือกสนามและคอลัมน์ในตารางจอง
+ */
+@php
+    $courtsAllData = $courts->map(function($c) {
+        $sections = collect();
+        if (method_exists($c, 'sections') && $c->sections) {
+            $sections = $c->sections;
+        } elseif (method_exists($c, 'courtSections') && $c->courtSections) {
+            $sections = $c->courtSections;
+        } elseif (isset($c->sections)) {
+            $sections = $c->sections;
+        }
 
-// ─── HERO SLIDESHOW ───
+        $defaultSectionId = method_exists($c, 'defaultSection') && $c->defaultSection() ? $c->defaultSection()->id : null;
+
+        // กรองเอาเฉพาะครึ่งสนามหรือแป้นย่อยที่ไม่ใช่เต็มสนามหลัก
+        $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
+            $isActive = !isset($s->is_active) || $s->is_active;
+            return $s->id !== $defaultSectionId && $isActive;
+        });
+
+        // ถ้ามีข้อมูล Sections ให้ใช้
+        if ($halfSections->isNotEmpty()) {
+            $sectionsList = $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values();
+        } else {
+            // เช็คว่าเคยแบ่งครึ่งสนามแบบระบบเดิม (มีชื่อครึ่ง A/B) ไว้หรือไม่
+            if (!empty($c->half_a_name) || !empty($c->half_b_name)) {
+                $sectionsList = collect([
+                    ['id' => $c->id, 'section_id' => 'half_a', 'name' => $c->half_a_name ?? 'ครึ่ง A'],
+                    ['id' => $c->id, 'section_id' => 'half_b', 'name' => $c->half_b_name ?? 'ครึ่ง B']
+                ]);
+            } else {
+                // กรณียังไม่มีการแบ่งสนามเลย ให้แสดงเป็นแบบเต็มสนาม (1 คอลัมน์)
+                $sectionsList = collect([
+                    ['id' => $c->id, 'section_id' => null, 'name' => 'เต็มสนาม']
+                ]);
+            }
+        }
+
+        return [
+            'id' => $c->id,
+            'name' => $c->name,
+            'sections' => $sectionsList
+        ];
+    })->values();
+@endphp
+
+const COURTS_DATA = @json($courtsAllData);
+let currentCourtId = COURTS_DATA.length > 0 ? COURTS_DATA[0].id : null;
+
+/**
+ * ดึงรายการแป้นย่อย (2 แป้น) ของสนามที่ผู้ใช้งานกำลังเลือกดูอยู่ปัจจุบัน
+ */
+function getActiveCourts() {
+    const court = COURTS_DATA.find(c => c.id == currentCourtId);
+    if (!court) return [];
+    return court.sections.map(s => ({
+        id: court.id,
+        section_id: s.section_id,
+        name: s.name
+    }));
+}
+
+/**
+ * ฟังก์ชันสำหรับเลื่อนหน้าจอไปยังส่วนตารางจองและเลือกสนามนั้นทันที
+ */
+function scrollToBookingAndSelect(courtId) {
+    currentCourtId = courtId;
+    buildCourtHeaders();
+    if (selDate) {
+        renderSch(selDate);
+    }
+    const bookingSection = document.getElementById('booking-section');
+    if (bookingSection) {
+        bookingSection.scrollIntoView({ behavior: 'smooth' , block: 'center'});
+    }
+}
+
+/**
+ * ระบบสลับภาพพื้นหลัง Hero Section อัตโนมัติ
+ */
 function initHeroSlideshow() {
     const hero = document.getElementById('hero-section');
     const fader = document.getElementById('hero-bg-fader');
@@ -1057,37 +1683,65 @@ function initHeroSlideshow() {
     }, rotationMs);
 }
 
+document.querySelectorAll('[data-slider]').forEach(button => {
+    button.addEventListener('click', () => {
+        const track = document.getElementById(button.dataset.slider);
+        if (!track || !track.firstElementChild) return;
+        const distance = track.firstElementChild.getBoundingClientRect().width + 16;
+        track.scrollBy({ left: distance * Number(button.dataset.direction), behavior: 'smooth' });
+    });
+});
+
 // ─── SCROLL TOP ───
+// ควบคุมการแสดงผลปุ่ม Scroll to Top
 window.addEventListener('scroll', () => {
     document.getElementById('scroll-top').classList.toggle('show', window.scrollY > 300);
 });
 
-// ─── BUILD COURT HEADERS (dynamic) ───
+/**
+ * สร้างปุ่มเลือกสนาม (Tabs) ด้านบน และหัวตารางคอลัมน์แป้นย่อย (2 แป้น) ตามสนามที่เลือก
+ */
 function buildCourtHeaders() {
     const pills = document.getElementById('bk-court-pills');
     const thead = document.getElementById('sch-thead');
+
+    // 1. สร้างปุ่มแท็บรายชื่อสนามในแถบสีดำ
     let pillsHtml = '';
+    COURTS_DATA.forEach(c => {
+        const activeClass = c.id == currentCourtId ? 'active' : '';
+        pillsHtml += `<span class="bk-court-pill ${activeClass}" onclick="changeCourt(${c.id})">${c.name}</span>`;
+    });
+    pills.innerHTML = pillsHtml;
+
+    // 2. สร้าง Header คอลัมน์ตารางเฉพาะ 2 แป้นของสนามที่เลือก
+    let activeCourts = getActiveCourts();
     let theadHtml = '<tr><th>เวลา</th>';
-    COURTS.forEach(c => {
-        pillsHtml += `<span class="bk-court-pill">${c.name}</span>`;
+    activeCourts.forEach(c => {
         theadHtml += `<th>${c.name}</th>`;
     });
     theadHtml += '</tr>';
-    pills.innerHTML = pillsHtml;
     thead.innerHTML = theadHtml;
+}
+
+/**
+ * ฟังก์ชันทำงานเมื่อผู้ใช้คลิกเปลี่ยนสนามที่แท็บด้านบน
+ */
+function changeCourt(courtId) {
+    currentCourtId = courtId;
+    buildCourtHeaders();
+    if (selDate) {
+        renderSch(selDate); // โหลดตารางเวลาใหม่ตามสนามที่เปลี่ยน
+    }
 }
 
 // ─── CALENDAR ENGINE ───
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-const HOURS = [];
-for (let h = 6; h < 22; h++) HOURS.push(String(h).padStart(2,'0') + ':00');
-
 let calYear, calMonth, selDate = null;
-let monthStatus = {};   // { '2026-07-05':'full', '2026-07-06':'free', ... } จาก backend
+let monthStatus = {};
 
-// ดึงสรุปว่าง/เต็มของเดือนที่กำลังแสดง แล้ววาดปฏิทินใหม่
+// โหลดสถานะการจองรายเดือนจากระบบเพื่อทำจุดสีแสดงสถานะในปฏิทิน
 async function loadMonthStatus() {
     const m = calYear + '-' + String(calMonth + 1).padStart(2,'0');
     try {
@@ -1099,6 +1753,7 @@ async function loadMonthStatus() {
     renderCal();
 }
 
+// วาดปฏิทินรายเดือน
 function renderCal() {
     const dim = new Date(calYear, calMonth + 1, 0).getDate();
     const fd  = new Date(calYear, calMonth, 1).getDay();
@@ -1116,13 +1771,13 @@ function renderCal() {
         const isPast = new Date(calYear, calMonth, d) < new Date(td.getFullYear(), td.getMonth(), td.getDate());
         if (td.getFullYear()===calYear && td.getMonth()===calMonth && td.getDate()===d) cls += ' today';
         if (selDate === ds) cls += ' selected';
-        const dsStatus = monthStatus[ds];   // 'free' | 'full' | 'past' | undefined
+        const dsStatus = monthStatus[ds];
         if (isPast || dsStatus === 'past') {
-            /* วันผ่านแล้ว — ไม่มีจุด */
+            /* วันในอดีต */
         } else if (dsStatus === 'full') {
-            cls += ' is-full';    // จุดแดง = เต็มทุก slot
+            cls += ' is-full';    // จุดสีแดง (เต็ม)
         } else {
-            cls += ' has-free';   // จุดเขียว = ยังมีว่าง (default ระหว่างรอโหลด)
+            cls += ' has-free';   // จุดสีเขียว (มีว่าง)
         }
         el.className = cls; el.textContent = d;
         el.onclick = () => selectDate(ds, d);
@@ -1130,6 +1785,7 @@ function renderCal() {
     }
 }
 
+// เมื่อผู้ใช้เลือกวันที่ในปฏิทิน
 function selectDate(ds, d) {
     selDate = ds;
     renderCal();
@@ -1145,9 +1801,11 @@ function selectDate(ds, d) {
     renderSch(ds);
 }
 
+// สร้างตารางแสดงช่วงเวลาและสถานะการจองของแป้นในแต่ละวัน
 async function renderSch(ds) {
+    let activeCourts = getActiveCourts();
     const tb = document.getElementById('sch-tbody');
-    const colCount = COURTS.length + 1;
+    const colCount = activeCourts.length + 1;
     tb.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#adb5bd;font-size:13px;">กำลังโหลดข้อมูล...</td></tr>`;
 
     let slots = {};
@@ -1162,48 +1820,44 @@ async function renderSch(ds) {
 
     const now = new Date();
     const todayDs = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-
-    // แปลงเวลาปัจจุบันเป็นนาทีรวม (เช่น 10:30 = 10*60 + 30 = 630 นาที)
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
 
     tb.innerHTML = '';
 
-    // กำหนดเวลาเปิด-ปิดสนาม (สมมติว่าเริ่ม 06:00 ถึง 22:00)
-    // ถ้าเวลาเปิดปิดของคุณต่างไปจากนี้ สามารถแก้ตัวเลข 6 และ 22 ได้เลยครับ
-    const startDayMinutes = 6 * 60;
-    const endDayMinutes = 22 * 60;
+    const startDayMinutes = 6 * 60;  // เริ่มต้น 06:00 น.
+    const endDayMinutes = 22 * 60;   // สิ้นสุด 22:00 น.
 
-    // วนลูปทีละ 30 นาที
+    // วนลูปสร้างตารางทีละช่วง 30 นาที
     for (let m = startDayMinutes; m < endDayMinutes; m += 30) {
-        // คำนวณเวลาเริ่ม
         const startH = Math.floor(m / 60);
         const startM = m % 60;
-        // คำนวณเวลาจบ (+30 นาที)
         const endH = Math.floor((m + 30) / 60);
         const endM = (m + 30) % 60;
 
-        // แปลงเป็นสตริง HH:MM (เช่น 06:30)
         const startStr = String(startH).padStart(2, '0') + ':' + String(startM).padStart(2, '0');
         const endStr = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
-
-        // รูปแบบเวลาสำหรับเช็ค key ในฐานข้อมูล/API (เช่น 06:30:00)
         const startTime = startStr + ':00';
 
         const tr = document.createElement('tr');
         let html = `<td><span class="hour-chip">${startStr} - ${endStr}</span></td>`;
-
-        // เช็กว่ารอบนี้เป็นรอบที่ผ่านมาแล้วหรือยัง (เช็คแบบละเอียดถึงระดับนาที)
         const isTimePast = (ds === todayDs) && (currentTotalMinutes >= m);
 
-        COURTS.forEach(c => {
-            let status = (slots[c.id] && slots[c.id][startTime]) || 'available';
+        activeCourts.forEach(c => {
+            let courtSlots = slots[c.id] || {};
+            let status = courtSlots[startTime] || 'available';
 
-            // ถ้าเวลาปัจจุบันเลยเวลาเริ่มรอบมาแล้ว ให้บังคับเป็นสถานะ 'past' ทันที
+            if (c.section_id && slots[c.section_id]) {
+                status = slots[c.section_id][startTime] || status;
+            }
+
             if (isTimePast) {
                 status = 'past';
             }
 
-            if (status === 'booked') {
+            // แสดงสถานะรูปแบบปุ่มต่างๆ ตามเงื่อนไข
+            if (status === 'pending_payment') {
+                html += '<td><span class="slot-badge slot-checkout"><span class="slot-dot"></span>กำลังจอง</span></td>';
+            } else if (status === 'booked') {
                 html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>จอง</span></td>';
             } else if (status === 'past') {
                 html += '<td><span class="slot-badge slot-past"><span class="slot-dot"></span>ผ่านมาแล้ว</span></td>';
@@ -1214,7 +1868,7 @@ async function renderSch(ds) {
             } else if (status === 'unavailable') {
                 html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
             } else {
-                html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
+                html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${c.section_id}','${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
         });
         tr.innerHTML = html;
@@ -1222,10 +1876,22 @@ async function renderSch(ds) {
     }
 }
 
-function bookSlot(h, courtId, ds) {
-    window.location.href = '{{ route("booking.index") }}?date=' + ds + '&hour=' + h + '&court_id=' + courtId;
+/**
+ * นำทางไปยังหน้าจองสนามเมื่อคลิกช่องเวลาที่ว่าง
+ */
+function bookSlot(h, courtId, sectionId, ds) {
+    let url = '{{ route("booking.index") }}?date=' + ds + '&hour=' + h + '&court_id=' + courtId;
+    if (sectionId && sectionId !== 'null' && sectionId !== 'undefined') {
+        if (!isNaN(sectionId)) {
+            url += '&court_section_id=' + sectionId;
+        } else {
+            url += '&type=' + sectionId;
+        }
+    }
+    window.location.href = url;
 }
 
+// ควบคุมการเปลี่ยนเดือนในปฏิทิน
 function calPrev() {
     const now = new Date();
     if (calYear === now.getFullYear() && calMonth === now.getMonth()) return;
@@ -1240,19 +1906,22 @@ function calNext() {
     calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } loadMonthStatus();
 }
 
+// เริ่มต้นโหลดระบบปฏิทินและตารางเมื่อหน้าเว็บโหลดเสร็จ
 const now2 = new Date();
 calYear = now2.getFullYear();
 calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
-loadMonthStatus();   // โหลดสถานะจริงของเดือนแล้ววาดจุดสีทับ
+loadMonthStatus();
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 initHeroSlideshow();
 
+/**
+ * คัดลอกเบอร์โทรศัพท์พร้อมแสดงเอฟเฟกต์แจ้งเตือน
+ */
 function copyPhone(btn) {
     const phone = '081-246-0000';
-
     const doFeedback = () => {
         const label = btn.querySelector('.phone-num');
         const original = label.textContent;

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'แก้ไขเนื้อหาและโปรโมชั่น')
+@section('title', 'จัดการเว็บไซต์')
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen min-w-screen py-8">
@@ -9,8 +9,8 @@
         {{-- Header --}}
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">แก้ไขเนื้อหาเว็บไซต์</h1>
-                <p class="text-sm text-gray-500 mt-1">จัดการข้อความโปรโมชั่น รูปภาพ และส่วน About Court</p>
+                <h1 class="text-2xl font-bold text-gray-900">จัดการเว็บไซต์</h1>
+                <p class="text-sm text-gray-500 mt-1">จัดการเนื้อหา รูปภาพ สิ่งอำนวยความสะดวก และรีวิวที่แสดงบนหน้า Home</p>
             </div>
         </div>
 
@@ -47,7 +47,7 @@
         <div class="space-y-6">
 
             {{-- ─── Section 1: About Court ─── --}}
-            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
                 @csrf
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
@@ -84,7 +84,7 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ About {{ $i }}</label>
-                                <img id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['about_img_'.$i] ?? '' }}" id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" id="" name="about_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-about-{{ $i }}')">
@@ -164,6 +164,7 @@
                         <div id="img-preview-wrap" class="{{ empty($promoImg) ? 'hidden' : '' }}">
                             <img id="img-preview"
                                 src="{{ $promoImg ?? '' }}"
+                                data-original-src="{{ $promoImg ?? '' }}"
                                 class="h-40 w-full rounded-lg object-cover border-2 border-gray-200 shadow-sm">
                             <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             <div class="flex items-start gap-4">
@@ -203,7 +204,7 @@
                             @foreach([1, 2, 3] as $i)
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Hero Banner {{ $i }}</label>
-                                <img id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['hero_img_'.$i] ?? '' }}" id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" name="hero_img_{{ $i }}_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-hero-{{ $i }}')">
@@ -218,14 +219,14 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">พื้นหลังสนาม</label>
-                                <img id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['courts_bg'] ?? '' }}" id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" id="" name="courts_bg_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-courts')">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Community</label>
-                                <img id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
+                                <img data-original-src="{{ $settings['community_img'] ?? '' }}" id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
                                 <input type="file" id="" name="community_img_file" accept="image/*"
                                        class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
                                        onchange="previewImg(this, 'preview-community')">
@@ -261,7 +262,7 @@
                     <div class="border border-gray-200 rounded-lg p-4">
                         <p class="font-semibold text-sm text-gray-800 mb-3">{{ $court->name }}</p>
 
-                        <img id="preview-court-{{ $court->id }}"
+                        <img data-original-src="{{ $courtImgSrc }}" id="preview-court-{{ $court->id }}"
                              src="{{ $courtImgSrc }}"
                              class="h-32 w-full object-cover rounded-lg border border-gray-200 mb-3">
 
@@ -280,6 +281,212 @@
                 </div>
             </form>
 
+            {{-- ─── Section 5: Facilities ─── --}}
+            <section id="facility-management" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 scroll-mt-24">
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">5. สิ่งอำนวยความสะดวก</h3>
+                    <p class="text-xs text-gray-400">เพิ่มการ์ดใหม่พร้อมรูปภาพ หรือเปิด–ปิดการแสดงผลบนหน้า Home</p>
+                </div>
+
+                <form action="{{ route('admin.website.facilities.store') }}" method="POST" enctype="multipart/form-data" novalidate
+                      class="rounded-xl border-2 border-dashed border-orange-200 bg-orange-50/50 p-5">
+                    @csrf
+                    <p class="mb-4 font-semibold text-gray-800">เพิ่มการ์ดใหม่</p>
+                    @if($errors->facilityCreate->any())
+                        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">กรุณาตรวจสอบข้อมูลที่กรอกให้ถูกต้อง</div>
+                    @endif
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">ชื่อหัวข้อ</label>
+                            <input type="text" name="name" value="{{ old('name') }}" required maxlength="100" placeholder="เช่น ที่จอดรถ"
+                                   class="w-full rounded-lg border-2 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500 {{ $errors->facilityCreate->has('name') ? 'border-red-500 bg-red-50/40' : 'border-gray-200' }}">
+                            @if($errors->facilityCreate->has('name'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('name') }}</p>@endif
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-gray-700">ลำดับ</label>
+                            <input type="number" name="sort_order" min="0" max="999" value="{{ old('sort_order', ($facilities->max('sort_order') ?? 0) + 1) }}"
+                                   class="w-full rounded-lg border-2 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500 {{ $errors->facilityCreate->has('sort_order') ? 'border-red-500 bg-red-50/40' : 'border-gray-200' }}">
+                            @if($errors->facilityCreate->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('sort_order') }}</p>@endif
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">รายละเอียด</label>
+                            <textarea name="description" rows="2" maxlength="500" placeholder="รายละเอียดสั้นๆ ที่แสดงบนการ์ด"
+                                      class="w-full rounded-lg border-2 px-4 py-2.5 text-sm outline-none transition focus:border-orange-500 {{ $errors->facilityCreate->has('description') ? 'border-red-500 bg-red-50/40' : 'border-gray-200' }}">{{ old('description') }}</textarea>
+                            @if($errors->facilityCreate->has('description'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('description') }}</p>@endif
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-gray-700">รูปภาพ</label>
+                            <div class="rounded-lg border p-2 {{ $errors->facilityCreate->has('image') ? 'border-red-500 bg-red-50/40' : 'border-transparent' }}">
+                                <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
+                                       class="block w-full text-xs text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-100 file:px-4 file:py-2 file:font-semibold file:text-orange-700 hover:file:bg-orange-200">
+                            </div>
+                            <p class="mt-1 text-[11px] text-gray-400">JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</p>
+                            @if($errors->facilityCreate->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('image') }}</p>@endif
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button type="submit" class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">เพิ่มการ์ด</button>
+                    </div>
+                </form>
+
+                <div class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+                    @forelse($facilities as $facility)
+                        <article id="facility-{{ $facility->id }}" class="relative scroll-mt-24 overflow-hidden rounded-xl border border-gray-200">
+                            <form action="{{ route('admin.website.facilities.destroy', $facility) }}" method="POST"
+                                  id="delete-facility-{{ $facility->id }}" class="js-confirm-delete hidden"
+                                  data-title="ลบการ์ดนี้?"
+                                  data-text="{{ $facility->name }} จะถูกลบออกจากหน้าเว็บไซต์"
+                                  data-confirm-text="ลบการ์ด">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+
+                            <form action="{{ route('admin.website.facilities.update', $facility) }}" method="POST" enctype="multipart/form-data" novalidate>
+                            @csrf
+                            @method('PUT')
+                            <img src="{{ $facility->image_url }}" alt="{{ $facility->name }}" class="h-40 w-full bg-gray-100 object-cover">
+                            <div class="space-y-3 p-4">
+                                @if($errors->getBag('facilityUpdate'.$facility->id)->any())
+                                    <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">กรุณาตรวจสอบข้อมูลในการ์ดนี้</div>
+                                @endif
+                                <div class="flex items-center justify-between gap-3">
+                                    <input type="text" name="name" value="{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('name') : $facility->name }}" required maxlength="100"
+                                           class="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold outline-none focus:border-orange-500">
+                                    <label class="flex shrink-0 items-center gap-2 text-xs font-medium text-gray-600">
+                                        <input type="checkbox" name="is_active" value="1" @checked($errors->getBag('facilityUpdate'.$facility->id)->any() ? old('is_active') : $facility->is_active) class="rounded border-gray-300 text-orange-500">
+                                        แสดง
+                                    </label>
+                                </div>
+                                @if($errors->getBag('facilityUpdate'.$facility->id)->has('name'))<p class="text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('name') }}</p>@endif
+                                <textarea name="description" rows="2" maxlength="500"
+                                          class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('description') : $facility->description }}</textarea>
+                                @if($errors->getBag('facilityUpdate'.$facility->id)->has('description'))<p class="text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('description') }}</p>@endif
+                                <div class="grid grid-cols-[90px_1fr] gap-3">
+                                    <div>
+                                        <label class="mb-1 block text-xs text-gray-500">ลำดับ</label>
+                                        <input type="number" name="sort_order" value="{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('sort_order') : $facility->sort_order }}" min="0" max="999" required
+                                               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">
+                                        @if($errors->getBag('facilityUpdate'.$facility->id)->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('sort_order') }}</p>@endif
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs text-gray-500">เปลี่ยนรูป</label>
+                                        <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
+                                               class="block w-full text-xs text-gray-500 file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-2">
+                                        @if($errors->getBag('facilityUpdate'.$facility->id)->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('image') }}</p>@endif
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-[1fr_auto] gap-2">
+                                    <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700">บันทึกการ์ด</button>
+                                    <button type="submit" form="delete-facility-{{ $facility->id }}"
+                                            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        ลบการ์ด
+                                    </button>
+                                </div>
+                            </div>
+                            </form>
+                        </article>
+                    @empty
+                        <p class="text-sm text-gray-400">ยังไม่มีสิ่งอำนวยความสะดวก</p>
+                    @endforelse
+                </div>
+            </section>
+
+            {{-- ─── Section 6: Review moderation ─── --}}
+            <section id="review-moderation" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 scroll-mt-24">
+                <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">6. รีวิวจากสมาชิก</h3>
+                        <p class="text-xs text-gray-400">รีวิวใหม่จะแสดงบนหน้า Home ทันที โดย Admin สามารถซ่อนหรือเผยแพร่รีวิวได้จากส่วนนี้</p>
+                    </div>
+                    <div class="flex gap-2 text-xs">
+                        <span class="rounded-full bg-emerald-100 px-3 py-1 font-semibold text-emerald-700">รีวิวทั้งหมด {{ $reviews->total() }}</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    @forelse($reviews as $review)
+                        <article class="relative rounded-xl border border-gray-200 p-4">
+                            <form action="{{ route('admin.website.reviews.destroy', $review) }}" method="POST"
+                                  id="delete-review-{{ $review->id }}" class="js-confirm-delete hidden"
+                                  data-title="ลบรีวิวนี้?"
+                                  data-text="รีวิวของ {{ $review->user->name }} จะถูกลบถาวร"
+                                  data-confirm-text="ลบรีวิว">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-semibold text-gray-900">{{ $review->user->name }}</p>
+                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold
+                                            {{ $review->status === 'published' ? 'bg-emerald-100 text-emerald-700' : ($review->status === 'hidden' ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-700') }}">
+                                            {{ $review->status === 'published' ? 'เผยแพร่แล้ว' : ($review->status === 'hidden' ? 'ซ่อนอยู่' : 'รอตรวจสอบ') }}
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400">{{ $review->user->email }} · {{ $review->created_at->format('d/m/Y H:i') }}</p>
+                                </div>
+                                <div class="text-lg text-amber-400">{{ str_repeat('★', $review->overall_rating) }}<span class="text-gray-200">{{ str_repeat('★', 5 - $review->overall_rating) }}</span></div>
+                            </div>
+
+                            <p class="mt-3 whitespace-pre-line text-sm leading-6 text-gray-700">{{ $review->comment }}</p>
+
+                            @if($review->ratings->isNotEmpty())
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach($review->ratings as $rating)
+                                        <span class="rounded-full bg-orange-50 px-3 py-1 text-xs text-orange-700">{{ $rating->facility->name }} {{ $rating->rating }}/5</span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($review->images->isNotEmpty())
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach($review->images as $image)
+                                        <a href="{{ $image->image_url }}" target="_blank" rel="noopener">
+                                            <img src="{{ $image->image_url }}" alt="รูปประกอบรีวิว" class="h-20 w-24 rounded-lg border border-gray-200 object-cover">
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="mt-4 flex flex-wrap justify-end gap-2">
+                                @if($review->status !== 'published')
+                                    <form action="{{ route('admin.website.reviews.status', $review) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="published">
+                                        <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700">เผยแพร่</button>
+                                    </form>
+                                @endif
+                                @if($review->status !== 'hidden')
+                                    <form action="{{ route('admin.website.reviews.status', $review) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="hidden">
+                                        <button type="submit" class="rounded-lg bg-gray-700 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800">ซ่อนรีวิว</button>
+                                    </form>
+                                @endif
+                                <button type="submit" form="delete-review-{{ $review->id }}"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    ลบรีวิว
+                                </button>
+                            </div>
+                        </article>
+                    @empty
+                        <div class="rounded-xl bg-gray-50 px-5 py-10 text-center text-sm text-gray-400">ยังไม่มีรีวิวจากสมาชิก</div>
+                    @endforelse
+                </div>
+
+                @if($reviews->hasPages())
+                    <div class="mt-5">{{ $reviews->links() }}</div>
+                @endif
+            </section>
+
         </div>
 
     </div>
@@ -287,6 +494,29 @@
 
 @push('scripts')
 <script>
+document.querySelectorAll('.js-confirm-delete').forEach(form => {
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: form.dataset.title || 'ยืนยันการลบ?',
+            text: form.dataset.text || 'การดำเนินการนี้ไม่สามารถย้อนกลับได้',
+            showCancelButton: true,
+            reverseButtons: true,
+            focusCancel: true,
+            confirmButtonText: form.dataset.confirmText || 'ลบ',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+        });
+
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+});
+
 function previewImg(input, targetId = 'img-preview') {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -404,7 +634,21 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
     form.addEventListener('input', refreshStatus);
     form.addEventListener('change', refreshStatus);
     form.addEventListener('reset', () => {
-        requestAnimationFrame(refreshStatus);
+        requestAnimationFrame(() => {
+            // Revert every preview image in this form back to its original src
+            form.querySelectorAll('img[data-original-src]').forEach(img => {
+                img.src = img.dataset.originalSrc || '';
+            });
+
+            // Re-hide the promo banner wrapper if it originally had no image
+            const previewWrap = form.querySelector('#img-preview-wrap');
+            const promoImg = form.querySelector('#img-preview');
+            if (previewWrap && promoImg) {
+                previewWrap.classList.toggle('hidden', !promoImg.dataset.originalSrc);
+            }
+
+            refreshStatus();
+        });
     });
 
     form.addEventListener('submit', async event => {
@@ -430,6 +674,14 @@ document.querySelectorAll('.js-setting-form').forEach(form => {
             }
 
             clearFormFileInputs(form);
+
+            // NEW: lock in the currently-shown previews as the new "original"
+            // so a later "ยกเลิก" reverts to the last SAVED image, not the
+            // image that was on the page at initial load.
+            form.querySelectorAll('img[data-original-src]').forEach(img => {
+                img.dataset.originalSrc = img.src;
+            });
+
             initialState = serializeSettingForm(form);
             refreshStatus();
             showSubmitSuccess();

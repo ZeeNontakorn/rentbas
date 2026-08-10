@@ -97,7 +97,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('booking.index')->with('success', 'ยืนยันบัญชีเรียบร้อย');
+        return redirect()->route('home')->with('success', 'ยืนยันบัญชีเรียบร้อย');
     }
 
     public function showLogin()
@@ -129,7 +129,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('booking.index'));
+        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('home'));
     }
 
     public function logout(Request $request)

@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Course;
 use App\Models\Court;
 use App\Models\CourtClosure;
+use App\Models\Facility;
+use App\Models\Review;
 use App\Models\SiteVisit;
+use App\Models\Package;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -23,7 +28,55 @@ class HomeController extends Controller
             return $court->name;
         }, SORT_NATURAL | SORT_FLAG_CASE)->values();
 
-        return view('home', compact('courts'));
+        // คอร์สเรียนบาสเกตบอลที่จะโชว์บนหน้าแรก: เอาเฉพาะคอร์สที่มีแพ็กเกจ "เปิดใช้งาน" (is_active) อยู่
+        $trainingCourses = Course::with(['targetGroups', 'schedules', 'packages' => function ($query) {
+            $query->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
+        }])
+            ->whereHas('packages', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->orderBy('course_name')
+            ->get();
+
+        $scheduleCourses = $trainingCourses->where('course_type', 'schedule')->values();
+        $sessionCourses = $trainingCourses->where('course_type', 'session')->values();
+
+        $facilities = Facility::where('is_active', true)
+            ->withAvg(['ratings as average_rating' => function ($query) {
+                $query->whereHas('review', fn ($reviewQuery) => $reviewQuery->published());
+            }], 'rating')
+            ->withCount(['ratings as ratings_count' => function ($query) {
+                $query->whereHas('review', fn ($reviewQuery) => $reviewQuery->published());
+            }])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $reviews = Review::published()
+            ->with(['user:id,name', 'ratings.facility:id,name', 'images'])
+            ->orderByRaw('COALESCE(published_at, created_at) DESC')
+            ->take(12)
+            ->get();
+
+        $reviewSummary = [
+            'average' => round((float) Review::published()->avg('overall_rating'), 1),
+            'count' => Review::published()->count(),
+        ];
+
+        $packages = Package::where('is_active', true)
+            ->orderBy('price')
+            ->get();
+
+        return view('home', compact(
+            'courts',
+            'trainingCourses',
+            'scheduleCourses',
+            'sessionCourses',
+            'facilities',
+            'reviews',
+            'reviewSummary',
+            'packages',
+        ));
     }
 
     /**
@@ -33,48 +86,56 @@ class HomeController extends Controller
     public function schedule(Request $request)
     {
         $date = $request->query('date', now()->toDateString());
-        /** @var \App\Models\Court[] $courts */
+        /** @var Court[] $courts */
         $courts = Court::orderBy('name')->get();
-        $now    = now();
+        $now = now();
 
-        // Collect all booked start_times per court for this date
-        $bookings = \App\Models\Booking::whereDate('booking_date', $date)
-            ->whereIn('status', ['pending', 'approved'])
-            ->get(['court_id', 'start_time']);
+        // ดึงการจองทั้งหมดของวันนี้ พร้อม court_section_id/end_time เพื่อเช็ค overlap ให้ถูกต้อง
+        // (แทนการเทียบ start_time ตรงๆ แบบเดิม ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง)
+        $bookings = Booking::whereDate('booking_date', $date)
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
+            ->get(['court_id', 'court_section_id', 'start_time', 'end_time', 'status']);
 
-        $slots = []; // [court_id][start_time] => status
-        $closures = ''; // [court_id][start_time] => closure_type
+        $slots = []; // [court_id][start_time] => status  (คีย์เป็นทุกๆ 30 นาที ให้ตรงกับตารางฝั่ง frontend)
         foreach ($courts as $court) {
-            $courtBookedTimes = $bookings
-                ->where('court_id', $court->id)
-                ->pluck('start_time')
-                ->toArray();
+            $fullSection = $court->defaultSection();
+            $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
 
-            for ($h = 6; $h < 22; $h++) {
-                $startStr = sprintf('%02d:00:00', $h);
-                $endStr   = sprintf('%02d:00:00', $h + 1);
+            $courtBookings = $bookings->where('court_id', $court->id);
 
-                $slotStart = \Carbon\Carbon::parse("{$date} {$startStr}");
+            for ($m = 6 * 60; $m < 22 * 60; $m += 30) {
+                $startStr = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
+                $endM = $m + 30;
+                $endStr = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
 
-                $slotEnd   = \Carbon\Carbon::parse("{$date} {$endStr}");
+                $slotStart = Carbon::parse("{$date} {$startStr}");
+                $slotEnd = Carbon::parse("{$date} {$endStr}");
 
-                $closuresType = $court->getClosureType($slotStart, $slotEnd, $date);
+                $closuresType = $court->getClosureType($startStr, $endStr, $date, $fullSection);
 
                 if ($slotEnd->lte($now)) {
                     $status = 'past';
-                } elseif ($court->isClosedAt($slotStart, $slotEnd)) {
+                } elseif ($court->isClosedAt($slotStart, $slotEnd, $fullSection)) {
                     $status = $closuresType ?? 'closed';
-                } elseif (in_array($startStr, $courtBookedTimes)) {
-                    $status = 'booked';
                 } else {
-                    $status = 'available';
+                    // ถือว่า booked ถ้ามีการจองใดๆ (เต็มสนามหรือครึ่งสนามที่บล็อกกัน) ทับซ้อนกับ 30 นาทีนี้อยู่
+                    $overlap = $courtBookings->first(function ($b) use ($conflictIds, $startStr, $endStr) {
+                        return in_array($b->court_section_id, $conflictIds, true)
+                            && $b->start_time < $endStr && $b->end_time > $startStr;
+                    });
+                    $status = $overlap?->status === 'pending_payment'
+                        ? 'pending_payment'
+                        : ($overlap ? 'booked' : 'available');
                 }
-                 $slots[$court->id][$startStr] = $status;
+                $slots[$court->id][$startStr] = $status;
             }
         }
-                $startStr = sprintf('%02d:00:00', 6);
-                $endStr   = sprintf('%02d:00:00', 6 + 1);
-
 
         return response()->json(['slots' => $slots]);
     }
@@ -91,27 +152,40 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             $start = now()->startOfMonth();
         }
-        $end   = $start->copy()->endOfMonth();
-        $now   = now();
+        $end = $start->copy()->endOfMonth();
+        $now = now();
         $today = $now->copy()->startOfDay();
 
         $courts = Court::orderBy('name')->get();
 
-        // preload การจองทั้งเดือน → set: "date|court_id|HH:MM:SS"
+        // preload การจองทั้งเดือน → group by "date|court_id" พร้อม start/end/section เพื่อเช็ค overlap
         $bookings = Booking::whereBetween('booking_date', [$start->toDateString(), $end->toDateString()])
-            ->whereIn('status', ['pending', 'approved'])
-            ->get(['booking_date', 'court_id', 'start_time']);
-        $bookedSet = [];
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
+            ->get(['booking_date', 'court_id', 'court_section_id', 'start_time', 'end_time']);
+        $bookingsByDateCourt = [];
         foreach ($bookings as $b) {
-            $bd = $b->booking_date instanceof \Carbon\CarbonInterface
+            $bd = $b->booking_date instanceof CarbonInterface
                 ? $b->booking_date->toDateString()
                 : substr((string) $b->booking_date, 0, 10);
-            $bookedSet["{$bd}|{$b->court_id}|{$b->start_time}"] = true;
+            $bookingsByDateCourt["{$bd}|{$b->court_id}"][] = $b;
         }
 
-        // preload closures ทั้งเดือน (กันยิง query ต่อ slot)
+        // preload closures ทั้งเดือน (กันยิง query ต่อ slot) พร้อม court_section_id เพื่อไม่ให้ปิดเกินส่วนที่ระบุ
         $closures = CourtClosure::whereBetween('date', [$start->toDateString(), $end->toDateString()])
-            ->get(['court_id', 'date', 'start_time', 'end_time']);
+            ->get(['court_id', 'date', 'start_time', 'end_time', 'court_section_id']);
+
+        // เตรียม conflict-ids ของ section "เต็มสนาม" ต่อสนามไว้ล่วงหน้า (ใช้ร่วมกันทุกวัน/ทุกชั่วโมง)
+        $conflictIdsByCourt = [];
+        foreach ($courts as $court) {
+            $fullSection = $court->defaultSection();
+            $conflictIdsByCourt[$court->id] = $fullSection ? $fullSection->conflictingSectionIds() : [];
+        }
 
         $days = [];
         for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
@@ -119,20 +193,40 @@ class HomeController extends Controller
 
             if ($d->lt($today)) {          // ทั้งวันผ่านไปแล้ว → ไม่มีจุด
                 $days[$ds] = 'past';
+
                 continue;
             }
 
             $available = 0;
             foreach ($courts as $court) {
-                for ($h = 6; $h < 22; $h++) {
-                    $startStr  = sprintf('%02d:00:00', $h);
-                    $endStr    = sprintf('%02d:00:00', $h + 1);
-                    $slotStart = Carbon::parse("{$ds} {$startStr}");
-                    $slotEnd   = Carbon::parse("{$ds} {$endStr}");
+                $conflictIds = $conflictIdsByCourt[$court->id];
+                $dayCourtBookings = $bookingsByDateCourt["{$ds}|{$court->id}"] ?? [];
 
-                    if ($slotEnd->lte($now)) continue;                                   // past slot
-                    if ($this->slotClosed($court, $closures, $ds, $startStr, $endStr, $slotStart, $slotEnd)) continue; // closed
-                    if (isset($bookedSet["{$ds}|{$court->id}|{$startStr}"])) continue;    // booked
+                for ($m = 6 * 60; $m < 22 * 60; $m += 30) {
+                    $startStr = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
+                    $endM = $m + 30;
+                    $endStr = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
+                    $slotStart = Carbon::parse("{$ds} {$startStr}");
+                    $slotEnd = Carbon::parse("{$ds} {$endStr}");
+
+                    if ($slotEnd->lte($now)) {
+                        continue;
+                    }                                                              // past slot
+                    if ($this->slotClosed($court, $closures, $ds, $startStr, $endStr, $slotStart, $slotEnd, $conflictIds)) {
+                        continue;
+                    } // closed
+
+                    $overlap = false;
+                    foreach ($dayCourtBookings as $b) {
+                        if (in_array($b->court_section_id, $conflictIds, true)
+                            && $b->start_time < $endStr && $b->end_time > $startStr) {
+                            $overlap = true;
+                            break;
+                        }
+                    }
+                    if ($overlap) {
+                        continue;
+                    } // booked (เต็มสนามหรือครึ่งสนามที่บล็อกกัน)
 
                     $available++;
                 }
@@ -146,8 +240,10 @@ class HomeController extends Controller
 
     /**
      * In-memory มิเรอร์ของ Court::isClosedAt() ใช้ closures ที่ preload มาแล้ว
+     * เช็ค court_section_id ของ closure ด้วยว่าทับซ้อนกับ section ที่กำลังพิจารณาหรือไม่
+     * (closure ที่ปิดเฉพาะครึ่งสนามอื่นที่ไม่บล็อกกันไม่ควรทำให้ทั้งชั่วโมงถูกนับว่าปิด)
      */
-    private function slotClosed(Court $court, $closures, string $ds, string $startStr, string $endStr, $slotStart, $slotEnd): bool
+    private function slotClosed(Court $court, $closures, string $ds, string $startStr, string $endStr, $slotStart, $slotEnd, array $conflictIds = []): bool
     {
         if ($court->court_status === 'closed') {
             return true;
@@ -157,14 +253,22 @@ class HomeController extends Controller
             return true;
         }
         foreach ($closures as $c) {
-            $cDate = $c->date instanceof \Carbon\CarbonInterface
+            $cDate = $c->date instanceof CarbonInterface
                 ? $c->date->toDateString()
                 : substr((string) $c->date, 0, 10);
-            if ($c->court_id == $court->id && $cDate === $ds
-                && $c->start_time < $endStr && $c->end_time > $startStr) {
-                return true;
+            if ($c->court_id != $court->id || $cDate !== $ds) {
+                continue;
             }
+            if ($c->start_time >= $endStr || $c->end_time <= $startStr) {
+                continue;
+            }
+            if ($c->court_section_id !== null && ! in_array($c->court_section_id, $conflictIds, true)) {
+                continue;
+            }
+
+            return true;
         }
+
         return false;
     }
 }

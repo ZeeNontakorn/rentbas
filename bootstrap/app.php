@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'verified_otp' => EnsureEmailIsVerified::class, // 2. เพิ่มบรรทัดนี้เข้าไปครับ
+            'staff_or_admin' => \App\Http\Middleware\EnsureStaffOrAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

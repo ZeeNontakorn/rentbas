@@ -117,28 +117,59 @@ class Court extends Model
             $query->whereNull('court_section_id');
         }
 
-        return $query->exists();
-    }
-    public function getClosureType(string $from, string $to, string $date): ?string
-    {
+        if ($query->exists()) {
+            return true;
+        }
 
+        $sectionIds = $section
+            ? $section->conflictingSectionIds()
+            : $this->sections()->pluck('id')->all();
+
+        return PrivateTrainingBooking::where('court_id', $this->id)
+            ->whereIn('court_section_id', $sectionIds)
+            ->whereDate('date', $dateStr)
+            ->where('status', 'confirmed')
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
+            ->exists();
+    }
+    public function getClosureType(string $from, string $to, string $date, ?CourtSection $section = null): ?string
+    {
         if ($this->court_status === 'closed') {
             return 'closed';
         }
 
+        $query = CourtClosure::where('court_id', $this->id)
+            ->whereDate('date', $date)
+            ->where('start_time', '<', $to)
+            ->where('end_time', '>', $from);
 
-        // Check court_closures
-        $dateStr = $date;
-        $startTime = $from;
-        $endTime = $to;
+        if ($section) {
+            $query->where(function ($q) use ($section) {
+                $q->whereNull('court_section_id')
+                    ->orWhere('court_section_id', $section->id);
+            });
+        } else {
+            $query->whereNull('court_section_id');
+        }
 
-        $closure = CourtClosure::where('court_id', $this->id)
-            ->whereDate('date', $dateStr)
-            ->where('start_time', '<=', $endTime)
-            ->where('end_time', '>=', $startTime)
-            ->first();
+        $closureType = $query->first()?->type;
+        if ($closureType) {
+            return $closureType;
+        }
 
+        $sectionIds = $section
+            ? $section->conflictingSectionIds()
+            : $this->sections()->pluck('id')->all();
 
-        return $closure?->type;
+        return PrivateTrainingBooking::where('court_id', $this->id)
+            ->whereIn('court_section_id', $sectionIds)
+            ->whereDate('date', $date)
+            ->where('status', 'confirmed')
+            ->where('start_time', '<', $to)
+            ->where('end_time', '>', $from)
+            ->exists()
+                ? 'unavailable'
+                : null;
     }
 }

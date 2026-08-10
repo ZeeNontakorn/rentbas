@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,12 +13,16 @@
     <style>
         /* ปรับ Font ให้ดูเป็นสไตล์สปอร์ต (ถ้าต้องการ) */
         @import url('https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,900&display=swap');
+
         body {
             font-family: 'Kanit', sans-serif;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
-<body class="bg-[#0b0b1a] min-h-screen flex flex-col text-white antialiased">
+<body class="bg-[#ffffff] min-h-screen flex flex-col text-white antialiased">
 
     {{-- Navbar อยู่ด้านบนสุด --}}
     @include('components.navbar')
@@ -36,12 +41,72 @@
         document.addEventListener('DOMContentLoaded', function() {
             AOS.init({
                 duration: 800, // ความเร็วอนิเมชั่น 0.8 วิ
-                once: true,    // เล่นรอบเดียวตอนโหลดเจอ
-                offset: 50,    // เลื่อนลงมา 50px ค่อยเล่น
+                once: true, // เล่นรอบเดียวตอนโหลดเจอ
+                offset: 50, // เลื่อนลงมา 50px ค่อยเล่น
                 easing: 'ease-out-cubic'
             });
         });
     </script>
+
+    {{-- SweetAlert2 + Toast (ใช้ร่วมกันทุกหน้าที่ extend layout นี้) --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            @if (session('success'))
+                Toast.fire({ icon: 'success', title: @json(session('success')) });
+            @endif
+
+            @if (session('error'))
+                Toast.fire({ icon: 'error', title: @json(session('error')) });
+            @endif
+
+            @if ($errors->any())
+                Toast.fire({ icon: 'error', title: @json($errors->first()) });
+            @endif
+        });
+    </script>
+
+    {{-- Loading overlay ตอน submit ฟอร์มที่ต้องรอส่งอีเมล (SMTP บางทีตอบช้ามาก) เพื่อไม่ให้ผู้ใช้คิดว่า
+         หน้าเว็บค้าง — ใส่ attribute data-loading-form ในฟอร์มไหนก็ได้เพื่อเปิดใช้งาน พร้อม
+         data-loading-message กำหนดข้อความเองได้ (ถ้าไม่ใส่จะใช้ข้อความ default) --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form[data-loading-form]').forEach((form) => {
+                form.addEventListener('submit', function (event) {
+                    if (form.dataset.loadingSkip === '1') return;
+                    if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const message = form.dataset.loadingMessage || 'กำลังบันทึกข้อมูลและส่งอีเมลแจ้งเตือน อาจใช้เวลาสักครู่ (ไม่ต้องปิดหรือรีเฟรชหน้านี้)...';
+                    Swal.fire({
+                        title: 'กำลังดำเนินการ',
+                        text: message,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => Swal.showLoading(),
+                    });
+                });
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
+
 </html>
