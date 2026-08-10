@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
 
 class PrivateTrainingController extends Controller
 {
@@ -630,7 +631,7 @@ class PrivateTrainingController extends Controller
             "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
             route('private-training.index'),
         );
-        
+
         $successMessage = 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว ไม่มีการหักเครดิตลูกค้า';
         // ส่งอีเมลแจ้งยืนยันไปหาลูกค้าโดยตรง (ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วทำให้
         // การจัดสนามที่สำเร็จไปแล้วจริงพังไปด้วย เหมือนที่ทำไว้กับ notifyAdminsOfPayment)
