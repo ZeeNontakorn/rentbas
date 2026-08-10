@@ -120,8 +120,11 @@
                         </div>
                     </div>
                 @else
-                    <!-- จองสนาม สำหรับ User -->
-                    <a href="{{ route('booking.index') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    <a href="{{ route('home') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        หน้าแรก
+                    </a>
+
+                    <a href="{{ route('booking.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
                     </a>
 
@@ -131,19 +134,16 @@
                             ตารางงาน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
-                        <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
-                        <a href="{{ route('admin.private-training.index') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('admin.private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
                         </a>
                     @else
-                        <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
-                        <a href="{{ route('private-training.index') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
                         </a>
                     @endif
 
-                    <!-- ประวัติการจอง -->
-                    <a href="{{ route('history') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    <a href="{{ route('history') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
 
@@ -185,7 +185,7 @@
                             </span>
                             <form class="mark-all-read-form" method="POST" action="{{ route('notifications.readAll') }}">
                                 @csrf
-                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านทั้งหมด</button>
+                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านแล้วทั้งหมด</button>
                             </form>
                         </div>
 
@@ -280,23 +280,23 @@
                     </div>
                 </div>
 
-                <!-- Divider for Admin (as per Figma) -->
-                @if($isAdminLike)
-                    <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
-                    <div class="relative flex-shrink-0">
-                        <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap">
-                        <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
-                            {{ auth()->user()->name }}
-                        </span>
-                        <svg class="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                        </button>
-                        <div id="adminMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
-                            <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
-                                <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
-                                <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
-                            </div>
+                <!-- Divider (ใช้ร่วมกันทุก role: name dropdown pattern) -->
+                <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
+                <div class="relative flex-shrink-0">
+                    <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap">
+                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
+                        {{ auth()->user()->name }}
+                    </span>
+                    <svg class="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                    </button>
+                    <div id="adminMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
+                            <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
+                            <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                        </div>
+                        @if($isAdminLike)
                             <a href="{{ route('admin.users.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                 จัดการผู้ใช้งาน
@@ -309,46 +309,34 @@
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 แก้ไขเนื้อหาเว็บไซต์
                             </a>
-                            <a href="{{ route('profile') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center border-t border-gray-700">
-                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                ตั้งค่าโปรไฟล์
-                            </a>
-                            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center border-t border-gray-700">
-                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                                ออกจากระบบ
-                            </a>
-                        </div>
+                        @endif
+                        <a href="{{ route('profile') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center border-t border-gray-700">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            ตั้งค่าโปรไฟล์
+                        </a>
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center border-t border-gray-700">
+                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            ออกจากระบบ
+                        </a>
                     </div>
+                </div>
 
-                    <!-- Logout -->
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                        {{-- credit --}}
-                           <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
-                            onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                            {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                        </button>
-
-                @else
-                {{-- credit --}}
-                <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
-                    onclick="window.location.href='{{ route('credits.topup.index') }}'">
-                    {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
-                </button>
-                    <div class="h-6 w-px bg-gray-600 mx-2 flex-shrink-0"></div>
-                     <a href="{{ route('profile') }}" class="flex min-w-0 items-center text-gray-300 font-medium hover:text-orange-500 transition flex-shrink-0">
-                        <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
-                            {{ auth()->user()->name }}
-                        </span>
-                    </a>
-                    <!-- Logout -->
-                <form method="POST" action="{{ route('logout') }}" class="ml-2 flex-shrink-0">
+                <!-- Logout -->
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                     @csrf
-                    <button type="submit" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center">
-                        ออกจากระบบ
-                    </button>
                 </form>
+
+                {{-- credit --}}
+                @if($isAdminLike)
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
+                        onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
+                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                    </button>
+                @else
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
+                        onclick="window.location.href='{{ route('credits.topup.index') }}'">
+                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                    </button>
                 @endif
             @endauth
 
@@ -419,7 +407,10 @@
                 </div>
             @else
                 <div class="flex flex-col py-2">
-                    <a href="{{ route('booking.index') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        หน้าแรก
+                    </a>
+                    <a href="{{ route('booking.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
                     </a>
                     @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
@@ -427,19 +418,18 @@
                             ตารางงาน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
-                        <!-- เทรนเนอร์ส่วนตัว สำหรับ Staff (จัดการคำขอ) -->
-                        <a href="{{ route('admin.private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('admin.private-training.index') }}" class="flex items-center py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
                         </a>
                     @else
-                        <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
-                        <a href="{{ route('private-training.index') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('private-training.index') }}" class="flex items-center py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             เทรนเนอร์ส่วนตัว
                         </a>
                     @endif
-                    <a href="{{ route('history') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ประวัติการจอง
                     </a>
+
                     {{-- @if($canManageBookings && auth()->user()->role === 'staff')
                         <a href="{{ route('admin.bookings') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             จัดการการจอง
@@ -480,11 +470,13 @@
                     </div>
                 </div>
             @else
-                <a href="{{ route('profile') }}" class="flex min-w-0 items-center text-gray-300 font-medium hover:text-orange-500 transition">
-                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
-                        {{ auth()->user()->name }}
-                    </span>
-                </a>
+                <div class="border-t border-gray-800 pt-2 mt-1">
+                    <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                    <div class="flex flex-col">
+                        <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
+                    </div>
+                </div>
             @endif
 
             <form method="POST" action="{{ route('logout') }}" class="mt-2">
