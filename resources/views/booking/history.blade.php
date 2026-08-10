@@ -113,7 +113,7 @@
     {{-- HEADER --}}
     <div class="mb-6 flex flex-col md:flex-row justify-between items-baseline gap-4" data-aos="fade-right">
         <div class="flex items-baseline gap-4">
-            <h1 class="text-[28px] font-semibold text-gray-800 tracking-tight">My Bookings</h1>
+            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">My Bookings</h1>
             <span class="text-gray-600 text-[15px] hidden sm:inline">ประวัติการจองสนามบาสเกตบอล</span>
         </div>
         <a href="{{ route('booking.index') }}" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-medium px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">

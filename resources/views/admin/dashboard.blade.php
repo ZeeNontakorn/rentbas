@@ -54,7 +54,7 @@
         <!-- Header -->
         <div class="mb-6 flex flex-wrap items-end justify-between gap-2">
             <div>
-                <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Dashboard</h1>
                 <p class="text-sm text-gray-500">ภาพรวมสุขภาพธุรกิจสนามบาส · {{ now()->translatedFormat('l d F Y') }}</p>
             </div>
             <span class="text-xs text-gray-400 flex items-center gap-1.5">

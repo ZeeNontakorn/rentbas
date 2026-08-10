@@ -3,7 +3,7 @@
 @section('title', 'แจ้งเตือนของฉัน')
 
 @section('content')
-<div class="container mx-auto max-w-4xl py-10 px-4">
+<div class="container mx-auto px-4 sm:px-6 max-w-7xl">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">แจ้งเตือนของฉัน</h2>
 
@@ -25,6 +25,8 @@
         <div class="space-y-3">
 @foreach($notifications as $n)
     @php
+        $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
+            || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
         $visual = match ($n->visualType()) {
             'success' => ['border' => 'border-l-emerald-500', 'bg' => 'bg-emerald-50/70', 'title' => 'text-emerald-800', 'iconBg' => 'bg-emerald-100', 'icon' => 'text-emerald-600', 'path' => 'M5 13l4 4L19 7'],
             'danger' => ['border' => 'border-l-rose-500', 'bg' => 'bg-rose-50/70', 'title' => 'text-rose-800', 'iconBg' => 'bg-rose-100', 'icon' => 'text-rose-600', 'path' => 'M6 18L18 6M6 6l12 12'],
@@ -38,7 +40,11 @@
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
         </span>
         <div class="min-w-0 flex-1">
-            <a href="{{ route('notifications.open', $n) }}" class="font-semibold {{ $visual['title'] }} hover:underline">{{ $n->title }}</a>
+            @if($isCourtBookingNotification)
+                <span class="font-semibold {{ $visual['title'] }}">{{ $n->title }}</span>
+            @else
+                <a href="{{ route('notifications.open', $n) }}" class="font-semibold {{ $visual['title'] }} hover:underline">{{ $n->title }}</a>
+            @endif
 
             {{-- ส่วนที่แก้ไข --}}
             <div class="text-sm text-gray-600">
@@ -57,7 +63,9 @@
             </div>
 
             <div class="text-xs text-gray-400 mt-1">{{ $n->created_at->format('d M Y H:i') }}</div>
-            <a href="{{ route('notifications.open', $n) }}" class="mt-2 inline-flex text-xs font-semibold {{ $visual['title'] }} hover:underline">เปิดดูรายละเอียด →</a>
+            @unless($isCourtBookingNotification)
+                <a href="{{ route('notifications.open', $n) }}" class="mt-2 inline-flex text-xs font-semibold {{ $visual['title'] }} hover:underline">เปิดดูรายละเอียด →</a>
+            @endunless
         </div>
 
         @if(!$n->is_read)

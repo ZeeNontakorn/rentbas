@@ -25,9 +25,9 @@ class CreditTopupPackageController extends Controller
     protected function rules(): array
     {
         return [
-            // ป้ายชื่อใช้เป็นตัวเลข (จำนวนบาท) ล้วนๆ เท่านั้น เช่น "250" — ห้ามมีตัวอักษร/สัญลักษณ์ปน
-            'label' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/'],
-            'price' => ['required', 'numeric', 'min:20', 'max:1000000'],
+            // ป้ายชื่อเป็นข้อความอิสระ (VARCHAR ในฐานข้อมูล) เช่น "250" หรือ "แพ็กสุดคุ้ม"
+            'label' => ['required', 'string', 'max:50'],
+            'price' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'credit' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -37,8 +37,7 @@ class CreditTopupPackageController extends Controller
     protected function messages(): array
     {
         return [
-            'label.regex' => 'ป้ายชื่อต้องเป็นตัวเลขเท่านั้น (เช่น 250)',
-            'price.min' => 'ราคาแพ็กเกจต้องไม่ต่ำกว่า 20 บาท',
+            'price.min' => 'ราคาแพ็กเกจต้องไม่ต่ำกว่า 1 บาท',
             'sort_order.integer' => 'ลำดับต้องเป็นตัวเลขจำนวนเต็มเท่านั้น',
             'sort_order.min' => 'ลำดับต้องไม่ติดลบ',
         ];
@@ -86,6 +85,26 @@ class CreditTopupPackageController extends Controller
     }
 
     /**
+     * บันทึกลำดับแพ็กเกจใหม่จากการลาก-วาง (drag handle) ในหน้าแอดมิน — รับ array ของ id
+     * เรียงตามลำดับที่ลากวางแล้ว จากนั้น map เป็น sort_order 0,1,2,... ตามตำแหน่ง
+     * ฝั่งผู้ใช้ (CreditTopupController::index) เรียง orderBy('sort_order') อยู่แล้ว จึงเห็นผลทันที
+     * โดยไม่ต้องแก้อะไรเพิ่มฝั่ง user
+     */
+    public function reorder(Request $request)
+    {
+        $data = $request->validate([
+            'order' => ['required', 'array', 'min:1'],
+            'order.*' => ['integer', 'distinct', 'exists:credit_topup_packages,id'],
+        ]);
+
+        foreach ($data['order'] as $index => $id) {
+            CreditTopupPackage::whereKey($id)->update(['sort_order' => $index]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * บันทึกลิงก์ LINE OA ที่ใช้กับปุ่ม "เติมผ่าน LINE ไวกว่า" ในหน้าเติมเครดิตของผู้ใช้
      */
     public function updateLineUrl(Request $request)
@@ -104,7 +123,7 @@ class CreditTopupPackageController extends Controller
         return back()->with('success', 'บันทึกลิงก์ LINE เรียบร้อยแล้ว');
     }
 
-    public function updatePromptpayNumber(Request $request)
+    public function updatePromptpayInfo(Request $request)
     {
         $data = $request->validateWithBag('promptpay', [
             // เบอร์มือถือไทย: ขึ้นต้นด้วย 0 ตามด้วยเลข 9 หลัก (รวม 10 หลัก) ไม่รับขีด/วงเล็บ/เว้นวรรค
@@ -118,7 +137,7 @@ class CreditTopupPackageController extends Controller
 
         Setting::updateOrCreate(
             ['key' => 'promptpay_number'],
-            ['value' => $data['promptpay_number']]
+            ['value' => $data['promptpay_number']],
         );
 
         Setting::updateOrCreate(

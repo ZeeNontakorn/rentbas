@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'แพ็กเกจเติมเครดิต')
+@section('title', 'แพ็กเกจเครดิต')
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-4xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         <a href="{{ route('admin.credit-topups.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
             <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,7 +13,7 @@
             กลับไปหน้าคำขอเติมเครดิต
         </a>
 
-        <h1 class="text-xl font-bold text-gray-800 mb-1">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
+        <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
         <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
 
         @if (session('success'))
@@ -82,12 +82,13 @@
         {{-- Add package --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <h2 class="font-medium text-gray-700 text-sm mb-4">เพิ่มแพ็กเกจใหม่</h2>
-            <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-5 gap-3 items-end">
+            <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-4 gap-3 items-end">
                 @csrf
+                <input type="hidden" name="sort_order" value="{{ $packages->count() + 1 }}">
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">ป้ายชื่อ (ตัวเลขเท่านั้น)</label>
-                    <input type="text" name="label" required inputmode="numeric" title="กรอกเป็นตัวเลขเท่านั้น"
-                           value="{{ old('label') }}" placeholder="เช่น 250"
+                    <label class="block text-xs font-medium text-gray-500 mb-1">ป้ายชื่อ</label>
+                    <input type="text" name="label" required
+                           value="{{ old('label') }}" placeholder="เช่น แพ็กสุดคุ้ม"
                            class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('label')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
@@ -97,9 +98,9 @@
                     @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">ราคา (บาท, ขั้นต่ำ 20)</label>
-                    <input type="number" step="0.01" min="20" name="price" required value="{{ old('price') }}"
-                           class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
+                    <label class="block text-xs font-medium text-gray-500 mb-1">ราคา (บาท)</label>
+                    <input type="number" step="0.01" min="1" name="price" required value="{{ old('price') }}" placeholder="เช่น 1000 บาท"
+                           class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('price')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
@@ -109,23 +110,12 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">เครดิตที่ได้ (บาท)</label>
-                    <input type="number" step="0.01" min="1" name="credit" required value="{{ old('credit') }}"
-                           class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
+                    <input type="number" step="0.01" min="1" name="credit" required value="{{ old('credit') }}" placeholder="เช่น 1000 บาท"
+                           class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('credit')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
                     @error('credit', 'createPackage')
-                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">ลำดับ</label>
-                    <input type="number" min="0" name="sort_order" value="{{ old('sort_order', 0) }}"
-                           class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
-                                  {{ $errors->createPackage->has('sort_order')
-                                      ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
-                                      : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
-                    @error('sort_order', 'createPackage')
                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -139,15 +129,16 @@
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-3 font-medium">ป้ายชื่อ</th>
-                            <th class="px-6 py-3 font-medium text-right">ราคา</th>
-                            <th class="px-6 py-3 font-medium text-right">เครดิตที่ได้</th>
-                            <th class="px-6 py-3 font-medium text-right">โบนัส</th>
+                            <th class="px-6 py-3 font-medium text-center">ลำดับ</th>
+                            <th class="px-6 py-3 font-medium text-center">ป้ายชื่อ</th>
+                            <th class="px-6 py-3 font-medium text-center">ราคา</th>
+                            <th class="px-6 py-3 font-medium text-center">เครดิตที่ได้</th>
+                            <th class="px-6 py-3 font-medium text-center">โบนัส</th>
                             <th class="px-6 py-3 font-medium text-center">แสดงผล</th>
                             <th class="px-6 py-3 font-medium"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100" id="packageRows">
                         @forelse($packages as $pkg)
                             @php
                                 $rowErrors = $errors->{"editPkg{$pkg->id}"};
@@ -161,29 +152,28 @@
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a1 1 0 11-2 0 1 1 0 012 0zM7 10a1 1 0 11-2 0 1 1 0 012 0zM7 16a1 1 0 11-2 0 1 1 0 012 0zM15 4a1 1 0 11-2 0 1 1 0 012 0zM15 10a1 1 0 11-2 0 1 1 0 012 0zM15 16a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
                                     </span>
                                 </td>
-                                <td class="px-6 py-3">
+                                <td class="px-6 py-3 text-center">
                                     <input form="editPkg{{ $pkg->id }}" type="text" name="label" value="{{ $rowLabel }}"
-                                           inputmode="numeric" title="กรอกเป็นตัวเลขเท่านั้น"
-                                           class="w-24 rounded border px-2 py-1 text-sm {{ $rowErrors->has('label') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                           class="w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('label') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('label', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-right">
-                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" min="20" name="price" value="{{ $rowPrice }}"
-                                           class="w-24 rounded border px-2 py-1 text-sm text-right {{ $rowErrors->has('price') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                <td class="px-6 py-3 text-center">
+                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" min="1" name="price" value="{{ $rowPrice }}"
+                                           class="no-spinner w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('price') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('price', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-right">
-                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" name="credit" value="{{ $rowCredit }}"
-                                           class="w-24 rounded border px-2 py-1 text-sm text-right {{ $rowErrors->has('credit') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                <td class="px-6 py-3 text-center">
+                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" min="1" name="credit" value="{{ $rowCredit }}"
+                                           class="no-spinner w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('credit') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('credit', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-right text-amber-600 font-medium">
+                                <td class="px-6 py-3 text-center text-amber-600 font-medium">
                                     @if($pkg->bonus_satang > 0) +฿{{ number_format($pkg->bonus_satang / 100, 0) }} @else — @endif
                                 </td>
                                 <td class="px-6 py-3 text-center">
@@ -204,12 +194,62 @@
                                 @method('PUT')
                             </form>
                         @empty
-                            <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
+                            <tr><td colspan="7" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
+        <div id="reorderToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
     </div>
 </div>
+
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+(function () {
+    const tbody = document.getElementById('packageRows');
+    if (!tbody || typeof Sortable === 'undefined') return;
+
+    const toast = document.getElementById('reorderToast');
+    function showToast(text, isError) {
+        toast.textContent = text;
+        toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
+        toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+
+    Sortable.create(tbody, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'opacity-40',
+        // เฉพาะแถวที่มี data-id (กัน empty-state row หลุดเข้ามาโดนลากด้วย)
+        filter: 'tr:not([data-id])',
+        onEnd: function () {
+            const order = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => parseInt(tr.dataset.id, 10));
+            if (order.length === 0) return;
+
+            fetch('{{ route('admin.credit-topup-packages.reorder') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                        || document.querySelector('input[name="_token"]')?.value,
+                },
+                body: JSON.stringify({ order }),
+            }).then(res => {
+                if (!res.ok) throw new Error('reorder failed');
+                showToast('บันทึกลำดับใหม่แล้ว');
+            }).catch(err => {
+                console.error(err);
+                showToast('บันทึกลำดับไม่สำเร็จ กำลังโหลดหน้าใหม่...', true);
+                setTimeout(() => window.location.reload(), 1200);
+            });
+        }
+    });
+})();
+</script>
+@endpush
 @endsection

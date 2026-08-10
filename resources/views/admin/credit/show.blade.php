@@ -12,7 +12,7 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-7xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         @include('components.mail-loading-overlay')
 
