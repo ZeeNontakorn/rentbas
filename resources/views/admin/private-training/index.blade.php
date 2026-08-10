@@ -32,7 +32,7 @@
             @include('components.mail-loading-overlay')
 
             <div class="mb-6">
-                <h1 class="text-2xl font-semibold text-gray-800">จัดการเทรนเนอร์ส่วนตัว</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเทรนเนอร์ส่วนตัว</h1>
                 <p class="text-sm text-gray-500 mt-1">ตรวจสอบและอนุมัติคำขอจองเทรนเนอร์ส่วนตัวของลูกค้า</p>
             </div>
 

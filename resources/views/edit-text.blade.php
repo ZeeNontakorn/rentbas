@@ -9,7 +9,7 @@
         {{-- Header --}}
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">จัดการเว็บไซต์</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเว็บไซต์</h1>
                 <p class="text-sm text-gray-500 mt-1">จัดการเนื้อหา รูปภาพ สิ่งอำนวยความสะดวก และรีวิวที่แสดงบนหน้า Home</p>
             </div>
         </div>

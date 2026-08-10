@@ -24,7 +24,7 @@
 
         {{-- Header --}}
         <div class="mb-6">
-            <h1 class="text-2xl font-semibold text-gray-800">ตั้งค่าราคา</h1>
+            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">ตั้งค่าราคา</h1>
             <p class="text-sm text-gray-500 mt-1">ปรับราคาต่อชั่วโมงตามช่วงเวลา และราคาแพ็กเกจโปรโมชั่น — มีผลกับการคำนวณราคาจองทันทีที่บันทึก</p>
         </div>
 

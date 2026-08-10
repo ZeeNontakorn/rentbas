@@ -8,7 +8,7 @@
     <div class="container mx-auto px-6 max-w-7xl">
 
         <div class="mb-6">
-            <h1 class="text-2xl font-semibold text-gray-800">จัดการโค้ช / ผู้ช่วยสนาม</h1>
+            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการโค้ช / ผู้ช่วยสนาม</h1>
             <p class="text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
         </div>
 

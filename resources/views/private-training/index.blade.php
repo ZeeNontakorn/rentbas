@@ -20,7 +20,7 @@
             {{-- ส่วน Title และ ช่องค้นหา --}}
             <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-2xl font-semibold text-gray-800">เทรนเนอร์ส่วนตัว (Private Training)</h1>
+                    <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">เทรนเนอร์ส่วนตัว (Private Training)</h1>
                     <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
                 </div>
 
