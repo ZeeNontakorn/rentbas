@@ -287,8 +287,8 @@ class PrivateTrainingController extends Controller
         if (! in_array($startsAt->minute, [0, 30], true) || ! in_array($endsAt->minute, [0, 30], true)) {
             return back()->withErrors(['start_time' => 'กรุณาเลือกเวลาเป็นช่วงละ 30 นาที']);
         }
-        if ($startsAt->diffInMinutes($endsAt) > 240) {
-            return back()->withErrors(['end_time' => 'จอง Private Training ได้ไม่เกิน 4 ชั่วโมงต่อคำขอ']);
+        if ($startsAt->diffInMinutes($endsAt) > 300) {
+            return back()->withErrors(['end_time' => 'จอง Private Training ได้ไม่เกิน 5 ชั่วโมงต่อคำขอ']);
         }
 
         $startDb = $data['start_time'].':00';

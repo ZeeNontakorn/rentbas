@@ -166,18 +166,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const pad = value => String(value).padStart(2, '0');
     const localDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     const localTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-
-    const maxDurationMs = 5 * 60 * 60 * 1000; // ลากได้สูงสุด 5 ชั่วโมง
+    const maxDurationMs = 5 * 60 * 60 * 1000;
 
     let pendingSelection = null;
     let needsConfirmClick = false;
-    let isProgrammaticSelect = false;
-
-    const programmaticSelect = (start, end) => {
-        isProgrammaticSelect = true;
-        calendar.select(start, end);
-        isProgrammaticSelect = false;
-    };
 
     const openBookingModal = (start, end) => {
         document.getElementById('booking-date').value = localDate(start);
@@ -339,9 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
             arg.el.appendChild(label);
         },
 
-        selectOverlap(event) {
-            return event.extendedProps.kind === 'available';
-        },
+        selectOverlap: false,
         allDaySlot: false,
         slotMinTime: '08:00:00',
         slotMaxTime: '22:00:00',
@@ -365,13 +355,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         selectAllow(info) {
-            const insideAvailableSchedule = calendar.getEvents().some(event =>
-                event.extendedProps.kind === 'available'
-                && info.start >= event.start
-                && info.end <= event.end
-            );
-            // ไม่เช็คระยะเวลาตรงนี้ เพื่อให้กล่องไฮไลต์โตต่อได้ตอนลาก ไม่หายไปกลางทาง
-            return insideAvailableSchedule && info.start >= new Date();
+            // FullCalendar ให้ลากข้ามคอลัมน์วันได้ จึงตรวจปลายช่วงแบบ exclusive
+            // (ลบ 1 ms) เพื่อยืนยันว่าช่วงที่เลือกทั้งหมดอยู่ภายในวันเดียวกัน
+            const inclusiveEnd = new Date(info.end.getTime() - 1);
+            return calendar.view.type !== 'dayGridMonth'
+                && info.start >= new Date()
+                && info.start <= maxSelectableDate
+                && localDate(info.start) === localDate(inclusiveEnd)
+                && (info.end - info.start) <= maxDurationMs;
         },
         dateClick(info) {
             if (info.date > maxSelectableDate) {
@@ -384,23 +375,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         select(info) {
-            if (isProgrammaticSelect) {
-                pendingSelection = { start: info.start, end: info.end };
-                return;
-            }
-
             const start = info.start;
             const end = info.end;
-            const duration = end - start;
-
-            if (duration > maxDurationMs) {
-                const clampedEnd = new Date(start.getTime() + maxDurationMs);
-                pendingSelection = { start, end: clampedEnd };
-                needsConfirmClick = false;
-                programmaticSelect(start, clampedEnd);
-                return;
-            }
-
             pendingSelection = { start, end };
             needsConfirmClick = false;
             openBookingModal(start, end);

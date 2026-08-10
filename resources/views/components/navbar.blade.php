@@ -195,7 +195,9 @@
                             @foreach($notifications as $n)
                             {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
                                 @php
-                                    $notifTarget = route('notifications.open', $n);
+                                    $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
+                                        || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
+                                    $notifTarget = $isCourtBookingNotification ? null : route('notifications.open', $n);
 
                                     // สีและไอคอนตามความหมาย: สำเร็จ / ปฏิเสธ / รอดำเนินการ / ข้อมูลทั่วไป
                                     $visualType = $n->visualType();
@@ -238,9 +240,9 @@
                                         ],
                                     };
                                 @endphp
-                                <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3  transition-colors"
+                                <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3 {{ $notifTarget ? 'cursor-pointer' : '' }} transition-colors"
                                      data-notif-id="{{ $n->id }}"
-                                    >
+                                     @if($notifTarget) onclick="window.location.href='{{ $notifTarget }}'" @endif>
                                     <span class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1 {{ $visual['iconBg'] }} {{ $visual['iconColor'] }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
                                     </span>
