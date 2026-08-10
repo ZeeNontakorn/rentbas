@@ -138,7 +138,7 @@
                             <th class="px-6 py-3 font-medium"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100" id="packageRows">
                         @forelse($packages as $pkg)
                             @php
                                 $rowErrors = $errors->{"editPkg{$pkg->id}"};
@@ -180,7 +180,7 @@
                                     <input type="hidden" form="editPkg{{ $pkg->id }}" name="sort_order" value="{{ $pkg->sort_order }}">
                                     <input form="editPkg{{ $pkg->id }}" type="checkbox" name="is_active" value="1" {{ $pkg->is_active ? 'checked' : '' }} class="accent-emerald-500 w-4 h-4">
                                 </td>
-                                <td class="px-6 py-3 text-center whitespace-nowrap">
+                                <td class="px-6 py-3 text-right whitespace-nowrap">
                                     <button type="submit" form="editPkg{{ $pkg->id }}" class="text-emerald-600 hover:text-emerald-700 font-medium text-xs mr-3">บันทึก</button>
                                     <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline" onsubmit="return confirm('ลบแพ็กเกจนี้?')">
                                         @csrf
@@ -200,17 +200,56 @@
                 </table>
             </div>
         </div>
+        <div id="reorderToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
     </div>
 </div>
 
-<style>
-    .no-spinner::-webkit-outer-spin-button,
-    .no-spinner::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+(function () {
+    const tbody = document.getElementById('packageRows');
+    if (!tbody || typeof Sortable === 'undefined') return;
+
+    const toast = document.getElementById('reorderToast');
+    function showToast(text, isError) {
+        toast.textContent = text;
+        toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
+        toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
     }
-    .no-spinner {
-        -moz-appearance: textfield;
-    }
-</style>
+
+    Sortable.create(tbody, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'opacity-40',
+        // เฉพาะแถวที่มี data-id (กัน empty-state row หลุดเข้ามาโดนลากด้วย)
+        filter: 'tr:not([data-id])',
+        onEnd: function () {
+            const order = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => parseInt(tr.dataset.id, 10));
+            if (order.length === 0) return;
+
+            fetch('{{ route('admin.credit-topup-packages.reorder') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                        || document.querySelector('input[name="_token"]')?.value,
+                },
+                body: JSON.stringify({ order }),
+            }).then(res => {
+                if (!res.ok) throw new Error('reorder failed');
+                showToast('บันทึกลำดับใหม่แล้ว');
+            }).catch(err => {
+                console.error(err);
+                showToast('บันทึกลำดับไม่สำเร็จ กำลังโหลดหน้าใหม่...', true);
+                setTimeout(() => window.location.reload(), 1200);
+            });
+        }
+    });
+})();
+</script>
+@endpush
 @endsection
