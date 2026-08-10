@@ -306,7 +306,10 @@
                                     </div>
 
                                     <!-- ปุ่มบันทึก -->
-
+                                    <button type="submit"
+                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3">
+                                        บันทึก
+                                    </button>
                                 </form>
 
                                 {{-- ปุ่มยกเลิกการแบ่งครึ่งสนาม --}}
