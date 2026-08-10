@@ -91,7 +91,7 @@
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-56 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
                             <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการ Private Training</a>
-                            <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">ตารางโค้ช</a>
+                            <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">Schedule บุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
                              <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
                         </div>
@@ -128,9 +128,10 @@
                         จองสนาม
                     </a>
 
-                    @if($user->role === 'staff' && $user->membership_type === 'coach')
-                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                            ตาราง Private ของฉัน
+                    <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
+                    @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            ตารางงาน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <a href="{{ route('admin.private-training.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -148,9 +149,12 @@
 
                     @if($canManageBookings && auth()->user()->role === 'staff')
                         <a href="{{ route('admin.bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    {{-- @if($canManageBookings && auth()->user()->role === 'staff')
+                        <!-- จัดการการจอง สำหรับ Staff -->
+                        <a href="{{ route('admin.bookings') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             จัดการการจอง
                         </a>
-                    @endif
+                    @endif --}}
                 @endif
 
                 <!-- Notification -->
@@ -190,19 +194,10 @@
                         <div id="notifEmptyMsg" class="p-4 text-center text-gray-400 {{ $notifications->isEmpty() ? '' : 'hidden' }}">ไม่มีการแจ้งเตือนใหม่</div>
 
                         <div id="notifItemsWrap" class="notif-scroll max-h-[22rem] overflow-y-auto overflow-x-hidden">
-                @php
-                    // ปลายทางเริ่มต้นเมื่อกดที่การ์ดแจ้งเตือน: ผู้ใช้ทั่วไป -> ประวัติการจอง, แอดมิน/สตาฟ -> จัดการการจอง
-                    $defaultNotifTarget = in_array(auth()->user()->role, ['admin', 'staff']) ? route('admin.bookings') : route('history');
-                    // แต่ถ้าเป็นแจ้งเตือนผลการจอง (อนุมัติ/ปฏิเสธ) ให้ไปหน้าประวัติการจองเสมอ ไม่ว่าจะ role ไหน
-                    $historyOnlyTitles = ['การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ'];
-                @endphp
                             @foreach($notifications as $n)
                             {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
                                 @php
-                                    $notifTarget = in_array($n->title, $historyOnlyTitles) ? route('history') : $defaultNotifTarget;
-                                    if ($n->title === 'มีรีวิวใหม่รอตรวจสอบ') {
-                                        $notifTarget = route('admin.edit.text').'#review-moderation';
-                                    }
+                                    $notifTarget = route('notifications.open', $n);
 
                                     // สีและไอคอนตามความหมาย: สำเร็จ / ปฏิเสธ / รอดำเนินการ / ข้อมูลทั่วไป
                                     $visualType = $n->visualType();
@@ -391,7 +386,7 @@
                         จัดการ Private Training
                     </a>
                     <a href="{{ route('admin.private-schedule.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตารางโค้ช
+                        Schedule บุคลากร
                     </a>
                     <a href="{{ route('admin.pricing.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         ตั้งราคา
@@ -416,9 +411,9 @@
                     <a href="{{ route('booking.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
                     </a>
-                    @if($user->role === 'staff' && $user->membership_type === 'coach')
-                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                            ตาราง Private ของฉัน
+                    @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                            ตารางงาน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
                         <a href="{{ route('admin.private-training.index') }}" class="flex items-center py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -434,9 +429,11 @@
                     </a>
                     @if($canManageBookings && auth()->user()->role === 'staff')
                         <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                    {{-- @if($canManageBookings && auth()->user()->role === 'staff')
+                        <a href="{{ route('admin.bookings') }}" class="py-2 hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             จัดการการจอง
                         </a>
-                    @endif
+                    @endif --}}
                 </div>
             @endif
 

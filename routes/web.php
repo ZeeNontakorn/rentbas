@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CreditTopupController as AdminCreditTopupControll
 use App\Http\Controllers\Admin\CreditTopupPackageController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ManageCourseController;
+use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PricingController;
 use App\Http\Controllers\Admin\PrivateScheduleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -17,15 +18,15 @@ use App\Http\Controllers\Admin\WebsiteReviewController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CoachScheduleController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CreditTopupController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\PackageCheckoutController;   // ← เพิ่มบรรทัดนี้
+use App\Http\Controllers\PackageCheckoutController;
 use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\Admin\PackageController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -98,6 +99,14 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     Route::prefix('private-training')->name('private-training.')->group(function () {
         Route::get('/', [PrivateTrainingController::class, 'index'])->name('index');
         Route::get('/my-schedule', [PrivateTrainingController::class, 'mySchedule'])->name('my-schedule');
+        Route::get('/my-schedule/events', [CoachScheduleController::class, 'events'])->name('my-schedule.events');
+        Route::post('/my-schedule/events', [CoachScheduleController::class, 'store'])->name('my-schedule.store');
+        Route::put('/my-schedule/events/{availability}', [CoachScheduleController::class, 'update'])->name('my-schedule.update');
+        Route::delete('/my-schedule/events/{availability}', [CoachScheduleController::class, 'destroy'])->name('my-schedule.destroy');
+        Route::post('/my-schedule/calendar-events', [CoachScheduleController::class, 'storeEvent'])->name('my-schedule.calendar-events.store');
+        Route::put('/my-schedule/calendar-events/{calendarEvent}', [CoachScheduleController::class, 'updateEvent'])->name('my-schedule.calendar-events.update');
+        Route::delete('/my-schedule/calendar-events/{calendarEvent}', [CoachScheduleController::class, 'destroyEvent'])->name('my-schedule.calendar-events.destroy');
+        Route::get('/available-assistants', [PrivateTrainingController::class, 'availableAssistants'])->name('available-assistants');
         Route::get('/{coach}/schedule', [PrivateTrainingController::class, 'scheduleEvents'])->name('schedule');
         Route::get('/{coach}', [PrivateTrainingController::class, 'show'])->name('show');
         Route::post('/', [PrivateTrainingController::class, 'store'])->name('store');
@@ -106,6 +115,7 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}/open', [NotificationController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 
@@ -193,9 +203,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // จัดการช่วงเวลาสำหรับ Private Training (ไม่รวมคลาสโรงเรียน)
     Route::get('/private-schedule', [PrivateScheduleController::class, 'index'])->name('private-schedule.index');
     Route::get('/private-schedule/events', [PrivateScheduleController::class, 'events'])->name('private-schedule.events');
-    Route::post('/private-schedule/events', [PrivateScheduleController::class, 'store'])->name('private-schedule.store');
-    Route::put('/private-schedule/events/{availability}', [PrivateScheduleController::class, 'update'])->name('private-schedule.update');
-    Route::delete('/private-schedule/events/{availability}', [PrivateScheduleController::class, 'destroy'])->name('private-schedule.destroy');
+    Route::post('/private-schedule/calendar-events', [PrivateScheduleController::class, 'storeEvent'])->name('private-schedule.calendar-events.store');
+    Route::put('/private-schedule/calendar-events/{calendarEvent}', [PrivateScheduleController::class, 'updateEvent'])->name('private-schedule.calendar-events.update');
+    Route::delete('/private-schedule/calendar-events/{calendarEvent}', [PrivateScheduleController::class, 'destroyEvent'])->name('private-schedule.calendar-events.destroy');
+    Route::put('/private-schedule/availabilities/{availability}', [PrivateScheduleController::class, 'updateAvailability'])->name('private-schedule.availabilities.update');
+    Route::delete('/private-schedule/availabilities/{availability}', [PrivateScheduleController::class, 'destroyAvailability'])->name('private-schedule.availabilities.destroy');
 
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [SettingController::class, 'edit'])->name('edit.text');
@@ -237,7 +249,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
     Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
 
-    //จัดการ package
+    // จัดการ package
     Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
     Route::get('packages/create', [PackageController::class, 'create'])->name('packages.create');
     Route::post('packages', [PackageController::class, 'store'])->name('packages.store');
@@ -263,6 +275,7 @@ Route::controller(AuthController::class)->group(function () {
 Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->group(function () {
     // จัดการคำขอจองเทรนเนอร์ส่วนตัว
     Route::get('/private-training', [PrivateTrainingController::class, 'adminIndex'])->name('private-training.index');
+    Route::get('/private-training/{privateTrainingBooking}/available-courts', [PrivateTrainingController::class, 'availableCourts'])->name('private-training.available-courts');
     Route::post('/private-training/{privateTrainingBooking}/approve', [PrivateTrainingController::class, 'approve'])->name('private-training.approve');
     Route::post('/private-training/{privateTrainingBooking}/assign-court', [PrivateTrainingController::class, 'assignCourt'])->name('private-training.assign-court');
     Route::post('/private-training/{privateTrainingBooking}/reject', [PrivateTrainingController::class, 'reject'])->name('private-training.reject');

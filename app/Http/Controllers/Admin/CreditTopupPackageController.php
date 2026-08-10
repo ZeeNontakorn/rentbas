@@ -17,8 +17,9 @@ class CreditTopupPackageController extends Controller
         $packages = CreditTopupPackage::orderBy('sort_order')->orderBy('price_satang')->get();
         $lineUrl = Setting::getVal('line_topup_url');
         $promptpayNumber = Setting::getVal('promptpay_number');
+        $promptpayName   = Setting::getVal('promptpay_name');
 
-        return view('admin.credit-topup-packages.index', compact('packages', 'lineUrl', 'promptpayNumber'));
+        return view('admin.credit-topup-packages.index', compact('packages', 'lineUrl', 'promptpayNumber', 'promptpayName'));
     }
 
     protected function rules(): array
@@ -118,6 +119,11 @@ class CreditTopupPackageController extends Controller
         Setting::updateOrCreate(
             ['key' => 'promptpay_number'],
             ['value' => $data['promptpay_number']]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'promptpay_name'],
+            ['value' => $data['promptpay_name']]
         );
 
         return back()->with('success', 'บันทึกเบอร์ PromptPay เรียบร้อยแล้ว');

@@ -38,7 +38,7 @@
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
         </span>
         <div class="min-w-0 flex-1">
-            <div class="font-semibold {{ $visual['title'] }}">{{ $n->title }}</div>
+            <a href="{{ route('notifications.open', $n) }}" class="font-semibold {{ $visual['title'] }} hover:underline">{{ $n->title }}</a>
 
             {{-- ส่วนที่แก้ไข --}}
             <div class="text-sm text-gray-600">
@@ -57,6 +57,7 @@
             </div>
 
             <div class="text-xs text-gray-400 mt-1">{{ $n->created_at->format('d M Y H:i') }}</div>
+            <a href="{{ route('notifications.open', $n) }}" class="mt-2 inline-flex text-xs font-semibold {{ $visual['title'] }} hover:underline">เปิดดูรายละเอียด →</a>
         </div>
 
         @if(!$n->is_read)
