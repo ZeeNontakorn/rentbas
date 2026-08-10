@@ -134,8 +134,6 @@ class CreditTopupController extends Controller
         }
 
         // 2) อีเมล — ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วทำให้คำขอที่บันทึกสำเร็จแล้วดูเหมือนพัง
-        try {
-            $adminEmails = User::whereIn('role', ['admin', 'superadmin'])->pluck('email')->filter();
 
         try {
             foreach ($admins->pluck('email')->filter() as $email) {
@@ -146,3 +144,5 @@ class CreditTopupController extends Controller
         }
     }
 }
+
+
