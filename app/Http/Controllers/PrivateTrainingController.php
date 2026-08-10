@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
 
 class PrivateTrainingController extends Controller
 {
@@ -287,8 +288,8 @@ class PrivateTrainingController extends Controller
         if (! in_array($startsAt->minute, [0, 30], true) || ! in_array($endsAt->minute, [0, 30], true)) {
             return back()->withErrors(['start_time' => 'กรุณาเลือกเวลาเป็นช่วงละ 30 นาที']);
         }
-        if ($startsAt->diffInMinutes($endsAt) > 240) {
-            return back()->withErrors(['end_time' => 'จอง Private Training ได้ไม่เกิน 4 ชั่วโมงต่อคำขอ']);
+        if ($startsAt->diffInMinutes($endsAt) > 300) {
+            return back()->withErrors(['end_time' => 'จอง Private Training ได้ไม่เกิน 5 ชั่วโมงต่อคำขอ']);
         }
 
         $startDb = $data['start_time'].':00';
@@ -630,7 +631,7 @@ class PrivateTrainingController extends Controller
             "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
             route('private-training.index'),
         );
-        
+
         $successMessage = 'จัดสนามและยืนยัน Private Training เรียบร้อยแล้ว ไม่มีการหักเครดิตลูกค้า';
         // ส่งอีเมลแจ้งยืนยันไปหาลูกค้าโดยตรง (ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วทำให้
         // การจัดสนามที่สำเร็จไปแล้วจริงพังไปด้วย เหมือนที่ทำไว้กับ notifyAdminsOfPayment)

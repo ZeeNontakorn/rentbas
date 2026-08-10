@@ -12,7 +12,7 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-4xl">
+    <div class="container mx-auto px-6 max-w-7xl">
 
         @include('components.mail-loading-overlay')
 
@@ -71,7 +71,7 @@
                                     placeholder="เช่น 500"
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
                             </div>
-                            <div class="flex-1 w-full">
+                            <div class="flex-1 w-full mx-auto mt-3">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">หมายเหตุ (ถ้ามี)</label>
                                 <input type="text" name="note" maxlength="255" placeholder="เช่น เติมเงินสดหน้าเคาน์เตอร์"
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
@@ -87,7 +87,7 @@
                                     <option value="cash_counter">ชำระเงินสดที่เคาน์เตอร์</option>
                                 </select>
                             </div>
-                            <div class="flex-1 w-full">
+                            <div class="flex-1 w-full mx-auto mt-3">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">ชื่อ-นามสกุลผู้ดำเนินการ </label>
                                 <input type="text" name="processed_by_name" required maxlength="100" placeholder="เช่น สมชาย ใจดี"
                                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">

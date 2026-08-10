@@ -154,7 +154,6 @@ class CourtController extends Controller
                                 ->where('locked_until', '>', now());
                         });
                 })
-
                 ->with('user:id,name')
                 ->get(['id', 'court_section_id', 'start_time', 'end_time', 'status', 'user_id']);
 
