@@ -71,12 +71,12 @@
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-3 font-medium">ลำดับ</th>
-                            <th class="px-6 py-3 font-medium">ชื่อผู้ใช้</th>
-                            <th class="px-6 py-3 font-medium">อีเมล</th>
-                            <th class="px-6 py-3 font-medium">Role</th>
-                            <th class="px-6 py-3 font-medium">สถานะยืนยัน (OTP)</th>
-                            <th class="px-6 py-3 font-medium">ประเภทสมาชิก</th>
+                            <th class="px-6 py-3 font-medium text-center">ลำดับ</th>
+                            <th class="px-6 py-3 font-medium text-center">ชื่อผู้ใช้</th>
+                            <th class="px-6 py-3 font-medium text-center">อีเมล</th>
+                            <th class="px-6 py-3 font-medium text-center">Role</th>
+                            <th class="px-6 py-3 font-medium text-center">สถานะยืนยัน (OTP)</th>
+                            <th class="px-6 py-3 font-medium text-center">ประเภทสมาชิก</th>
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
@@ -85,28 +85,28 @@
 
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
-                                <td class="px-6 py-4 font-medium text-gray-700">{{ $u->name }}</td>
-                                <td class="px-6 py-4 text-gray-500">{{ $u->email }}</td>
+                                <td class="px-6 py-4 font-medium text-gray-700">
+                                    <span class="copy-text inline-block max-w-[140px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                          title="{{ $u->name }}" data-copy="{{ $u->name }}" onclick="copyToClipboard(this, event)">{{ $u->name }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">
+                                    <span class="copy-text inline-block max-w-[180px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                          title="{{ $u->email }}" data-copy="{{ $u->email }}" onclick="copyToClipboard(this, event)">{{ $u->email }}</span>
+                                </td>
                                 <td class="px-6 py-4">
                                     @if($u->role === 'superadmin')
-                                        <div class="flex items-center gap-2 w-[136px]">
-                                            <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
+                                        @if($isSuperadmin && $u->id !== auth()->id())
+                                            <button type="button"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
+                                                    title="แก้ไข Role">
+                                                Super Admin
+                                            </button>
+                                        @else
+                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
                                                 Super Admin
                                             </span>
-                                            @if($isSuperadmin && $u->id !== auth()->id())
-                                                <button type="button"
-                                                        onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                        class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                    </svg>
-                                                </button>
-                                            @else
-                                                {{-- placeholder ขนาดเท่าปุ่ม เพื่อให้ badge กว้างเท่าแถวอื่นที่มีปุ่มจริง --}}
-                                                <span class="w-[22px] h-[22px] flex-shrink-0"></span>
-                                            @endif
-                                        </div>
+                                        @endif
                                     @else
                                         @php
                                             $roleColors = [
@@ -116,23 +116,18 @@
                                             ];
                                             $roleClass = $roleColors[$u->role] ?? 'bg-gray-100 text-gray-600';
                                         @endphp
-                                        <div class="flex items-center gap-2 w-[136px]">
-                                            <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
+                                        @if($u->id !== auth()->id())
+                                            <button type="button"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
+                                                    title="แก้ไข Role">
+                                                {{ ucfirst($u->role) }}
+                                            </button>
+                                        @else
+                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
                                                 {{ ucfirst($u->role) }}
                                             </span>
-                                            @if($u->id !== auth()->id())
-                                                <button type="button"
-                                                        onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                        class="text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0" title="แก้ไข Role">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                    </svg>
-                                                </button>
-                                            @else
-                                                <span class="w-[22px] h-[22px] flex-shrink-0"></span>
-                                            @endif
-                                        </div>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
@@ -151,20 +146,15 @@
                                 <td class="px-6 py-4">
                                     @if(in_array($u->role, ['admin', 'superadmin'], true))
                                         {{-- แอดมิน: ป้ายพื้นหลังสีเทา มีกรอบ เหมือนป้ายประเภทสมาชิกอื่นๆ --}}
-                                        <div class="flex items-center gap-2 w-[107px]">
-                                            <span class="inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
-                                        </div>
+                                        <span class="inline-flex items-center justify-center w-[107px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
                                     @else
-                                        {{-- ประเภทสมาชิก: ป้ายสถานะ (มีสีตามประเภท) + ปุ่มแก้ไขเปิดโมดัล (สไตล์เดียวกับ Role) --}}
+                                        {{-- ประเภทสมาชิก: ป้ายทั้งก้อนคลิกได้เพื่อเปิดโมดัลแก้ไข (สไตล์เดียวกับ Role) --}}
                                         @php
                                             $membershipClass = $membershipColorMap[$u->membership_type] ?? 'bg-gray-100 text-gray-600';
                                         @endphp
-                                        <div class="flex items-center gap-2 w-[136px] membership-cell" data-user-id="{{ $u->id }}">
-                                            <span class="membership-label inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }}">
-                                                {{ $u->membershipTypeLabel() }}
-                                            </span>
+                                        <div class="membership-cell" data-user-id="{{ $u->id }}">
                                             <button type="button"
-                                                class="membership-edit-btn text-gray-400 hover:text-orange-500 transition p-1 flex-shrink-0"
+                                                class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                 data-user-id="{{ $u->id }}"
                                                 data-name="{{ $u->name }}"
                                                 data-value="{{ $u->membership_type }}"
@@ -172,10 +162,7 @@
                                                 data-role="{{ $u->role }}"
                                                 onclick="openMembershipModal(this.dataset.userId, this.dataset.name, this.dataset.value, this.dataset.url, this.dataset.role)"
                                                 title="แก้ไขประเภทสมาชิก">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
+                                                {{ $u->membershipTypeLabel() }}
                                             </button>
                                         </div>
                                     @endif
@@ -351,6 +338,17 @@
     </div>
 </div>
 
+{{-- Toast แจ้งเตือนคัดลอกสำเร็จ --}}
+<div id="copyToast"
+     class="fixed z-[9999] pointer-events-none opacity-0 -translate-y-1 transition-all duration-200 ease-out">
+    <span class="inline-flex items-center gap-1.5 bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+        </svg>
+        คัดลอกแล้ว
+    </span>
+</div>
+
 <script>
     function selectRole(btn) {
         document.getElementById('roleModalInput').value = btn.dataset.role;
@@ -481,9 +479,8 @@
                 const badge = cell.querySelector('.membership-label');
                 badge.textContent = newLabel;
                 const colorClass = membershipColorMap[newValue] || 'bg-gray-100 text-gray-600';
-                badge.className = 'membership-label inline-flex items-center justify-center flex-1 min-w-0 px-2.5 py-1 text-xs rounded-full font-medium truncate ' + colorClass;
-                const editBtn = cell.querySelector('.membership-edit-btn');
-                if (editBtn) editBtn.dataset.value = newValue;
+                badge.className = 'membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition ' + colorClass;
+                badge.dataset.value = newValue;
             }
             closeMembershipModal();
         })
@@ -511,5 +508,67 @@
             });
         });
     });
+
+    // ===================== คัดลอกชื่อ/อีเมลด้วยการคลิก =====================
+    function copyToClipboard(el, event) {
+        const text = el.dataset.copy;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => showCopyToast(event, el)).catch(() => fallbackCopy(text, event, el));
+        } else {
+            fallbackCopy(text, event, el);
+        }
+    }
+
+    function fallbackCopy(text, event, el) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showCopyToast(event, el);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+        document.body.removeChild(textarea);
+    }
+
+    let copyToastTimeout;
+    function showCopyToast(event, el) {
+        const toast = document.getElementById('copyToast');
+
+        // ตำแหน่งอ้างอิงจากคลิก ถ้าไม่มี event (เช่นถูกเรียกจากที่อื่น) ให้อ้างจากตัว element แทน
+        let x, y;
+        if (event) {
+            x = event.clientX;
+            y = event.clientY;
+        } else {
+            const rect = el.getBoundingClientRect();
+            x = rect.left;
+            y = rect.top;
+        }
+
+        toast.style.left = x + 'px';
+        toast.style.top = (y - 36) + 'px';
+
+        // เด้งขึ้นเล็กน้อยแล้วค่อยจาง (retrigger animation ทุกครั้งที่คลิกซ้ำเร็วๆ)
+        toast.classList.remove('opacity-0', '-translate-y-1');
+        toast.classList.add('opacity-100', 'translate-y-0');
+
+        clearTimeout(copyToastTimeout);
+        copyToastTimeout = setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', '-translate-y-1');
+        }, 1000);
+
+        // เอฟเฟกต์เขียวชั่วครู่ที่ตัวข้อความเอง
+        el.classList.add('text-emerald-600');
+        clearTimeout(el._copyTimeout);
+        el._copyTimeout = setTimeout(() => el.classList.remove('text-emerald-600'), 1000);
+    }
 </script>
 @endsection

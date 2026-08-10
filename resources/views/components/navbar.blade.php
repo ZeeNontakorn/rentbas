@@ -159,7 +159,7 @@
                 @php
                     $user = auth()->user(); // ดึงข้อมูลผู้ใช้ที่ Login อยู่
                     $unreadCount = $user->unreadNotifications()->count(); // นับจำนวนแจ้งเตือนที่ยังไม่ได้อ่าน
-                    $notifications = $user->unreadNotifications()->latest()->take(10)->get(); // ดึงเฉพาะที่ยังไม่ได้อ่าน ล่าสุด 10 รายการ
+                    $notifications = $user->unreadNotifications()->latest()->take(200)->get(); // ดึงเฉพาะที่ยังไม่ได้อ่าน ล่าสุด 10 รายการ
                 @endphp
                 {{-- ปุ่มแจ้งเตือน --}}
                 <div class="relative flex-shrink-0">

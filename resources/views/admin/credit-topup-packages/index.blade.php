@@ -88,7 +88,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">ป้ายชื่อ</label>
                     <input type="text" name="label" required
-                           value="{{ old('label') }}" placeholder="เช่น 250"
+                           value="{{ old('label') }}" placeholder="เช่น แพ็กสุดคุ้ม"
                            class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('label')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
@@ -99,7 +99,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">ราคา (บาท)</label>
-                    <input type="number" step="0.01" min="1" name="price" required value="{{ old('price') }}"
+                    <input type="number" step="0.01" min="1" name="price" required value="{{ old('price') }}" placeholder="เช่น 1000 บาท"
                            class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('price')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
@@ -110,7 +110,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">เครดิตที่ได้ (บาท)</label>
-                    <input type="number" step="0.01" min="1" name="credit" required value="{{ old('credit') }}"
+                    <input type="number" step="0.01" min="1" name="credit" required value="{{ old('credit') }}" placeholder="เช่น 1000 บาท"
                            class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('credit')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
