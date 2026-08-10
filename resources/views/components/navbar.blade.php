@@ -115,8 +115,8 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-52 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
-                         <a href="{{ route('admin.credit-topup-packages.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">แพ็กเกจเติมเครดิต</a>
-                        <a href="{{ route('admin.credit-topups.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">คำขอเติมเครดิต</a>
+                            <a href="{{ route('admin.credit-topup-packages.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center {{ request()->routeIs('admin.credit-topup-packages.index') ? 'text-orange-500 font-bold' : '' }}">แพ็กเกจเติมเครดิต</a>
+                            <a href="{{ route('admin.credit-topups.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center {{ request()->routeIs('admin.credit-topups.index') ? 'text-orange-500 font-bold' : '' }}">คำขอเติมเครดิต</a>
                         </div>
                     </div>
                 @else

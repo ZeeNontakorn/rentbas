@@ -16,7 +16,7 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900">Schedule โค้ชและผู้ช่วยสนาม</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Schedule โค้ชและผู้ช่วยสนาม</h1>
                 <p class="mt-1 text-sm text-slate-500">แอดมินเพิ่ม แก้ไข หรือลบกำหนดการให้บุคลากรได้โดยตรง</p>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">

@@ -20,7 +20,7 @@
     {{-- HEADER --}}
     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4">
         <div>
-            <h1 class="text-[26px] font-semibold text-gray-800 tracking-tight">บัญชีของฉัน</h1>
+            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">บัญชีของฉัน</h1>
             <p class="text-gray-500 text-[14px] mt-0.5">ข้อมูลสมาชิก Thata Homecourt</p>
         </div>
         <a href="{{ route('profile.edit') }}"

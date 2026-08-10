@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-4xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         <a href="{{ route('admin.credit-topups.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
             <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,7 +13,7 @@
             กลับไปหน้าคำขอเติมเครดิต
         </a>
 
-        <h1 class="text-xl font-bold text-gray-800 mb-1">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
+        <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
         <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
 
         @if (session('success'))

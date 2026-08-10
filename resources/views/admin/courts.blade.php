@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pb-10">
+    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
 
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -124,18 +124,11 @@
             }
         </style>
 
-        <div class="bk-main max-w-[1200px] mx-auto px-4 py-8">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             <div class="mb-6 flex justify-between items-end">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
-                        <a href="{{ route('admin.dashboard') }}"
-                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 hover:text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                            </svg>
-                        </a>
                         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการสนาม</h1>
                     </div>
                     <p class="text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
@@ -272,9 +265,10 @@
                                     <div class="flex flex-col gap-3 mb-4">
                                         {{-- เต็มสนาม (FULL) --}}
                                         <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3">
-                                            <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">FULL</span>
-                                            <input type="text" name="name_full" value="{{ $fullSec->name ?? 'เต็มสนาม' }}" maxlength="100"
-                                                class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                            <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">Half</span>
+                                            <label class="flex-1 min-w-0 rounded-lg px-3 py-1.5 text-sm text-gray-900 outline-none">
+                                                ครึ่งสนาม
+                                            </label>
                                             <div class="shrink-0 w-[115px] text-right px-1">
                                                 <span class="text-[12px] text-gray-400 whitespace-nowrap">เปิดใช้งานเสมอ</span>
                                             </div>
@@ -312,10 +306,7 @@
                                     </div>
 
                                     <!-- ปุ่มบันทึก -->
-                                    <button type="submit"
-                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3">
-                                        บันทึก
-                                    </button>
+
                                 </form>
 
                                 {{-- ปุ่มยกเลิกการแบ่งครึ่งสนาม --}}
@@ -333,23 +324,16 @@
                                 {{-- ---------------------------------------------------- --}}
                                 {{-- กรณีที่ 2: ยกเลิกการแบ่งสนามแล้ว / จองเฉพาะเต็มสนาม   --}}
                                 {{-- ---------------------------------------------------- --}}
-                                
+
                                 {{-- แก้ไขชื่อเต็มสนาม --}}
                                 @if ($fullSec)
-                                    <form method="POST" action="{{ route('admin.court-sections.update', $fullSec->id) }}"
-                                        class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 mb-4">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 mb-4">
                                         <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">FULL</span>
-                                        <input type="text" name="name" value="{{ $fullSec->name }}" maxlength="100"
-                                            class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        <label class="flex-1 min-w-0 rounded-lg px-3 py-1.5 text-sm text-gray-900 outline-none">
+                                            {{ $fullSec->name }}
+                                        </label>
                                         <span class="text-[12px] text-gray-400 px-2 whitespace-nowrap">เปิดใช้งานเสมอ</span>
-                                        <button type="submit"
-                                            class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-1.5 transition whitespace-nowrap">
-                                            บันทึก
-                                        </button>
-                                    </form>
+                                    </div>
                                 @endif
 
                                 {{-- ฟอร์มแบ่งครึ่งสนามใหม่ --}}

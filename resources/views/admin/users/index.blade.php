@@ -4,12 +4,12 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-7xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         {{-- Header --}}
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-800">จัดการผู้ใช้งาน</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการผู้ใช้งาน</h1>
                 <p class="text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูล และจัดการผู้ใช้ทั้งหมดในระบบ</p>
             </div>
 
