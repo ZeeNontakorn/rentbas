@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\CreditTopupRequestedMail;
 use App\Models\CreditTopupPackage;
 use App\Models\CreditTopupRequest;
+use App\Models\Notification;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -104,16 +105,26 @@ class CreditTopupController extends Controller
     }
 
     /**
-     * แจ้งเตือนแอดมินทุกคนทางอีเมลว่ามีคำขอเติมเครดิตใหม่รอตรวจสอบ — ส่งแบบ synchronous
+     * แจ้งเตือนแอดมินทุกคนในระบบและทางอีเมลว่ามีคำขอเติมเครดิตใหม่รอตรวจสอบ — ส่งแบบ synchronous
      * (ดูเหตุผลเรื่องไม่มี queue worker ใน CreditTopupRequestedMail) ครอบ try/catch กันเมล
      * เซิร์ฟเวอร์ล่มแล้วทำให้คำขอที่บันทึกสำเร็จแล้วดูเหมือนพัง ทั้งที่จริงบันทึกลง DB สำเร็จแล้ว
      */
     protected function notifyAdminsOfNewRequest(CreditTopupRequest $topupRequest): void
     {
-        try {
-            $adminEmails = User::whereIn('role', ['admin', 'superadmin'])->pluck('email')->filter();
+        $admins = User::whereIn('role', ['admin', 'superadmin'])->get(['id', 'email']);
 
-            foreach ($adminEmails as $email) {
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'มีคำขอเติมเครดิตใหม่',
+                'message' => "คำขอ #{$topupRequest->id} จาก {$topupRequest->user->name} |ยอดเติม ฿".
+                    number_format($topupRequest->credit_satang / 100, 2),
+                'action_url' => route('admin.credit-topups.index'),
+            ]);
+        }
+
+        try {
+            foreach ($admins->pluck('email')->filter() as $email) {
                 Mail::to($email)->send(new CreditTopupRequestedMail($topupRequest));
             }
         } catch (\Throwable $e) {

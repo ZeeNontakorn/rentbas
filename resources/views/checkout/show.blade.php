@@ -171,7 +171,8 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('checkout.pay.credit', $booking) }}">
+                <<form method="POST" action="{{ route('checkout.pay.credit', $booking) }}"
+      onsubmit="showMailLoadingOverlay('กำลังตัดเครดิตและส่งอีเมลยืนยันการจอง...'); this.querySelector('button[type=submit]').disabled = true;">
                     @csrf
                     <button type="submit" class="btn-pay credit" {{ $sufficient ? '' : 'disabled' }}>
                         ชำระด้วยเครดิต ฿{{ number_format($price / 100, 0) }}
@@ -202,9 +203,10 @@
     </div>
 </div>
 </div>
-
+@include('components.mail-loading-overlay')
 @push('scripts')
 <script>
+
 (function () {
     const timerBox = document.getElementById('coTimer');
     const clockEl = document.getElementById('coClock');
