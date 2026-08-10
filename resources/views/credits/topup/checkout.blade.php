@@ -25,8 +25,8 @@
     position: absolute;
     width: 45px; /* ขนาดโลโก้ตรงกลาง (ห้ามใหญ่เกินไปเดี๋ยวสแกนไม่ได้) */
     height: auto;
-    background-color: white;
-    padding: 3px;
+    background-color: transparent;
+    padding: 0;
     border-radius: 8px;
 }
 
