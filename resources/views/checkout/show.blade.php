@@ -180,7 +180,7 @@
             </div>
 
             {{-- Option B: QR PromptPay [WIP] --}}
-            <div class="pay-option wip-option">
+            {{-- <div class="pay-option wip-option">
                 <div class="flex items-center justify-between">
                     <h3 class="text-[15px] font-bold text-gray-900">QR PromptPay</h3>
                     <span class="pay-badge wip">กำลังพัฒนา</span>
@@ -193,7 +193,7 @@
                         ดำเนินการต่อด้วย QR PromptPay
                     </button>
                 </form>
-            </div>
+            </div> --}}
 
             <p class="text-xs text-gray-400 text-center px-2">
                 หากไม่ชำระเงินภายในเวลาที่กำหนด ระบบจะยกเลิกรายการนี้อัตโนมัติ และคืนช่วงเวลาให้ผู้อื่นจองได้ทันที
