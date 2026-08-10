@@ -5,7 +5,7 @@
 @section('content')
 @include('private-training._calendar-theme')
 <div class="min-h-screen bg-slate-50 py-8 text-gray-900">
-    <div class="container mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <a href="{{ route('private-training.index') }}"
             class="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-orange-500">
             ← กลับไปหน้ารายชื่อโค้ช

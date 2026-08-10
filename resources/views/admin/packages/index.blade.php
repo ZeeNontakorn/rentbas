@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-slate-50 py-8 text-gray-900">
-    <div class="container mx-auto max-w-7xl px-6">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการ Package</h1>

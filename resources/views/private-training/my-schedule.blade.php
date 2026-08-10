@@ -14,7 +14,7 @@
 </style>
 
 <div class="min-h-screen bg-slate-50 py-8 text-slate-900">
-    <div class="container mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
                 <span class="inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">สำหรับโค้ชและผู้ช่วยสนาม</span>

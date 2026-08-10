@@ -5,7 +5,7 @@
 @section('content')
 
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-7xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         <div class="mb-6">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการโค้ช / ผู้ช่วยสนาม</h1>

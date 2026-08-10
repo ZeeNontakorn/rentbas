@@ -15,7 +15,7 @@
 
 @section('content')
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-        <div class="container mx-auto px-6 max-w-7xl">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             {{-- ส่วน Title และ ช่องค้นหา --}}
             <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">

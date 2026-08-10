@@ -3,7 +3,7 @@
 @section('title', 'แจ้งเตือนของฉัน')
 
 @section('content')
-<div class="container mx-auto max-w-4xl py-10 px-4">
+<div class="container mx-auto px-4 sm:px-6 max-w-7xl">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">แจ้งเตือนของฉัน</h2>
 

@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pb-10">
+    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
 
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -124,7 +124,7 @@
             }
         </style>
 
-        <div class="bk-main max-w-[1200px] mx-auto px-4 py-8">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             <div class="mb-6 flex justify-between items-end">
                 <div>

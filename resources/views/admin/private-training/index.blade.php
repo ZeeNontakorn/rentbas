@@ -26,7 +26,7 @@
 
 @section('content')
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-        <div class="container mx-auto px-6 max-w-6xl">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             {{-- 1. ดึง Loading Overlay Component มาใส่ --}}
             @include('components.mail-loading-overlay')

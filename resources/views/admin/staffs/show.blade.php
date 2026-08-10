@@ -73,7 +73,7 @@
     </style>
 
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-        <div class="container mx-auto px-6 max-w-7xl">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             <a href="{{ route('admin.staffs.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
