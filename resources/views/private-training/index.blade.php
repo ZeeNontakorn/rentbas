@@ -59,9 +59,9 @@
                                         @else
                                             @php
                                                 $defaultCoachImage = match ($coach->staffProfile?->gender) {
-                                                    'male' => asset('images/defaults/coach-male.png'),
-                                                    'female' => asset('images/defaults/coach-female.png'),
-                                                    default => asset('images/defaults/coach-default.svg'),
+                                                    'male' => Storage::disk('public')->url('defaults/coach-male.png'),
+                                                    'female' => Storage::disk('public')->url('defaults/coach-female.png'),
+                                                    default => Storage::disk('public')->url('defaults/coach-default.svg'),
                                                 };
                                             @endphp
                                             <img src="{{ $defaultCoachImage }}" alt="{{ $coach->name }}"
