@@ -238,9 +238,9 @@
                                         ],
                                     };
                                 @endphp
-                                <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3 cursor-pointer transition-colors"
+                                <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3  transition-colors"
                                      data-notif-id="{{ $n->id }}"
-                                     onclick="window.location.href='{{ $notifTarget }}'">
+                                    >
                                     <span class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1 {{ $visual['iconBg'] }} {{ $visual['iconColor'] }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
                                     </span>
@@ -268,7 +268,7 @@
                                     {{-- ปุ่มสำหรับทำเครื่องหมายว่าอ่านแล้ว (ถ้ายังไม่ได้อ่าน) — กันไม่ให้คลิกทะลุไปเปิดหน้าปลายทางด้วย --}}
                                     <form class="mark-read-form flex-shrink-0" method="POST" action="{{ route('notifications.read', $n) }}" onclick="event.stopPropagation()">
                                         @csrf
-                                        <button type="submit" class="text-[11px] bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600 px-2.5 py-1 rounded-full transition whitespace-nowrap">อ่านแล้ว</button>
+                                        <button type="submit" class="text-[11px] bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600 px-2.5 py-1 rounded-full transition whitespace-nowrap cursor-pointer">อ่านแล้ว</button>
                                     </form>
                                 </div>
                             @endforeach
