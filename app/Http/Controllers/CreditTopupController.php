@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\CreditTopupRequestedMail;
 use App\Models\CreditTopupPackage;
 use App\Models\CreditTopupRequest;
+use App\Models\Notification;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -104,12 +105,33 @@ class CreditTopupController extends Controller
     }
 
     /**
-     * แจ้งเตือนแอดมินทุกคนทางอีเมลว่ามีคำขอเติมเครดิตใหม่รอตรวจสอบ — ส่งแบบ synchronous
-     * (ดูเหตุผลเรื่องไม่มี queue worker ใน CreditTopupRequestedMail) ครอบ try/catch กันเมล
-     * เซิร์ฟเวอร์ล่มแล้วทำให้คำขอที่บันทึกสำเร็จแล้วดูเหมือนพัง ทั้งที่จริงบันทึกลง DB สำเร็จแล้ว
+     * แจ้งเตือนแอดมินทุกคนว่ามีคำขอเติมเครดิตใหม่รอตรวจสอบ — ทั้งแจ้งเตือนในเว็บ (กระดิ่ง)
+     * และอีเมล แยก try/catch กันคนละส่วน เพื่อไม่ให้ฝั่งหนึ่งพังแล้วอีกฝั่งไม่ทำงานไปด้วย
+     * (อีเมลส่งแบบ synchronous เพราะไม่มี queue worker — ดูเหตุผลใน CreditTopupRequestedMail)
      */
     protected function notifyAdminsOfNewRequest(CreditTopupRequest $topupRequest): void
     {
+        $admins = User::whereIn('role', ['admin', 'superadmin'])->get();
+
+        $amountText = number_format($topupRequest->price_satang / 100, 2);
+        $requesterName = $topupRequest->user->name ?? 'ผู้ใช้';
+
+        // 1) แจ้งเตือนในเว็บ (ขึ้นกระดิ่ง) — ทำก่อนอีเมล และแยก try/catch ต่อแอดมินแต่ละคน
+        foreach ($admins as $admin) {
+            try {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'title' => 'มีคำขอเติมเครดิตใหม่',
+                    'message' => "ผู้ใช้ {$requesterName} ส่งคำขอเติมเครดิตจำนวน {$amountText} บาท|กดเพื่อตรวจสอบสลิปและอนุมัติ",
+                    'is_read' => false,
+                    'action_url' => route('admin.credit-topups.index'),
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('สร้างแจ้งเตือนในเว็บ (คำขอเติมเครดิตใหม่) ไม่สำเร็จ สำหรับแอดมิน user_id=' . $admin->id . ': ' . $e->getMessage());
+            }
+        }
+
+        // 2) อีเมล — ครอบ try/catch กันเมลเซิร์ฟเวอร์ล่มแล้วทำให้คำขอที่บันทึกสำเร็จแล้วดูเหมือนพัง
         try {
             $adminEmails = User::whereIn('role', ['admin', 'superadmin'])->pluck('email')->filter();
 
