@@ -25,9 +25,9 @@ class CreditTopupPackageController extends Controller
     protected function rules(): array
     {
         return [
-            // ป้ายชื่อใช้เป็นตัวเลข (จำนวนบาท) ล้วนๆ เท่านั้น เช่น "250" — ห้ามมีตัวอักษร/สัญลักษณ์ปน
-            'label' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/'],
-            'price' => ['required', 'numeric', 'min:20', 'max:1000000'],
+            // ป้ายชื่อเป็นข้อความอิสระ (VARCHAR ในฐานข้อมูล) เช่น "250" หรือ "แพ็กสุดคุ้ม"
+            'label' => ['required', 'string', 'max:50'],
+            'price' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'credit' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -37,8 +37,7 @@ class CreditTopupPackageController extends Controller
     protected function messages(): array
     {
         return [
-            'label.regex' => 'ป้ายชื่อต้องเป็นตัวเลขเท่านั้น (เช่น 250)',
-            'price.min' => 'ราคาแพ็กเกจต้องไม่ต่ำกว่า 20 บาท',
+            'price.min' => 'ราคาแพ็กเกจต้องไม่ต่ำกว่า 1 บาท',
             'sort_order.integer' => 'ลำดับต้องเป็นตัวเลขจำนวนเต็มเท่านั้น',
             'sort_order.min' => 'ลำดับต้องไม่ติดลบ',
         ];

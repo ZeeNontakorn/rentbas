@@ -1858,7 +1858,7 @@ async function renderSch(ds) {
             if (status === 'pending_payment') {
                 html += '<td><span class="slot-badge slot-checkout"><span class="slot-dot"></span>กำลังจอง</span></td>';
             } else if (status === 'booked') {
-                html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>จอง</span></td>';
+                html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>ไม่ว่าง</span></td>';
             } else if (status === 'past') {
                 html += '<td><span class="slot-badge slot-past"><span class="slot-dot"></span>ผ่านมาแล้ว</span></td>';
             } else if (status === 'closed') {

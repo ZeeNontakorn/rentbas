@@ -218,6 +218,19 @@ class CheckoutController extends Controller
             Mail::to($confirmed->user->email)->send(new BookingReceiptMail($confirmed));
         }
 
+        User::whereIn('role', ['admin', 'superadmin'])
+            ->pluck('id')
+            ->each(function ($adminId) use ($confirmed) {
+                Notification::create([
+                    'user_id' => $adminId,
+                    'title' => 'มีการจองสนามบาสใหม่',
+                    'message' => "การจอง #{$confirmed->id} จาก {$confirmed->user->name} |{$confirmed->court->name} — {$confirmed->courtSection->name}\nวันที่ {$confirmed->booking_date->toDateString()} เวลา ".
+                        substr($confirmed->start_time, 0, 5).'-'.substr($confirmed->end_time, 0, 5).
+                        "\nยอดชำระ ฿".number_format($confirmed->price / 100, 2).' ผ่านเครดิต',
+                    'action_url' => route('admin.bookings'),
+                ]);
+            });
+
         $this->notifyAdminsOfPayment(
             'การจองสนาม',
             $confirmed->id,

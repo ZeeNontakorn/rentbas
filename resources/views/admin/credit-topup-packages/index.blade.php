@@ -82,11 +82,12 @@
         {{-- Add package --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <h2 class="font-medium text-gray-700 text-sm mb-4">เพิ่มแพ็กเกจใหม่</h2>
-            <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-5 gap-3 items-end">
+            <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-4 gap-3 items-end">
                 @csrf
+                <input type="hidden" name="sort_order" value="{{ $packages->count() + 1 }}">
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">ป้ายชื่อ (ตัวเลขเท่านั้น)</label>
-                    <input type="text" name="label" required inputmode="numeric" title="กรอกเป็นตัวเลขเท่านั้น"
+                    <label class="block text-xs font-medium text-gray-500 mb-1">ป้ายชื่อ</label>
+                    <input type="text" name="label" required
                            value="{{ old('label') }}" placeholder="เช่น 250"
                            class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('label')
@@ -97,9 +98,9 @@
                     @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">ราคา (บาท, ขั้นต่ำ 20)</label>
-                    <input type="number" step="0.01" min="20" name="price" required value="{{ old('price') }}"
-                           class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
+                    <label class="block text-xs font-medium text-gray-500 mb-1">ราคา (บาท)</label>
+                    <input type="number" step="0.01" min="1" name="price" required value="{{ old('price') }}"
+                           class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('price')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
@@ -110,22 +111,11 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">เครดิตที่ได้ (บาท)</label>
                     <input type="number" step="0.01" min="1" name="credit" required value="{{ old('credit') }}"
-                           class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
+                           class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('credit')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
                     @error('credit', 'createPackage')
-                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">ลำดับ</label>
-                    <input type="number" min="0" name="sort_order" value="{{ old('sort_order', 0) }}"
-                           class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
-                                  {{ $errors->createPackage->has('sort_order')
-                                      ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
-                                      : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
-                    @error('sort_order', 'createPackage')
                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -139,10 +129,11 @@
                 <table class="w-full text-sm text-left">
                     <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-3 font-medium">ป้ายชื่อ</th>
-                            <th class="px-6 py-3 font-medium text-right">ราคา</th>
-                            <th class="px-6 py-3 font-medium text-right">เครดิตที่ได้</th>
-                            <th class="px-6 py-3 font-medium text-right">โบนัส</th>
+                            <th class="px-6 py-3 font-medium text-center">ลำดับ</th>
+                            <th class="px-6 py-3 font-medium text-center">ป้ายชื่อ</th>
+                            <th class="px-6 py-3 font-medium text-center">ราคา</th>
+                            <th class="px-6 py-3 font-medium text-center">เครดิตที่ได้</th>
+                            <th class="px-6 py-3 font-medium text-center">โบนัส</th>
                             <th class="px-6 py-3 font-medium text-center">แสดงผล</th>
                             <th class="px-6 py-3 font-medium"></th>
                         </tr>
@@ -161,36 +152,35 @@
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a1 1 0 11-2 0 1 1 0 012 0zM7 10a1 1 0 11-2 0 1 1 0 012 0zM7 16a1 1 0 11-2 0 1 1 0 012 0zM15 4a1 1 0 11-2 0 1 1 0 012 0zM15 10a1 1 0 11-2 0 1 1 0 012 0zM15 16a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
                                     </span>
                                 </td>
-                                <td class="px-6 py-3">
+                                <td class="px-6 py-3 text-center">
                                     <input form="editPkg{{ $pkg->id }}" type="text" name="label" value="{{ $rowLabel }}"
-                                           inputmode="numeric" title="กรอกเป็นตัวเลขเท่านั้น"
-                                           class="w-24 rounded border px-2 py-1 text-sm {{ $rowErrors->has('label') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                           class="w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('label') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('label', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-right">
-                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" min="20" name="price" value="{{ $rowPrice }}"
-                                           class="w-24 rounded border px-2 py-1 text-sm text-right {{ $rowErrors->has('price') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                <td class="px-6 py-3 text-center">
+                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" min="1" name="price" value="{{ $rowPrice }}"
+                                           class="no-spinner w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('price') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('price', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-right">
-                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" name="credit" value="{{ $rowCredit }}"
-                                           class="w-24 rounded border px-2 py-1 text-sm text-right {{ $rowErrors->has('credit') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                <td class="px-6 py-3 text-center">
+                                    <input form="editPkg{{ $pkg->id }}" type="number" step="0.01" min="1" name="credit" value="{{ $rowCredit }}"
+                                           class="no-spinner w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('credit') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('credit', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-right text-amber-600 font-medium">
+                                <td class="px-6 py-3 text-center text-amber-600 font-medium">
                                     @if($pkg->bonus_satang > 0) +฿{{ number_format($pkg->bonus_satang / 100, 0) }} @else — @endif
                                 </td>
                                 <td class="px-6 py-3 text-center">
                                     <input type="hidden" form="editPkg{{ $pkg->id }}" name="sort_order" value="{{ $pkg->sort_order }}">
                                     <input form="editPkg{{ $pkg->id }}" type="checkbox" name="is_active" value="1" {{ $pkg->is_active ? 'checked' : '' }} class="accent-emerald-500 w-4 h-4">
                                 </td>
-                                <td class="px-6 py-3 text-right whitespace-nowrap">
+                                <td class="px-6 py-3 text-center whitespace-nowrap">
                                     <button type="submit" form="editPkg{{ $pkg->id }}" class="text-emerald-600 hover:text-emerald-700 font-medium text-xs mr-3">บันทึก</button>
                                     <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline" onsubmit="return confirm('ลบแพ็กเกจนี้?')">
                                         @csrf
@@ -204,7 +194,7 @@
                                 @method('PUT')
                             </form>
                         @empty
-                            <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
+                            <tr><td colspan="7" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -212,4 +202,15 @@
         </div>
     </div>
 </div>
+
+<style>
+    .no-spinner::-webkit-outer-spin-button,
+    .no-spinner::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .no-spinner {
+        -moz-appearance: textfield;
+    }
+</style>
 @endsection
