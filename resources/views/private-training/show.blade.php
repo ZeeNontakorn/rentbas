@@ -337,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function () {
         slotMaxTime: '22:00:00',
         slotDuration: '00:30:00',
         snapDuration: '00:30:00',
-        validRange: { start: @js($today) },
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -348,12 +347,6 @@ document.addEventListener('DOMContentLoaded', function () {
         eventMaxStack: 3,
         slotEventOverlap: false,
         events: @js(route('private-training.schedule', $coach)),
-        dayCellDidMount(info) {
-            if (info.date > maxSelectableDate) {
-                info.el.title = advanceLimitMessage;
-                info.el.setAttribute('aria-label', `${info.el.getAttribute('aria-label') || ''} ${advanceLimitMessage}`.trim());
-            }
-        },
         selectAllow(info) {
             // FullCalendar ให้ลากข้ามคอลัมน์วันได้ จึงตรวจปลายช่วงแบบ exclusive
             // (ลบ 1 ms) เพื่อยืนยันว่าช่วงที่เลือกทั้งหมดอยู่ภายในวันเดียวกัน
