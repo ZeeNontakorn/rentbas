@@ -69,16 +69,22 @@ class NotificationController extends Controller
             }
         }
 
-        return match ($notification->title) {
-            'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
-            'ยืนยันการซื้อแพ็กเกจ' => route('admin.credit-topups.index'),
-            'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),
-            'มีการจองสนามบาสใหม่' => route('admin.bookings'),
-            'คำขอจองเทรนเนอร์ส่วนตัวใหม่' => route('admin.private-training.index', ['status' => 'pending']),
-            'การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ' => route('history'),
-            default => in_array(auth()->user()->role, ['admin', 'superadmin', 'staff'], true)
-                ? route('admin.bookings')
-                : route('history'),
-        };
+        return match (true) {
+    default => match ($notification->title) {
+        'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
+        'เติมเครดิตสำเร็จ' => route('credits.topup.index'),
+        'เครดิตของคุณถูกเติมแล้ว' => route('admin.credits.show', $notification->user_id),
+        'ยืนยันการซื้อแพ็กเกจ' => route('admin.private-training.index'),
+        'คำขอเติมเครดิตถูกปฏิเสธ' => route('credits.topup.index'),
+        'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),
+        'การจองถูกปฏิเสธอัตโนมัติ', 'การจองถูกยกเลิกโดยระบบ' => route('admin.bookings'),
+        'ผู้ใช้ยกเลิกการจอง' => route('admin.bookings'),
+        'คำขอจองเทรนเนอร์ส่วนตัวใหม่' => route('admin.private-training.index', ['status' => 'pending']),
+        'การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ' => route('history'),
+        default => in_array(auth()->user()->role, ['admin', 'superadmin', 'staff'], true)
+            ? route('admin.bookings')
+            : route('history'),
+    },
+};
     }
 }
