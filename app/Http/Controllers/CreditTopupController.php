@@ -27,13 +27,14 @@ class CreditTopupController extends Controller
 
         $lineUrl = Setting::getVal('line_topup_url');
         $promptpayNumber = Setting::getVal('promptpay_number');
+        $promptpayName = Setting::getVal('promptpay_name');
 
         $myRequests = $request->user()->creditTopupRequests()
             ->latest()
             ->take(5)
             ->get();
 
-        return view('credits.topup.index', compact('packages', 'lineUrl', 'promptpayNumber', 'myRequests'));
+        return view('credits.topup.index', compact('packages', 'lineUrl', 'promptpayNumber', 'promptpayName', 'myRequests'));
     }
 
     /**
@@ -66,6 +67,7 @@ class CreditTopupController extends Controller
             'creditSatang' => $creditSatang,
             'lineUrl' => Setting::getVal('line_topup_url'),
             'promptpayNumber' => Setting::getVal('promptpay_number'),
+            'promptpayName' => Setting::getVal('promptpay_name'),
         ]);
     }
 
