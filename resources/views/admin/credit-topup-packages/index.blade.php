@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'แพ็กเกจเติมเครดิต')
+@section('title', 'แพ็กเกจเครดิต')
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
