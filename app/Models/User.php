@@ -114,6 +114,11 @@ class User extends Authenticatable
         return $this->hasMany(Availability::class, 'user_id');
     }
 
+    public function calendarEvents(): HasMany
+    {
+        return $this->hasMany(CalendarEvent::class, 'coach_id');
+    }
+
     /**
      * รายการคำขอจองเทรนเนอร์ส่วนตัวที่ user คนนี้เป็นคนจอง (ฝั่งลูกค้า)
      */
@@ -128,6 +133,11 @@ class User extends Authenticatable
     public function coachingBookings(): HasMany
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'coach_id');
+    }
+
+    public function assistedPrivateTrainingBookings(): HasMany
+    {
+        return $this->hasMany(PrivateTrainingBooking::class, 'court_assistant_id');
     }
 
     /**

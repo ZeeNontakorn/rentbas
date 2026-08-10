@@ -17,6 +17,8 @@ class PrivateTrainingBooking extends Model
     protected $fillable = [
         'user_id',
         'coach_id',
+        'assistant_requested',
+        'court_assistant_id',
         'court_id',
         'court_section_id',
         'court_assigned_by',
@@ -41,6 +43,7 @@ class PrivateTrainingBooking extends Model
             // แคสต์ฟิลด์ date ให้เป็น Object ของ Carbon อัตโนมัติ
             // ทำให้ตอนเรียก $this->date สามารถต่อด้วยฟังก์ชันของ Carbon ได้เลย
             'date' => 'date',
+            'assistant_requested' => 'boolean',
             'court_assigned_at' => 'datetime',
             'price_breakdown' => 'array',
         ];
@@ -64,6 +67,11 @@ class PrivateTrainingBooking extends Model
     public function coach(): BelongsTo
     {
         return $this->belongsTo(User::class, 'coach_id');
+    }
+
+    public function courtAssistant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'court_assistant_id');
     }
 
     public function court(): BelongsTo
@@ -93,6 +101,17 @@ class PrivateTrainingBooking extends Model
             // Logic เช็คเวลาทับซ้อน (Overlapping Logic):
             // รายการเก่าต้องเริ่ม "ก่อน" รายการใหม่จะจบ (start_time < $end)
             // และ รายการเก่าต้องจบ "หลัง" รายการใหม่เริ่ม (end_time > $start)
+            ->where(function (Builder $q) use ($start, $end) {
+                $q->where('start_time', '<', $end)
+                    ->where('end_time', '>', $start);
+            });
+    }
+
+    public function scopeOverlappingAssistant(Builder $query, int $assistantId, string $date, string $start, string $end): Builder
+    {
+        return $query->where('court_assistant_id', $assistantId)
+            ->whereDate('date', $date)
+            ->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
             ->where(function (Builder $q) use ($start, $end) {
                 $q->where('start_time', '<', $end)
                     ->where('end_time', '>', $start);

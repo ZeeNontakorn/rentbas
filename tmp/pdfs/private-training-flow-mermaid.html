@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title>Private Training Activity Flow</title>
+  <style>
+    @page { size: 420mm 1180mm; margin: 12mm; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #ffffff; }
+    body {
+      width: 396mm;
+      font-family: Thonburi, "Sukhumvit Set", Arial, sans-serif;
+      color: #0f172a;
+    }
+    .page-title {
+      margin: 0 0 8mm;
+      padding: 8mm 10mm;
+      border-radius: 5mm;
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .page-title h1 { margin: 0; font-size: 28px; font-weight: 700; }
+    .page-title p { margin: 4px 0 0; color: #cbd5e1; font-size: 16px; }
+    .mermaid { width: 100%; text-align: center; }
+    .mermaid svg {
+      display: block;
+      width: 100% !important;
+      max-width: none !important;
+      height: auto !important;
+      overflow: visible;
+    }
+    .nodeLabel, .edgeLabel { font-family: Thonburi, "Sukhumvit Set", Arial, sans-serif !important; }
+  </style>
+</head>
+<body>
+  <section class="page-title">
+    <h1>Activity Diagram - Private Training และตารางงาน</h1>
+    <p>Flow ตั้งแต่ลูกค้าเลือกโค้ช ส่งคำขอ อนุมัติ จัดสนาม ไปจนถึงการจัดการ Schedule</p>
+  </section>
+
+  <pre class="mermaid">
+flowchart TD
+    START([ลูกค้าต้องการจอง Private Training])
+
+    START --> PKG{มีแพ็กเกจ Private&lt;br/&gt;ที่ยังใช้งานได้ไหม}
+    PKG -- ไม่มี --> BUY[ซื้อแพ็กเกจก่อน]
+    BUY --> PKG
+    PKG -- มี --> COACH[เลือกโค้ช]
+
+    COACH --> CAL[ดูตารางโค้ช&lt;br/&gt;แบบวัน / สัปดาห์ / เดือน]
+    CAL --> DATE{วันที่ต้องการจอง&lt;br/&gt;เกิน 3 วันไหม}
+
+    DATE -- เกิน --> DATELOCK[ดูตารางได้ตามปกติ&lt;br/&gt;แต่กดจองไม่ได้&lt;br/&gt;แจ้งว่าจองล่วงหน้าได้สูงสุด 3 วัน]
+    DATELOCK --> CAL
+
+    DATE -- ไม่เกิน --> SLOT{ช่วงเวลานี้โค้ชว่างไหม}
+    SLOT -- ไม่ว่าง --> BUSY[แสดงช่วงเวลาสีเทา&lt;br/&gt;กดดูวันที่ เวลา และเหตุผลทั่วไปได้&lt;br/&gt;ไม่เปิดเผยข้อมูลลูกค้าคนอื่น]
+    BUSY --> CAL
+
+    SLOT -- ว่าง --> ASSIST{ต้องการผู้ช่วยสนามไหม}
+    ASSIST -- ต้องการ --> FINDASSIST[ระบบกรองผู้ช่วยสนาม&lt;br/&gt;ที่ว่างตรงกับวันและเวลา]
+    FINDASSIST --> ASSISTOK{มีผู้ช่วยว่างไหม}
+    ASSISTOK -- ไม่มี --> CHANGE[เลือกเวลาใหม่&lt;br/&gt;หรือเลือกไม่ใช้ผู้ช่วย]
+    CHANGE --> CAL
+    ASSISTOK -- มี --> SELECTASSIST[เลือกผู้ช่วยสนาม]
+    ASSIST -- ไม่ต้องการ --> SUBMIT
+    SELECTASSIST --> SUBMIT[ส่งคำขอจอง]
+
+    SUBMIT --> VALIDATE{ระบบตรวจสอบอีกครั้ง}
+    VALIDATE -- ไม่ผ่าน --> ERROR[แจ้งสาเหตุ&lt;br/&gt;เช่น เวลาทับ ตารางไม่ว่าง&lt;br/&gt;แพ็กเกจหมด หรือเกิน 3 วัน]
+    ERROR --> CAL
+
+    VALIDATE -- ผ่าน --> USEPKG[ตัดจำนวนครั้งในแพ็กเกจ 1 ครั้ง]
+    USEPKG --> PENDING[สร้างคำขอสถานะ&lt;br/&gt;รออนุมัติ]
+    PENDING --> AUTOSCHEDULE[คำขอขึ้นในตารางงาน&lt;br/&gt;ของโค้ชและผู้ช่วยอัตโนมัติ]
+    AUTOSCHEDULE --> NOTIADMIN[แจ้งเตือนแอดมิน&lt;br/&gt;กดแล้วไปหน้าจัดการ Private Training]
+
+    NOTIADMIN --> DECISION{แอดมินตรวจสอบคำขอ}
+    DECISION -- ปฏิเสธ --> REASON[กรอกเหตุผลปฏิเสธ]
+    REASON --> REFUND[คืนจำนวนครั้งให้แพ็กเกจ]
+    REFUND --> REJECTED[สถานะปฏิเสธ&lt;br/&gt;แจ้งเตือนลูกค้า]
+    REJECTED --> END([จบรายการ])
+
+    DECISION -- อนุมัติ --> AWAIT[สถานะรอจัดสนาม&lt;br/&gt;แจ้งเตือนลูกค้า]
+    AWAIT --> COURTFILTER[ระบบกรองเฉพาะสนามที่ว่าง&lt;br/&gt;ตรงกับวันและเวลาของ Private]
+    COURTFILTER --> COURTOK{มีสนามว่างไหม}
+
+    COURTOK -- ไม่มี --> WAITCOURT[คงสถานะรอจัดสนาม&lt;br/&gt;แอดมินกลับมาจัดภายหลัง]
+    WAITCOURT --> COURTFILTER
+
+    COURTOK -- มี --> SELECTCOURT[แอดมินเลือกสนาม]
+    SELECTCOURT --> RECHECK{ระบบล็อกข้อมูลและ&lt;br/&gt;ตรวจสนามซ้ำก่อนบันทึก}
+
+    RECHECK -- สนามถูกใช้ไปแล้ว --> COURTERROR[แจ้งว่าสนามไม่ว่าง&lt;br/&gt;ให้เลือกสนามใหม่]
+    COURTERROR --> COURTFILTER
+
+    RECHECK -- สนามยังว่าง --> CONFIRMED[ยืนยัน Private Training]
+    CONFIRMED --> BLOCKCOURT[ปิดใช้งานสนามตามช่วงเวลานั้น&lt;br/&gt;ป้องกันการจองสนามปกติและ Private ซ้ำ]
+    BLOCKCOURT --> NOCHARGE[ไม่มีการคิดราคาสนาม&lt;br/&gt;และไม่หักเครดิตเพิ่ม]
+    NOCHARGE --> NOTICUSTOMER[แจ้งลูกค้า โค้ช และผู้ช่วยสนาม&lt;br/&gt;พร้อมรายละเอียดวัน เวลา สนาม และสถานะ]
+    NOTICUSTOMER --> FINISH([จองสำเร็จ])
+
+    PENDING -. ลูกค้ายกเลิกก่อนเริ่ม .-> CANCEL
+    AWAIT -. ลูกค้ายกเลิกก่อนเริ่ม .-> CANCEL
+    CANCEL[ยกเลิกคำขอและคืนจำนวนครั้ง] --> END
+
+    SCHEDULESTART([จัดการตารางงาน]) --> ROLE{ใครเป็นคนจัดการ}
+    ROLE -- โค้ชหรือผู้ช่วยสนาม --> OWN[เพิ่ม ลบ แก้ไข&lt;br/&gt;ตารางงานของตัวเอง]
+    ROLE -- Admin หรือ Super Admin --> ADMINEDIT[เพิ่ม ลบ แก้ไข&lt;br/&gt;ตารางโค้ชและผู้ช่วยสนาม]
+
+    OWN --> EVENT[ระบุชื่อกิจกรรม วัน เวลา สี&lt;br/&gt;รายละเอียด และการเกิดซ้ำ]
+    ADMINEDIT --> EVENT
+    EVENT --> OVERLAP{เวลาทับกับตารางเดิม&lt;br/&gt;หรือ Private ที่ยืนยันแล้วไหม}
+    OVERLAP -- ทับ --> EVENTERROR[ไม่ให้บันทึก&lt;br/&gt;แจ้งช่วงเวลาที่ชนกัน]
+    EVENTERROR --> EVENT
+    OVERLAP -- ไม่ทับ --> SAVEEVENT[บันทึกลงตารางงาน]
+    SAVEEVENT --> UNAVAILABLE[ช่วงเวลาที่มี Schedule&lt;br/&gt;ถือว่าไม่ว่างสำหรับการจอง]
+    UNAVAILABLE --> CAL
+  </pre>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      flowchart: { htmlLabels: true, curve: "basis", nodeSpacing: 34, rankSpacing: 46 },
+      themeVariables: {
+        fontFamily: "Thonburi, Sukhumvit Set, Arial, sans-serif",
+        fontSize: "18px",
+        primaryColor: "#eff6ff",
+        primaryTextColor: "#0f172a",
+        primaryBorderColor: "#2563eb",
+        lineColor: "#475569",
+        secondaryColor: "#f5f3ff",
+        tertiaryColor: "#f8fafc",
+        edgeLabelBackground: "#ffffff"
+      }
+    });
+  </script>
+</body>
+</html>

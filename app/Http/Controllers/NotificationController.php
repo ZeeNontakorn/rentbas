@@ -34,6 +34,15 @@ class NotificationController extends Controller
         return back();
     }
 
+    public function open(Notification $notification)
+    {
+        abort_unless($notification->user_id === auth()->id(), 403);
+
+        $notification->update(['is_read' => true]);
+
+        return redirect()->to($this->destination($notification));
+    }
+
     /**
      * ทำเครื่องหมายว่าอ่านแล้วทั้งหมดในครั้งเดียว
      */
@@ -48,5 +57,28 @@ class NotificationController extends Controller
         }
 
         return back();
+    }
+
+    private function destination(Notification $notification): string
+    {
+        if ($notification->action_url) {
+            $parts = parse_url($notification->action_url);
+            $appParts = parse_url(config('app.url'));
+            if (! isset($parts['host']) || ($parts['host'] ?? null) === ($appParts['host'] ?? null)) {
+                return $notification->action_url;
+            }
+        }
+
+        return match ($notification->title) {
+            'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
+            'ยืนยันการซื้อแพ็กเกจ' => route('admin.credit-topups.index'),
+            'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),
+            'มีการจองสนามบาสใหม่' => route('admin.bookings'),
+            'คำขอจองเทรนเนอร์ส่วนตัวใหม่' => route('admin.private-training.index', ['status' => 'pending']),
+            'การจองได้รับการอนุมัติ', 'การจองถูกปฏิเสธ' => route('history'),
+            default => in_array(auth()->user()->role, ['admin', 'superadmin', 'staff'], true)
+                ? route('admin.bookings')
+                : route('history'),
+        };
     }
 }

@@ -145,7 +145,7 @@
                 $price = (float) $booking->price;
                 $sufficient = $balance >= $price;
             @endphp
-            <div class="pay-option active-option h-full">
+            <div class="pay-option active-option">
                 <div class="flex items-center justify-between">
                     <h3 class="text-[15px] font-bold text-gray-900">ชำระด้วยเครดิต</h3>
                     <span class="pay-badge ready">พร้อมใช้งาน</span>
@@ -171,13 +171,30 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('checkout.pay.credit', $booking) }}" data-credit-payment-form>
+                <form method="POST" action="{{ route('checkout.pay.credit', $booking) }}">
                     @csrf
-                    <button type="submit" class="btn-pay credit mt-10" {{ $sufficient ? '' : 'disabled' }}>
+                    <button type="submit" class="btn-pay credit" {{ $sufficient ? '' : 'disabled' }}>
                         ชำระด้วยเครดิต ฿{{ number_format($price / 100, 0) }}
                     </button>
                 </form>
             </div>
+
+            {{-- Option B: QR PromptPay [WIP] --}}
+            {{-- <div class="pay-option wip-option">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-[15px] font-bold text-gray-900">QR PromptPay</h3>
+                    <span class="pay-badge wip">กำลังพัฒนา</span>
+                </div>
+                <p class="text-xs text-gray-500">สแกนจ่ายผ่าน PromptPay แล้วแนบสลิป — ตอนนี้ยังเป็นเวอร์ชันทดลอง แอดมินจะตรวจสลิปด้วยมือ (ยังไม่ตรวจอัตโนมัติ)</p>
+
+                <form method="POST" action="{{ route('checkout.pay.promptpay', $booking) }}">
+                    @csrf
+                    <button type="submit" class="btn-pay promptpay">
+                        ดำเนินการต่อด้วย QR PromptPay
+                    </button>
+                </form>
+            </div> --}}
+
             <p class="text-xs text-gray-400 text-center px-2">
                 หากไม่ชำระเงินภายในเวลาที่กำหนด ระบบจะยกเลิกรายการนี้อัตโนมัติ และคืนช่วงเวลาให้ผู้อื่นจองได้ทันที
             </p>
@@ -188,14 +205,6 @@
 
 @push('scripts')
 <script>
-document.querySelector('[data-credit-payment-form]')?.addEventListener('submit', function () {
-    const button = this.querySelector('button[type="submit"]');
-    if (!button || button.disabled) return;
-
-    button.disabled = true;
-    button.textContent = 'กำลังชำระเงิน...';
-});
-
 (function () {
     const timerBox = document.getElementById('coTimer');
     const clockEl = document.getElementById('coClock');

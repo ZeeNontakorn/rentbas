@@ -54,7 +54,7 @@ class HomeController extends Controller
 
         $reviews = Review::published()
             ->with(['user:id,name', 'ratings.facility:id,name', 'images'])
-            ->orderByRaw('COALESCE(published_at, created_at) DESC')
+            ->latest('published_at')
             ->take(12)
             ->get();
 

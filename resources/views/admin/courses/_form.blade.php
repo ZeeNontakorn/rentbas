@@ -328,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addPackage(data = {}) {
         const row = packageTemplate.content.firstElementChild.cloneNode(true);
-        row.dataset.packageId = data.id || '';
         row.querySelector('.packageType').value = data.package_type || 'group';
         row.querySelector('.sessions').value = data.total_sessions || '';
         row.querySelector('.price').value = data.total_price || '';
@@ -585,8 +584,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (isNaN(priceVal)) {
                 showRowError(row, '.price-error', 'ราคาต้องเป็นตัวเลข', [priceInput]);
                 markInvalid(priceInput);
-            } else if (Number(priceVal) < 0) {
-                showRowError(row, '.price-error', 'ราคาต้องไม่น้อยกว่า 0', [priceInput]);
+            } else if (Number(priceVal) <= 0) {
+                showRowError(row, '.price-error', 'ราคาต้องมากกว่า 0', [priceInput]);
                 markInvalid(priceInput);
             } else if (Number(priceVal) > MAX_PACKAGE_PRICE) {
                 showRowError(row, '.price-error', 'ราคาต้องไม่เกิน ' + MAX_PACKAGE_PRICE.toLocaleString() + ' บาท', [priceInput]);
@@ -646,25 +645,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden.append(input)
             })
         });
-        [...packages.children].forEach((row, index) => {
-            if (row.dataset.packageId) {
-                const idInput = document.createElement('input');
-                idInput.type = 'hidden';
-                idInput.name = `packages[${index}][id]`;
-                idInput.value = row.dataset.packageId;
-                row.append(idInput);
-            }
-
-            [
+        [...packages.children].forEach((row, index) => [
             ['package_type', '.packageType'],
             ['total_sessions', '.sessions'],
             ['total_price', '.price'],
             ['validity_value', '.validity'],
             ['validity_unit', '.unit'],
             ['recommendation_text', '.recommendation']
-            ].forEach(([key, selector]) => row.querySelector(selector).name =
-                `packages[${index}][${key}]`);
-        });
+        ].forEach(([key, selector]) => row.querySelector(selector).name =
+            `packages[${index}][${key}]`));
     }
 });
 </script>

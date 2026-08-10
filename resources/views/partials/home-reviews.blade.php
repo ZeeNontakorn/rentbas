@@ -48,7 +48,7 @@
 
                 @if($review->ratings->isNotEmpty())
                     <div class="review-ratings">
-                        @foreach($review->ratings as $rating)
+                        @foreach($review->ratings->take(4) as $rating)
                             <span class="review-rating-chip">{{ $rating->facility->name }} {{ $rating->rating }}/5</span>
                         @endforeach
                     </div>
