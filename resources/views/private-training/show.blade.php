@@ -402,6 +402,11 @@ document.addEventListener('DOMContentLoaded', function () {
         eventClick(info) {
             const props = info.event.extendedProps;
 
+            if (props.isMine) {
+                showPrivateTrainingDetails(info.event);
+                return;
+            }
+
             if (props.kind === 'available') {
                 const isPast = info.event.end <= new Date();
                 Swal.fire({
@@ -414,14 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const isPast = info.event.end <= new Date();
-            const statusLabel = isPast ? 'เลยกำหนด' : props.statusLabel;
-
-            Swal.fire({
-                title: info.event.title,
-                text: [statusLabel, props.court].filter(Boolean).join(' · ') || 'ช่วงเวลานี้ไม่ว่าง',
-                icon: 'info'
-            });
+            showUnavailableDetails(info.event);
         }
     });
 
