@@ -71,7 +71,9 @@ class NotificationController extends Controller
 
         return match ($notification->title) {
             'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
-            'ยืนยันการซื้อแพ็กเกจ' => route('admin.credit-topups.index'),
+            'เติมเครดิตสำเร็จ' => route('credits.topup.index'),
+            'เครดิตของคุณถูกเติมแล้ว' => route('admin.credits.show', $notification->user_id),
+            'ยืนยันการซื้อแพ็กเกจ' => route('admin.private-training.index'),
             'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),
             'มีการจองสนามบาสใหม่' => route('admin.bookings'),
             'คำขอจองเทรนเนอร์ส่วนตัวใหม่' => route('admin.private-training.index', ['status' => 'pending']),

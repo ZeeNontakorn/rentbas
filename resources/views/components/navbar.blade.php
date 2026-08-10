@@ -238,11 +238,7 @@
                                         ],
                                     };
                                 @endphp
-<<<<<<< Updated upstream
                                 <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3 cursor-pointer transition-colors"
-=======
-                                <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3  transition-colors cursor-pointer"
->>>>>>> Stashed changes
                                      data-notif-id="{{ $n->id }}"
                                      onclick="window.location.href='{{ $notifTarget }}'">
                                     <span class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1 {{ $visual['iconBg'] }} {{ $visual['iconColor'] }}">
