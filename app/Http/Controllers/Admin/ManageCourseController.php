@@ -7,11 +7,13 @@ use App\Models\Course;
 use App\Models\CoursePackage;
 use App\Models\CourseSchedule;
 use App\Models\CourseTargetGroup;
+use App\Models\CourseType;
 use App\Models\Court;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ManageCourseController extends Controller
 {
@@ -20,6 +22,7 @@ class ManageCourseController extends Controller
      * เปิดหน้าเพิ่มคอร์ส
      */
     const MAX_PACKAGE_PRICE = 1000000;
+
     public function create()
     {
         return view('admin.courses.create', [
@@ -27,6 +30,7 @@ class ManageCourseController extends Controller
             'existingSchedules' => collect(),
             'existingPackages' => collect(),
             'maxPackagePrice' => self::MAX_PACKAGE_PRICE,
+            'courseTypes' => $this->activeCourseTypes(),
 
         ]);
     }
@@ -41,7 +45,7 @@ class ManageCourseController extends Controller
 
         $courses = Course::query()
         // แสดงผลพร้อม targetGroups, schedules, packages เพื่อไม่ให้เกิด N+1 query
-            ->with(['targetGroups', 'schedules', 'packages'])
+            ->with(['targetGroups', 'schedules', 'packages.courseType'])
             // ถ้ามี search ให้ค้นหาจาก course_name
             ->when($search !== '', function ($query) use ($search) {
                 $query->where('course_name', 'like', "%{$search}%");
@@ -105,7 +109,7 @@ class ManageCourseController extends Controller
      */
     public function edit(Course $course)
     {
-        $course->load(['targetGroups', 'schedules', 'packages']);
+        $course->load(['targetGroups', 'schedules', 'packages.courseType']);
 
         return view('admin.courses.edit', [
             'course' => $course,
@@ -113,6 +117,7 @@ class ManageCourseController extends Controller
             'existingSchedules' => $this->scheduleFormRows($course),
             'existingPackages' => $course->packages->values(),
             'maxPackagePrice' => self::MAX_PACKAGE_PRICE,
+            'courseTypes' => $this->activeCourseTypes(),
 
         ]);
     }
@@ -254,7 +259,11 @@ class ManageCourseController extends Controller
             'schedules.*.capacity' => ['nullable', 'required_if:schedules.*.is_limited_spots,1', 'integer', 'min:1'],
 
             'packages' => ['required', 'array', 'min:1'],
-            'packages.*.package_type' => ['required', 'in:group,private'],
+            'packages.*.course_type_id' => [
+                'required',
+                'integer',
+                Rule::exists('course_types', 'id')->where(fn ($query) => $query->where('is_active', true)),
+            ],
             'packages.*.total_sessions' => ['required', 'integer', 'min:1'],
             'packages.*.total_price' => ['required', 'numeric', 'min:0.01', 'max:'.self::MAX_PACKAGE_PRICE],
             'packages.*.validity_value' => ['required', 'integer', 'min:1'],
@@ -319,7 +328,7 @@ class ManageCourseController extends Controller
 
         $packages = array_map(function ($package) {
             return [
-                'package_type' => $package['package_type'],
+                'course_type_id' => (int) $package['course_type_id'],
                 'total_sessions' => (int) $package['total_sessions'],
                 'total_price' => $package['total_price'],
                 'price_per_session' => round($package['total_price'] / $package['total_sessions'], 2),
@@ -341,5 +350,14 @@ class ManageCourseController extends Controller
             'schedules' => $schedules,
             'packages' => $packages,
         ];
+    }
+
+    private function activeCourseTypes()
+    {
+        return CourseType::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 }

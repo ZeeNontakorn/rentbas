@@ -191,6 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pad = value => String(value).padStart(2, '0');
     const localDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     const localTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const isSameCalendarDate = (first, second) => Boolean(first && second) && localDate(first) === localDate(second);
+    const staysWithinOneDate = (start, end) => !end || isSameCalendarDate(start, new Date(end.getTime() - 1));
     const checkedDays = () => [...document.querySelectorAll('input[name="admin_recurrence_days"]:checked')].map(input => input.value);
 
     function setCheckedDays(days) {
@@ -299,12 +301,29 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch(`${eventsApi}?staff_id=${filter.value}&start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`, {headers:{'Accept':'application/json'}})
                 .then(response => response.ok ? response.json() : Promise.reject(response)).then(success).catch(failure);
         },
-        selectAllow(info) { return info.start > new Date(); },
+        selectAllow(info) {
+            return staysWithinOneDate(info.start, info.end)
+                && info.start > new Date();
+        },
         eventAllow(dropInfo, event) {
             return ['availability', 'calendar_event'].includes(event.extendedProps.kind)
-                && (event.extendedProps.kind === 'availability' || event.extendedProps.recurrence === 'none');
+                && (event.extendedProps.kind === 'availability' || event.extendedProps.recurrence === 'none')
+                && isSameCalendarDate(event.start, dropInfo.start)
+                && staysWithinOneDate(dropInfo.start, dropInfo.end);
         },
-        select(info) { openModal(null, info.start, info.end); },
+        select(info) {
+            if (!staysWithinOneDate(info.start, info.end)) {
+                calendar.unselect();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'เลือกข้ามวันไม่ได้',
+                    text: 'กรุณาเลือกช่วงเวลาภายในวันเดียวกัน'
+                });
+                return;
+            }
+
+            openModal(null, info.start, info.end);
+        },
         eventClick(info) {
             if (['availability', 'calendar_event'].includes(info.event.extendedProps.kind)) return openModal(info.event);
             showPrivateTrainingDetails(info.event);
@@ -315,6 +334,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function persistMove(info) {
         const props = info.event.extendedProps;
+
+        if (!isSameCalendarDate(info.oldEvent?.start, info.event.start)
+            || !staysWithinOneDate(info.event.start, info.event.end)) {
+            info.revert();
+            Swal.fire({
+                icon: 'warning',
+                title: 'ย้ายข้ามวันไม่ได้',
+                text: 'กำหนดการของโค้ชและผู้ช่วยสนามปรับเวลาได้เฉพาะภายในวันเดิมเท่านั้น'
+            });
+            return;
+        }
+
         try {
             if (props.kind === 'availability') {
                 await request(`${availabilityApi}/${props.recordId}`, 'PUT', {date:localDate(info.event.start), start_time:localTime(info.event.start), end_time:localTime(info.event.end), detail:props.detail || null});

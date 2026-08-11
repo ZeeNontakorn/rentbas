@@ -186,8 +186,9 @@
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">ประเภทคอร์ส <span class="text-xs text-red-500"> *</span></label>
                     <select class="packageType w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]">
-                        <option value="group">Standard Group Class</option>
-                        <option value="private">Private Class</option>
+                        @foreach($courseTypes as $courseType)
+                            <option value="{{ $courseType->id }}">{{ $courseType->name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
@@ -328,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addPackage(data = {}) {
         const row = packageTemplate.content.firstElementChild.cloneNode(true);
-        row.querySelector('.packageType').value = data.package_type || 'group';
+        row.querySelector('.packageType').value = data.course_type_id || @json($courseTypes->firstWhere('slug', 'standard')?->id ?? $courseTypes->first()?->id);
         row.querySelector('.sessions').value = data.total_sessions || '';
         row.querySelector('.price').value = data.total_price || '';
         row.querySelector('.validity').value = data.validity_value || '';
@@ -646,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
         });
         [...packages.children].forEach((row, index) => [
-            ['package_type', '.packageType'],
+            ['course_type_id', '.packageType'],
             ['total_sessions', '.sessions'],
             ['total_price', '.price'],
             ['validity_value', '.validity'],

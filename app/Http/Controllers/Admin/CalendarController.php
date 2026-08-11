@@ -42,7 +42,7 @@ class CalendarController extends Controller
         $from = Carbon::parse($data['start'])->startOfDay();
         $until = Carbon::parse($data['end'])->endOfDay();
         $overrides = CourseCalendarOverride::with('courtSection.court')->whereBetween('occurrence_date', [$from->toDateString(), $until->toDateString()])->get()->keyBy(fn ($override) => $override->course_schedule_id.'-'.$override->occurrence_date->toDateString());
-        $courseEvents = CourseSchedule::with(['course', 'course.targetGroups', 'course.packages', 'courtSection.court'])->get()->flatMap(fn (CourseSchedule $schedule) => $this->courseOccurrences($schedule, $from, $until, $overrides));
+        $courseEvents = CourseSchedule::with(['course', 'course.targetGroups', 'course.packages.courseType', 'courtSection.court'])->get()->flatMap(fn (CourseSchedule $schedule) => $this->courseOccurrences($schedule, $from, $until, $overrides));
         $personalEvents = CalendarEvent::with(['courtSection.court', 'coach'])
             ->where('event_type', 'school_class')
             ->get()
@@ -115,11 +115,15 @@ class CalendarController extends Controller
             $end = $override?->ends_at ?? Carbon::parse($date->toDateString().' '.$schedule->end_time);
             $color = $this->courseColor($schedule);
             $courtSection = $override?->courtSection ?? $schedule->courtSection;
-            $packageType = $override?->package_type ?? $schedule->course->packages->first()?->package_type;
+            $package = $schedule->course->packages->first();
+            $packageType = $override?->package_type ?? $package?->courseType?->slug;
+            $packageTypeLabel = $override?->package_type
+                ? $this->calendarPackageTypeLabel($override->package_type)
+                : $package?->package_type_label;
             $result[] = ['id' => 'course-'.$schedule->id.'-'.$date->toDateString(), 'title' => $override?->title_override ?: $schedule->course->course_name, 'start' => $start->toIso8601String(), 'end' => $end->toIso8601String(), 'backgroundColor' => $color, 'borderColor' => $color, 'editable' => false,
                 'extendedProps' => ['kind' => 'course', 'coach' => $coach, 'capacity' => $schedule->spots_label, 'students' => array_slice(self::SAMPLE_STUDENTS, 0, min($schedule->capacity ?? 3, 5)), 'description' => $schedule->course->description, 'scheduleLabel' => $schedule->day_type_label,
                     'sourceScheduleId' => $schedule->id, 'occurrenceDate' => $date->toDateString(), 'packageTypeValue' => $packageType,
-                    'packageType' => $packageType === 'private' ? 'Private Class (ส่วนตัว)' : ($packageType === 'group' ? 'Standard Group Class (กลุ่มเรียนรวม)' : 'ยังไม่กำหนดประเภทแพ็กเกจ'),
+                    'packageType' => $packageTypeLabel ?? 'ยังไม่กำหนดประเภทแพ็กเกจ',
                     'courtSectionId' => $courtSection?->id, 'court' => $courtSection ? $courtSection->court->name.' — '.$courtSection->name : 'ยังไม่ระบุสนาม']];
         }
 
@@ -143,6 +147,15 @@ class CalendarController extends Controller
     {
         return match ($schedule->course->targetGroups->first()?->target_group) {
             'Junior' => '#7c3aed', 'Player' => '#ea580c', default => '#2563eb'
+        };
+    }
+
+    private function calendarPackageTypeLabel(?string $packageType): string
+    {
+        return match ($packageType) {
+            'group' => 'Standard Group Class (กลุ่มเรียนรวม)',
+            'private' => 'Private Class (ส่วนตัว)',
+            default => 'ยังไม่กำหนดประเภทแพ็กเกจ',
         };
     }
 }
