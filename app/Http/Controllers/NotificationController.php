@@ -74,7 +74,7 @@ class NotificationController extends Controller
         'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
         'เติมเครดิตสำเร็จ' => route('credits.topup.index'),
         'เครดิตของคุณถูกเติมแล้ว' => route('admin.credits.show', $notification->user_id),
-        'ยืนยันการซื้อแพ็กเกจ' => route('admin.private-training.index'),
+        'ยืนยันการซื้อแพ็กเกจ' => route('private-training.index'),
         'คำขอเติมเครดิตถูกปฏิเสธ' => route('credits.topup.index'),
         'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),
         'การจองถูกปฏิเสธอัตโนมัติ', 'การจองถูกยกเลิกโดยระบบ' => route('admin.bookings'),
