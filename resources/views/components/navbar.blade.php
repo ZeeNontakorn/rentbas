@@ -376,31 +376,48 @@
                     <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
                     </a>
-                    <a href="{{ route('admin.courts') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการสนาม
-                    </a>
-                    <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการการจอง
-                    </a>
-                    <a href="{{ route('admin.private-training.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการ Private Training
-                    </a>
-                    <a href="{{ route('admin.private-schedule.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        Schedule บุคลากร
-                    </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
-                    </a>
-                    <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ดูประวัติการจอง
-                    </a>
-                    <a href="{{ route('admin.courses') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์สเรียน
-                    </a>
-
-                    <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        Dashboard
-                    </a>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'true' : 'false' }}">
+                            จัดการสนาม
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.courts') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการสนาม</a>
+                            <a href="{{ route('admin.pricing.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ตั้งราคา</a>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? 'true' : 'false' }}">
+                            การสอน
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.private-training.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการ Private Training</a>
+                            <a href="{{ route('admin.private-schedule.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Schedule บุคลากร</a>
+                            <a href="{{ route('admin.courses') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการคอร์สเรียน</a>
+                            <a href="{{ route('admin.packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจ</a>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('history', 'admin.dashboard') ? 'true' : 'false' }}">
+                            รายงานและภาพรวม
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('history', 'admin.dashboard') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('history', 'admin.dashboard') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.dashboard') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Dashboard</a>
+                            <a href="{{ route('history') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ดูประวัติการจอง</a>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'true' : 'false' }}">
+                            เติมเครดิต
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.credit-topup-packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topup-packages.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">แพ็กเกจเครดิต</a>
+                            <a href="{{ route('admin.credit-topups.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">คำขอเติมเครดิต</a>
+                        </div>
+                    </div>
 
                 </div>
             @else
@@ -519,6 +536,30 @@
         const mobileMenuIconOpen = document.getElementById('mobileMenuIconOpen');
         const mobileMenuIconClose = document.getElementById('mobileMenuIconClose');
 
+        // Accordion สำหรับเมนูกลุ่มบนมือถือ
+        const mobileNavDropdowns = document.querySelectorAll('[data-mobile-nav-dropdown]');
+        mobileNavDropdowns.forEach((menu) => {
+            const button = menu.querySelector('.mobile-nav-dropdown-btn');
+            const dropdown = menu.querySelector('.mobile-nav-dropdown');
+            const icon = button?.querySelector('svg');
+
+            button?.addEventListener('click', () => {
+                const isOpen = !dropdown?.classList.contains('hidden');
+
+                mobileNavDropdowns.forEach((otherMenu) => {
+                    if (otherMenu === menu) return;
+
+                    otherMenu.querySelector('.mobile-nav-dropdown')?.classList.add('hidden');
+                    otherMenu.querySelector('.mobile-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                    otherMenu.querySelector('svg')?.classList.remove('rotate-180');
+                });
+
+                dropdown?.classList.toggle('hidden', isOpen);
+                button.setAttribute('aria-expanded', String(!isOpen));
+                icon?.classList.toggle('rotate-180', !isOpen);
+            });
+        });
+
         // Dropdown ของเมนูผู้ดูแลในแถบหลัก
         const adminNavDropdowns = document.querySelectorAll('[data-admin-nav-dropdown]');
         adminNavDropdowns.forEach((menu) => {
@@ -569,6 +610,13 @@
                 if (!menu.contains(e.target)) {
                     menu.querySelector('.admin-nav-dropdown')?.classList.add('hidden');
                     menu.querySelector('.admin-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                }
+            });
+            mobileNavDropdowns.forEach((menu) => {
+                if (!menu.contains(e.target) && !mobileMenu?.contains(e.target)) {
+                    menu.querySelector('.mobile-nav-dropdown')?.classList.add('hidden');
+                    menu.querySelector('.mobile-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                    menu.querySelector('svg')?.classList.remove('rotate-180');
                 }
             });
         });
