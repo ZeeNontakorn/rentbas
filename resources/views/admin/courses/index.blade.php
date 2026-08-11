@@ -67,7 +67,10 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($courses as $course)
-                            @php $package = $course->packages->first(); @endphp
+                            @php
+                                $package = $course->packages->first();
+                                $courseIsActive = $course->packages->contains(fn ($coursePackage) => $coursePackage->is_active);
+                            @endphp
                             <tr class="align-top transition hover:bg-slate-50/80">
                                 <td class="px-7 py-6">
                                     @if ($course->image_url)
@@ -127,8 +130,8 @@
                                     @if ($package)
                                         <form action="{{ route('admin.courses.toggleStatus', $course) }}" method="POST" class="inline-flex items-center gap-2.5">
                                             @csrf @method('PATCH')
-                                            <label class="switch" title="คลิกเพื่อ{{ $package->is_active ? 'ปิด' : 'เปิด' }}ใช้งานคอร์สนี้">
-                                                <input type="checkbox" {{ $package->is_active ? 'checked' : '' }} onchange="this.form.submit()">
+                                            <label class="switch" title="คลิกเพื่อ{{ $courseIsActive ? 'ปิด' : 'เปิด' }}ใช้งานคอร์สนี้">
+                                                <input type="checkbox" {{ $courseIsActive ? 'checked' : '' }} onchange="this.form.submit()">
                                                 <div class="slider">
                                                     <div class="circle">
                                                         <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -144,8 +147,8 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                            <span class="text-xs font-medium {{ $package->is_active ? 'text-green-700' : 'text-gray-400' }}">
-                                                {{ $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
+                                            <span class="text-xs font-medium {{ $courseIsActive ? 'text-green-700' : 'text-gray-400' }}">
+                                                {{ $courseIsActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
                                             </span>
                                         </form>
                                     @else

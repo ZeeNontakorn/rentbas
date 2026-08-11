@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CourseSchedule extends Model
 {
@@ -33,6 +34,11 @@ class CourseSchedule extends Model
     public function courtSection(): BelongsTo
     {
         return $this->belongsTo(CourtSection::class);
+    }
+
+    public function overrides(): HasMany
+    {
+        return $this->hasMany(CourseCalendarOverride::class);
     }
 
     public function getDayTypeLabelAttribute(): string

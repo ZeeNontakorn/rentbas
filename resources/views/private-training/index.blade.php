@@ -9,6 +9,7 @@
         'confirmed' => ['label' => 'ยืนยันแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
         'rejected' => ['label' => 'ถูกปฏิเสธ', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
         'cancelled' => ['label' => 'ยกเลิกแล้ว', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
+        'expired' => ['label' => 'เลยกำหนด', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
 
     ];
 @endphp

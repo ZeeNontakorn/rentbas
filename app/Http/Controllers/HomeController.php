@@ -7,9 +7,9 @@ use App\Models\Course;
 use App\Models\Court;
 use App\Models\CourtClosure;
 use App\Models\Facility;
+use App\Models\Package;
 use App\Models\Review;
 use App\Models\SiteVisit;
-use App\Models\Package;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
@@ -30,7 +30,7 @@ class HomeController extends Controller
 
         // คอร์สเรียนบาสเกตบอลที่จะโชว์บนหน้าแรก: เอาเฉพาะคอร์สที่มีแพ็กเกจ "เปิดใช้งาน" (is_active) อยู่
         $trainingCourses = Course::with(['targetGroups', 'schedules', 'packages' => function ($query) {
-            $query->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
+            $query->with('courseType')->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
         }])
             ->whereHas('packages', function ($query) {
                 $query->where('is_active', true);

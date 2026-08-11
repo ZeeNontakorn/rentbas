@@ -9,7 +9,7 @@ class CoursePackage extends Model
 {
     protected $fillable = [
         'course_id',
-        'package_type',
+        'course_type_id',
         'total_sessions',
         'total_price',
         'price_per_session',
@@ -33,14 +33,20 @@ class CoursePackage extends Model
         return $this->belongsTo(Course::class);
     }
 
+    public function courseType(): BelongsTo
+    {
+        return $this->belongsTo(CourseType::class);
+    }
+
     public function getPackageTypeLabelAttribute(): string
     {
-        return $this->package_type === 'private' ? 'Private Class (ส่วนตัว)' : 'Standard Group Class (กลุ่มเรียนรวม)';
+        return $this->courseType?->name ?? 'ยังไม่กำหนดประเภทแพ็กเกจ';
     }
 
     public function getValidityLabelAttribute(): string
     {
         $unit = $this->validity_unit === 'hours' ? 'ชั่วโมง' : 'วัน';
+
         return "{$this->validity_value} {$unit}";
     }
 }
