@@ -4,6 +4,7 @@
     enctype="multipart/form-data" id="courseForm" class="space-y-6" novalidate>
     @csrf
     @if($isEdit) @method('PUT') @endif
+    <input type="hidden" name="course_form_version" value="2">
 
     @if ($errors->any())
         <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -180,6 +181,7 @@
     </template>
     <template id="packageTemplate">
         <div class="package rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
+            <input type="hidden" class="packageId">
             <div class="flex justify-between"><b class="text-sm text-slate-700">แพ็กเกจ <span class="text-xs text-red-500"> *</span></b><button type="button"
                     class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบแพ็กเกจ</button></div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
@@ -233,8 +235,8 @@ document.addEventListener('DOMContentLoaded', () => {
         packages = document.getElementById('packageRows'),
         scheduleTemplate = document.getElementById('scheduleTemplate'),
         packageTemplate = document.getElementById('packageTemplate'),
-        oldSchedules = @json($existingSchedules),
-        oldPackages = @json($existingPackages);
+        oldSchedules = @json(old('schedules', $existingSchedules)),
+        oldPackages = @json(old('packages', $existingPackages));
 
     const MAX_PACKAGE_PRICE = {{ $maxPackagePrice }};
     const INVALID_CLASSES = ['!border-red-600', '!bg-red-50'];
@@ -297,9 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
         end: '00:00'
     }) {
         const row = scheduleTemplate.content.firstElementChild.cloneNode(true);
-        row.querySelector('.start').value = data.start;
-        row.querySelector('.end').value = data.end;
-        row.querySelector('.limited').checked = !!data.limited;
+        row.dataset.scheduleId = data.id || '';
+        row.dataset.dayType = data.day_type || 'weekday';
+        row.dataset.courtSectionId = data.court_section_id || '';
+        row.querySelector('.start').value = data.start || data.start_time || '';
+        row.querySelector('.end').value = data.end || data.end_time || '';
+        const isLimited = [true, 1, '1'].includes(data.limited ?? data.is_limited_spots);
+        row.querySelector('.limited').checked = isLimited;
         row.querySelector('.capacity').value = data.capacity || '';
         const setCapacityVisible = visible => {
             const wrap = row.querySelector('.capacityWrap');
@@ -307,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wrap.classList.toggle('flex', visible);
             if (!visible) row.querySelector('.capacity').value = '';
         };
-        setCapacityVisible(!!data.limited);
+        setCapacityVisible(isLimited);
         row.querySelectorAll('.day').forEach(input => input.checked = data.weekdays.includes(input.value));
 
         const clearDayError = () => clearRowErrorEl(row, '.day-error');
@@ -329,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addPackage(data = {}) {
         const row = packageTemplate.content.firstElementChild.cloneNode(true);
+        row.querySelector('.packageId').value = data.id || '';
         row.querySelector('.packageType').value = data.course_type_id || @json($courseTypes->firstWhere('slug', 'standard')?->id ?? $courseTypes->first()?->id);
         row.querySelector('.sessions').value = data.total_sessions || '';
         row.querySelector('.price').value = data.total_price || '';
@@ -599,8 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (!isInt(validityVal)) {
                 showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องเป็นตัวเลข', [validityInput]);
                 markInvalid(validityInput);
-            } else if (Number(validityVal) < 0) {
-                showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องมากกว่าหรือเท่ากับ 0', [validityInput]);
+            } else if (Number(validityVal) < 1) {
+                showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องมากกว่า 0', [validityInput]);
                 markInvalid(validityInput);
             }
         });
@@ -625,12 +632,14 @@ document.addEventListener('DOMContentLoaded', () => {
         [...schedules.children].forEach((row, index) => {
             const days = [...row.querySelectorAll('.day:checked')].map(input => input.value);
             const fields = {
-                day_type: 'weekday',
+                day_type: row.dataset.dayType || 'weekday',
+                court_section_id: row.dataset.courtSectionId || '',
                 start_time: row.querySelector('.start').value,
                 end_time: row.querySelector('.end').value,
                 is_limited_spots: row.querySelector('.limited').checked ? '1' : '0',
                 capacity: row.querySelector('.capacity').value
             };
+            if (row.dataset.scheduleId) fields.id = row.dataset.scheduleId;
             Object.entries(fields).forEach(([key, value]) => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -646,15 +655,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden.append(input)
             })
         });
-        [...packages.children].forEach((row, index) => [
-            ['course_type_id', '.packageType'],
-            ['total_sessions', '.sessions'],
-            ['total_price', '.price'],
-            ['validity_value', '.validity'],
-            ['validity_unit', '.unit'],
-            ['recommendation_text', '.recommendation']
-        ].forEach(([key, selector]) => row.querySelector(selector).name =
-            `packages[${index}][${key}]`));
+        [...packages.children].forEach((row, index) => {
+            const fields = [
+                ['course_type_id', '.packageType'],
+                ['total_sessions', '.sessions'],
+                ['total_price', '.price'],
+                ['validity_value', '.validity'],
+                ['validity_unit', '.unit'],
+                ['recommendation_text', '.recommendation']
+            ];
+            if (row.querySelector('.packageId').value) fields.unshift(['id', '.packageId']);
+            fields.forEach(([key, selector]) => row.querySelector(selector).name =
+                `packages[${index}][${key}]`);
+        });
     }
 });
 </script>

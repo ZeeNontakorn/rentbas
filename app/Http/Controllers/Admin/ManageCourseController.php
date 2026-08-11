@@ -65,36 +65,49 @@ class ManageCourseController extends Controller
      */
     public function store(Request $request)
     {
+        $this->normalizeLegacyCourseTypeInput($request);
         $data = $this->validated($request); // Validate เพื่อตรวจสอบข้อมูลก่่อนบันทึก
+        $imagePath = $this->storeUploadedImage($request);
+
         // ใช้ DB::transaction() เพื่อให้การบันทึกทั้งหมดเป็น atomic operation ถ้ามีข้อผิดพลาดใดๆ จะ rollback ทั้งหมด
-        $course = DB::transaction(function () use ($request, $data) {
-            $courseData = $data['course'];
+        try {
+            $course = DB::transaction(function () use ($data, $imagePath) {
+                $courseData = $data['course'];
 
-            // ถ้ามีไฟล์รูปภาพที่อัปโหลดมา ให้บันทึก path ของไฟล์ลงใน database ด้วย
-            if ($request->hasFile('image')) {
-                $courseData['image_path'] = $request->file('image')->store('courses', 'public');
+                if ($imagePath) {
+                    $courseData['image_path'] = $imagePath;
+                }
+
+                $course = Course::create($courseData);
+                // สร้างกลุ่มเป้าหมาย
+                foreach ($data['target_groups'] as $group) {
+                    CourseTargetGroup::create([
+                        'course_id' => $course->id,
+                        'target_group' => $group,
+                    ]);
+                }
+                // สร้างรอบเวลาเรียนใหม่ตามข้อมูลที่ส่งมา
+                foreach ($data['schedules'] as $schedule) {
+                    unset($schedule['id']);
+                    CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
+                }
+                // หนึ่งคอร์สมีตัวเลือกแพ็กเกจได้หลายแบบ เช่น 1 / 4 / 8 ครั้ง
+                foreach ($data['packages'] as $package) {
+                    unset($package['id']);
+                    CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
+                }
+
+                // ส่งกลับ $course เพื่อใช้ใน redirect() ด้านล่าง
+                return $course;
+            });
+        } catch (\Throwable $exception) {
+            // Database rollback ไม่ครอบคลุม filesystem จึงต้องลบไฟล์ใหม่เองเมื่อบันทึกไม่สำเร็จ
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
             }
 
-            $course = Course::create($courseData);
-            // สร้างกลุ่มเป้าหมาย
-            foreach ($data['target_groups'] as $group) {
-                CourseTargetGroup::create([
-                    'course_id' => $course->id,
-                    'target_group' => $group,
-                ]);
-            }
-            // สร้างรอบเวลาเรียนใหม่ตามข้อมูลที่ส่งมา
-            foreach ($data['schedules'] as $schedule) {
-                CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
-            }
-            // หนึ่งคอร์สมีตัวเลือกแพ็กเกจได้หลายแบบ เช่น 1 / 4 / 8 ครั้ง
-            foreach ($data['packages'] as $package) {
-                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
-            }
-
-            // ส่งกลับ $course เพื่อใช้ใน redirect() ด้านล่าง
-            return $course;
-        });
+            throw $exception;
+        }
 
         // ส่งกลับไปที่หน้า index พร้อม alert success
         return redirect()
@@ -117,7 +130,7 @@ class ManageCourseController extends Controller
             'existingSchedules' => $this->scheduleFormRows($course),
             'existingPackages' => $course->packages->values(),
             'maxPackagePrice' => self::MAX_PACKAGE_PRICE,
-            'courseTypes' => $this->activeCourseTypes(),
+            'courseTypes' => $this->activeCourseTypes($course),
 
         ]);
     }
@@ -127,49 +140,50 @@ class ManageCourseController extends Controller
      */
     public function update(Request $request, Course $course)
     {
-        $data = $this->validated($request);
+        $this->normalizeLegacyCourseTypeInput($request, $course);
+        $this->normalizeLegacyScheduleIds($request, $course);
+        $data = $this->validated($request, $course);
+        $oldImagePath = $course->image_path;
+        $newImagePath = $this->storeUploadedImage($request);
+        $removeImage = ! $newImagePath && $request->boolean('remove_image');
 
-        DB::transaction(function () use ($request, $data, $course) {
-            $courseData = $data['course'];
+        try {
+            DB::transaction(function () use ($data, $course, $newImagePath, $removeImage) {
+                $courseData = $data['course'];
 
-            // ถ้ามีไฟล์รูปภาพที่อัปโหลดมา ให้บันทึก path ของไฟล์ลงใน database ด้วย และลบไฟล์เก่าออกจาก storage
-            if ($request->hasFile('image')) {
-                if ($course->image_path) {
-                    Storage::disk('public')->delete($course->image_path);
+                if ($newImagePath) {
+                    $courseData['image_path'] = $newImagePath;
+                } elseif ($removeImage) {
+                    $courseData['image_path'] = null;
                 }
-                // บันทึก path ของไฟล์ใหม่ลงใน database
-                $courseData['image_path'] = $request->file('image')->store('courses', 'public');
 
-                // ถ้าเลือก "ลบรูปภาพ" ให้ลบไฟล์เก่าออกจาก storage และตั้งค่า image_path เป็น null
-            } elseif ($request->boolean('remove_image')) {
-                if ($course->image_path) {
-                    Storage::disk('public')->delete($course->image_path);
+                // อัปเดตข้อมูลคอร์ส
+                $course->update($courseData);
+
+                $course->targetGroups()->delete();
+                foreach ($data['target_groups'] as $group) {
+                    CourseTargetGroup::create([
+                        'course_id' => $course->id,
+                        'target_group' => $group,
+                    ]);
                 }
-                $courseData['image_path'] = null;
-            }
-            // อัปเดตข้อมูลคอร์ส
-            $course->update($courseData);
 
-            // ลบกลุ่มเป้าหมาย/รอบเวลาเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา
-            $course->targetGroups()->delete();
-            foreach ($data['target_groups'] as $group) {
-                CourseTargetGroup::create([
-                    'course_id' => $course->id,
-                    'target_group' => $group,
-                ]);
-            }
-            // ลบรอบเวลาเรียนเดิมทั้งหมด แล้วสร้างใหม่ตามที่ส่งมา
-            $course->schedules()->delete();
-            foreach ($data['schedules'] as $schedule) {
-                CourseSchedule::create(array_merge($schedule, ['course_id' => $course->id]));
+                // รักษา ID ของรายการเดิมไว้ เพื่อไม่ให้ calendar overrides และสถานะแพ็กเกจสูญหาย
+                $this->syncSchedules($course, $data['schedules']);
+                $this->syncPackages($course, $data['packages']);
+            });
+        } catch (\Throwable $exception) {
+            if ($newImagePath) {
+                Storage::disk('public')->delete($newImagePath);
             }
 
-            // สร้างแพ็กเกจใหม่จากรายการในฟอร์มทั้งหมด
-            $course->packages()->delete();
-            foreach ($data['packages'] as $package) {
-                CoursePackage::create(array_merge($package, ['course_id' => $course->id]));
-            }
-        });
+            throw $exception;
+        }
+
+        // ลบรูปเก่าหลัง transaction สำเร็จแล้วเท่านั้น
+        if (($newImagePath || $removeImage) && $oldImagePath && $oldImagePath !== $newImagePath) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
 
         return redirect()
             ->route('admin.courses')
@@ -182,11 +196,14 @@ class ManageCourseController extends Controller
      */
     public function destroy(Course $course)
     {
-        if ($course->image_path) {
-            Storage::disk('public')->delete($course->image_path);
-        }
+        $imagePath = $course->image_path;
 
-        $course->delete();
+        DB::transaction(fn () => $course->delete());
+
+        // เก็บไฟล์ไว้หากการลบในฐานข้อมูลล้มเหลว และลบเมื่อ commit สำเร็จแล้วเท่านั้น
+        if ($imagePath) {
+            Storage::disk('public')->delete($imagePath);
+        }
 
         return redirect()
             ->route('admin.courses')
@@ -195,22 +212,20 @@ class ManageCourseController extends Controller
 
     /**
      * PATCH /admin/courses/{course}/toggle-status -> route('admin.courses.toggleStatus')
-     * เปิด/ปิดการใช้งานคอร์ส โดยสลับค่า is_active ของแพ็กเกจแรกของคอร์สนี้
-     * (ฟอร์มนี้จัดการทีละ 1 แพ็กเกจต่อคอร์ส
+     * เปิด/ปิดการใช้งานคอร์ส โดยตั้งสถานะแพ็กเกจทั้งหมดของคอร์สให้ตรงกัน
      */
     public function toggleStatus(Course $course)
     {
-        $package = $course->packages()->first();
-
-        if (! $package) {
+        if (! $course->packages()->exists()) {
             return redirect()
                 ->route('admin.courses')
                 ->with('error', 'คอร์ส "'.$course->course_name.'" ยังไม่มีแพ็กเกจ ไม่สามารถเปิด/ปิดใช้งานได้');
         }
 
-        $package->update(['is_active' => ! $package->is_active]);
+        $activate = ! $course->packages()->where('is_active', true)->exists();
+        $course->packages()->update(['is_active' => $activate]);
 
-        $statusText = $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+        $statusText = $activate ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
 
         return redirect()
             ->route('admin.courses')
@@ -224,7 +239,10 @@ class ManageCourseController extends Controller
     private function scheduleFormRows(Course $course)
     {
         return $course->schedules->map(fn ($schedule) => [
+            'id' => $schedule->id,
+            'day_type' => $schedule->day_type,
             'weekdays' => $schedule->weekdays ?: ['mon', 'wed', 'fri'],
+            'court_section_id' => $schedule->court_section_id,
             'start' => Carbon::parse($schedule->start_time)->format('H:i'),
             'end' => Carbon::parse($schedule->end_time)->format('H:i'),
             'limited' => $schedule->is_limited_spots,
@@ -235,8 +253,18 @@ class ManageCourseController extends Controller
     /**
      * Validate + normalize ข้อมูลจากฟอร์ม แล้วแยกเป็น 3 กลุ่ม: course / target_groups / schedules / package
      */
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Course $course = null): array
     {
+        $scheduleIdRules = $course
+            ? ['nullable', 'integer', 'distinct', Rule::exists('course_schedules', 'id')->where(fn ($query) => $query->where('course_id', $course->id))]
+            : ['prohibited'];
+        $packageIdRules = $course
+            ? ['nullable', 'integer', 'distinct', Rule::exists('course_packages', 'id')->where(fn ($query) => $query->where('course_id', $course->id))]
+            : ['prohibited'];
+        $existingCourseTypeIds = $course
+            ? $course->packages()->pluck('course_type_id')->map(fn ($id) => (int) $id)->all()
+            : [];
+
         $validated = $request->validate([
             'course_name' => ['required', 'string', 'max:255'],
             'min_age' => ['required', 'integer', 'min:0'],
@@ -248,6 +276,7 @@ class ManageCourseController extends Controller
             'target_groups.*' => ['required', 'in:Rookie,Beginner,Junior,Player'],
 
             'schedules' => ['required', 'array', 'min:1'],
+            'schedules.*.id' => $scheduleIdRules,
             'schedules.*.day_type' => ['nullable', 'in:weekday,weekend'],
             'schedules.*.weekdays' => ['required', 'array', 'min:1'],
             'schedules.*.weekdays.*' => ['in:mon,tue,wed,thu,fri,sat,sun'],
@@ -259,10 +288,18 @@ class ManageCourseController extends Controller
             'schedules.*.capacity' => ['nullable', 'required_if:schedules.*.is_limited_spots,1', 'integer', 'min:1'],
 
             'packages' => ['required', 'array', 'min:1'],
+            'packages.*.id' => $packageIdRules,
             'packages.*.course_type_id' => [
                 'required',
                 'integer',
-                Rule::exists('course_types', 'id')->where(fn ($query) => $query->where('is_active', true)),
+                Rule::exists('course_types', 'id')->where(function ($query) use ($existingCourseTypeIds) {
+                    $query->where(function ($query) use ($existingCourseTypeIds) {
+                        $query->where('is_active', true);
+                        if ($existingCourseTypeIds !== []) {
+                            $query->orWhereIn('id', $existingCourseTypeIds);
+                        }
+                    });
+                }),
             ],
             'packages.*.total_sessions' => ['required', 'integer', 'min:1'],
             'packages.*.total_price' => ['required', 'numeric', 'min:0.01', 'max:'.self::MAX_PACKAGE_PRICE],
@@ -306,7 +343,7 @@ class ManageCourseController extends Controller
 
             'packages.*.validity_value.required' => 'กรุณากรอกอายุแพ็กเกจ',
             'packages.*.validity_value.integer' => 'อายุแพ็กเกจต้องเป็นตัวเลข',
-            'packages.*.validity_value.min' => 'อายุแพ็กเกจต้องมากกว่าหรือเท่ากับ 0',
+            'packages.*.validity_value.min' => 'อายุแพ็กเกจต้องมากกว่า 0',
         ]);
 
         // วนลูปทุกข้อมูลใน Array แล้วแปลงข้อมูลใหม่กลับมาเป็น Array อีกชุดหนึ่ง
@@ -314,7 +351,8 @@ class ManageCourseController extends Controller
             $isLimited = filter_var($schedule['is_limited_spots'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             return [
-                'day_type' => $schedule['day_type'],
+                'id' => ! empty($schedule['id']) ? (int) $schedule['id'] : null,
+                'day_type' => $schedule['day_type'] ?? 'weekday',
                 'weekdays' => array_values($schedule['weekdays']),
                 'court_section_id' => $schedule['court_section_id'] ?? null,
                 'start_time' => $schedule['start_time'],
@@ -328,6 +366,7 @@ class ManageCourseController extends Controller
 
         $packages = array_map(function ($package) {
             return [
+                'id' => ! empty($package['id']) ? (int) $package['id'] : null,
                 'course_type_id' => (int) $package['course_type_id'],
                 'total_sessions' => (int) $package['total_sessions'],
                 'total_price' => $package['total_price'],
@@ -352,12 +391,199 @@ class ManageCourseController extends Controller
         ];
     }
 
-    private function activeCourseTypes()
+    private function activeCourseTypes(?Course $course = null)
     {
+        $existingCourseTypeIds = $course?->packages()->pluck('course_type_id')->all() ?? [];
+
         return CourseType::query()
-            ->where('is_active', true)
+            ->where(function ($query) use ($existingCourseTypeIds) {
+                $query->where('is_active', true);
+                if ($existingCourseTypeIds !== []) {
+                    $query->orWhereIn('id', $existingCourseTypeIds);
+                }
+            })
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Forms opened before the course-types deployment still submit package_type.
+     * Preserve the existing type by row during updates so those stale pages do not
+     * fail after the legacy database column has been removed.
+     */
+    private function normalizeLegacyCourseTypeInput(Request $request, ?Course $course = null): void
+    {
+        if ($request->input('course_form_version') === '2') {
+            return;
+        }
+
+        $packages = $request->input('packages');
+        if (! is_array($packages)) {
+            return;
+        }
+
+        $existingPackages = $course
+            ? $course->packages()->orderBy('id')->get()
+            : collect();
+        $unusedExistingPackages = $existingPackages->keyBy('id');
+        $standardTypeId = CourseType::query()->where('slug', 'standard')->value('id');
+
+        foreach ($packages as $index => &$package) {
+            $existingPackage = null;
+            if (! empty($package['id'])) {
+                $existingPackage = $unusedExistingPackages->pull((int) $package['id']);
+            } elseif ($course) {
+                $existingPackage = $unusedExistingPackages->first(function (CoursePackage $existing) use ($package) {
+                    return (int) $existing->total_sessions === (int) ($package['total_sessions'] ?? 0)
+                        && (float) $existing->total_price === (float) ($package['total_price'] ?? -1)
+                        && (int) $existing->validity_value === (int) ($package['validity_value'] ?? 0)
+                        && $existing->validity_unit === ($package['validity_unit'] ?? null);
+                });
+
+                if ($existingPackage) {
+                    $unusedExistingPackages->forget($existingPackage->id);
+                } elseif (count($packages) === $existingPackages->count()) {
+                    $candidate = $existingPackages->get($index);
+                    if ($candidate && $unusedExistingPackages->has($candidate->id)) {
+                        $existingPackage = $unusedExistingPackages->pull($candidate->id);
+                    }
+                }
+            }
+
+            if ($existingPackage && empty($package['id'])) {
+                $package['id'] = $existingPackage->id;
+            }
+
+            if (! empty($package['course_type_id'])) {
+                continue;
+            }
+
+            $courseTypeId = $existingPackage?->course_type_id;
+            if (! $courseTypeId && ($package['package_type'] ?? null) === 'group') {
+                $courseTypeId = $standardTypeId;
+            }
+
+            if ($courseTypeId) {
+                $package['course_type_id'] = $courseTypeId;
+            }
+        }
+        unset($package);
+
+        $request->merge(['packages' => $packages]);
+    }
+
+    /**
+     * Forms opened before schedule IDs were added do not submit an ID. Match rows
+     * back to their records when possible so an old browser tab does not remove
+     * calendar overrides merely because the course was edited.
+     */
+    private function normalizeLegacyScheduleIds(Request $request, Course $course): void
+    {
+        if ($request->input('course_form_version') === '2') {
+            return;
+        }
+
+        $schedules = $request->input('schedules');
+        if (! is_array($schedules)) {
+            return;
+        }
+
+        $existingSchedules = $course->schedules()->orderBy('id')->get();
+        $unusedExistingSchedules = $existingSchedules->keyBy('id');
+
+        foreach ($schedules as $index => &$schedule) {
+            if (! empty($schedule['id'])) {
+                $unusedExistingSchedules->forget((int) $schedule['id']);
+
+                continue;
+            }
+
+            $existingSchedule = $unusedExistingSchedules->first(function (CourseSchedule $existing) use ($schedule) {
+                $existingDays = collect($existing->weekdays ?? [])->sort()->values()->all();
+                $submittedDays = collect($schedule['weekdays'] ?? [])->sort()->values()->all();
+
+                return $existingDays === $submittedDays
+                    && substr((string) $existing->start_time, 0, 5) === ($schedule['start_time'] ?? null)
+                    && substr((string) $existing->end_time, 0, 5) === ($schedule['end_time'] ?? null)
+                    && (int) ($existing->court_section_id ?? 0) === (int) ($schedule['court_section_id'] ?? 0);
+            });
+
+            if ($existingSchedule) {
+                $unusedExistingSchedules->forget($existingSchedule->id);
+            } elseif (count($schedules) === $existingSchedules->count()) {
+                $candidate = $existingSchedules->get($index);
+                if ($candidate && $unusedExistingSchedules->has($candidate->id)) {
+                    $existingSchedule = $unusedExistingSchedules->pull($candidate->id);
+                }
+            }
+
+            if ($existingSchedule) {
+                $schedule['id'] = $existingSchedule->id;
+            }
+        }
+        unset($schedule);
+
+        $request->merge(['schedules' => $schedules]);
+    }
+
+    private function syncSchedules(Course $course, array $schedules): void
+    {
+        $existingSchedules = $course->schedules()->lockForUpdate()->get()->keyBy('id');
+
+        foreach ($schedules as $scheduleData) {
+            $scheduleId = $scheduleData['id'] ?? null;
+            unset($scheduleData['id']);
+
+            if ($scheduleId) {
+                $schedule = $existingSchedules->pull($scheduleId);
+                $schedule->update($scheduleData);
+            } else {
+                $course->schedules()->create($scheduleData);
+            }
+        }
+
+        if ($existingSchedules->isNotEmpty()) {
+            $course->schedules()->whereKey($existingSchedules->keys())->delete();
+        }
+    }
+
+    private function syncPackages(Course $course, array $packages): void
+    {
+        $existingPackages = $course->packages()->lockForUpdate()->get()->keyBy('id');
+        $newPackageIsActive = $existingPackages->isEmpty()
+            || $existingPackages->contains(fn (CoursePackage $package) => $package->is_active);
+
+        foreach ($packages as $packageData) {
+            $packageId = $packageData['id'] ?? null;
+            unset($packageData['id']);
+
+            if ($packageId) {
+                $package = $existingPackages->pull($packageId);
+                $package->update($packageData);
+            } else {
+                $course->packages()->create(array_merge($packageData, [
+                    'is_active' => $newPackageIsActive,
+                ]));
+            }
+        }
+
+        if ($existingPackages->isNotEmpty()) {
+            $course->packages()->whereKey($existingPackages->keys())->delete();
+        }
+    }
+
+    private function storeUploadedImage(Request $request): ?string
+    {
+        if (! $request->hasFile('image')) {
+            return null;
+        }
+
+        $path = $request->file('image')->store('courses', 'public');
+        if (! is_string($path) || $path === '') {
+            throw new \RuntimeException('ไม่สามารถบันทึกรูปคอร์สได้');
+        }
+
+        return $path;
     }
 }

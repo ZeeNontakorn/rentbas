@@ -13,6 +13,9 @@ return new class extends Migration
             // Expand before converting existing rows so MySQL never truncates an enum value.
             DB::statement("ALTER TABLE course_packages MODIFY package_type ENUM('group','private','kinder','special','standard') NOT NULL DEFAULT 'group'");
             DB::table('course_packages')->where('package_type', 'group')->update(['package_type' => 'standard']);
+            // Private packages have moved to their own flow. Keep legacy rows usable
+            // as standard course packages instead of failing or truncating the migration.
+            DB::table('course_packages')->where('package_type', 'private')->update(['package_type' => 'standard']);
 
             // Private courses now live in their own flow and are no longer valid course packages.
             DB::statement("ALTER TABLE course_packages MODIFY package_type ENUM('kinder','special','standard') NOT NULL DEFAULT 'standard'");
