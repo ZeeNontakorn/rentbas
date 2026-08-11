@@ -365,16 +365,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (info.view.type === 'dayGridMonth') {
                 calendar.changeView('timeGridDay', info.date);
+                return;
             }
-        },
-        select(info) {
-            const start = info.start;
-            const end = info.end;
-            pendingSelection = { start, end };
-            needsConfirmClick = false;
-            openBookingModal(start, end);
-        },
-        dateClick(info) {
+
             if (!pendingSelection) {
                 return;
             }
@@ -391,6 +384,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     needsConfirmClick = true;
                 }
             }
+        },
+        select(info) {
+            const start = info.start;
+            const end = info.end;
+            pendingSelection = { start, end };
+            needsConfirmClick = false;
+            openBookingModal(start, end);
         },
         eventClick(info) {
             const props = info.event.extendedProps;

@@ -9,6 +9,7 @@ use App\Models\CourseSchedule;
 use App\Models\CourtSection;
 use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
+use App\Services\StaffScheduleService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,7 @@ class CalendarController extends Controller
 
     public function __construct(
         private readonly CalendarEventOccurrenceService $occurrences,
+        private readonly StaffScheduleService $staffSchedule,
     ) {}
 
     public function calendar()
@@ -56,12 +58,22 @@ class CalendarController extends Controller
 
     public function store(Request $request)
     {
-        return response()->json($this->toEvent(CalendarEvent::create($this->validated($request))), 201);
+        $data = $this->validated($request);
+        $event = isset($data['coach_id'])
+            ? $this->staffSchedule->createEvent(User::findOrFail($data['coach_id']), $data)
+            : CalendarEvent::create($data);
+
+        return response()->json($this->toEvent($event), 201);
     }
 
     public function update(Request $request, CalendarEvent $calendarEvent)
     {
-        $calendarEvent->update($this->validated($request));
+        $data = $this->validated($request);
+        if (isset($data['coach_id'])) {
+            $this->staffSchedule->updateEvent(User::findOrFail($data['coach_id']), $calendarEvent, $data);
+        } else {
+            $calendarEvent->update($data);
+        }
 
         return response()->json($this->toEvent($calendarEvent->fresh()));
     }

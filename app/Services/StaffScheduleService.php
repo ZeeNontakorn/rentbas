@@ -131,6 +131,7 @@ class StaffScheduleService
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'detail' => ['nullable', 'string', 'max:255'],
+            'court_id' => ['nullable', 'integer', 'exists:courts,id'],
         ]);
 
         $startsAt = Carbon::parse($data['date'].' '.$data['start_time']);
@@ -167,6 +168,31 @@ class StaffScheduleService
         });
     }
 
+    public function createOrUpdateAvailability(User $staff, array $data): Availability
+    {
+        return DB::transaction(function () use ($staff, $data) {
+            $staff = User::whereKey($staff->id)->lockForUpdate()->firstOrFail();
+            $existing = Availability::query()
+                ->where('user_id', $staff->id)
+                ->whereDate('date', $data['date'])
+                ->where('start_time', $data['start_time'].':00')
+                ->where('end_time', $data['end_time'].':00')
+                ->where('court_id', $data['court_id'] ?? null)
+                ->lockForUpdate()
+                ->first();
+
+            $this->ensureSlotIsFree($staff, $data, $existing?->id);
+
+            if ($existing) {
+                $existing->update($this->slotData($data));
+
+                return $existing->refresh();
+            }
+
+            return $staff->availabilities()->create($this->slotData($data));
+        });
+    }
+
     public function updateAvailability(User $staff, Availability $availability, array $data): Availability
     {
         return DB::transaction(function () use ($staff, $availability, $data) {
@@ -191,7 +217,8 @@ class StaffScheduleService
 
         $availabilities = Availability::query()
             ->where('user_id', $staff->id)
-            ->whereBetween('date', [$checkingFrom->toDateString(), $seriesEnd->toDateString()])
+            ->whereDate('date', '>=', $checkingFrom->toDateString())
+            ->whereDate('date', '<=', $seriesEnd->toDateString())
             ->lockForUpdate()
             ->get();
         $bookings = PrivateTrainingBooking::query()
@@ -199,7 +226,8 @@ class StaffScheduleService
                 $query->where('coach_id', $staff->id)
                     ->orWhere('court_assistant_id', $staff->id);
             })
-            ->whereBetween('date', [$checkingFrom->toDateString(), $seriesEnd->toDateString()])
+            ->whereDate('date', '>=', $checkingFrom->toDateString())
+            ->whereDate('date', '<=', $seriesEnd->toDateString())
             ->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
             ->lockForUpdate()
             ->get();
@@ -292,6 +320,7 @@ class StaffScheduleService
             'date' => $data['date'],
             'start_time' => $data['start_time'].':00',
             'end_time' => $data['end_time'].':00',
+            'court_id' => $data['court_id'] ?? null,
             'status' => 'booked',
             'detail' => $data['detail'] ?? null,
         ];
