@@ -93,6 +93,15 @@
         cursor: pointer;
         z-index: 5;
     }
+    /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือแถบวันนี้ แต่ต่ำกว่า event การจอง */
+    #private-calendar .fc-bg-event {
+        z-index: 1 !important;
+    }
+
+    /* event การจองจริง (สถานะต่าง ๆ) ต้องอยู่หน้าสุดเสมอ ไม่ให้อะไรมาทับ */
+    #private-calendar .fc-timegrid-event-harness {
+        z-index: 3 !important;
+    }
 </style>
 
 <div id="bookTrainingModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
@@ -290,6 +299,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const openHour = 8, closeHour = 22;
+    const scheduleUrl = @js(route('private-training.schedule', $coach));
+    function buildPastOverlay(rangeStart, rangeEnd) {
+        const overlay = [];
+        const now = new Date();
+        const cursor = new Date(rangeStart);
+        cursor.setHours(0, 0, 0, 0);
+        while (cursor < rangeEnd) {
+            const dayOpen = new Date(cursor);
+            dayOpen.setHours(openHour, 0, 0, 0);
+            const dayClose = new Date(cursor);
+            dayClose.setHours(closeHour, 0, 0, 0);
+            // ครอบเฉพาะช่วงที่ผ่านมาแล้วจริง ๆ ของวันนั้น (ไม่เกิน "ตอนนี้" และไม่เกินเวลาปิด)
+            const overlayEnd = now < dayClose ? now : dayClose;
+            if (overlayEnd > dayOpen) {
+                overlay.push({
+                    start: dayOpen.toISOString(),
+                    end: overlayEnd.toISOString(),
+                    display: 'background',
+                    backgroundColor: '#e5e7eb',
+                    extendedProps: { kind: 'past', selectable: false }
+                });
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return overlay;
+    }
+
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         locale: 'th',
@@ -302,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         eventClassNames(arg) {
             // ทำให้ช่วงเวลาที่ว่างแต่ผ่านไปแล้วดูจางลง ไม่ให้เข้าใจผิดว่ายังจองได้
-            if (arg.event.extendedProps.kind === 'available' && arg.event.end <= new Date()) {
+            if (arg.event.extendedProps.kind === 'past' && arg.event.end <= new Date()) {
                 return ['opacity-40'];
             }
             return [];
@@ -310,10 +347,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         eventDidMount(arg) {
             const props = arg.event.extendedProps;
-            const isPastAvailable = props.kind === 'available' && arg.event.end <= new Date();
-            if (!isPastAvailable) return;
+            const isPastAvailable = props.kind === 'past' && arg.event.end <= new Date();
+            if (arg.event.extendedProps.kind !== 'past') return;
 
-            arg.el.style.backgroundColor = '#e5e7eb';
+            arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+            arg.el.style.opacity = '0.4';
+
 
             const label = document.createElement('div');
             label.textContent = 'เลยกำหนด';
@@ -324,8 +363,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 align-items: center;
                 justify-content: center;
                 font-size: 11px;
-                font-weight: 600;
-                color: #6b7280;
+                font-weight: 700;
+                color: #1e293b;
                 pointer-events: none;
             `;
             arg.el.appendChild(label);
@@ -346,7 +385,16 @@ document.addEventListener('DOMContentLoaded', function () {
         dayMaxEvents: true,
         eventMaxStack: 3,
         slotEventOverlap: false,
-        events: @js(route('private-training.schedule', $coach)),
+
+        events: function (fetchInfo, successCallback, failureCallback) {
+            const params = new URLSearchParams({ start: fetchInfo.startStr, end: fetchInfo.endStr });
+            fetch(`${scheduleUrl}?${params}`, { headers: { Accept: 'application/json' } })
+                .then(res => res.json())
+                .then(realEvents => {
+                    successCallback([...realEvents, ...buildPastOverlay(fetchInfo.start, fetchInfo.end)]);
+                })
+                .catch(failureCallback);
+        },
         selectAllow(info) {
             // FullCalendar ให้ลากข้ามคอลัมน์วันได้ จึงตรวจปลายช่วงแบบ exclusive
             // (ลบ 1 ms) เพื่อยืนยันว่าช่วงที่เลือกทั้งหมดอยู่ภายในวันเดียวกัน
@@ -400,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            if (props.kind === 'available') {
+            if (props.kind === 'past') {
                 const isPast = info.event.end <= new Date();
                 Swal.fire({
                     title: isPast ? 'เลยกำหนด' : 'เปิดรับจอง',
