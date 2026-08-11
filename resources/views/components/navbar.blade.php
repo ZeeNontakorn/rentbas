@@ -73,7 +73,7 @@
                     </a>
                     <!-- จัดการสนาม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             จัดการสนาม
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -85,7 +85,7 @@
 
                     <!-- การสอน -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             การสอน
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -99,7 +99,7 @@
 
                     <!-- รายงานและภาพรวม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('history', 'admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('history', 'admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             รายงานและภาพรวม
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -110,7 +110,7 @@
                     </div>
                     <!-- เติมเครดิต -->
                      <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                         เติมเครดิต
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -164,7 +164,7 @@
                 {{-- ปุ่มแจ้งเตือน --}}
                 <div class="relative flex-shrink-0">
                     {{-- ไอคอนกระดิ่ง --}}
-                    <button id="notifBtn" class="relative focus:outline-none hover:text-gray-300 transition">
+                    <button id="notifBtn" class="relative focus:outline-none hover:text-gray-300 transition cursor-pointer">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -185,7 +185,7 @@
                             </span>
                             <form class="mark-all-read-form" method="POST" action="{{ route('notifications.readAll') }}">
                                 @csrf
-                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านแล้วทั้งหมด</button>
+                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium cursor-pointer">อ่านแล้วทั้งหมด</button>
                             </form>
                         </div>
 
@@ -281,7 +281,7 @@
                 <!-- Divider (ใช้ร่วมกันทุก role: name dropdown pattern) -->
                 <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
                 <div class="relative flex-shrink-0">
-                    <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap">
+                    <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap cursor-pointer">
                     <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
                         {{ auth()->user()->name }}
                     </span>
@@ -326,12 +326,12 @@
 
                 {{-- credit --}}
                 @if($isAdminLike)
-                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
                         {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                     </button>
                 @else
-                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('credits.topup.index') }}'">
                         {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                     </button>
@@ -486,22 +486,20 @@
         @endauth
 
         @guest
-            <div class="flex flex-col py-2">
-                <a href="{{ route('login') }}" class="py-2 flex items-center text-gray-300 hover:text-orange-500 transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Login
-                </a>
-                <a href="{{ route('register') }}" class="py-2 flex items-center text-gray-300 hover:text-orange-500 transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 21v-2c0-2.21 3.58-4 6-4s6 1.79 6 4v2H6z"></path>
-                    </svg>
-                    Register
-                </a>
-            </div>
+            <a href="{{ route('login') }}" class="flex items-center hover:text-gray-300 transition mt-3">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                </svg>
+                เข้าสู่ระบบ
+            </a>
+            <a href="{{ route('register') }}" class="flex items-center hover:text-gray-300 transition mt-3">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                สมัครสมาชิก
+            </a>
         @endguest
     </div>
 
