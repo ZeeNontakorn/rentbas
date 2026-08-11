@@ -1161,9 +1161,16 @@ html { scroll-behavior: smooth; }
         @endphp
         @foreach($courts as $court)
             @php
-                $isOpen = $court->court_status === 'open' &&
-                    !($court->closed_from && $court->closed_until &&
-                      now()->between($court->closed_from, $court->closed_until));
+                $currentCourtStatus = $court->getRealtimeStatus(now());
+                $isOpen = $currentCourtStatus === 'available';
+                $statusText = match ($currentCourtStatus) {
+                    'pending_payment' => 'กำลังจอง (รอชำระเงิน)',
+                    'booked' => 'ไม่ว่าง',
+                    'maintenance' => 'ปิดปรับปรุง',
+                    'unavailable' => 'ปิดชั่วคราว',
+                    'closed' => 'ปิดให้บริการ',
+                    default => 'พร้อมให้บริการ',
+                };
                 $uploadedImg = \App\Models\Setting::getVal('court_img_' . $court->id);
                 $img = $uploadedImg ?: $courtImgs[$loop->index % count($courtImgs)];
             @endphp
@@ -1183,7 +1190,7 @@ html { scroll-behavior: smooth; }
                     <div class="court-status-row" style="margin-bottom: 16px;">
                         <div class="sdot {{ $isOpen ? 'open' : 'closed' }}"></div>
                         <span class="stext {{ $isOpen ? 'open' : 'closed' }}">
-                            {{ $isOpen ? 'พร้อมให้บริการ' : 'ปิดปรับปรุง' }}
+                            {{ $statusText }}
                         </span>
                     </div>
                     @if($isOpen)
@@ -1809,10 +1816,12 @@ async function renderSch(ds) {
     tb.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#adb5bd;font-size:13px;">กำลังโหลดข้อมูล...</td></tr>`;
 
     let slots = {};
+    let sectionSlots = {};
     try {
         const res  = await fetch('{{ route("schedule") }}?date=' + ds);
         const data = await res.json();
         slots = data.slots || {};
+        sectionSlots = data.section_slots || {};
     } catch (e) {
         tb.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#e53e3e;font-size:13px;">ไม่สามารถโหลดข้อมูลได้</td></tr>`;
         return;
@@ -1844,10 +1853,17 @@ async function renderSch(ds) {
 
         activeCourts.forEach(c => {
             let courtSlots = slots[c.id] || {};
-            let status = courtSlots[startTime] || 'available';
+            const hasNumericSectionId = c.section_id !== null
+                && c.section_id !== undefined
+                && c.section_id !== ''
+                && !Number.isNaN(Number(c.section_id));
 
-            if (c.section_id && slots[c.section_id]) {
-                status = slots[c.section_id][startTime] || status;
+            let status;
+            if (hasNumericSectionId) {
+                const secSlots = sectionSlots[String(c.section_id)] || {};
+                status = secSlots[startTime] || courtSlots[startTime] || 'available';
+            } else {
+                status = courtSlots[startTime] || 'available';
             }
 
             if (isTimePast) {

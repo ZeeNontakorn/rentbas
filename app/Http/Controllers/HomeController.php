@@ -102,10 +102,14 @@ class HomeController extends Controller
             })
             ->get(['court_id', 'court_section_id', 'start_time', 'end_time', 'status']);
 
-        $slots = []; // [court_id][start_time] => status  (คีย์เป็นทุกๆ 30 นาที ให้ตรงกับตารางฝั่ง frontend)
+        $slots = []; // [court_id][start_time] => status
+        $sectionSlots = []; // [section_id][start_time] => status
         foreach ($courts as $court) {
-            $fullSection = $court->defaultSection();
-            $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
+            $referenceSection = $court->defaultSection() ?? $court->activeSections()->first();
+            $conflictIds = $referenceSection
+                ? $referenceSection->conflictingSectionIds()
+                : $court->sections()->pluck('id')->all();
+            $activeSections = $court->activeSections();
 
             $courtBookings = $bookings->where('court_id', $court->id);
 
@@ -117,11 +121,11 @@ class HomeController extends Controller
                 $slotStart = Carbon::parse("{$date} {$startStr}");
                 $slotEnd = Carbon::parse("{$date} {$endStr}");
 
-                $closuresType = $court->getClosureType($startStr, $endStr, $date, $fullSection);
+                $closuresType = $court->getClosureType($startStr, $endStr, $date, $referenceSection);
 
                 if ($slotEnd->lte($now)) {
                     $status = 'past';
-                } elseif ($court->isClosedAt($slotStart, $slotEnd, $fullSection)) {
+                } elseif ($court->isClosedAt($slotStart, $slotEnd, $referenceSection)) {
                     $status = $closuresType ?? 'closed';
                 } else {
                     // ถือว่า booked ถ้ามีการจองใดๆ (เต็มสนามหรือครึ่งสนามที่บล็อกกัน) ทับซ้อนกับ 30 นาทีนี้อยู่
@@ -134,10 +138,35 @@ class HomeController extends Controller
                         : ($overlap ? 'booked' : 'available');
                 }
                 $slots[$court->id][$startStr] = $status;
+
+                foreach ($activeSections as $section) {
+                    $sectionConflictIds = $section->conflictingSectionIds();
+                    $sectionClosureType = $court->getClosureType($startStr, $endStr, $date, $section);
+
+                    if ($slotEnd->lte($now)) {
+                        $sectionStatus = 'past';
+                    } elseif ($court->isClosedAt($slotStart, $slotEnd, $section)) {
+                        $sectionStatus = $sectionClosureType ?? 'closed';
+                    } else {
+                        $sectionOverlap = $courtBookings->first(function ($b) use ($sectionConflictIds, $startStr, $endStr) {
+                            return in_array($b->court_section_id, $sectionConflictIds, true)
+                                && $b->start_time < $endStr && $b->end_time > $startStr;
+                        });
+
+                        $sectionStatus = $sectionOverlap?->status === 'pending_payment'
+                            ? 'pending_payment'
+                            : ($sectionOverlap ? 'booked' : 'available');
+                    }
+
+                    $sectionSlots[$section->id][$startStr] = $sectionStatus;
+                }
             }
         }
 
-        return response()->json(['slots' => $slots]);
+        return response()->json([
+            'slots' => $slots,
+            'section_slots' => $sectionSlots,
+        ]);
     }
 
     /**
@@ -183,8 +212,10 @@ class HomeController extends Controller
         // เตรียม conflict-ids ของ section "เต็มสนาม" ต่อสนามไว้ล่วงหน้า (ใช้ร่วมกันทุกวัน/ทุกชั่วโมง)
         $conflictIdsByCourt = [];
         foreach ($courts as $court) {
-            $fullSection = $court->defaultSection();
-            $conflictIdsByCourt[$court->id] = $fullSection ? $fullSection->conflictingSectionIds() : [];
+            $referenceSection = $court->defaultSection() ?? $court->activeSections()->first();
+            $conflictIdsByCourt[$court->id] = $referenceSection
+                ? $referenceSection->conflictingSectionIds()
+                : $court->sections()->pluck('id')->all();
         }
 
         $days = [];

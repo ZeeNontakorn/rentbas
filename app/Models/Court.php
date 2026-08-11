@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -133,29 +134,84 @@ class Court extends Model
             ->where('end_time', '>', $startTime)
             ->exists();
     }
+    public function getRealtimeStatus(?CarbonInterface $at = null, ?CourtSection $section = null): string
+    {
+        $at ??= now();
+
+        if ($this->court_status === 'closed') {
+            return 'closed';
+        }
+
+        if ($this->closed_from && $this->closed_until) {
+            if ($at->lt($this->closed_until) && $at->gt($this->closed_from)) {
+                return 'closed';
+            }
+        }
+
+        $date = $at->toDateString();
+        $startTime = $at->format('H:i:s');
+        $endTime = $at->copy()->addMinutes(30)->format('H:i:s');
+        $referenceSection = $section ?? $this->defaultSection() ?? $this->activeSections()->first();
+        $conflictIds = $referenceSection
+            ? $referenceSection->conflictingSectionIds()
+            : $this->sections()->pluck('id')->all();
+
+        $activeBookingQuery = Booking::where('court_id', $this->id)
+            ->whereDate('booking_date', $date)
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            });
+
+        if (! empty($conflictIds)) {
+            $activeBookingQuery->whereIn('court_section_id', $conflictIds);
+        }
+
+        $activeBooking = $activeBookingQuery->first(['status']);
+
+        if ($activeBooking) {
+            return $activeBooking->status === 'pending_payment' ? 'pending_payment' : 'booked';
+        }
+
+        $closureType = $this->getClosureType($startTime, $endTime, $date, $referenceSection);
+
+        return $closureType ?? 'available';
+    }
+
     public function getClosureType(string $from, string $to, string $date, ?CourtSection $section = null): ?string
     {
         if ($this->court_status === 'closed') {
             return 'closed';
         }
 
-        $query = CourtClosure::where('court_id', $this->id)
+        $windowStart = Carbon::parse("{$date} {$from}");
+        $windowEnd = Carbon::parse("{$date} {$to}");
+
+        $closure = CourtClosure::where('court_id', $this->id)
             ->whereDate('date', $date)
-            ->where('start_time', '<', $to)
-            ->where('end_time', '>', $from);
+            ->get()
+            ->first(function ($candidate) use ($section, $windowStart, $windowEnd): bool {
+                $candidateStart = Carbon::parse("{$candidate->date} {$candidate->start_time}");
+                $candidateEnd = Carbon::parse("{$candidate->date} {$candidate->end_time}");
 
-        if ($section) {
-            $query->where(function ($q) use ($section) {
-                $q->whereNull('court_section_id')
-                    ->orWhere('court_section_id', $section->id);
+                if ($candidateStart >= $windowEnd || $candidateEnd <= $windowStart) {
+                    return false;
+                }
+
+                if ($candidate->court_section_id !== null && $section) {
+                    return in_array($candidate->court_section_id, $section->conflictingSectionIds(), true);
+                }
+
+                return $candidate->court_section_id === null;
             });
-        } else {
-            $query->whereNull('court_section_id');
-        }
 
-        $closureType = $query->first()?->type;
-        if ($closureType) {
-            return $closureType;
+        if ($closure?->type) {
+            return $closure->type;
         }
 
         $sectionIds = $section
