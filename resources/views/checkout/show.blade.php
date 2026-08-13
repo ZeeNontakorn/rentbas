@@ -171,7 +171,7 @@
                     </div>
                 @endif
 
-                <<form method="POST" action="{{ route('checkout.pay.credit', $booking) }}"
+                <form method="POST" action="{{ route('checkout.pay.credit', $booking) }}"
       onsubmit="showMailLoadingOverlay('กำลังตัดเครดิตและส่งอีเมลยืนยันการจอง...'); this.querySelector('button[type=submit]').disabled = true;">
                     @csrf
                     <button type="submit" class="btn-pay credit" {{ $sufficient ? '' : 'disabled' }}>
