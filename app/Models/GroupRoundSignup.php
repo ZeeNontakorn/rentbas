@@ -10,6 +10,7 @@ class GroupRoundSignup extends Model
     protected $fillable = [
         'group_round_id',
         'user_id',
+        'guest_name',
         'order_number',
         'credit_used',
         'status',
