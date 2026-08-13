@@ -195,9 +195,15 @@
                             @foreach($notifications as $n)
                             {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
                                 @php
-                                    $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
-                                        || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
-                                    $notifTarget = $isCourtBookingNotification ? null : route('notifications.open', $n);
+                                  $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
+                                    || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
+                                $notifTarget = $isCourtBookingNotification 
+                                    ? route('admin.bookings', [
+                                        'status'   => 'approved',
+                                        'date'     => now()->format('Y-m-d'),
+                                        'court_id' => '',
+                                    ]) 
+                                    : route('notifications.open', $n);
 
                                     // สีและไอคอนตามความหมาย: สำเร็จ / ปฏิเสธ / รอดำเนินการ / ข้อมูลทั่วไป
                                     $visualType = $n->visualType();

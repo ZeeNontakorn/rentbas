@@ -18,22 +18,22 @@ class NotificationController extends Controller
         return view('notifications.index', compact('notifications'));
     }
 
-    public function markAsRead(Request $request, Notification $notification)
-    {
-        // ตรวจสอบสิทธิ์ผู้ใช้
-        if ($notification->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $notification->update(['is_read' => true]);
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->noContent(); // 204 ไม่ redirect
-        }
-
-        return back();
+   public function markAsRead(Request $request, Notification $notification)
+{
+    if ($notification->user_id !== auth()->id()) {
+        abort(403);
     }
 
+    $notification->update(['is_read' => true]);
+
+    if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+            'redirect' => $this->destination($notification), 
+        ]);
+    }
+
+    return redirect()->to($this->destination($notification));
+}
     public function open(Notification $notification)
     {
         abort_unless($notification->user_id === auth()->id(), 403);
