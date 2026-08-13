@@ -56,13 +56,13 @@
                     </colgroup>
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
-                            <th class="px-7 py-4 font-medium">ภาพ</th>
-                            <th class="px-5 py-4 font-medium">ชื่อคอร์ส / กลุ่มเป้าหมาย</th>
-                            <th class="px-5 py-4 font-medium">ช่วงอายุ</th>
-                            <th class="px-5 py-4 font-medium">วันและเวลาเรียน</th>
-                            <th class="px-5 py-4 font-medium">แพ็กเกจ</th>
-                            <th class="px-5 py-4 font-medium">สถานะ</th>
-                            <th class="px-5 py-4 font-medium">จัดการ</th>
+                            <th class="px-7 py-4 font-medium text-center">ภาพ</th>
+                            <th class="px-5 py-4 font-medium text-center">ชื่อคอร์ส / กลุ่มเป้าหมาย</th>
+                            <th class="px-5 py-4 font-medium text-center">ช่วงอายุ</th>
+                            <th class="px-5 py-4 font-medium text-center">วันและเวลาเรียน</th>
+                            <th class="px-5 py-4 font-medium text-center">แพ็กเกจ</th>
+                            <th class="px-5 py-4 font-medium text-center">สถานะ</th>
+                            <th class="px-5 py-4 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -80,7 +80,9 @@
                                 </td>
                                 <td class="px-5 py-6">
                                     <p class="font-semibold leading-6 text-gray-800">
+                                        <span class="inline-block max-w-[100%] truncate">
                                         {{ $course->course_name }}
+                                        </span>
                                         @if ($package && $package->is_featured)<span class="ml-1" title="แพ็กเกจแนะนำ">⭐</span>@endif
                                     </p>
                                     <div class="mt-1.5 flex items-center gap-2 text-xs leading-5">

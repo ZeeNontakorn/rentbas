@@ -17,8 +17,8 @@
     @endif
 
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3"><b
-                class="grid h-7 w-7 place-items-center rounded-lg bg-orange-50 text-sm text-orange-600">1</b>
+        <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <b class="grid h-7 w-7 place-items-center rounded-lg bg-orange-50 text-sm text-orange-600">1</b>
             <h2 class="text-lg font-semibold text-slate-900">ข้อมูลทั่วไปของคลาสเรียน</h2>
         </div>
         <div class="mb-6">
@@ -26,7 +26,7 @@
                 <span class="text-xs text-red-500"> *</span>
             </label>
             <input id="course_name_input" name="course_name" value="{{ old('course_name', $isEdit ? $course->course_name : '') }}"
-                maxlength="255"
+                maxlength="50"
                 class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="เช่น Standard Class">
             <p id="course_name_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกชื่อคลาสเรียน</p>
@@ -236,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         oldPackages = @json($existingPackages);
 
     const MAX_PACKAGE_PRICE = {{ $maxPackagePrice }};
+    const COURSE_NAME_MAX_LENGTH = 50;
     const INVALID_CLASSES = ['!border-red-600', '!bg-red-50'];
 
     // ---------- helper: error แบบ field เดี่ยว (ใช้กับ error element ที่มี id ตายตัว) ----------
@@ -353,7 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addPackage').onclick = () => addPackage();
 
     document.getElementById('course_name_input').addEventListener('input', function () {
-        clearFieldError('course_name_error', this);
+        if (this.value.length > COURSE_NAME_MAX_LENGTH) {
+            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน ' + COURSE_NAME_MAX_LENGTH + ' ตัวอักษร';
+            showFieldError(this, 'course_name_error');
+        } else {
+            clearFieldError('course_name_error', this);
+        }
     });
     ['min_age_input', 'max_age_input'].forEach(id => {
         document.getElementById(id).addEventListener('input', function () {
@@ -468,15 +474,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let firstInvalidEl = null;
         const markInvalid = el => { firstInvalidEl = firstInvalidEl || el; isValid = false; };
 
-        // 1) ชื่อคลาสเรียน: ห้ามว่าง, ห้ามยาวเกิน 255 ตัวอักษร
+        // 1) ชื่อคลาสเรียน: ห้ามว่าง, ห้ามยาวเกิน 50 ตัวอักษร
         const courseNameInput = document.getElementById('course_name_input');
         const courseNameVal = courseNameInput.value.trim();
         if (!courseNameVal) {
             document.getElementById('course_name_error').textContent = 'กรุณากรอกชื่อคลาสเรียน';
             showFieldError(courseNameInput, 'course_name_error');
             markInvalid(courseNameInput);
-        } else if (courseNameVal.length > 255) {
-            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน 255 ตัวอักษร';
+        } else if (courseNameVal.length > COURSE_NAME_MAX_LENGTH) {
+            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน ' + COURSE_NAME_MAX_LENGTH + ' ตัวอักษร';
             showFieldError(courseNameInput, 'course_name_error');
             markInvalid(courseNameInput);
         }
