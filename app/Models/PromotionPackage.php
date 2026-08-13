@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class PromotionPackage extends Model
 {
@@ -24,5 +25,27 @@ class PromotionPackage extends Model
             'requires_verification' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    public static function generateCodeFromLabel(string $label, ?string $existingCode = null): string
+    {
+        $base = trim((string) Str::of($label ?? '')
+            ->ascii()
+            ->replaceMatches('/[^A-Za-z0-9]+/', '-')
+            ->trim('-')
+            ->lower());
+
+        $base = $base !== '' ? $base : 'package';
+        $candidate = $base;
+        $count = 1;
+
+        while (self::query()->where('code', $candidate)
+            ->when($existingCode !== null && $existingCode !== '', fn ($query) => $query->whereKeyNot($existingCode))
+            ->exists()) {
+            $candidate = $base . '-' . $count;
+            $count++;
+        }
+
+        return $candidate;
     }
 }
