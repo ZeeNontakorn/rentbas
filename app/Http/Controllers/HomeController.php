@@ -10,6 +10,7 @@ use App\Models\Facility;
 use App\Models\Package;
 use App\Models\Review;
 use App\Models\SiteVisit;
+use App\Services\PricingService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
@@ -89,7 +90,8 @@ class HomeController extends Controller
         /** @var Court[] $courts */
         $courts = Court::orderBy('name')->get();
         $now = now();
-
+        $pricingService = app(PricingService::class);
+        $pricedSlotCache = []; // "{courtType}:{start}:{end}" => bool มีราคาตั้งไว้ไหม
         // ดึงการจองทั้งหมดของวันนี้ พร้อม court_section_id/end_time เพื่อเช็ค overlap ให้ถูกต้อง
         // (แทนการเทียบ start_time ตรงๆ แบบเดิม ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง)
         $bookings = Booking::whereDate('booking_date', $date)
@@ -123,10 +125,16 @@ class HomeController extends Controller
 
                 $closuresType = $court->getClosureType($startStr, $endStr, $date, $referenceSection);
 
+                // เช็คว่าช่วงเวลานี้ (สำหรับ court type ของ reference section) มีการตั้งราคาไว้หรือไม่
+                $refCourtType = ($referenceSection && $referenceSection->code === 'full') ? 'full' : 'half';
+                $refPriced = $this->hasPriceForSlot($pricingService, $pricedSlotCache, $date, $startStr, $endStr, $refCourtType);
+
                 if ($slotEnd->lte($now)) {
                     $status = 'past';
                 } elseif ($court->isClosedAt($slotStart, $slotEnd, $referenceSection)) {
                     $status = $closuresType ?? 'closed';
+                } elseif (! $refPriced) {
+                    $status = 'closed'; // ยังไม่มีการตั้งราคา -> ไม่ว่าง
                 } else {
                     // ถือว่า booked ถ้ามีการจองใดๆ (เต็มสนามหรือครึ่งสนามที่บล็อกกัน) ทับซ้อนกับ 30 นาทีนี้อยู่
                     $overlap = $courtBookings->first(function ($b) use ($conflictIds, $startStr, $endStr) {
@@ -142,11 +150,15 @@ class HomeController extends Controller
                 foreach ($activeSections as $section) {
                     $sectionConflictIds = $section->conflictingSectionIds();
                     $sectionClosureType = $court->getClosureType($startStr, $endStr, $date, $section);
+                    $sectionCourtType = $section->code === 'full' ? 'full' : 'half';
+                    $sectionPriced = $this->hasPriceForSlot($pricingService, $pricedSlotCache, $date, $startStr, $endStr, $sectionCourtType);
 
                     if ($slotEnd->lte($now)) {
                         $sectionStatus = 'past';
                     } elseif ($court->isClosedAt($slotStart, $slotEnd, $section)) {
                         $sectionStatus = $sectionClosureType ?? 'closed';
+                    } elseif (! $sectionPriced) {
+                        $sectionStatus = 'closed';
                     } else {
                         $sectionOverlap = $courtBookings->first(function ($b) use ($sectionConflictIds, $startStr, $endStr) {
                             return in_array($b->court_section_id, $sectionConflictIds, true)
@@ -167,6 +179,29 @@ class HomeController extends Controller
             'slots' => $slots,
             'section_slots' => $sectionSlots,
         ]);
+    }
+
+    /**
+     * เช็คว่าช่วงเวลา+ประเภทสนามนี้มีราคาตั้งไว้หรือไม่ (cache ผลไว้กันยิงซ้ำ)
+     * ใช้ logic เดียวกับ BookingController::buildAvailabilityMatrix()
+     */
+    private function hasPriceForSlot(PricingService $pricingService, array &$cache, string $date, string $startStr, string $endStr, string $courtType): bool
+    {
+        $key = "{$courtType}:{$startStr}:{$endStr}";
+        if (! array_key_exists($key, $cache)) {
+            try {
+                $pricingService->calculate([
+                    'date' => $date,
+                    'start_time' => substr($startStr, 0, 5),
+                    'end_time' => substr($endStr, 0, 5),
+                    'court_type' => $courtType,
+                ]);
+                $cache[$key] = true;
+            } catch (\InvalidArgumentException) {
+                $cache[$key] = false;
+            }
+        }
+        return $cache[$key];
     }
 
     /**
