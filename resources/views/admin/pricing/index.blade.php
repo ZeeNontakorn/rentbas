@@ -244,8 +244,6 @@
 
         {{-- Shared backdrop for the edit drawer --}}
         <div id="pkg-drawer-backdrop" class="hidden fixed inset-0 bg-black/30 z-40" onclick="closeAllPkgDrawers()"></div>
-
-        <div id="pageToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
     </div>
 </div>
 @endsection
