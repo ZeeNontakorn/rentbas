@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PricingRule;
 use App\Models\PromotionPackage;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class PricingController extends Controller
 {
@@ -16,8 +17,50 @@ class PricingController extends Controller
     {
         $pricingRules = PricingRule::orderBy('day_type')->orderBy('court_type')->get();
         $promotionPackages = PromotionPackage::orderBy('category')->get();
+        $existingPackageCategories = $promotionPackages->pluck('category')->filter()->unique()->sort()->values()->all();
 
-        return view('admin.pricing.index', compact('pricingRules', 'promotionPackages'));
+        return view('admin.pricing.index', compact('pricingRules', 'promotionPackages', 'existingPackageCategories'));
+    }
+
+    protected function normalizePackageCode(?string $code, ?string $label = null, ?PromotionPackage $existing = null): string
+    {
+        $candidate = trim((string) ($code ?? ''));
+
+        if ($candidate === '') {
+            $candidate = PromotionPackage::generateCodeFromLabel($label ?? 'package', $existing?->code);
+        } else {
+            $candidate = PromotionPackage::generateCodeFromLabel($candidate, $existing?->code);
+        }
+
+        return $candidate;
+    }
+
+    /**
+     * ช่วงเวลาที่อนุญาตให้ตั้งราคาได้ ตาม day_type ของ pricing rule นั้นๆ — ไม่ผูกกับชื่อ/id ของ
+     * rule รายตัวใดๆ เลย (ไม่ hardcode) ดังนั้นถ้าในอนาคตมีการเพิ่ม day_type ใหม่ ระบบจะ fallback
+     * ไปใช้ช่วงกลางวันให้อัตโนมัติโดยไม่ต้องมาแก้โค้ดจุดนี้เพิ่ม
+     * - ช่วงกลางวัน (day_type ใดๆ ที่ไม่ใช่ 'everyday' เช่น weekday/weekend/holiday): 06:00–16:00
+     * - ช่วงค่ำ/พระอาทิตย์ตก (day_type = 'everyday' — ดู $dayTypeLabel ในหน้า admin.pricing.index
+     *   ที่ label ไว้ว่า "ทุกวัน (ช่วงค่ำ)"): 16:00–23:00
+     */
+    protected function allowedTimeWindow(string $dayType): array
+    {
+        return $dayType === 'everyday'
+            ? ['16:00', '23:00']
+            : ['06:00', '16:00'];
+    }
+
+    protected function assertWithinTimeWindow(string $dayType, string $start, string $end): void
+    {
+        [$min, $max] = $this->allowedTimeWindow($dayType);
+
+        if ($start < $min || $end > $max) {
+            $periodLabel = $dayType === 'everyday' ? 'ช่วงค่ำ' : 'ช่วงกลางวัน';
+
+            throw ValidationException::withMessages([
+                'start_time' => "ช่วงเวลาสำหรับ \"{$periodLabel}\" ต้องอยู่ระหว่าง {$min}–{$max} น. เท่านั้น",
+            ]);
+        }
     }
 
     /**
@@ -31,6 +74,8 @@ class PricingController extends Controller
             'price_per_hour' => ['required', 'numeric', 'min:0', 'max:100000'], // หน่วยบาท
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        $this->assertWithinTimeWindow($pricingRule->day_type, $data['start_time'], $data['end_time']);
 
         $pricingRule->update([
             'start_time' => $data['start_time'],
@@ -54,16 +99,36 @@ class PricingController extends Controller
             'rules.*.end_time' => ['required', 'date_format:H:i', 'after:rules.*.start_time'],
             'rules.*.price_per_hour' => ['required', 'numeric', 'min:0', 'max:100000'], // หน่วยบาท
             'rules.*.is_active' => ['sometimes', 'boolean'],
+        ],[
+            'rules.*.start_time.required' => 'กรุณากรอกเวลาเริ่มต้น',
+            'rules.*.start_time.date_format' => 'รูปแบบเวลาเริ่มต้นไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'rules.*.end_time.required' => 'กรุณากรอกเวลาสิ้นสุด',
+            'rules.*.end_time.date_format' => 'รูปแบบเวลาสิ้นสุดไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'rules.*.end_time.after' => 'เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น',
+            'rules.*.price_per_hour.required' => 'กรุณากรอกราคาต่อชั่วโมง',
+            'rules.*.price_per_hour.numeric' => 'ราคาต่อชั่วโมงต้องเป็นตัวเลข',
+            'rules.*.price_per_hour.min' => 'ราคาต่อชั่วโมงต้องไม่น้อยกว่า 0 บาท',
+            'rules.*.price_per_hour.max' => 'ราคาต่อชั่วโมงต้องไม่เกิน 100,000 บาท',
         ]);
 
-        foreach ($data['rules'] as $ruleId => $fields) {
-            $pricingRule = PricingRule::findOrFail($ruleId);
+        $rules = PricingRule::whereIn('id', array_keys($data['rules']))->get()->keyBy('id');
 
-            $pricingRule->update([
+        // ตรวจสอบช่วงเวลาของทุกแถวให้ผ่านก่อน แล้วค่อย update จริง (กันเซฟไปแล้วครึ่งเดียวถ้าแถว
+        // หลังๆ ในการ์ดเดียวกัน validation ไม่ผ่าน)
+        foreach ($data['rules'] as $ruleId => $fields) {
+            $pricingRule = $rules->get($ruleId);
+            if (! $pricingRule) {
+                abort(404);
+            }
+            $this->assertWithinTimeWindow($pricingRule->day_type, $fields['start_time'], $fields['end_time']);
+        }
+
+        foreach ($data['rules'] as $ruleId => $fields) {
+            $rules[$ruleId]->update([
                 'start_time' => $fields['start_time'],
                 'end_time' => $fields['end_time'],
                 'price_per_hour' => (int) round($fields['price_per_hour'] * 100),
-                'is_active' => $request->boolean("rules.{$ruleId}.is_active", $pricingRule->is_active),
+                'is_active' => $request->boolean("rules.{$ruleId}.is_active", $rules[$ruleId]->is_active),
             ]);
         }
 
@@ -78,8 +143,8 @@ class PricingController extends Controller
     {
         return [
             'code' => [
-                'required', 'string', 'max:50', 'alpha_dash',
-                $existing ? "unique:promotion_packages,code,{$existing->id}" : 'unique:promotion_packages,code',
+                'nullable', 'string', 'max:50', 'alpha_dash',
+                $existing ? "unique:promotion_packages,code,{$existing->id}" : 'nullable',
             ],
             'label' => ['required', 'string', 'max:150'],
             'category' => ['required', 'string', 'max:50'],
@@ -105,12 +170,14 @@ class PricingController extends Controller
     /**
      * แปลง input จากฟอร์ม (หน่วยบาท) เป็นค่าที่จะบันทึกลง DB (หน่วยสตางค์ + normalize ค่าว่าง)
      */
-    protected function packagePayload(array $data): array
+    protected function packagePayload(array $data, ?PromotionPackage $existing = null): array
     {
+        $code = $this->normalizePackageCode($data['code'] ?? null, $data['label'] ?? null, $existing);
+
         return [
-            'code' => $data['code'],
+            'code' => $code,
             'label' => $data['label'],
-            'category' => $data['category'],
+            'category' => trim((string) ($data['category'] ?? '')) !== '' ? trim((string) $data['category']) : 'general',
             'court_type' => $data['court_type'] ?: null,
             'available_days' => ! empty($data['available_days']) ? array_values($data['available_days']) : null,
             'available_start_time' => $data['available_start_time'] ?: null,
@@ -149,7 +216,7 @@ class PricingController extends Controller
     {
         $data = $request->validate($this->packageRules($promotionPackage));
 
-        $promotionPackage->update($this->packagePayload($data));
+        $promotionPackage->update($this->packagePayload($data, $promotionPackage));
 
         return back()->with('success', "อัปเดตแพ็กเกจ \"{$promotionPackage->label}\" เรียบร้อย");
     }
