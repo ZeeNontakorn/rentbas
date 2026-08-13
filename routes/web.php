@@ -28,6 +28,8 @@ use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\GroupSessionController;
+
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -287,4 +289,23 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
     Route::post('/bookings/{booking}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
     Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
     Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
+});
+
+Route::prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
+    Route::get('/', [GroupSessionController::class, 'index'])->name('index');
+    Route::post('/', [GroupSessionController::class, 'storeSession'])->name('store');
+    Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');   // <-- เพิ่มบรรทัดนี้
+    Route::patch('/{session}/toggle', [GroupSessionController::class, 'toggleSession'])->name('toggle');
+
+    Route::post('/rounds', [GroupSessionController::class, 'openRound'])->name('rounds.open');
+    Route::get('/rounds/{round}', [GroupSessionController::class, 'showRound'])->name('rounds.show');
+    Route::post('/rounds/{round}/players', [GroupSessionController::class, 'addPlayer'])->name('rounds.addPlayer');
+    Route::delete('/rounds/{round}/players/{signup}', [GroupSessionController::class, 'removePlayer'])->name('rounds.removePlayer');
+    Route::patch('/rounds/{round}/close', [GroupSessionController::class, 'closeRound'])->name('rounds.close');
+    Route::patch('/rounds/{round}/reopen', [GroupSessionController::class, 'reopenRound'])->name('rounds.reopen');
+    Route::delete('/rounds/{round}/cancel', [GroupSessionController::class, 'cancelRound'])->name('rounds.cancel');
+});
+Route::middleware('auth')->group(function () {
+    Route::post('/group-rounds/{round}/signup', [App\Http\Controllers\GroupRoundSignupController::class, 'store'])
+        ->name('group-rounds.signup');
 });

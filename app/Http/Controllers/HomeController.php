@@ -13,6 +13,8 @@ use App\Models\SiteVisit;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
+use App\Models\GroupRound;
+use App\Models\GroupSession;
 
 class HomeController extends Controller
 {
@@ -66,17 +68,32 @@ class HomeController extends Controller
         $packages = Package::where('is_active', true)
             ->orderBy('price')
             ->get();
+        $groupSessions = GroupSession::with('court')
+            ->where('is_active', true)
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
 
-        return view('home', compact(
-            'courts',
-            'trainingCourses',
-            'scheduleCourses',
-            'sessionCourses',
-            'facilities',
-            'reviews',
-            'reviewSummary',
-            'packages',
-        ));
+        $upcomingGroupRounds = GroupRound::with('court')
+            ->withCount(['confirmedSignups as players_count'])
+            ->where('status', 'open')
+            ->where('play_date', '>=', Carbon::today())
+            ->orderBy('play_date')
+            ->orderBy('start_time')
+            ->take(6)
+            ->get();
+            return view('home', compact(
+                'courts',
+                'trainingCourses',
+                'scheduleCourses',
+                'sessionCourses',
+                'facilities',
+                'reviews',
+                'reviewSummary',
+                'packages',
+                'groupSessions',
+                'upcomingGroupRounds',
+            ));
     }
 
     /**
