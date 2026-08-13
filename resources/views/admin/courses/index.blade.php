@@ -80,6 +80,7 @@
                                 <td class="max-w-[220px] px-3 py-4 sm:max-w-none sm:px-5 sm:py-6">
                                     <p class="font-semibold leading-6 text-gray-800 break-words">
                                         {{ $course->course_name }}
+                                        </span>
                                         @if ($package && $package->is_featured)<span class="ml-1" title="แพ็กเกจแนะนำ">⭐</span>@endif
                                     </p>
                                     <div class="mt-1.5 flex items-center gap-2 text-xs leading-5">

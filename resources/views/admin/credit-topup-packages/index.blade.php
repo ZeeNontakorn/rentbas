@@ -135,7 +135,12 @@
                             <th class="px-6 py-3 font-medium text-center">เครดิตที่ได้</th>
                             <th class="px-6 py-3 font-medium text-center">โบนัส</th>
                             <th class="px-6 py-3 font-medium text-center">แสดงผล</th>
-                            <th class="px-6 py-3 font-medium"></th>
+                            <th class="px-6 py-3 font-medium text-right">
+                                <button type="button" id="saveAllBtn" disabled
+                                        class="text-xs font-medium rounded-lg px-4 py-2 transition normal-case tracking-normal bg-gray-200 text-gray-400 cursor-not-allowed">
+                                    บันทึกแล้ว
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100" id="packageRows">
@@ -173,19 +178,18 @@
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-center text-amber-600 font-medium">
+                                <td class="px-6 py-3 text-center text-amber-600 font-medium bonus-cell">
                                     @if($pkg->bonus_satang > 0) +฿{{ number_format($pkg->bonus_satang / 100, 0) }} @else — @endif
                                 </td>
                                 <td class="px-6 py-3 text-center">
                                     <input type="hidden" form="editPkg{{ $pkg->id }}" name="sort_order" value="{{ $pkg->sort_order }}">
                                     <input form="editPkg{{ $pkg->id }}" type="checkbox" name="is_active" value="1" {{ $pkg->is_active ? 'checked' : '' }} class="accent-emerald-500 w-4 h-4">
                                 </td>
-                                <td class="px-6 py-3 text-right whitespace-nowrap">
-                                    <button type="submit" form="editPkg{{ $pkg->id }}" class="text-emerald-600 hover:text-emerald-700 font-medium text-xs mr-3">บันทึก</button>
-                                    <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline" onsubmit="return confirm('ลบแพ็กเกจนี้?')">
+                                <td class="px-6 py-3 text-center whitespace-nowrap">
+                                    <button type="button" onclick="confirmDeletePackage('{{ $pkg->id }}', '{{ addslashes($pkg->label) }}')" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
+                                    <form id="deletePkg{{ $pkg->id }}" method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="hidden">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
                                     </form>
                                 </td>
                             </tr>
@@ -250,6 +254,172 @@
         }
     });
 })();
+</script>
+
+{{-- Bulk save for the package list rows --}}
+<script>
+(function () {
+    const saveBtn = document.getElementById('saveAllBtn');
+    const rows = Array.from(document.querySelectorAll('#packageRows tr[data-id]'));
+    const toast = document.getElementById('reorderToast');
+    if (!saveBtn || rows.length === 0) return;
+
+    const SAVED_CLASSES = ['bg-gray-200', 'text-gray-400', 'cursor-not-allowed'];
+    const DIRTY_CLASSES = ['bg-emerald-500', 'hover:bg-emerald-600', 'text-white', 'cursor-pointer'];
+
+    function showToast(text, isError) {
+        if (!toast) return;
+        toast.textContent = text;
+        toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
+        toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+
+    const FIELD_DIRTY_CLASSES = ['border-yellow-400', 'ring-2', 'ring-yellow-200'];
+
+    function fieldsOf(row) {
+        return {
+            label: row.querySelector('input[name="label"]'),
+            price: row.querySelector('input[name="price"]'),
+            credit: row.querySelector('input[name="credit"]'),
+            is_active: row.querySelector('input[name="is_active"]'),
+        };
+    }
+
+    function readRowState(row) {
+        const f = fieldsOf(row);
+        return {
+            label: f.label ? f.label.value : '',
+            price: f.price ? f.price.value : '',
+            credit: f.credit ? f.credit.value : '',
+            is_active: f.is_active ? f.is_active.checked : false,
+        };
+    }
+
+    // ราคา/เครดิตในช่องกรอกเป็นหน่วยบาทอยู่แล้ว
+    function calcBonusText(priceVal, creditVal) {
+        const price = parseFloat(priceVal) || 0;
+        const credit = parseFloat(creditVal) || 0;
+        const diff = credit - price;
+        if (diff > 0) {
+            return '+฿' + diff.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+        return '—';
+    }
+
+    function updateBonusCell(row, state) {
+        const bonusCell = row.querySelector('.bonus-cell');
+        if (bonusCell) bonusCell.textContent = calcBonusText(state.price, state.credit);
+    }
+
+    function setFieldDirty(input, dirty) {
+        if (!input) return;
+        if (dirty) {
+            input.classList.remove('border-gray-200', 'border-red-400', 'bg-red-50/40');
+            input.classList.add(...FIELD_DIRTY_CLASSES);
+        } else {
+            input.classList.remove(...FIELD_DIRTY_CLASSES);
+            input.classList.add('border-gray-200');
+        }
+    }
+
+    function refreshFieldHighlight(row) {
+        const cur = readRowState(row);
+        const init = row._initial;
+        const f = fieldsOf(row);
+        setFieldDirty(f.label, cur.label !== init.label);
+        setFieldDirty(f.price, cur.price !== init.price);
+        setFieldDirty(f.credit, cur.credit !== init.credit);
+        setFieldDirty(f.is_active, cur.is_active !== init.is_active);
+    }
+
+    function clearRowHighlight(row) {
+        const f = fieldsOf(row);
+        Object.values(f).forEach(input => setFieldDirty(input, false));
+    }
+
+    // Snapshot the values currently on the page as the "unchanged" baseline.
+    rows.forEach(row => { row._initial = readRowState(row); });
+
+    function rowIsDirty(row) {
+        const cur = readRowState(row);
+        const init = row._initial;
+        return cur.label !== init.label
+            || cur.price !== init.price
+            || cur.credit !== init.credit
+            || cur.is_active !== init.is_active;
+    }
+
+    function refreshSaveButton() {
+        const dirty = rows.some(rowIsDirty);
+        saveBtn.disabled = !dirty;
+        saveBtn.textContent = dirty ? 'บันทึก' : 'บันทึกแล้ว';
+        saveBtn.classList.remove(...SAVED_CLASSES, ...DIRTY_CLASSES);
+        saveBtn.classList.add(...(dirty ? DIRTY_CLASSES : SAVED_CLASSES));
+    }
+
+    rows.forEach(row => {
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => { refreshFieldHighlight(row); refreshSaveButton(); });
+            input.addEventListener('change', () => { refreshFieldHighlight(row); refreshSaveButton(); });
+        });
+    });
+
+    refreshSaveButton();
+
+    saveBtn.addEventListener('click', async function () {
+        const dirtyRows = rows.filter(rowIsDirty);
+        if (dirtyRows.length === 0) return;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'กำลังบันทึก...';
+
+        try {
+            await Promise.all(dirtyRows.map(row => {
+                const form = document.getElementById('editPkg' + row.dataset.id);
+                const formData = new FormData(form);
+                return fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: formData,
+                }).then(res => {
+                    if (!res.ok) throw new Error('save failed for package ' + row.dataset.id);
+                });
+            }));
+
+            // อัปเดตค่า baseline, คำนวณโบนัสใหม่ และล้างเส้นขอบสีเหลืองของช่องที่เพิ่งบันทึกไป
+            dirtyRows.forEach(row => {
+                row._initial = readRowState(row);
+                updateBonusCell(row, row._initial);
+                clearRowHighlight(row);
+            });
+            showToast('บันทึกการเปลี่ยนแปลงเรียบร้อยแล้ว');
+        } catch (err) {
+            console.error(err);
+            showToast('บันทึกไม่สำเร็จ กรุณาลองใหม่', true);
+        } finally {
+            refreshSaveButton();
+        }
+    });
+})();
+
+function confirmDeletePackage(packageId, packageLabel) {
+    Swal.fire({
+        title: 'ยืนยันลบแพ็กเกจนี้ใช่ไหม?',
+        text: `เมื่อลบแพ็กเกจ "${packageLabel}" แล้วจะไม่สามารถกู้คืนข้อมูลได้`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deletePkg' + packageId).submit();
+        }
+    });
+}
 </script>
 @endpush
 @endsection
