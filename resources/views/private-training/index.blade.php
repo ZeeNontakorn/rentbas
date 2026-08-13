@@ -9,18 +9,19 @@
         'confirmed' => ['label' => 'ยืนยันแล้ว', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
         'rejected' => ['label' => 'ถูกปฏิเสธ', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
         'cancelled' => ['label' => 'ยกเลิกแล้ว', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
+        'expired' => ['label' => 'เลยกำหนด', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
 
     ];
 @endphp
 
 @section('content')
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-        <div class="container mx-auto px-6 max-w-7xl">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             {{-- ส่วน Title และ ช่องค้นหา --}}
             <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-2xl font-semibold text-gray-800">เทรนเนอร์ส่วนตัว (Private Training)</h1>
+                    <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">เทรนเนอร์ส่วนตัว (Private Training)</h1>
                     <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
                 </div>
 
@@ -59,9 +60,9 @@
                                         @else
                                             @php
                                                 $defaultCoachImage = match ($coach->staffProfile?->gender) {
-                                                    'male' => asset('images/defaults/coach-male.png'),
-                                                    'female' => asset('images/defaults/coach-female.png'),
-                                                    default => asset('images/defaults/coach-default.svg'),
+                                                    'male' => Storage::disk('public')->url('defaults/coach-male.png'),
+                                                    'female' => Storage::disk('public')->url('defaults/coach-female.png'),
+                                                    default => Storage::disk('public')->url('defaults/coach-default.svg'),
                                                 };
                                             @endphp
                                             <img src="{{ $defaultCoachImage }}" alt="{{ $coach->name }}"

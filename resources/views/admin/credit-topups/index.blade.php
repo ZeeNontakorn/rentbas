@@ -17,11 +17,11 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-6xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
             <div>
-                <h1 class="text-xl font-bold text-gray-800">คำขอเติมเครดิต</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">คำขอเติมเครดิต</h1>
                 <p class="text-sm text-gray-400 mt-0.5">ตรวจสอบสลิป/หลักฐานการชำระเงิน แล้วอนุมัติหรือปฏิเสธคำขอของผู้ใช้</p>
             </div>
             <a href="{{ route('admin.credit-topup-packages.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">

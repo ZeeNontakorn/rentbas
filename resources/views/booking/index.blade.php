@@ -53,7 +53,7 @@
         <div class="step"><span class="num">5</span><span>ชำระเงิน</span></div>
     </div>
 
-    <h1 class="text-[28px] font-bold text-gray-900 tracking-tight mb-2">จองสนาม</h1>
+    <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จองสนาม</h1>
     <p class="text-gray-500 text-[14px] mb-8">เริ่มจากเลือกวันที่และระบุจำนวนเวลาที่ต้องการเล่น ระบบจะช่วยเรียงสนามที่มีช่วงว่างพอดีให้เลือกในขั้นตอนถัดไป</p>
 
     @if ($errors->any())

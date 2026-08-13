@@ -8,6 +8,7 @@ use App\Models\Court;
 use App\Models\PrivateTrainingBooking;
 use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
+use App\Services\StaffScheduleService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +19,7 @@ class StaffController extends Controller
 
     public function __construct(
         private readonly CalendarEventOccurrenceService $occurrences,
+        private readonly StaffScheduleService $staffSchedule,
     ) {}
 
     public function index(Request $request)
@@ -164,27 +166,12 @@ class StaffController extends Controller
         $this->assertIsStaff($staff);
         abort_if($staff->membership_type === 'coach', 403, 'Schedule ของโค้ชต้องบันทึกโดยบัญชีโค้ชเจ้าของตารางเท่านั้น');
 
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+        $request->validate([
             'status' => 'required|in:booked',
-            'court_id' => 'nullable|integer|exists:courts,id',
-            'detail' => 'nullable|string',
         ]);
+        $validated = $this->staffSchedule->validateAvailabilityRequest($request);
 
-        $staff->availabilities()->updateOrCreate(
-            [
-                'date' => $validated['date'],
-                'start_time' => $validated['start_time'].':00',
-                'end_time' => $validated['end_time'].':00',
-                'court_id' => $validated['court_id'] ?? null,
-            ],
-            [
-                'status' => 'booked',
-                'detail' => $validated['detail'] ?? null,
-            ]
-        );
+        $this->staffSchedule->createOrUpdateAvailability($staff, $validated);
 
         return redirect()->back()->with('success', 'บันทึกสถานะช่วงเวลาสำเร็จ!');
     }

@@ -24,6 +24,27 @@
         @error('description')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
     </div>
 
+    <!-- วันที่สามารถใช้แพ็กเกจได้ -->
+    <div>
+        <label class="mb-2 block text-sm font-medium text-gray-700">
+            วันที่สามารถใช้แพ็กเกจได้
+        </label>
+        <p class="mb-2.5 text-xs text-gray-400">ไม่เลือกวันใดเลย = ใช้ได้ทุกวัน</p>
+        <div class="flex flex-wrap gap-2">
+            @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value => $label)
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="usable_days[]" value="{{ $value }}" class="peer sr-only"
+                           {{ in_array($value, old('usable_days', $package->usable_days ?? [])) ? 'checked' : '' }}>
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-300 px-2 text-sm text-gray-600 transition peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:text-white">
+                        {{ $label }}
+                    </span>
+                </label>
+            @endforeach
+        </div>
+        @error('usable_days')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+        @error('usable_days.*')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+    </div>
+
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <!-- ราคา -->
         <div>

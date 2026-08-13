@@ -25,8 +25,8 @@
     position: absolute;
     width: 45px; /* ขนาดโลโก้ตรงกลาง (ห้ามใหญ่เกินไปเดี๋ยวสแกนไม่ได้) */
     height: auto;
-    background-color: white;
-    padding: 3px;
+    background-color: transparent;
+    padding: 0;
     border-radius: 8px;
 }
 
@@ -86,7 +86,7 @@
             <div class="tu-qr-box">
                 <canvas id="qrCanvas"></canvas>
                 <!-- โลโก้พร้อมเพย์ที่จะแสดงทับตรงกลาง -->
-                <img src="{{ asset('images/icon-thaiqr.png') }}" class="qr-logo-overlay" alt="PromptPay">
+                <img src="{{ Storage::disk('public')->url('icon-thaiqr.png') }}" class="qr-logo-overlay" alt="PromptPay">
             </div>
 
             {{-- จัดรูปแบบเบอร์ให้สวยงาม (ถ้าเป็นเบอร์โทรให้ใส่ขีดดเพื่อให้ดูง่าย) --}}

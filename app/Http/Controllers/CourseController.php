@@ -18,7 +18,7 @@ class CourseController extends Controller
             'targetGroups',
             'schedules',
             'packages' => function ($query) {
-                $query->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
+                $query->with('courseType')->where('is_active', true)->orderByDesc('is_featured')->orderBy('sort_order');
             },
         ]);
 
