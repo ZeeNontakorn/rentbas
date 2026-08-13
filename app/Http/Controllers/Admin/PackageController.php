@@ -36,6 +36,8 @@ class PackageController extends Controller
             'day'         => 'nullable|integer|min:0',
             'is_active'   => 'boolean',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp',
+            'usable_days'    => 'nullable|array',
+            'usable_days.*'  => 'in:mon,tue,wed,thu,fri,sat,sun',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
@@ -67,9 +69,12 @@ class PackageController extends Controller
             'day'         => 'nullable|integer|min:0',
             'is_active'   => 'boolean',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'usable_days'    => 'nullable|array',
+            'usable_days.*'  => 'in:mon,tue,wed,thu,fri,sat,sun',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['usable_days'] = $validated['usable_days'] ?? [];
 
         if ($request->hasFile('image')) {
             // delete the old file from storage before saving the new one

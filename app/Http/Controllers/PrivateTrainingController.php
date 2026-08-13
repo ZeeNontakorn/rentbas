@@ -304,22 +304,37 @@ class PrivateTrainingController extends Controller
         $endDb = $data['end_time'].':00';
 
         $result = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
-            User::whereKey($coach->id)->lockForUpdate()->firstOrFail();
+        User::whereKey($coach->id)->lockForUpdate()->firstOrFail();
 
-            // ล็อกแพ็กเกจที่ลูกค้าเลือกเอง ต้องเป็นของ user นี้จริง และยังใช้ได้อยู่ ณ ขณะนี้
-            $packagePurchase = PackagePurchase::where('id', $data['package_purchase_id'])
-                ->where('user_id', $request->user()->id)
-                ->where('status', 'approved')
-                ->where('remaining_use', '>', 0)
-                ->where(function ($q) {
-                    $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
-                })
-                ->lockForUpdate()
-                ->first();
+        // ล็อกแพ็กเกจที่ลูกค้าเลือกเอง ต้องเป็นของ user นี้จริง และยังใช้ได้อยู่ ณ ขณะนี้
+        $packagePurchase = PackagePurchase::with('package')
+            ->where('id', $data['package_purchase_id'])
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'approved')
+            ->where('remaining_use', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
+            })
+            ->lockForUpdate()
+            ->first();
 
-            if (! $packagePurchase) {
-                return 'แพ็กเกจที่เลือกไม่สามารถใช้ได้แล้ว (อาจถูกใช้หมดหรือหมดอายุไปแล้ว) กรุณาเลือกแพ็กเกจอื่น';
-            }
+        if (! $packagePurchase) {
+            return 'แพ็กเกจที่เลือกไม่สามารถใช้ได้แล้ว (อาจถูกใช้หมดหรือหมดอายุไปแล้ว) กรุณาเลือกแพ็กเกจอื่น';
+        }
+        $usableDays = $packagePurchase->package->usable_days ?? [];
+        $bookingDayKey = strtolower(Carbon::parse($date)->format('D')); // mon, tue, wed, thu, fri, sat, sun
+
+        if (! empty($usableDays) && ! in_array($bookingDayKey, $usableDays, true)) {
+            return 'แพ็กเกจที่เลือกไม่สามารถใช้จองในวันนี้ได้ กรุณาเลือกแพ็กเกจอื่นหรือเปลี่ยนวันที่';
+        }
+
+        // เช็ควันที่ใช้แพ็กเกจได้ — ว่าง = ใช้ได้ทุกวัน, ถ้าระบุไว้ต้องมีวันที่จองอยู่ในรายการ
+        $usableDays = $packagePurchase->package->usable_days ?? [];
+        $bookingDayKey = strtolower(Carbon::parse($date)->format('D'));
+
+        if (! empty($usableDays) && ! in_array($bookingDayKey, $usableDays, true)) {
+            return 'แพ็กเกจที่เลือกไม่สามารถใช้จองในวันนี้ได้ กรุณาเลือกแพ็กเกจอื่นหรือเปลี่ยนวันที่';
+        }
 
             $isBusy = Availability::where('user_id', $coach->id)
                 ->whereDate('date', $date)

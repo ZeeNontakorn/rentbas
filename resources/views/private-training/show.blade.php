@@ -126,11 +126,14 @@
                         class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">-- กรุณาเลือกแพ็กเกจ --</option>
                     @foreach ($myPackagePurchases as $pp)
-                        <option value="{{ $pp->id }}">
+                        <option value="{{ $pp->id }}" data-days="{{ json_encode($pp->package->usable_days ?? []) }}">
                             {{ $pp->package->name }} (เหลือ {{ $pp->remaining_use }} ครั้ง{{ $pp->expired_at ? ' · หมดอายุ ' . $pp->expired_at->format('d/m/Y') : '' }})
                         </option>
                     @endforeach
                 </select>
+                <p id="package-day-warning" class="mt-1.5 hidden text-[11px] font-medium text-red-600">
+                    ไม่มีแพ็กเกจของคุณที่ใช้ได้ในวันนี้ กรุณาเลือกวันอื่น หรือซื้อแพ็กเกจที่รองรับวันนี้
+                </p>
                 <p class="mt-1 text-[11px] text-gray-400">ระบบจะหักสิทธิ์จากแพ็กเกจที่คุณเลือกทันทีที่ส่งคำขอ</p>
             </div>
             <div>
@@ -180,6 +183,26 @@ document.addEventListener('DOMContentLoaded', function () {
     let pendingSelection = null;
     let needsConfirmClick = false;
 
+    const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    function filterPackageOptionsForDate(date) {
+        const select = document.getElementById('package-purchase-select');
+        const warning = document.getElementById('package-day-warning');
+        const dayKey = DAY_KEYS[date.getDay()];
+        let hasSelectable = false;
+
+        Array.from(select.options).forEach(option => {
+            if (!option.value) return; // ข้าม placeholder "-- กรุณาเลือกแพ็กเกจ --"
+            let days = [];
+            try { days = JSON.parse(option.dataset.days || '[]'); } catch (e) { days = []; }
+            const usable = days.length === 0 || days.includes(dayKey); // ว่าง = ใช้ได้ทุกวัน
+            option.hidden = !usable;
+            option.disabled = !usable;
+            if (usable) hasSelectable = true;
+        });
+
+        select.value = ''; // reset ทุกครั้งที่เปลี่ยนวัน กันเลือกค้างจากวันก่อนหน้า
+        warning.classList.toggle('hidden', hasSelectable);
+    }
     const openBookingModal = (start, end) => {
         document.getElementById('booking-date').value = localDate(start);
         document.getElementById('booking-start').value = localTime(start);
@@ -188,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
             start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         document.getElementById('booking-time-label').textContent =
             `${localTime(start)}–${localTime(end)} น.`;
+        filterPackageOptionsForDate(start); // <-- เพิ่มบรรทัดนี้
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     };

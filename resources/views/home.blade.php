@@ -1874,7 +1874,7 @@ async function renderSch(ds) {
             if (status === 'pending_payment') {
                 html += '<td><span class="slot-badge slot-checkout"><span class="slot-dot"></span>กำลังจอง</span></td>';
             } else if (status === 'booked') {
-                html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>ไม่ว่าง</span></td>';
+                html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>ถูกจอง</span></td>';
             } else if (status === 'past') {
                 html += '<td><span class="slot-badge slot-past"><span class="slot-dot"></span>ผ่านมาแล้ว</span></td>';
             } else if (status === 'closed') {
@@ -1882,7 +1882,7 @@ async function renderSch(ds) {
             } else if (status === 'maintenance') {
                 html += '<td><span class="slot-badge slot-maintenance"><span class="slot-dot"></span>ปิดปรับปรุง</span></td>';
             } else if (status === 'unavailable') {
-                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
+                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ไม่ว่าง</span></td>';
             } else {
                 html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${c.section_id}','${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
