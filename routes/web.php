@@ -291,7 +291,7 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
     Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
 });
 
-Route::prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
     Route::get('/', [GroupSessionController::class, 'index'])->name('index');
     Route::post('/', [GroupSessionController::class, 'storeSession'])->name('store');
     Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');   // <-- เพิ่มบรรทัดนี้
@@ -306,6 +306,10 @@ Route::prefix('admin/group-sessions')->name('admin.group-sessions.')->group(func
     Route::delete('/rounds/{round}/cancel', [GroupSessionController::class, 'cancelRound'])->name('rounds.cancel');
 });
 Route::middleware('auth')->group(function () {
+    Route::get('/group-rounds/my-bookings', [App\Http\Controllers\GroupRoundSignupController::class, 'myBookings'])
+        ->name('group-rounds.my-bookings');
+    Route::get('/group-rounds/{round}/checkout', [App\Http\Controllers\GroupRoundSignupController::class, 'checkout'])
+        ->name('group-rounds.checkout');
     Route::post('/group-rounds/{round}/signup', [App\Http\Controllers\GroupRoundSignupController::class, 'store'])
         ->name('group-rounds.signup');
 });

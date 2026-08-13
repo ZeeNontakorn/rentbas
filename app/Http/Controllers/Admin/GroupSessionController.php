@@ -146,7 +146,13 @@ class GroupSessionController extends Controller
     {
         $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
 
-        return view('admin.group-sessions.round', compact('round'));
+        // รายชื่อสมาชิกที่ยังไม่มีรายการในรอบนี้ สำหรับแอดมินเพิ่มผู้ที่จองผ่าน LINE
+        $members = User::query()
+            ->whereNotIn('id', $round->signups->pluck('user_id')->filter())
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('admin.group-sessions.round', compact('round', 'members'));
     }
 
     /**
@@ -156,7 +162,8 @@ class GroupSessionController extends Controller
     public function addPlayer(Request $request, GroupRound $round): RedirectResponse
     {
         $data = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
+            'user_id' => ['nullable', 'exists:users,id', 'required_without:guest_name'],
+            'guest_name' => ['nullable', 'string', 'max:255', 'required_without:user_id'],
         ]);
 
         return DB::transaction(function () use ($data, $round) {
@@ -171,36 +178,46 @@ class GroupSessionController extends Controller
                 return back()->withErrors(['round' => 'รอบนี้เต็มแล้ว']);
             }
 
-            $alreadyIn = GroupRoundSignup::where('group_round_id', $round->id)
-                ->where('user_id', $data['user_id'])
-                ->where('status', 'confirmed')
-                ->exists();
+            $user = null;
+            $guestName = null;
+            $creditUsed = 0;
 
-            if ($alreadyIn) {
-                return back()->withErrors(['user_id' => 'สมาชิกคนนี้ลงชื่อในรอบนี้อยู่แล้ว']);
+            if (! empty($data['user_id'])) {
+                $alreadyIn = GroupRoundSignup::where('group_round_id', $round->id)
+                    ->where('user_id', $data['user_id'])
+                    ->where('status', 'confirmed')
+                    ->exists();
+
+                if ($alreadyIn) {
+                    return back()->withErrors(['user_id' => 'สมาชิกคนนี้ลงชื่อในรอบนี้อยู่แล้ว']);
+                }
+
+                $user = User::lockForUpdate()->findOrFail($data['user_id']);
+
+                if ($user->{self::CREDIT_COLUMN} < $round->credit_cost) {
+                    return back()->withErrors(['user_id' => "เครดิตของ {$user->name} ไม่พอ (มี {$user->{self::CREDIT_COLUMN}}, ต้องใช้ {$round->credit_cost})"]);
+                }
+
+                $user->decrement(self::CREDIT_COLUMN, $round->credit_cost);
+                $creditUsed = $round->credit_cost;
+            } else {
+                $guestName = $data['guest_name'];
             }
-
-            $user = User::lockForUpdate()->findOrFail($data['user_id']);
-
-            if ($user->{self::CREDIT_COLUMN} < $round->credit_cost) {
-                return back()->withErrors(['user_id' => "เครดิตของ {$user->name} ไม่พอ (มี {$user->{self::CREDIT_COLUMN}}, ต้องใช้ {$round->credit_cost})"]);
-            }
-
-            $user->decrement(self::CREDIT_COLUMN, $round->credit_cost);
 
             $nextOrder = ((int) GroupRoundSignup::where('group_round_id', $round->id)->max('order_number')) + 1;
 
             GroupRoundSignup::create([
                 'group_round_id' => $round->id,
-                'user_id' => $user->id,
+                'user_id' => $user?->id,
+                'guest_name' => $guestName,
                 'order_number' => $nextOrder,
-                'credit_used' => $round->credit_cost,
+                'credit_used' => $creditUsed,
                 'status' => 'confirmed',
                 'signed_up_at' => now(),
                 'added_by' => auth()->id(),
             ]);
 
-            return back()->with('success', "เพิ่ม {$user->name} เป็นลำดับที่ {$nextOrder} แล้ว");
+            return back()->with('success', 'เพิ่ม '.($user?->name ?? $guestName)." เป็นลำดับที่ {$nextOrder} แล้ว");
         });
     }
 
@@ -215,12 +232,17 @@ class GroupSessionController extends Controller
         }
 
         return DB::transaction(function () use ($round, $signup) {
-            $user = User::lockForUpdate()->findOrFail($signup->user_id);
-            $user->increment(self::CREDIT_COLUMN, $signup->credit_used);
+            $user = $signup->user_id
+                ? User::lockForUpdate()->findOrFail($signup->user_id)
+                : null;
+
+            if ($user && $signup->credit_used > 0) {
+                $user->increment(self::CREDIT_COLUMN, $signup->credit_used);
+            }
 
             $signup->update(['status' => 'cancelled']);
 
-            return back()->with('success', "นำ {$user->name} ออกจากรอบและคืนเครดิตแล้ว");
+            return back()->with('success', 'นำ '.($user?->name ?? $signup->guest_name).' ออกจากรอบแล้ว'.($user ? 'และคืนเครดิตแล้ว' : ''));
         });
     }
 
@@ -252,7 +274,9 @@ class GroupSessionController extends Controller
                 ->get();
 
             foreach ($signups as $signup) {
-                User::where('id', $signup->user_id)->increment(self::CREDIT_COLUMN, $signup->credit_used);
+                if ($signup->user_id && $signup->credit_used > 0) {
+                    User::where('id', $signup->user_id)->increment(self::CREDIT_COLUMN, $signup->credit_used);
+                }
                 $signup->update(['status' => 'cancelled']);
             }
 

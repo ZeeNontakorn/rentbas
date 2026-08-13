@@ -1136,27 +1136,17 @@ html { scroll-behavior: smooth; }
 }
 .groupsession-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
 .gs-btn-row { display: flex; gap: 8px; }
-.gs-btn-row form { flex: 1; }
+.gs-btn-row > * { flex: 1 1 0; min-width: 0; }
 .gs-btn-row .gs-card-btn { width: 100%; }
 .gs-card-btn-outline {
-    background: transparent;
-    color: var(--ore);
-    border: 1px solid var(--ore);
+    background: #4b5563;
+    color: #fff;
+    border: 1px solid #4b5563;
 }
-.gs-card-btn-outline:hover { background: rgba(232,108,42,.08); }
+.gs-card-btn-outline:hover { background: #374151; color: #fff; }
 </style>
 
 <div class="home-content">
-    @if(session('success'))
-    <div style="position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:400;background:#ebfbee;border:1px solid #b2f2bb;color:#2f9e44;padding:12px 20px;border-radius:10px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.15);">
-        {{ session('success') }}
-    </div>
-@endif
-@if($errors->any())
-    <div style="position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:400;background:#fff5f5;border:1px solid #ffc9c9;color:#c92a2a;padding:12px 20px;border-radius:10px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.15);">
-        {{ $errors->first() }}
-    </div>
-@endif
 @php
     $imagePlaceholder = "data:image/svg+xml;charset=UTF-8," . rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1e2235" offset="0%"/><stop stop-color="#13162a" offset="100%"/></linearGradient></defs><rect width="800" height="500" fill="url(#g)"/><circle cx="400" cy="210" r="58" fill="#e86c2a" fill-opacity="0.18"/><path d="M260 340h280" stroke="#e86c2a" stroke-width="18" stroke-linecap="round" stroke-opacity="0.35"/><path d="M320 235l40 40 120-120" fill="none" stroke="#f6f5f0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.55"/></svg>');
     $imageFallback = "onerror=\"this.onerror=null;this.src='" . $imagePlaceholder . "';\"";
@@ -1428,11 +1418,11 @@ html { scroll-behavior: smooth; }
 </section>
 {{-- ═══ GROUP SESSIONS (กลุ่มเล่นบาสค่ำ) ═══ --}}
 @if(($upcomingGroupRounds ?? collect())->isNotEmpty())
-<section class="groupsession-section" data-aos="fade-up">
+<section id="group-sessions" class="groupsession-section" data-aos="fade-up">
     <div class="groupsession-header">
         <p class="groupsession-label">Group Play</p>
-        <h2 class="groupsession-title">กลุ่มเล่นบาสค่ำ</h2>
-        <p class="groupsession-subtitle">ร่วมสนุกกับกลุ่มเล่นบาสประจำสัปดาห์ ลงชื่อจองที่นั่งได้เลย</p>
+        <h2 class="groupsession-title">กลุ่มเล่นบาส</h2>
+        <p class="groupsession-subtitle">ร่วมสนุกกับกลุ่มเล่นบาสประจำสัปดาห์ ลงชื่อจองที่ได้เลย</p>
     </div>
 
     <div class="groupsession-grid">
@@ -1447,21 +1437,6 @@ html { scroll-behavior: smooth; }
             @endphp
             <div class="gs-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                 <div class="gs-card-header">
-                    @if($isFull)
-    <span class="gs-card-btn full">เต็มแล้ว</span>
-@else
-    <div class="gs-btn-row">
-        @auth
-            <form action="{{ route('group-rounds.signup', $round) }}" method="POST" style="margin:0;">
-                @csrf
-                <button type="submit" class="gs-card-btn">ลงชื่อจอง</button>
-            </form>
-        @else
-            <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
-        @endauth
-        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
-    </div>
-@endif
                     <div class="gs-card-day">{{ $dayNames[$round->play_date->dayOfWeek] }}</div>
                     <div class="gs-card-date">{{ $round->play_date->format('d/m/Y') }}</div>
                 </div>
@@ -1494,7 +1469,14 @@ html { scroll-behavior: smooth; }
                         @if($isFull)
                             <span class="gs-card-btn full">เต็มแล้ว</span>
                         @else
-                            <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" class="gs-card-btn">จองผ่าน LINE</a>
+                            <div class="gs-btn-row">
+                                @auth
+                                    <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn">ลงชื่อจอง</a>
+                                @else
+                                    <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
+                                @endauth
+                                <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+                            </div>
                         @endif
                     </div>
                 </div>

@@ -6,6 +6,7 @@ use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -14,8 +15,61 @@ class GroupRoundSignupController extends Controller
     /** เครดิตในระบบเก็บในคอลัมน์ credit_balance (หน่วยสตางค์) */
     private const CREDIT_COLUMN = 'credit_balance';
 
+    /** แสดงรอบกลุ่มเล่นบาสที่ผู้ใช้ลงชื่อไว้ พร้อมรายชื่อผู้เล่นในแต่ละรอบ */
+    public function myBookings(Request $request)
+    {
+        $signups = GroupRoundSignup::query()
+            ->with([
+                'round.court',
+                'round.confirmedSignups.user:id,name',
+            ])
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'confirmed')
+            ->latest('signed_up_at')
+            ->get();
+
+        return view('group-rounds.my-bookings', compact('signups'));
+    }
+
     /**
-     * ให้ลูกค้าลงชื่อเข้ารอบและตัดเครดิตทันที
+     * หน้าแสดงรายละเอียดและยืนยันการชำระเครดิตก่อนลงชื่อเข้ารอบ
+     */
+    public function checkout(GroupRound $round, Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return redirect()
+                ->route('login')
+                ->with('error', 'กรุณาเข้าสู่ระบบก่อนลงชื่อจอง');
+        }
+
+        if ($round->status !== 'open' || $round->play_date->isBefore(today())) {
+            return redirect()->route('home')->withErrors(['round' => 'รอบนี้ปิดรับสมัครแล้ว']);
+        }
+
+        if ($round->isFull()) {
+            return redirect()->route('home')->withErrors(['round' => 'รอบนี้เต็มแล้ว']);
+        }
+
+        $alreadyIn = GroupRoundSignup::query()
+            ->where('group_round_id', $round->id)
+            ->where('user_id', $user->id)
+            ->where('status', 'confirmed')
+            ->first();
+
+        if ($alreadyIn) {
+            return redirect()->route('home')->with(
+                'error',
+                'คุณได้จองรอบนี้ไปแล้ว (ลำดับที่ '.$alreadyIn->order_number.')'
+            );
+        }
+
+        return view('checkout.group-round', compact('round', 'user'));
+    }
+
+    /**
+     * ยืนยันการชำระเครดิต แล้วจึงลงชื่อเข้ารอบ
      */
     public function store(GroupRound $round): RedirectResponse
     {
@@ -47,10 +101,15 @@ class GroupRoundSignupController extends Controller
                 ->where('group_round_id', $round->id)
                 ->where('user_id', $user->id)
                 ->where('status', 'confirmed')
-                ->exists();
+                ->first();
 
             if ($alreadyIn) {
-                return back()->withErrors(['round' => 'คุณลงชื่อในรอบนี้ไว้แล้ว']);
+                // กรณี browser ส่งคำขอยืนยันซ้ำ: request แรกลงชื่อสำเร็จแล้ว
+                // ให้ตอบผลสำเร็จเดิมแทนการแสดง error และไม่ตัดเครดิตซ้ำ
+                return redirect()->route('home')->with(
+                    'success',
+                    'ชำระเงินสำเร็จ! คุณลงชื่อจองรอบนี้เป็นลำดับที่ '.$alreadyIn->order_number.' แล้ว'
+                );
             }
 
             // ล็อกเครดิตผู้ใช้ เพื่อไม่ให้ยอดคลาดเคลื่อนเมื่อมีการใช้เครดิตพร้อมกัน
@@ -58,7 +117,7 @@ class GroupRoundSignupController extends Controller
 
             if ($lockedUser->{self::CREDIT_COLUMN} < $round->credit_cost) {
                 return back()->withErrors([
-                    'round' => 'เครดิตของคุณไม่พอ (มี '.$lockedUser->{self::CREDIT_COLUMN}.', ต้องใช้ '.$round->credit_cost.')',
+                    'round' => 'เครดิตของคุณไม่พอ (มี ฿'.number_format($lockedUser->{self::CREDIT_COLUMN} / 100, 2).', ต้องใช้ ฿'.number_format($round->credit_cost / 100, 2).')',
                 ]);
             }
 
@@ -78,7 +137,10 @@ class GroupRoundSignupController extends Controller
                 'added_by' => null,
             ]);
 
-            return back()->with('success', 'ลงชื่อจองรอบเรียบร้อยแล้ว! คุณอยู่ลำดับที่ '.$nextOrder);
+            return redirect()->route('home')->with(
+                'success',
+                'ชำระเงินสำเร็จ! คุณลงชื่อจองรอบนี้เป็นลำดับที่ '.$nextOrder
+            );
         });
     }
 }
