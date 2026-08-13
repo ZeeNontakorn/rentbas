@@ -37,15 +37,16 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-[1280px] w-full table-fixed text-left text-sm">
+                <table class="min-w-[1380px] w-full table-fixed text-left text-sm">
                     <colgroup>
-                        <col class="w-[100px]"><col class="w-[200px]"><col class="w-[270px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[175px]">
+                        <col class="w-[100px]"><col class="w-[200px]"><col class="w-[220px]"><col class="w-[160px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[175px]">
                     </colgroup>
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
                             <th class="px-6 py-4 font-medium">รูปภาพ</th>
                             <th class="px-6 py-4 font-medium">ชื่อแพ็กเกจ</th>
                             <th class="px-5 py-4 font-medium">รายละเอียด</th>
+                            <th class="px-5 py-4 font-medium">วันที่ใช้ได้</th>
                             <th class="px-5 py-4 font-medium">ราคา</th>
                             <th class="px-5 py-4 font-medium">จำนวนครั้งที่ใช้ได้</th>
                             <th class="px-5 py-4 font-medium">จำนวนวัน</th>
@@ -71,6 +72,23 @@
                                 </td>
                                 <td class="px-5 py-6">
                                     <p class="line-clamp-2 text-sm leading-6 text-gray-500 break-words">{{ $package->description ?: '—' }}</p>
+                                </td>
+                                <td class="px-5 py-6">
+                                    @php
+                                        $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                                        $usableDays = $package->usable_days ?? [];
+                                    @endphp
+                                    @if(empty($usableDays))
+                                        <span class="inline-flex rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700">ทุกวัน</span>
+                                    @else
+                                        <div class="flex flex-wrap gap-1">
+                                            @foreach($usableDays as $day)
+                                                <span class="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1.5 text-xs font-medium text-slate-600">
+                                                    {{ $dayLabels[$day] ?? $day }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-6">
                                     <span class="font-medium text-slate-700">{{ number_format($package->price, 2) }}</span>
@@ -118,7 +136,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="px-6 py-16 text-center text-gray-400">
+                            <tr><td colspan="9" class="px-6 py-16 text-center text-gray-400">
                                 <p class="font-medium text-sm">ยังไม่มีแพ็กเกจในระบบ</p>
                                 <a href="{{ route('admin.packages.create') }}" class="mt-3 inline-block text-sm font-medium text-blue-500 hover:text-blue-600">+ เพิ่มแพ็กเกจแรกของคุณ</a>
                             </td></tr>
