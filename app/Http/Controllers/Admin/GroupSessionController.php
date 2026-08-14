@@ -194,11 +194,10 @@ class GroupSessionController extends Controller
 
                 $user = User::lockForUpdate()->findOrFail($data['user_id']);
 
-                if ($user->{self::CREDIT_COLUMN} < $round->credit_cost) {
-                    return back()->withErrors(['user_id' => "เครดิตของ {$user->name} ไม่พอ (มี {$user->{self::CREDIT_COLUMN}}, ต้องใช้ {$round->credit_cost})"]);
-                }
-
-                $user->decrement(self::CREDIT_COLUMN, $round->credit_cost);
+if ($user->{self::CREDIT_COLUMN} < $round->credit_cost * 100) {
+    return back()->withErrors(['user_id' => "เครดิตของ {$user->name} ไม่พอ (มี ฿".number_format($user->{self::CREDIT_COLUMN} / 100, 2).", ต้องใช้ ฿".number_format($round->credit_cost, 2).")"]);
+}
+$user->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
                 $creditUsed = $round->credit_cost;
             } else {
                 $guestName = $data['guest_name'];
@@ -253,9 +252,9 @@ class GroupSessionController extends Controller
                 ? User::lockForUpdate()->findOrFail($signup->user_id)
                 : null;
 
-            if ($user && $signup->credit_used > 0) {
-                $user->increment(self::CREDIT_COLUMN, $signup->credit_used);
-            }
+if ($user && $signup->credit_used > 0) {
+    $user->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+}
 
             $signup->update(['status' => 'cancelled']);
 
@@ -291,9 +290,10 @@ class GroupSessionController extends Controller
                 ->get();
 
             foreach ($signups as $signup) {
-                if ($signup->user_id && $signup->credit_used > 0) {
-                    User::where('id', $signup->user_id)->increment(self::CREDIT_COLUMN, $signup->credit_used);
-                }
+            
+if ($signup->user_id && $signup->credit_used > 0) {
+    User::where('id', $signup->user_id)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+}
                 $signup->update(['status' => 'cancelled']);
             }
 

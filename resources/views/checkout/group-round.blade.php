@@ -4,9 +4,10 @@
 
 @section('content')
 @php
-    $price = (int) $round->credit_cost;
-    $balance = (int) $user->credit_balance;
-    $sufficient = $balance >= $price;
+$price = (int) $round->credit_cost;        // หน่วยบาท
+$priceSatang = $price * 100;               // แปลงเป็นสตางค์เพื่อเทียบกับ credit_balance
+$balance = (int) $user->credit_balance;     // หน่วยสตางค์
+$sufficient = $balance >= $priceSatang;
     $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 @endphp
 
@@ -67,10 +68,10 @@
                     <p class="my-3 text-xs text-gray-500">หักจากยอดเครดิตคงเหลือของคุณทันที และยืนยันการลงชื่อจองอัตโนมัติ</p>
                     <div class="gc-row"><span class="gc-label">ยอดเครดิตปัจจุบัน</span><span class="gc-value">฿{{ number_format($balance / 100, 2) }}</span></div>
                     <div class="gc-row"><span class="gc-label">ยอดชำระ</span><span class="gc-value">฿-{{ number_format($price ) }}</span></div>
-                    <div class="gc-row"><span class="gc-label">ยอดเครดิตคงเหลือ</span><span class="gc-value">฿{{ number_format(max(0, $balance - $price) / 100, 2) }}</span></div>
+                    <div class="gc-row"><span class="gc-label">ยอดเครดิตคงเหลือ</span><span class="gc-value">฿{{ number_format(max(0, $balance - $priceSatang) / 100, 2) }}</span></div>
 
                     @if (! $sufficient)
-                        <p class="my-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">เครดิตไม่เพียงพอ ขาดอีก ฿{{ number_format(($price - $balance) / 100, 2) }}</p>
+                        <p class="my-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">เครดิตไม่เพียงพอ ขาดอีก ฿{{ number_format(($priceSatang - $balance) / 100, 2) }}</p>
                     @endif
 
                     <form class="mt-4" method="POST" action="{{ route('group-rounds.signup', $round) }}">

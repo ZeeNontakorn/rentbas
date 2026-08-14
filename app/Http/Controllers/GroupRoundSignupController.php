@@ -115,13 +115,13 @@ class GroupRoundSignupController extends Controller
             // ล็อกเครดิตผู้ใช้ เพื่อไม่ให้ยอดคลาดเคลื่อนเมื่อมีการใช้เครดิตพร้อมกัน
             $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
 
-            if ($lockedUser->{self::CREDIT_COLUMN} < $round->credit_cost) {
-                return back()->withErrors([
-                    'round' => 'เครดิตของคุณไม่พอ (มี ฿'.number_format($lockedUser->{self::CREDIT_COLUMN} / 100, 2).', ต้องใช้ ฿'.number_format($round->credit_cost / 100, 2).')',
-                ]);
-            }
-
-            $lockedUser->decrement(self::CREDIT_COLUMN, $round->credit_cost);
+        
+if ($lockedUser->{self::CREDIT_COLUMN} < $round->credit_cost * 100) {
+    return back()->withErrors([
+        'round' => 'เครดิตของคุณไม่พอ (มี ฿'.number_format($lockedUser->{self::CREDIT_COLUMN} / 100, 2).', ต้องใช้ ฿'.number_format($round->credit_cost, 2).')',
+    ]);
+}
+$lockedUser->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
 
             $nextOrder = ((int) GroupRoundSignup::query()
                 ->where('group_round_id', $round->id)
