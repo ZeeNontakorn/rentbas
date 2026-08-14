@@ -102,7 +102,7 @@
                                                 <input type="hidden" name="rules[{{ $rule->id }}][is_active]" value="0">
                                                 <input type="checkbox" name="rules[{{ $rule->id }}][is_active]" value="1" @checked($rule->is_active)
                                                        class="peer sr-only">
-                                                <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-green-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
+                                                <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
                                             </label>
                                         </td>
                                     </tr>
@@ -116,7 +116,7 @@
                                 data-target="rules-form-{{ $dayType }}">
                             ยกเลิก
                         </button>
-                        <button type="submit" class="text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg px-4 py-1.5 cursor-pointer transition">
+                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 cursor-pointer transition">
                             บันทึก
                         </button>
                     </div>
@@ -150,7 +150,14 @@
 
                 {{-- CSS multi-column layout instead of grid: cards flow independently
                      per column, so expanding one card's edit panel only pushes
-                     cards below it in the SAME column, not the card beside it. --}}
+                     cards below it in the SAME column, not the card beside it.
+                     NOTE: the edit drawer (.pkg-drawer, position:fixed) must NEVER be
+                     rendered inside this columns-* container — position:fixed elements
+                     nested inside a CSS multi-column formatting context render
+                     incorrectly in several browsers (can flash/hang blank-white on
+                     reflow, e.g. when a peer-checked switch inside the drawer
+                     transitions). Drawers are rendered in a separate loop further
+                     below, as siblings of this container instead. --}}
                 <div class="columns-1 md:columns-2 gap-4">
                     @foreach ($packages as $package)
                         @php
@@ -220,25 +227,26 @@
                                 </form>
                             </div>
                         </div>
-
-                        {{-- Edit drawer: fixed to the viewport (position: fixed), so it
-                             sits OUTSIDE normal document flow entirely. Growing/shrinking
-                             this panel can never push any card, above or below, in either
-                             column. --}}
-                        <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[50%] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
-                            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-                                <h3 class="font-semibold text-gray-800 text-[15px]">แก้ไข: {{ $package->label }}</h3>
-                                <button type="button" onclick="closePkgDrawer('{{ $editId }}')"
-                                        class="text-gray-400 hover:text-gray-600 rounded-lg p-1 transition">
-                                    ✕
-                                </button>
-                            </div>
-                            <div class="p-5">
-                                @include('admin.pricing._package-form', ['package' => $package, 'formId' => $editId, 'existingCategories' => $existingPackageCategories])
-                            </div>
-                        </div>
                     @endforeach
                 </div>
+
+                {{-- Edit drawers for this category, rendered OUTSIDE the columns-* container
+                     on purpose — see note above the container's opening tag. --}}
+                @foreach ($packages as $package)
+                    @php $editId = 'pkg-edit-' . $package->id; @endphp
+                    <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[50%] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+                            <h3 class="font-semibold text-gray-800 text-[15px]">แก้ไข: {{ $package->label }}</h3>
+                            <button type="button" onclick="closePkgDrawer('{{ $editId }}')"
+                                    class="text-gray-400 hover:text-gray-600 rounded-lg p-1 transition">
+                                ✕
+                            </button>
+                        </div>
+                        <div class="p-5">
+                            @include('admin.pricing._package-form', ['package' => $package, 'formId' => $editId, 'existingCategories' => $existingPackageCategories])
+                        </div>
+                    </div>
+                @endforeach
             </div>
         @endforeach
 
