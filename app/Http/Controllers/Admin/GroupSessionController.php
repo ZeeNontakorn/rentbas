@@ -60,7 +60,6 @@ class GroupSessionController extends Controller
         ]);
 
         $data['created_by'] = auth()->id();
-        $data['is_active'] = true;
 
         GroupSession::create($data);
 
@@ -87,16 +86,6 @@ class GroupSessionController extends Controller
         $session->update($data);
 
         return back()->with('success', 'แก้ไขเทมเพลตรอบประจำเรียบร้อยแล้ว');
-    }
-
-    /**
-     * เปิด/ปิดใช้งานเทมเพลต (ไม่ลบ เผื่อมีรอบเก่าที่ผูกอยู่)
-     */
-    public function toggleSession(GroupSession $session): RedirectResponse
-    {
-        $session->update(['is_active' => !$session->is_active]);
-
-        return back()->with('success', $session->is_active ? 'เปิดใช้งานเทมเพลตแล้ว' : 'ปิดใช้งานเทมเพลตแล้ว');
     }
 
     /**

@@ -17,12 +17,10 @@ class GroupSession extends Model
         'court_id',
         'max_players',
         'credit_cost',
-        'is_active',
         'created_by',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'day_of_week' => 'integer',
         'max_players' => 'integer',
         'credit_cost' => 'integer',

@@ -294,9 +294,7 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
 Route::middleware(['auth', 'admin'])->prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
     Route::get('/', [GroupSessionController::class, 'index'])->name('index');
     Route::post('/', [GroupSessionController::class, 'storeSession'])->name('store');
-    Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');   // <-- เพิ่มบรรทัดนี้
-    Route::patch('/{session}/toggle', [GroupSessionController::class, 'toggleSession'])->name('toggle');
-
+    Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');   
     Route::post('/rounds', [GroupSessionController::class, 'openRound'])->name('rounds.open');
     Route::get('/rounds/{round}', [GroupSessionController::class, 'showRound'])->name('rounds.show');
     Route::post('/rounds/{round}/players', [GroupSessionController::class, 'addPlayer'])->name('rounds.addPlayer');

@@ -42,7 +42,6 @@
                     <th class="px-5 py-2 font-medium">สนาม</th>
                     <th class="px-5 py-2 font-medium">จำนวน</th>
                     <th class="px-5 py-2 font-medium">เครดิต/คน</th>
-                    <th class="px-5 py-2 font-medium">สถานะ</th>
                     <th class="px-5 py-2 font-medium text-right">จัดการ</th>
                 </tr>
             </thead>
@@ -55,11 +54,6 @@
                     <td class="px-5 py-3 text-gray-600">{{ $s->court->name ?? '-' }}</td>
                     <td class="px-5 py-3 text-gray-600">{{ $s->max_players }} คน</td>
                     <td class="px-5 py-3 text-gray-600">{{ $s->credit_cost }}</td>
-                    <td class="px-5 py-3">
-                        <span class="px-2 py-0.5 rounded-full text-xs {{ $s->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                            {{ $s->is_active ? 'ใช้งานอยู่' : 'ปิดใช้งาน' }}
-                        </span>
-                    </td>
                     <td class="px-5 py-3 text-right space-x-2">
     <button
         @click="showRoundForm = true; prefillSession = {
@@ -73,11 +67,6 @@
             play_date: '{{ $s->nextOccurrence()->format('Y-m-d') }}'
         }"
         class="text-orange-600 hover:text-orange-800 font-medium">เปิดรอบ</button>
-    <form action="{{ route('admin.group-sessions.toggle', $s) }}" method="POST" class="inline">
-        @csrf
-        @method('PATCH')
-        <button class="text-gray-500 hover:text-gray-700">{{ $s->is_active ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}</button>
-    </form>
     <button
         @click="showEditForm = true; editSession = {
             id: {{ $s->id }},
@@ -93,7 +82,7 @@
 </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="px-5 py-6 text-center text-gray-400">ยังไม่มีรอบประจำ</td></tr>
+                <tr><td colspan="7" class="px-5 py-6 text-center text-gray-400">ยังไม่มีรอบประจำ</td></tr>
                 @endforelse
             </tbody>
         </table>
