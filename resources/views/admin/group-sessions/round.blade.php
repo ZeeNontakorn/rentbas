@@ -31,6 +31,9 @@
                 @endif
 
                 &middot; เครดิต {{ $round->credit_cost }}/คน
+@if($round->cancel_deadline)
+    &middot; ยกเลิกได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
+@endif
             </p>
         </div>
 
@@ -265,7 +268,16 @@
                 {{-- Body --}}
                 <tbody class="divide-y divide-gray-50">
 
-                    @forelse($round->confirmedSignups as $signup)
+                    @php $reserveDividerShown = false; @endphp
+@forelse($round->confirmedSignups as $signup)
+    @if($signup->is_reserve && !$reserveDividerShown)
+        @php $reserveDividerShown = true; @endphp
+        <tr>
+            <td colspan="6" class="px-5 py-2 text-center text-xs text-amber-600 bg-amber-50">
+                — ตัวจริงครบแล้ว รายชื่อต่อไปนี้คือคิวสำรอง —
+            </td>
+        </tr>
+    @endif
 
                         @php
                             $playerName = $signup->user?->name
@@ -292,12 +304,12 @@
                             {{-- ชื่อ --}}
                             <td class="px-5 py-3 text-gray-900 align-middle">
 
-                                <div
-                                    class="max-w-[320px] truncate"
-                                    title="{{ $playerName }}"
-                                >
-                                    {{ $playerName }}
-                                </div>
+                                <div class="max-w-[320px] truncate" title="{{ $playerName }}">
+    {{ $playerName }}
+    @if($signup->is_reserve)
+        <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700">สำรอง</span>
+    @endif
+</div>
 
                             </td>
 
@@ -355,26 +367,6 @@
                             </td>
 
                         </tr>
-
-
-                        {{-- จุดแบ่งตัวจริง / ตัวสำรอง --}}
-                        @if($signup->order_number === $round->max_players)
-
-                            <tr>
-
-                                <td
-                                    colspan="6"
-                                    class="px-5 py-2 text-center text-xs text-amber-600 bg-amber-50"
-                                >
-                                    — เต็มจำนวนตัวจริง
-                                    ({{ $round->max_players }} คน)
-                                    รายชื่อถัดไปคือตัวสำรอง —
-                                </td>
-
-                            </tr>
-
-                        @endif
-
 
                     @empty
 

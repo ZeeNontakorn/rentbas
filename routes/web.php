@@ -302,6 +302,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin/group-sessions')->name('admi
     Route::patch('/rounds/{round}/close', [GroupSessionController::class, 'closeRound'])->name('rounds.close');
     Route::patch('/rounds/{round}/reopen', [GroupSessionController::class, 'reopenRound'])->name('rounds.reopen');
     Route::delete('/rounds/{round}/cancel', [GroupSessionController::class, 'cancelRound'])->name('rounds.cancel');
+    
 });
 Route::middleware('auth')->group(function () {
     Route::get('/group-rounds/my-bookings', [App\Http\Controllers\GroupRoundSignupController::class, 'myBookings'])
@@ -311,3 +312,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/group-rounds/{round}/signup', [App\Http\Controllers\GroupRoundSignupController::class, 'store'])
         ->name('group-rounds.signup');
 });
+ Route::post('/group-rounds/{round}/cancel', [\App\Http\Controllers\GroupRoundSignupController::class, 'cancel'])
+       ->middleware('auth')
+       ->name('group-rounds.cancel');

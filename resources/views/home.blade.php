@@ -1428,13 +1428,20 @@ html { scroll-behavior: smooth; }
     <div class="groupsession-grid">
         @foreach($upcomingGroupRounds as $round)
             @php
-                $spotsLeft = max(0, $round->max_players - $round->players_count);
-                $isFull = $spotsLeft <= 0;
-                $percentFull = $round->max_players > 0
-                    ? min(100, round(($round->players_count / $round->max_players) * 100))
-                    : 0;
-                $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-            @endphp
+    $round->processExpiredReserves();
+
+    $mainCount = $round->mainConfirmedCount();
+    $spotsLeft = max(0, $round->max_players - $mainCount);
+    $isFull = $spotsLeft <= 0;
+    $percentFull = $round->max_players > 0
+        ? min(100, round(($mainCount / $round->max_players) * 100))
+        : 0;
+    $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+
+    $myGroupSignup = auth()->check()
+        ? $round->confirmedSignups->firstWhere('user_id', auth()->id())
+        : null;
+@endphp
             <div class="gs-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                 <div class="gs-card-header">
                     <div class="gs-card-day">{{ $dayNames[$round->play_date->dayOfWeek] }}</div>
@@ -1443,27 +1450,33 @@ html { scroll-behavior: smooth; }
                 <div class="gs-card-body">
                     <div class="gs-card-title">{{ $round->title }}</div>
                     <div class="gs-card-info">
-                        <div class="gs-info-line">
-                            <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            {{ \Carbon\Carbon::parse($round->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($round->end_time)->format('H:i') }} น.
-                        </div>
-                        @if($round->court)
-                        <div class="gs-info-line">
-                            <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                            {{ $round->court->name }}
-                        </div>
-                        @endif
-                        <div class="gs-info-line">
-                            <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
-                            เครดิต {{ $round->credit_cost }} / คน
-                        </div>
-                    </div>
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ \Carbon\Carbon::parse($round->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($round->end_time)->format('H:i') }} น.
+    </div>
+    @if($round->court)
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        {{ $round->court->name }}
+    </div>
+    @endif
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
+        เครดิต {{ $round->credit_cost }} / คน
+    </div>
+    @if($round->cancel_deadline)
+    <div class="gs-info-line" style="color:#e67700;">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+        ยกเลิกจองได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
+    </div>
+    @endif
+</div>
                     <div class="gs-spots-wrap">
                         <div class="gs-spots-bar">
                             <div class="gs-spots-fill" style="width: {{ $percentFull }}%;"></div>
                         </div>
                         <p class="gs-spots-text">
-                            ลงชื่อแล้ว {{ $round->players_count }}/{{ $round->max_players }} คน
+                            ลงชื่อแล้ว {{ $mainCount }}/{{ $round->max_players }} คน
                             @if(!$isFull) &middot; เหลือ {{ $spotsLeft }} ที่ @endif
                         </p>
                        @php
@@ -1473,11 +1486,27 @@ html { scroll-behavior: smooth; }
 @endphp
 
 @if($myGroupSignup)
-    <span class="gs-card-btn full" style="background:#ebfbee;color:#2f9e44;">
-        ✓ จองแล้ว &middot; ลำดับที่ {{ $myGroupSignup->order_number }}
-    </span>
+    <div class="gs-btn-row">
+        <span class="gs-card-btn full" style="background:{{ $myGroupSignup->is_reserve ? '#fff3bf' : '#ebfbee' }};color:{{ $myGroupSignup->is_reserve ? '#e67700' : '#2f9e44' }};">
+            {{ $myGroupSignup->is_reserve ? '⏳ คิวสำรอง' : '✓ จองแล้ว' }} &middot; ลำดับที่ {{ $myGroupSignup->order_number }}
+        </span>
+        @if($round->canSelfCancel())
+            <form action="{{ route('group-rounds.cancel', $round) }}" method="POST"
+                onsubmit="return confirm('ยกเลิกการจองรอบนี้และรับเครดิตคืน ฿{{ number_format($myGroupSignup->credit_used, 2) }}?');">
+                @csrf
+                <button type="submit" class="gs-card-btn gs-card-btn-outline" style="width:100%;">ยกเลิกจอง</button>
+            </form>
+        @endif
+    </div>
 @elseif($isFull)
-    <span class="gs-card-btn full">เต็มแล้ว</span>
+    <div class="gs-btn-row">
+        @auth
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
+        @else
+            <a href="{{ route('login') }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
+        @endauth
+        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+    </div>
 @else
     <div class="gs-btn-row">
         @auth

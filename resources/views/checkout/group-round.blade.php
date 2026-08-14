@@ -48,6 +48,9 @@ $sufficient = $balance >= $priceSatang;
                     <div class="gc-row"><span class="gc-label">วันที่</span><span class="gc-value">{{ $round->play_date->day }} {{ $thaiMonths[$round->play_date->month] }} {{ $round->play_date->year + 543 }}</span></div>
                     <div class="gc-row"><span class="gc-label">เวลา</span><span class="gc-value">{{ \Carbon\Carbon::parse($round->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($round->end_time)->format('H:i') }} น.</span></div>
                     <div class="gc-row"><span class="gc-label">สนาม</span><span class="gc-value">{{ $round->court?->name ?? '-' }}</span></div>
+@if($round->cancel_deadline)
+<div class="gc-row"><span class="gc-label">ยกเลิกจองได้ถึง</span><span class="gc-value">{{ $round->cancel_deadline->format('d/m/Y H:i') }} น.</span></div>
+@endif
                 </div>
 
                 <div class="gc-card">
@@ -66,6 +69,11 @@ $sufficient = $balance >= $priceSatang;
                         <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">พร้อมใช้งาน</span>
                     </div>
                     <p class="my-3 text-xs text-gray-500">หักจากยอดเครดิตคงเหลือของคุณทันที และยืนยันการลงชื่อจองอัตโนมัติ</p>
+@if($willBeReserve)
+<p class="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+    ตอนนี้ตัวจริงเต็มแล้ว การจองนี้จะเป็น <strong>คิวสำรอง</strong> — เสียเครดิตทันทีเหมือนตัวจริง แต่ถ้ามีคนสละสิทธิ์ก่อนเดดไลน์ คุณจะเลื่อนเป็นตัวจริงอัตโนมัติ ถ้าไม่มีใครสละสิทธิ์ ระบบจะคืนเครดิตให้อัตโนมัติหลังหมดเวลา
+</p>
+@endif
                     <div class="gc-row"><span class="gc-label">ยอดเครดิตปัจจุบัน</span><span class="gc-value">฿{{ number_format($balance / 100, 2) }}</span></div>
                     <div class="gc-row"><span class="gc-label">ยอดชำระ</span><span class="gc-value">฿-{{ number_format($price ) }}</span></div>
                     <div class="gc-row"><span class="gc-label">ยอดเครดิตคงเหลือ</span><span class="gc-value">฿{{ number_format(max(0, $balance - $priceSatang) / 100, 2) }}</span></div>

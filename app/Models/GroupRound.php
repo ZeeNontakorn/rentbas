@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class GroupRound extends Model
 {
@@ -17,6 +18,7 @@ class GroupRound extends Model
         'court_id',
         'max_players',
         'credit_cost',
+        'cancel_deadline',
         'status',
         'created_by',
     ];
@@ -25,6 +27,8 @@ class GroupRound extends Model
         'play_date' => 'date',
         'max_players' => 'integer',
         'credit_cost' => 'integer',
+        'cancel_deadline' => 'datetime',
+        'reserves_processed_at' => 'datetime',
     ];
 
     public function session(): BelongsTo
@@ -52,6 +56,13 @@ class GroupRound extends Model
         return $this->signups()->where('status', 'confirmed');
     }
 
+    /** จำนวนคน "ตัวจริง" ที่ยืนยันแล้ว (ไม่นับคิวสำรอง) */
+    public function mainConfirmedCount(): int
+    {
+        return $this->confirmedSignups()->where('is_reserve', false)->count();
+    }
+
+    /** จำนวนคนทั้งหมดที่ยืนยันแล้ว รวมทั้งตัวจริงและสำรอง */
     public function confirmedCount(): int
     {
         return $this->confirmedSignups()->count();
@@ -59,11 +70,105 @@ class GroupRound extends Model
 
     public function isFull(): bool
     {
-        return $this->confirmedCount() >= $this->max_players;
+        return $this->mainConfirmedCount() >= $this->max_players;
     }
 
     public function remainingSlots(): int
     {
-        return max(0, $this->max_players - $this->confirmedCount());
+        return max(0, $this->max_players - $this->mainConfirmedCount());
+    }
+
+    /** ยังอยู่ในช่วงเวลาที่สมาชิกยกเลิกจองเองได้ไหม (ไม่ได้ตั้งเดดไลน์ = ยกเลิกได้เสมอ) */
+    public function canSelfCancel(): bool
+    {
+        if (! $this->cancel_deadline) {
+            return true;
+        }
+
+        return now()->lessThan($this->cancel_deadline);
+    }
+
+    /**
+     * เลื่อนคิวสำรองคนแรกสุด (ตามลำดับที่ลงชื่อจริง) ขึ้นเป็นตัวจริงแทนที่ว่าง
+     * เรียกใช้ทุกครั้งที่มีคน "ตัวจริง" ยกเลิก/ถูกนำออกจากรอบ
+     */
+    public function promoteNextReserve(): ?GroupRoundSignup
+    {
+        $next = GroupRoundSignup::where('group_round_id', $this->id)
+            ->where('status', 'confirmed')
+            ->where('is_reserve', true)
+            ->orderBy('order_number')
+            ->first();
+
+        if (! $next) {
+            return null;
+        }
+
+        $next->update(['is_reserve' => false]);
+
+        if ($next->user_id) {
+            Notification::create([
+                'user_id' => $next->user_id,
+                'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
+                'message' => "คุณได้เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
+                'action_url' => null,
+                'is_read' => false,
+            ]);
+        }
+
+        return $next;
+    }
+
+    /**
+     * เมื่อหมดเวลาสละสิทธิ์แล้ว (cancel_deadline ผ่านไปแล้ว) ให้คืนเครดิตให้คิวสำรอง
+     * ที่ยังไม่ได้เลื่อนเป็นตัวจริงทั้งหมด แล้วปิดจ็อบไม่ให้ประมวลผลซ้ำอีก
+     *
+     * เรียกแบบ "lazy" — ไม่ต้องตั้ง cron ก็ทำงานได้ แค่เรียกเมธอดนี้ทุกครั้งที่มีคนเปิดดูรอบนี้
+     * (หน้าแรก / หน้า checkout / หน้า admin) ถ้ายังไม่ถึงเวลาหรือประมวลผลไปแล้วจะ return ทันทีไม่ทำอะไร
+     */
+    public function processExpiredReserves(): void
+    {
+        if (! $this->cancel_deadline || $this->reserves_processed_at) {
+            return;
+        }
+
+        if (now()->lessThan($this->cancel_deadline)) {
+            return;
+        }
+
+        DB::transaction(function () {
+            $round = self::where('id', $this->id)->lockForUpdate()->first();
+
+            if (! $round || $round->reserves_processed_at || ! $round->cancel_deadline || now()->lessThan($round->cancel_deadline)) {
+                return;
+            }
+
+            $reserves = GroupRoundSignup::where('group_round_id', $round->id)
+                ->where('status', 'confirmed')
+                ->where('is_reserve', true)
+                ->get();
+
+            foreach ($reserves as $signup) {
+                if ($signup->user_id && $signup->credit_used > 0) {
+                    User::where('id', $signup->user_id)->increment('credit_balance', $signup->credit_used * 100);
+                }
+
+                $signup->update(['status' => 'cancelled']);
+
+                if ($signup->user_id) {
+                    Notification::create([
+                        'user_id' => $signup->user_id,
+                        'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',
+                        'message' => "รอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
+                        'action_url' => null,
+                        'is_read' => false,
+                    ]);
+                }
+            }
+
+            $round->update(['reserves_processed_at' => now()]);
+        });
+
+        $this->refresh();
     }
 }

@@ -92,20 +92,21 @@ class GroupSessionController extends Controller
      * เปิดรอบจริงจากเทมเพลต (เลือกวันที่ที่จะเล่น) หรือเปิดรอบแบบ one-time โดยไม่ผูกเทมเพลตก็ได้
      */
     public function openRound(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'group_session_id' => ['nullable', 'exists:group_sessions,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'play_date' => ['required', 'date', 'after_or_equal:today'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
-            'court_id' => ['nullable', 'exists:courts,id'],
-            'max_players' => ['required', 'integer', 'min:1', 'max:100'],
-            'credit_cost' => ['required', 'integer', 'min:0'],
-        ], [
-            'end_time.after' => 'เวลาเลิกต้องอยู่หลังเวลาเริ่ม',
-            'play_date.after_or_equal' => 'วันที่เล่นต้องไม่ใช่วันที่ผ่านมาแล้ว',
-        ]);
+{
+    $data = $request->validate([
+        'group_session_id' => ['nullable', 'exists:group_sessions,id'],
+        'title' => ['required', 'string', 'max:255'],
+        'play_date' => ['required', 'date', 'after_or_equal:today'],
+        'start_time' => ['required', 'date_format:H:i'],
+        'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+        'court_id' => ['nullable', 'exists:courts,id'],
+        'max_players' => ['required', 'integer', 'min:1', 'max:100'],
+        'credit_cost' => ['required', 'integer', 'min:0'],
+        'cancel_deadline' => ['nullable', 'date'],
+    ], [
+        'end_time.after' => 'เวลาเลิกต้องอยู่หลังเวลาเริ่ม',
+        'play_date.after_or_equal' => 'วันที่เล่นต้องไม่ใช่วันที่ผ่านมาแล้ว',
+    ]);
 
         // กันเปิดรอบซ้ำ วัน+เวลา+สนามเดียวกัน
         $duplicate = GroupRound::where('play_date', $data['play_date'])
@@ -132,8 +133,11 @@ class GroupSessionController extends Controller
      * แสดงรายละเอียดรอบ + รายชื่อคนลงเล่น เรียงลำดับ 1-25 ตามเวลาจริง
      */
     public function showRound(GroupRound $round)
-    {
-        $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
+{
+    // เช็คว่ารอบนี้หมดเวลาสละสิทธิ์แล้วหรือยัง ถ้าใช่ให้คืนเครดิตสำรองที่เหลือก่อนแสดงผล
+    $round->processExpiredReserves();
+
+    $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
 
         // รายชื่อสมาชิกที่ยังไม่มีรายการในรอบนี้ สำหรับแอดมินเพิ่มผู้ที่จองผ่าน LINE
         $members = User::query()
@@ -163,13 +167,12 @@ class GroupSessionController extends Controller
                 return back()->withErrors(['round' => 'รอบนี้ปิดรับสมัครแล้ว']);
             }
 
-            if ($round->confirmedCount() >= $round->max_players) {
-                return back()->withErrors(['round' => 'รอบนี้เต็มแล้ว']);
-            }
+            // ไม่บล็อกแม้ตัวจริงเต็มแล้ว — ให้เพิ่มเป็นคิวสำรองแทน
+                $isReserve = $round->mainConfirmedCount() >= $round->max_players;
 
-            $user = null;
-            $guestName = null;
-            $creditUsed = 0;
+                $user = null;
+                $guestName = null;
+                $creditUsed = 0;
 
             if (! empty($data['user_id'])) {
                 $alreadyIn = GroupRoundSignup::where('group_round_id', $round->id)
@@ -217,6 +220,7 @@ $user->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
         'order_number' => $nextOrder,
         'credit_used' => $creditUsed,
         'status' => 'confirmed',
+        'is_reserve' => $isReserve,
         'signed_up_at' => now(),
         'added_by' => auth()->id(),
     ]);
@@ -231,25 +235,25 @@ $user->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
      * (ลำดับของคนที่เหลือจะไม่ถูกไล่ใหม่ เพื่อรักษาลำดับตามเวลาลงชื่อจริง)
      */
     public function removePlayer(GroupRound $round, GroupRoundSignup $signup): RedirectResponse
-    {
-        if ($signup->group_round_id !== $round->id) {
-            abort(404);
+{
+    if ($signup->group_round_id !== $round->id) {
+        abort(404);
+    }
+
+    return DB::transaction(function () use ($round, $signup) {
+        $user = $signup->user_id
+            ? User::lockForUpdate()->findOrFail($signup->user_id)
+            : null;
+
+        if ($user && $signup->credit_used > 0) {
+            $user->increment(self::CREDIT_COLUMN, $signup->credit_used);
         }
 
-        return DB::transaction(function () use ($round, $signup) {
-            $user = $signup->user_id
-                ? User::lockForUpdate()->findOrFail($signup->user_id)
-                : null;
+        $signup->update(['status' => 'cancelled']);
 
-if ($user && $signup->credit_used > 0) {
-    $user->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+        return back()->with('success', 'นำ '.($user?->name ?? $signup->guest_name).' ออกจากรอบแล้ว'.($user ? 'และคืนเครดิตแล้ว' : ''));
+    });
 }
-
-            $signup->update(['status' => 'cancelled']);
-
-            return back()->with('success', 'นำ '.($user?->name ?? $signup->guest_name).' ออกจากรอบแล้ว'.($user ? 'และคืนเครดิตแล้ว' : ''));
-        });
-    }
 
     /**
      * ปิดรับสมัครรอบ (ยังเล่นได้ตามปกติ แค่ไม่รับลงชื่อเพิ่ม)
