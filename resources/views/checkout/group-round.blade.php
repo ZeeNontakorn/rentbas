@@ -53,7 +53,7 @@
                     <h2 class="mb-4 text-[16px] font-bold">รายละเอียดราคา</h2>
                     <div class="gc-row border-t-2 border-gray-900 pt-3">
                         <span class="gc-label font-bold text-gray-900">ยอดชำระทั้งหมด</span>
-                        <span class="gc-value text-xl text-[#87D068]">฿{{ number_format($price / 100, 2) }}</span>
+                        <span class="gc-value text-xl text-[#87D068]">฿{{ number_format($price ) }}</span>
                     </div>
                 </div>
             </div>
@@ -66,7 +66,7 @@
                     </div>
                     <p class="my-3 text-xs text-gray-500">หักจากยอดเครดิตคงเหลือของคุณทันที และยืนยันการลงชื่อจองอัตโนมัติ</p>
                     <div class="gc-row"><span class="gc-label">ยอดเครดิตปัจจุบัน</span><span class="gc-value">฿{{ number_format($balance / 100, 2) }}</span></div>
-                    <div class="gc-row"><span class="gc-label">ยอดชำระ</span><span class="gc-value">฿-{{ number_format($price / 100, 2) }}</span></div>
+                    <div class="gc-row"><span class="gc-label">ยอดชำระ</span><span class="gc-value">฿-{{ number_format($price ) }}</span></div>
                     <div class="gc-row"><span class="gc-label">ยอดเครดิตคงเหลือ</span><span class="gc-value">฿{{ number_format(max(0, $balance - $price) / 100, 2) }}</span></div>
 
                     @if (! $sufficient)
@@ -75,7 +75,7 @@
 
                     <form class="mt-4" method="POST" action="{{ route('group-rounds.signup', $round) }}">
                         @csrf
-                        <button type="submit" class="gc-button" {{ $sufficient ? '' : 'disabled' }}>ยืนยันชำระด้วยเครดิต ฿{{ number_format($price / 100, 2) }}</button>
+                        <button type="submit" class="gc-button" {{ $sufficient ? '' : 'disabled' }}>ยืนยันชำระด้วยเครดิต ฿{{ number_format($price ) }}</button>
                     </form>
                 </div>
             </div>
