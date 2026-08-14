@@ -73,6 +73,32 @@
                     <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
                         <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
                     </p>
+                    @if($myPackagePurchases->isNotEmpty())
+                        @php
+                            $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                            $hasRestrictedPackage = $myPackagePurchases->contains(fn ($pp) => !empty($pp->package->usable_days));
+                        @endphp
+                        @if($hasRestrictedPackage)
+                            <div class="mt-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-700 ring-1 ring-orange-200">
+                                <p class="mb-1.5 flex items-center gap-1.5 font-semibold">
+                                    <span aria-hidden="true">ⓘ</span> แพ็กเกจของคุณใช้ได้เฉพาะบางวัน กรุณาเลือกวันให้ตรงกับแพ็กเกจ
+                                </p>
+                                <ul class="space-y-0.5 pl-5">
+                                    @foreach($myPackagePurchases as $pp)
+                                        <li class="list-disc">
+                                            <span class="font-medium">{{ $pp->package->name }}</span> —
+                                            @if(empty($pp->package->usable_days))
+                                                <span class="text-green-700">ใช้ได้ทุกวัน</span>
+                                            @else
+                                                ใช้ได้เฉพาะวัน
+                                                <span class="font-semibold">{{ collect($pp->package->usable_days)->map(fn($d) => $dayLabels[$d] ?? $d)->implode(', ') }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    @endif
                 </div>
                 <div class="flex flex-wrap gap-3 text-xs text-gray-600">
                     <span><i class="mr-1 inline-block h-3 w-3 rounded bg-blue-500"></i>รออนุมัติ</span>
