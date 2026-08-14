@@ -112,11 +112,11 @@
                     </div>
 
                     <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-slate-50">
-                        <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 transition"
+                        <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 cursor-pointer transition"
                                 data-target="rules-form-{{ $dayType }}">
                             ยกเลิก
                         </button>
-                        <button type="submit" class="text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg px-4 py-1.5 transition">
+                        <button type="submit" class="text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg px-4 py-1.5 cursor-pointer transition">
                             บันทึก
                         </button>
                     </div>
@@ -131,7 +131,7 @@
                 <h2 class="font-medium text-gray-700 text-sm">แพ็กเกจโปรโมชั่น</h2>
             </div>
             <button type="button" onclick="toggleCreatePkgForm()"
-                    class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 transition">
+                    class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 cursor-pointer transition">
                 + เพิ่มแพ็กเกจใหม่
             </button>
         </div>
