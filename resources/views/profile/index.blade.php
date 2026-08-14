@@ -45,34 +45,21 @@
 }
 .section-divider::before,.section-divider::after { content:''; flex:1; height:1px; background:#f1f3f5; }
 
-/* Avatar upload */
+/* Avatar display (read-only) */
 .avatar-wrap {
     width:140px; flex-shrink:0;
     display:flex; flex-direction:column; align-items:center;
     padding-top:4px;
 }
 .avatar-frame {
-    position:relative; width:140px; height:160px; cursor:pointer;
+    position:relative; width:140px; height:160px;
 }
 .avatar-preview {
     width:16rem; height:20rem; border-radius:10px;
     object-fit:cover; border:1.5px solid #e5e7eb;
     background:#f9fafb;
     display:flex; align-items:center; justify-content:center;
-    transition:opacity .2s, border-color .2s;
 }
-.avatar-frame:hover .avatar-preview { opacity:.85; border-color:#e86c2a; }
-.avatar-edit-btn {
-    position:absolute; bottom:6px; right:6px;
-    width:32px; height:32px; border-radius:50%;
-    background:#e86c2a; border:2.5px solid #fff;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 1px 4px rgba(0,0,0,.15);
-    transition:background .2s;
-    pointer-events:none;
-}
-.avatar-frame:hover .avatar-edit-btn { background:#d05a1a; }
-.avatar-hint { font-size:11px; color:#9ca3af; text-align:center; margin-top:8px; line-height:1.4; }
 
 /* Placeholder box only fills 70% of the preview area, centered */
 .avatar-placeholder-box {
@@ -148,7 +135,7 @@
         </div>
 
         <div class="p-5">
-            <form method="POST" action="{{ route('profile.update') }}" id="profileForm" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('profile.update') }}" id="profileForm">
                 @csrf
 
                 <div class="flex flex-col md:flex-row gap-6 items-start">
@@ -217,32 +204,21 @@
                         </button>
                     </div>
 
-                    {{-- RIGHT: avatar upload (staff only: coach / court_assistant) --}}
+                    {{-- RIGHT: avatar display (staff only: coach / court_assistant), read-only --}}
                     @if ($isStaff)
                     <div class="avatar-wrap">
-                        <div class="avatar-frame" onclick="document.getElementById('avatarInput').click()">
+                        <div class="avatar-frame">
                             @if (!empty($user->avatar))
-                                <img id="avatarPreview" src="{{ asset('storage/' . $user->avatar) }}"
+                                <img src="{{ asset('storage/' . $user->avatar) }}"
                                      alt="Avatar" class="avatar-preview">
                             @else
-                                <div id="avatarPreview" class="avatar-preview">
+                                <div class="avatar-preview">
                                     <div class="avatar-placeholder-box">
                                         <span class="avatar-placeholder-text">No Image</span>
                                     </div>
                                 </div>
                             @endif
-
-                            <div class="avatar-edit-btn">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                            </div>
                         </div>
-
-                        <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden">
-                        <div class="avatar-hint">คลิกที่รูปเพื่อเปลี่ยนรูปโปรไฟล์<br>(JPG, PNG ไม่เกิน 2MB)</div>
-                        @error('avatar') <div class="form-error text-center">{{ $message }}</div> @enderror
                     </div>
                     @endif
 
