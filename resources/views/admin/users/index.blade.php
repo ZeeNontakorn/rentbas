@@ -146,7 +146,7 @@
                                 <td class="px-6 py-4">
                                     @if(in_array($u->role, ['admin', 'superadmin'], true))
                                         {{-- แอดมิน: ป้ายพื้นหลังสีเทา มีกรอบ เหมือนป้ายประเภทสมาชิกอื่นๆ --}}
-                                        <span class="inline-flex items-center justify-center w-[107px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
+                                        <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
                                     @else
                                         {{-- ประเภทสมาชิก: ป้ายทั้งก้อนคลิกได้เพื่อเปิดโมดัลแก้ไข (สไตล์เดียวกับ Role) --}}
                                         @php
