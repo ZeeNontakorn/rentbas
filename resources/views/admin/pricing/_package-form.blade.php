@@ -71,7 +71,7 @@
         <label class="block text-[11px] font-medium text-gray-500 mb-1">วันที่ใช้โปรนี้ได้ (เงื่อนไขจริงตอนจอง — ไม่เลือก = ใช้ได้ทุกวัน)</label>
         <div data-field-wrap="available_days" class="flex flex-wrap gap-x-6 gap-y-2 bg-slate-50 rounded-lg px-3 py-2.5 border {{ $errors->has('available_days') || $errors->has('available_days.*') ? 'border-red-500' : 'border-gray-200' }}">
             @foreach (['weekday' => 'จันทร์-ศุกร์', 'weekend' => 'เสาร์-อาทิตย์', 'holiday' => 'วันหยุดนักขัตฤกษ์'] as $val => $lbl)
-                <label class="inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+                <label class="relative inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
                     <input type="checkbox" name="available_days[]" value="{{ $val }}" class="peer sr-only"
                            @checked(in_array($val, $availableDays ?? []))>
                     <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
@@ -196,13 +196,13 @@
     </div>
 
     <div class="md:col-span-2 flex items-center gap-6 pt-1">
-        <label class="inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+        <label class="relative inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
             <input type="checkbox" name="requires_verification" value="1" class="peer sr-only"
                    @checked(old('requires_verification', $isEdit ? $package->requires_verification : false))>
             <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-amber-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
             <span>ต้องยืนยันสถานะ (เช่น บัตรนักเรียน/นักศึกษา)</span>
         </label>
-        <label class="inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+        <label class="relative inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
             <input type="checkbox" name="is_active" value="1" class="peer sr-only"
                    @checked(old('is_active', $isEdit ? $package->is_active : true))>
             <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
