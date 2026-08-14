@@ -70,7 +70,6 @@ class HomeController extends Controller
             ->orderBy('price')
             ->get();
         $groupSessions = GroupSession::with('court')
-            ->where('is_active', true)
             ->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
