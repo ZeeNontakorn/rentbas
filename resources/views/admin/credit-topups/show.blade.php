@@ -90,13 +90,13 @@
                     <form method="POST" action="{{ route('admin.credit-topups.approve', $topupRequest) }}" class="flex-1"
                           onsubmit="showMailLoadingOverlay('กำลังอนุมัติและส่งอีเมลใบเสร็จให้ลูกค้า...'); this.querySelector('button').disabled = true;">
                         @csrf
-                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 transition">
-                            ✓ อนุมัติและเติมเครดิต
+                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                            อนุมัติและเติมเครดิต
                         </button>
                     </form>
 
-                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 transition">
-                            ✕ ปฏิเสธคำขอ
+                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                            ปฏิเสธคำขอ
                     </button>
                 </div>
             @endif
@@ -146,10 +146,10 @@
             </div>
 
             <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onclick="closeRejectTopupModal()" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
+                <button type="button" onclick="closeRejectTopupModal()" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 cursor-pointer">
                     ยกเลิก
                 </button>
-                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700">
+                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 cursor-pointer">
                     ปฏิเสธและส่งอีเมลแจ้งลูกค้า
                 </button>
             </div>

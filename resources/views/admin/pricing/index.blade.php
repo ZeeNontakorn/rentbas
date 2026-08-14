@@ -214,11 +214,11 @@
 
                             <div class="flex justify-end gap-2 pt-1 border-t border-gray-100">
                                 <button type="button" onclick="openPkgDrawer('{{ $editId }}')"
-                                        class="text-xs font-medium text-blue-600 hover:text-blue-800 rounded-lg px-3 py-1.5 transition">
+                                        class="text-xs font-medium text-blue-600 hover:text-blue-800 rounded-lg px-3 py-1.5 cursor-pointer transition">
                                     แก้ไข
                                 </button>
                                 <button type="button" onclick="confirmDeletePromoPackage('{{ $package->id }}', '{{ addslashes($package->label) }}')"
-                                        class="text-xs font-medium text-red-500 hover:text-red-700 rounded-lg px-3 py-1.5 transition">
+                                        class="text-xs font-medium text-red-500 hover:text-red-700 rounded-lg px-3 py-1.5 cursor-pointer transition">
                                     ลบ
                                 </button>
                                 <form id="deletePromoPkg{{ $package->id }}" method="POST" action="{{ route('admin.pricing.packages.destroy', $package) }}" class="hidden">

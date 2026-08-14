@@ -19,7 +19,7 @@
                        placeholder="ระบุชื่อผู้ใช้ที่ต้องการค้นหา..."
                        class="w-full md:w-72 border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
                 <button type="submit"
-                        class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
@@ -184,7 +184,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="button"
-                                                    class="user-delete-button inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600">
+                                                    class="user-delete-button inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 cursor-pointer">
                                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -267,11 +267,11 @@
 
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="closeRoleModal()"
-                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer transition">
                     ยกเลิก
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition">
+                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium cursor-pointer transition">
                     บันทึก
                 </button>
             </div>
@@ -326,11 +326,11 @@
 
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="closeMembershipModal()"
-                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer transition">
                     ยกเลิก
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition">
+                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium cursor-pointer transition">
                     บันทึก
                 </button>
             </div>

@@ -254,7 +254,7 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span
                             class="text-red-500">*</span></label>
                     <select name="membership_type" required
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white cursor-pointer">
                         <option value="court_assistant" {{ old('membership_type', $staff->membership_type) === 'court_assistant' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
                         <option value="coach" {{ old('membership_type', $staff->membership_type) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
                     </select>
@@ -278,7 +278,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">เพศ</label>
                     <select name="gender"
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white cursor-pointer">
                         <option value="">ไม่ระบุ</option>
                         <option value="male" {{ old('gender', $staffProfile?->gender) === 'male' ? 'selected' : '' }}>ชาย
                         </option>
@@ -340,7 +340,7 @@
                             {{ $staffProfile?->profile_image ? 'ใช้รูปโปรไฟล์เดิม' : '' }}
                         </p>
                         <button type="button" id="remove-staff-image-btn"
-                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer">
                             ลบภาพ
                         </button>
                         <input type="hidden" name="remove_profile_image" id="remove-staff-image-input" value="0">
@@ -349,9 +349,9 @@
 
                 <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 md:col-span-2">
                     <button type="button" onclick="toggleModal('staffProfileModal', false)"
-                        class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">ยกเลิก</button>
+                        class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium cursor-pointer">ยกเลิก</button>
                     <button type="submit"
-                        class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium shadow-sm">บันทึกข้อมูล</button>
+                        class="px-4 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg font-medium shadow-sm cursor-pointer">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
