@@ -1456,6 +1456,22 @@ html { scroll-behavior: smooth; }
                                 ใช้ได้ <strong style="color:#fff;">{{ $package->num_of_use }}</strong> ครั้ง
                             </span>
                         </div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                @php
+                                    $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                                    $usableDays = $package->usable_days ?? [];
+                                @endphp
+                                @if(empty($usableDays))
+                                    ใช้ได้ <strong style="color:#fff;">ทุกวัน</strong>
+                                @else
+                                    ใช้ได้เฉพาะวัน <strong style="color:#fff;">{{ collect($usableDays)->map(fn($d) => $dayLabels[$d] ?? $d)->implode(', ') }}</strong>
+                                @endif
+                            </span>
+                        </div>
                         <div class="package-price-block">
                             <p class="package-price-label">ราคา</p>
                             <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
@@ -1470,7 +1486,7 @@ html { scroll-behavior: smooth; }
                             </button>
                         </form>
                         @endguest
-                        </div>
+                    </div>
                 @endforeach
             </div>
         @endif
