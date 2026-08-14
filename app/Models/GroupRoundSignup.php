@@ -14,6 +14,7 @@ class GroupRoundSignup extends Model
         'order_number',
         'credit_used',
         'status',
+        'is_reserve',
         'signed_up_at',
         'added_by',
     ];
@@ -21,6 +22,7 @@ class GroupRoundSignup extends Model
     protected $casts = [
         'order_number' => 'integer',
         'credit_used' => 'integer',
+        'is_reserve' => 'boolean',
         'signed_up_at' => 'datetime',
     ];
 

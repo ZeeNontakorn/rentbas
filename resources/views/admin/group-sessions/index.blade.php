@@ -132,7 +132,7 @@
         </table>
     </div>
 
-    {{-- Modal: สร้างเทมเพลตรอบประจำ --}}
+    {{-- Modal: สร้างเทมเพลตรอบประจำ (ไม่มีเดดไลน์ เพราะเป็นแค่เทมเพลต ยังไม่ใช่รอบจริง) --}}
     <div x-show="showSessionForm" x-cloak class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
         <div @click.outside="showSessionForm = false" class="bg-white rounded-xl w-full max-w-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">สร้างรอบประจำใหม่</h3>
@@ -270,7 +270,7 @@
         </div>
     </div>
 
-    {{-- Modal: เปิดรอบ (จากเทมเพลต หรือกำหนดเอง) --}}
+    {{-- Modal: เปิดรอบ (จากเทมเพลต หรือกำหนดเอง) — จุดเดียวที่มีเดดไลน์สละสิทธิ์ เพราะเป็นรอบจริง --}}
     <div x-show="showRoundForm" x-cloak class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
         <div @click.outside="showRoundForm = false" class="bg-white rounded-xl w-full max-w-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">เปิดรอบ</h3>
@@ -328,6 +328,12 @@
                             x-bind:value="prefillSession ? prefillSession.credit_cost : 0"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">ยกเลิกจองได้ถึง (ไม่บังคับ)</label>
+                    <input type="datetime-local" name="cancel_deadline"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                    <p class="mt-1 text-xs text-gray-400">ถ้าไม่กรอก จะยกเลิกจองเองได้ตลอด (ไม่มีเดดไลน์)</p>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" @click="showRoundForm = false" class="px-4 py-2 text-sm text-gray-600">ยกเลิก</button>
