@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Package extends Model
 {
     protected $fillable = [
-        'name', 'type', 'description', 'price', 'num_of_use', 'day', 'is_active', 'image'
+        'name', 'type', 'description', 'price', 'num_of_use', 'day', 'is_active', 'image', 'usable_days'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'day' => 'integer',
         'is_active' => 'boolean',
+        'usable_days' => 'array',
     ];
 
     public function getImageUrlAttribute(): ?string

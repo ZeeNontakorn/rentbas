@@ -16,14 +16,6 @@
         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
         <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
 
-        @if (session('success'))
-            <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm">{{ session('success') }}</div>
-        @endif
-        @if ($errors->any())
-            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                @foreach ($errors->all() as $err)<div>• {{ $err }}</div>@endforeach
-            </div>
-        @endif
         @if (auth()->user()->role === 'superadmin')
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                 <p class="mb-2">ตั้งค่าเบอร์มือถือ PromptPay เพื่อรับเงิน</p>
@@ -85,45 +77,51 @@
             <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-4 gap-3 items-end">
                 @csrf
                 <input type="hidden" name="sort_order" value="{{ $packages->count() + 1 }}">
-                <div>
+
+                {{-- เติมคลาส relative ที่ div คลุม --}}
+                <div class="relative">
                     <label class="block text-xs font-medium text-gray-500 mb-1">ป้ายชื่อ</label>
-                    <input type="text" name="label" required
+                    <input type="text" name="label"
                            value="{{ old('label') }}" placeholder="เช่น แพ็กสุดคุ้ม"
                            class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('label')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
                     @error('label', 'createPackage')
-                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                        {{-- เติม absolute top-full left-0 ให้ข้อความ error ลอยอยู่ใต้ช่องกรอก --}}
+                        <p class="absolute top-full left-0 text-[11px] text-red-600 mt-1 whitespace-nowrap">{{ $message }}</p>
                     @enderror
                 </div>
-                <div>
+
+                <div class="relative">
                     <label class="block text-xs font-medium text-gray-500 mb-1">ราคา (บาท)</label>
-                    <input type="number" step="0.01" min="1" name="price" required value="{{ old('price') }}" placeholder="เช่น 1000 บาท"
+                    <input type="number" step="0.01" min="1" name="price" value="{{ old('price') }}" placeholder="เช่น 1000 บาท"
                            class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('price')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
                     @error('price', 'createPackage')
-                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                        <p class="absolute top-full left-0 text-[11px] text-red-600 mt-1 whitespace-nowrap">{{ $message }}</p>
                     @enderror
                 </div>
-                <div>
+
+                <div class="relative">
                     <label class="block text-xs font-medium text-gray-500 mb-1">เครดิตที่ได้ (บาท)</label>
-                    <input type="number" step="0.01" min="1" name="credit" required value="{{ old('credit') }}" placeholder="เช่น 1000 บาท"
+                    <input type="number" step="0.01" min="1" name="credit" value="{{ old('credit') }}" placeholder="เช่น 1000 บาท"
                            class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('credit')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
                                       : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
                     @error('credit', 'createPackage')
-                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                        <p class="absolute top-full left-0 text-[11px] text-red-600 mt-1 whitespace-nowrap">{{ $message }}</p>
                     @enderror
                 </div>
+
                 <button type="submit" class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition">+ เพิ่ม</button>
             </form>
         </div>
 
-        {{-- Package list --}}
+       {{-- Package list --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
@@ -135,7 +133,12 @@
                             <th class="px-6 py-3 font-medium text-center">เครดิตที่ได้</th>
                             <th class="px-6 py-3 font-medium text-center">โบนัส</th>
                             <th class="px-6 py-3 font-medium text-center">แสดงผล</th>
-                            <th class="px-6 py-3 font-medium"></th>
+                            <th class="px-6 py-3 font-medium text-right w-32">
+                                <button type="button" id="saveAllBtn" disabled
+                                        class="w-24 text-center text-xs font-medium rounded-lg py-2 transition normal-case tracking-normal bg-gray-200 text-gray-400 cursor-not-allowed">
+                                    บันทึกแล้ว
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100" id="packageRows">
@@ -173,26 +176,25 @@
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
-                                <td class="px-6 py-3 text-center text-amber-600 font-medium">
+                                <td class="px-6 py-3 text-center text-amber-600 font-medium bonus-cell">
                                     @if($pkg->bonus_satang > 0) +฿{{ number_format($pkg->bonus_satang / 100, 0) }} @else — @endif
                                 </td>
                                 <td class="px-6 py-3 text-center">
                                     <input type="hidden" form="editPkg{{ $pkg->id }}" name="sort_order" value="{{ $pkg->sort_order }}">
-                                    <input form="editPkg{{ $pkg->id }}" type="checkbox" name="is_active" value="1" {{ $pkg->is_active ? 'checked' : '' }} class="accent-emerald-500 w-4 h-4">
+
+                                    {{-- เปลี่ยนเป็น Toggle Switch สีเขียว Emerald --}}
+                                    <div class="flex justify-center">
+                                        <label class="relative inline-flex cursor-pointer items-center">
+                                            <input type="hidden" form="editPkg{{ $pkg->id }}" name="is_active" value="0">
+                                            <input form="editPkg{{ $pkg->id }}" type="checkbox" name="is_active" value="1" {{ $pkg->is_active ? 'checked' : '' }} class="peer sr-only">
+                                            <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
+                                        </label>
+                                    </div>
                                 </td>
-                                <td class="px-6 py-3 text-right whitespace-nowrap">
-                                    <button type="submit" form="editPkg{{ $pkg->id }}" class="text-emerald-600 hover:text-emerald-700 font-medium text-xs mr-3">บันทึก</button>
-                                    <form method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="inline" onsubmit="return confirm('ลบแพ็กเกจนี้?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
-                                    </form>
+                                <td class="px-6 py-3 text-center whitespace-nowrap">
+                                    <button type="button" onclick="confirmDeletePackage('{{ $pkg->id }}', '{{ addslashes($pkg->label) }}')" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
                                 </td>
                             </tr>
-                            <form id="editPkg{{ $pkg->id }}" method="POST" action="{{ route('admin.credit-topup-packages.update', $pkg) }}" class="hidden">
-                                @csrf
-                                @method('PUT')
-                            </form>
                         @empty
                             <tr><td colspan="7" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
                         @endforelse
@@ -200,25 +202,54 @@
                 </table>
             </div>
         </div>
-        <div id="reorderToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
+
+        {{-- ย้าย <form> ทั้งหมดมาไว้ด้านนอกตารางตรงนี้ --}}
+        @foreach($packages as $pkg)
+            <form id="editPkg{{ $pkg->id }}" method="POST" action="{{ route('admin.credit-topup-packages.update', $pkg) }}" class="hidden">
+                @csrf
+                @method('PUT')
+            </form>
+            <form id="deletePkg{{ $pkg->id }}" method="POST" action="{{ route('admin.credit-topup-packages.destroy', $pkg) }}" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endforeach
+
+        <div id="pageToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
     </div>
 </div>
 
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script>
-(function () {
-    const tbody = document.getElementById('packageRows');
-    if (!tbody || typeof Sortable === 'undefined') return;
-
-    const toast = document.getElementById('reorderToast');
+    // ─── Toast แจ้งผลลัพธ์แบบไม่บล็อกหน้าจอ (รูปแบบเดียวกับหน้าตั้งค่าราคา) ───
     function showToast(text, isError) {
+        const toast = document.getElementById('pageToast');
+        if (!toast) return;
         toast.textContent = text;
         toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
         toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
         clearTimeout(showToast._t);
         showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // ─── ข้อผิดพลาดจาก server ตอนโหลดหน้า: หลายบรรทัด/สำคัญกว่า จึงใช้ modal แทน toast ที่หายไปเร็วเกินจะอ่านทัน ───
+        @if ($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'ทำรายการไม่สำเร็จ',
+                html: @js('• ' . implode('<br>• ', $errors->all())),
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'เข้าใจแล้ว',
+            });
+        @endif
+    });
+</script>
+<script>
+(function () {
+    const tbody = document.getElementById('packageRows');
+    if (!tbody || typeof Sortable === 'undefined') return;
 
     Sortable.create(tbody, {
         handle: '.drag-handle',
@@ -250,6 +281,184 @@
         }
     });
 })();
+</script>
+
+{{-- Bulk save for the package list rows --}}
+<script>
+(function () {
+    const saveBtn = document.getElementById('saveAllBtn');
+    const rows = Array.from(document.querySelectorAll('#packageRows tr[data-id]'));
+    if (!saveBtn || rows.length === 0) return;
+
+    const SAVED_CLASSES = ['bg-gray-200', 'text-gray-400', 'cursor-not-allowed'];
+    const DIRTY_CLASSES = ['bg-emerald-500', 'hover:bg-emerald-600', 'text-white', 'cursor-pointer'];
+
+    const FIELD_DIRTY_CLASSES = ['border-yellow-400', 'ring-2', 'ring-yellow-200'];
+
+    function fieldsOf(row) {
+        return {
+            label: row.querySelector('input[name="label"]'),
+            price: row.querySelector('input[name="price"]'),
+            credit: row.querySelector('input[name="credit"]'),
+            is_active: row.querySelector('input[type="checkbox"][name="is_active"]'),
+        };
+    }
+
+    function readRowState(row) {
+        const f = fieldsOf(row);
+        return {
+            label: f.label ? f.label.value : '',
+            price: f.price ? f.price.value : '',
+            credit: f.credit ? f.credit.value : '',
+            is_active: f.is_active ? f.is_active.checked : false,
+        };
+    }
+
+    // ราคา/เครดิตในช่องกรอกเป็นหน่วยบาทอยู่แล้ว
+    function calcBonusText(priceVal, creditVal) {
+        const price = parseFloat(priceVal) || 0;
+        const credit = parseFloat(creditVal) || 0;
+        const diff = credit - price;
+        if (diff > 0) {
+            return '+฿' + diff.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+        return '—';
+    }
+
+    function updateBonusCell(row, state) {
+        const bonusCell = row.querySelector('.bonus-cell');
+        if (bonusCell) bonusCell.textContent = calcBonusText(state.price, state.credit);
+    }
+
+    function setFieldDirty(input, dirty) {
+        if (!input) return;
+        if (dirty) {
+            input.classList.remove('border-gray-200', 'border-red-400', 'bg-red-50/40');
+            input.classList.add(...FIELD_DIRTY_CLASSES);
+        } else {
+            input.classList.remove(...FIELD_DIRTY_CLASSES);
+            input.classList.add('border-gray-200');
+        }
+    }
+
+    function refreshFieldHighlight(row) {
+        const cur = readRowState(row);
+        const init = row._initial;
+        const f = fieldsOf(row);
+        setFieldDirty(f.label, cur.label !== init.label);
+        setFieldDirty(f.price, cur.price !== init.price);
+        setFieldDirty(f.credit, cur.credit !== init.credit);
+        setFieldDirty(f.is_active, cur.is_active !== init.is_active);
+    }
+
+    function clearRowHighlight(row) {
+        const f = fieldsOf(row);
+        Object.values(f).forEach(input => setFieldDirty(input, false));
+    }
+
+    // Snapshot the values currently on the page as the "unchanged" baseline.
+    rows.forEach(row => { row._initial = readRowState(row); });
+
+    function rowIsDirty(row) {
+        const cur = readRowState(row);
+        const init = row._initial;
+        return cur.label !== init.label
+            || cur.price !== init.price
+            || cur.credit !== init.credit
+            || cur.is_active !== init.is_active;
+    }
+
+    function refreshSaveButton() {
+        const dirty = rows.some(rowIsDirty);
+        saveBtn.disabled = !dirty;
+        saveBtn.textContent = dirty ? 'บันทึก' : 'บันทึกแล้ว';
+        saveBtn.classList.remove(...SAVED_CLASSES, ...DIRTY_CLASSES);
+        saveBtn.classList.add(...(dirty ? DIRTY_CLASSES : SAVED_CLASSES));
+    }
+
+    rows.forEach(row => {
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => { refreshFieldHighlight(row); refreshSaveButton(); });
+            input.addEventListener('change', () => { refreshFieldHighlight(row); refreshSaveButton(); });
+        });
+    });
+
+    refreshSaveButton();
+
+    saveBtn.addEventListener('click', async function () {
+        const dirtyRows = rows.filter(rowIsDirty);
+        if (dirtyRows.length === 0) return;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'กำลังบันทึก...';
+
+        try {
+            await Promise.all(dirtyRows.map(row => {
+                const form = document.getElementById('editPkg' + row.dataset.id);
+                const formData = new FormData(form);
+                return fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: formData,
+                }).then(res => {
+                    if (!res.ok) throw new Error('save failed for package ' + row.dataset.id);
+                });
+            }));
+
+            // อัปเดตค่า baseline, คำนวณโบนัสใหม่ และล้างเส้นขอบสีเหลืองของช่องที่เพิ่งบันทึกไป
+            dirtyRows.forEach(row => {
+                row._initial = readRowState(row);
+                updateBonusCell(row, row._initial);
+                clearRowHighlight(row);
+            });
+
+            // เรียกใช้ Toast มุมขวาบน สำหรับตอนกดบันทึกสำเร็จ
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'บันทึกการเปลี่ยนแปลงเรียบร้อยแล้ว',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+        } catch (err) {
+            console.error(err);
+
+            // เรียกใช้ Toast มุมขวาบน สำหรับตอนเกิดข้อผิดพลาด
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: 'บันทึกไม่สำเร็จ กรุณาลองใหม่',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+        } finally {
+            refreshSaveButton();
+        }
+    });
+})();
+
+function confirmDeletePackage(packageId, packageLabel) {
+    Swal.fire({
+        title: 'ยืนยันลบแพ็กเกจนี้ใช่ไหม?',
+        text: `เมื่อลบแพ็กเกจ "${packageLabel}" แล้วจะไม่สามารถกู้คืนข้อมูลได้`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deletePkg' + packageId).submit();
+        }
+    });
+}
 </script>
 @endpush
 @endsection
