@@ -73,6 +73,16 @@ class PricingController extends Controller
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'price_per_hour' => ['required', 'numeric', 'min:0', 'max:100000'], // หน่วยบาท
             'is_active' => ['sometimes', 'boolean'],
+        ], [
+            'start_time.required' => 'กรุณากรอกเวลาเริ่มต้น',
+            'start_time.date_format' => 'รูปแบบเวลาเริ่มต้นไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'end_time.required' => 'กรุณากรอกเวลาสิ้นสุด',
+            'end_time.date_format' => 'รูปแบบเวลาสิ้นสุดไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'end_time.after' => 'เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น',
+            'price_per_hour.required' => 'กรุณากรอกราคาต่อชั่วโมง',
+            'price_per_hour.numeric' => 'ราคาต่อชั่วโมงต้องเป็นตัวเลข',
+            'price_per_hour.min' => 'ราคาต่อชั่วโมงต้องไม่น้อยกว่า 0 บาท',
+            'price_per_hour.max' => 'ราคาต่อชั่วโมงต้องไม่เกิน 100,000 บาท',
         ]);
 
         $this->assertWithinTimeWindow($pricingRule->day_type, $data['start_time'], $data['end_time']);
@@ -168,6 +178,56 @@ class PricingController extends Controller
     }
 
     /**
+     * ข้อความ error ภาษาไทยของฟอร์มแพ็กเกจ (แยกเป็น method ให้เรียกซ้ำได้ทั้งตอนสร้างและแก้ไข
+     * เช่นเดียวกับ packageRules())
+     */
+    protected function packageMessages(): array
+    {
+        return [
+            'code.string' => 'รหัสภายในต้องเป็นตัวอักษร',
+            'code.max' => 'รหัสภายในต้องไม่เกิน 50 ตัวอักษร',
+            'code.alpha_dash' => 'รหัสภายในใช้ได้เฉพาะตัวอักษร ตัวเลข ขีดกลาง (-) และขีดล่าง (_) เท่านั้น',
+            'code.unique' => 'รหัสภายในนี้ถูกใช้ไปแล้ว กรุณาตั้งรหัสอื่น',
+            'label.required' => 'กรุณากรอกชื่อแพ็กเกจ',
+            'label.string' => 'ชื่อแพ็กเกจต้องเป็นตัวอักษร',
+            'label.max' => 'ชื่อแพ็กเกจต้องไม่เกิน 150 ตัวอักษร',
+            'category.required' => 'กรุณากรอกหมวดหมู่',
+            'category.string' => 'หมวดหมู่ต้องเป็นตัวอักษร',
+            'category.max' => 'หมวดหมู่ต้องไม่เกิน 50 ตัวอักษร',
+            'court_type.in' => 'กรุณาเลือกประเภทสนามให้ถูกต้อง',
+            'available_days.array' => 'รูปแบบวันที่ใช้โปรได้ไม่ถูกต้อง',
+            'available_days.*.in' => 'วันที่เลือกไม่ถูกต้อง กรุณาเลือกใหม่',
+            'available_start_time.date_format' => 'รูปแบบเวลาเริ่มต้นไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'available_end_time.date_format' => 'รูปแบบเวลาสิ้นสุดไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'duration_hours.integer' => 'ระยะเวลาที่ต้องจองต้องเป็นตัวเลขจำนวนเต็ม',
+            'duration_hours.min' => 'ระยะเวลาที่ต้องจองต้องไม่น้อยกว่า 1 ชั่วโมง',
+            'duration_hours.max' => 'ระยะเวลาที่ต้องจองต้องไม่เกิน 24 ชั่วโมง',
+            'max_people.required' => 'กรุณากรอกจำนวนคนสูงสุด',
+            'max_people.integer' => 'จำนวนคนสูงสุดต้องเป็นตัวเลขจำนวนเต็ม',
+            'max_people.min' => 'จำนวนคนสูงสุดต้องไม่น้อยกว่า 1 คน',
+            'max_people.max' => 'จำนวนคนสูงสุดต้องไม่เกิน 1,000 คน',
+            'base_price.required' => 'กรุณากรอกราคาปกติ',
+            'base_price.numeric' => 'ราคาปกติต้องเป็นตัวเลข',
+            'base_price.min' => 'ราคาปกติต้องไม่น้อยกว่า 0 บาท',
+            'holiday_price.numeric' => 'ราคาวันหยุดนักขัตฤกษ์ต้องเป็นตัวเลข',
+            'holiday_price.min' => 'ราคาวันหยุดนักขัตฤกษ์ต้องไม่น้อยกว่า 0 บาท',
+            'weekend_special_price.numeric' => 'ราคาพิเศษเสาร์-อาทิตย์ต้องเป็นตัวเลข',
+            'weekend_special_price.min' => 'ราคาพิเศษเสาร์-อาทิตย์ต้องไม่น้อยกว่า 0 บาท',
+            'weekend_special_start.date_format' => 'รูปแบบเวลาเริ่มต้นราคาพิเศษไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'weekend_special_start.required_with' => 'กรุณากรอกเวลาเริ่มต้น เนื่องจากมีการตั้งราคาพิเศษเสาร์-อาทิตย์',
+            'weekend_special_end.date_format' => 'รูปแบบเวลาสิ้นสุดราคาพิเศษไม่ถูกต้อง (ต้องเป็น HH:MM)',
+            'weekend_special_end.after' => 'เวลาสิ้นสุดราคาพิเศษต้องมากกว่าเวลาเริ่มต้น',
+            'weekend_special_end.required_with' => 'กรุณากรอกเวลาสิ้นสุด เนื่องจากมีการตั้งราคาพิเศษเสาร์-อาทิตย์',
+            'session_count.integer' => 'จำนวนครั้ง/เซสชันต้องเป็นตัวเลขจำนวนเต็ม',
+            'session_count.min' => 'จำนวนครั้ง/เซสชันต้องไม่น้อยกว่า 1 ครั้ง',
+            'session_count.max' => 'จำนวนครั้ง/เซสชันต้องไม่เกิน 255 ครั้ง',
+            'validity_days.integer' => 'อายุแพ็กเกจต้องเป็นตัวเลขจำนวนเต็ม',
+            'validity_days.min' => 'อายุแพ็กเกจต้องไม่น้อยกว่า 1 วัน',
+            'validity_days.max' => 'อายุแพ็กเกจต้องไม่เกิน 3,650 วัน',
+        ];
+    }
+
+    /**
      * แปลง input จากฟอร์ม (หน่วยบาท) เป็นค่าที่จะบันทึกลง DB (หน่วยสตางค์ + normalize ค่าว่าง)
      */
     protected function packagePayload(array $data, ?PromotionPackage $existing = null): array
@@ -202,7 +262,7 @@ class PricingController extends Controller
      */
     public function storePackage(Request $request)
     {
-        $data = $request->validate($this->packageRules());
+        $data = $request->validate($this->packageRules(), $this->packageMessages());
 
         $package = PromotionPackage::create($this->packagePayload($data));
 
@@ -214,7 +274,7 @@ class PricingController extends Controller
      */
     public function updatePackage(Request $request, PromotionPackage $promotionPackage)
     {
-        $data = $request->validate($this->packageRules($promotionPackage));
+        $data = $request->validate($this->packageRules($promotionPackage), $this->packageMessages());
 
         $promotionPackage->update($this->packagePayload($data, $promotionPackage));
 
