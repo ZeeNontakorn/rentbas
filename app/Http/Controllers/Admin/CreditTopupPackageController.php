@@ -37,7 +37,16 @@ class CreditTopupPackageController extends Controller
     protected function messages(): array
     {
         return [
+            'label.required' => 'กรุณากรอกชื่อแพ็กเกจ',
+            'label.max' => 'ชื่อแพ็กเกจต้องไม่เกิน 50 ตัวอักษร',
+            'price.required' => 'กรุณากรอกราคาแพ็กเกจ',
+            'price.numeric' => 'กรุณากรอกราคาแพ็กเกจเป็นตัวเลข',
             'price.min' => 'ราคาแพ็กเกจต้องไม่ต่ำกว่า 1 บาท',
+            'price.max' => 'ราคาแพ็กเกจต้องไม่เกิน 1,000,000 บาท',
+            'credit.required' => 'กรุณากรอกจำนวนเครดิตที่ได้',
+            'credit.numeric' => 'กรุณากรอกจำนวนเครดิตที่ได้เป็นตัวเลข',
+            'credit.min' => 'จำนวนเครดิตที่ได้ต้องไม่ต่ำกว่า 1 เครดิต',
+            'credit.max' => 'จำนวนเครดิตที่ได้ต้องไม่เกิน 1,000,000 เครดิต',
             'sort_order.integer' => 'ลำดับต้องเป็นตัวเลขจำนวนเต็มเท่านั้น',
             'sort_order.min' => 'ลำดับต้องไม่ติดลบ',
         ];
@@ -45,7 +54,8 @@ class CreditTopupPackageController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validateWithBag('createPackage', $this->rules(), $this->messages());
+        $data = $request->validateWithBag('createPackage', $this->rules(), $this->messages(),);
+
 
         CreditTopupPackage::create([
             'label' => $data['label'],
@@ -131,6 +141,8 @@ class CreditTopupPackageController extends Controller
             // ชื่อบัญชีต้องเป็นตัวอักษรไทยเท่านั้น (เว้นวรรค/จุดได้ เผื่อคำนำหน้าเช่น "น.ส.")
             'promptpay_name' => ['required', 'string', 'max:100', 'regex:/^[\x{0E00}-\x{0E7F}\s.]+$/u'],
         ], [
+            'promptpay_number.required' => 'กรุณากรอกเบอร์มือถือ PromptPay',
+            'promptpay_name.required' => 'กรุณากรอกชื่อบัญชี PromptPay',
             'promptpay_number.regex' => 'กรุณากรอกเบอร์มือถือให้ถูกต้อง (ขึ้นต้นด้วย 0 ตามด้วยตัวเลข 9 หลัก เช่น 0812345678)',
             'promptpay_name.regex' => 'กรุณากรอกชื่อบัญชีเป็นภาษาไทยเท่านั้น',
         ]);
