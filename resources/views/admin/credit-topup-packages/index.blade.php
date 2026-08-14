@@ -54,7 +54,7 @@
 
         {{-- LINE URL --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 class="font-medium text-gray-700 text-sm mb-4">ลิงก์ LINE สำหรับปุ่ม "เติมผ่าน LINE ไวกว่า"</h2>
+            <h2 class="font-medium text-gray-700 text-sm mb-4">ลิงก์ LINE สำหรับปุ่ม "เติมผ่าน LINE"</h2>
             <form method="POST" action="{{ route('admin.credit-topup-packages.line-url') }}" class="flex flex-col sm:flex-row gap-3 items-start">
                 @csrf
                 <div class="flex-1">
