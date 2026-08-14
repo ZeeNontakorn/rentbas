@@ -1466,18 +1466,28 @@ html { scroll-behavior: smooth; }
                             ลงชื่อแล้ว {{ $round->players_count }}/{{ $round->max_players }} คน
                             @if(!$isFull) &middot; เหลือ {{ $spotsLeft }} ที่ @endif
                         </p>
-                        @if($isFull)
-                            <span class="gs-card-btn full">เต็มแล้ว</span>
-                        @else
-                            <div class="gs-btn-row">
-                                @auth
-                                    <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn">ลงชื่อจอง</a>
-                                @else
-                                    <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
-                                @endauth
-                                <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
-                            </div>
-                        @endif
+                       @php
+    $myGroupSignup = auth()->check()
+        ? $round->confirmedSignups->firstWhere('user_id', auth()->id())
+        : null;
+@endphp
+
+@if($myGroupSignup)
+    <span class="gs-card-btn full" style="background:#ebfbee;color:#2f9e44;">
+        ✓ จองแล้ว &middot; ลำดับที่ {{ $myGroupSignup->order_number }}
+    </span>
+@elseif($isFull)
+    <span class="gs-card-btn full">เต็มแล้ว</span>
+@else
+    <div class="gs-btn-row">
+        @auth
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn">ลงชื่อจอง</a>
+        @else
+            <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
+        @endauth
+        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+    </div>
+@endif
                     </div>
                 </div>
             </div>

@@ -206,16 +206,33 @@ class GroupSessionController extends Controller
 
             $nextOrder = ((int) GroupRoundSignup::where('group_round_id', $round->id)->max('order_number')) + 1;
 
-            GroupRoundSignup::create([
-                'group_round_id' => $round->id,
-                'user_id' => $user?->id,
-                'guest_name' => $guestName,
-                'order_number' => $nextOrder,
-                'credit_used' => $creditUsed,
-                'status' => 'confirmed',
-                'signed_up_at' => now(),
-                'added_by' => auth()->id(),
-            ]);
+            if ($user) {
+    GroupRoundSignup::updateOrCreate(
+        [
+            'group_round_id' => $round->id,
+            'user_id' => $user->id,
+        ],
+        [
+            'guest_name' => null,
+            'order_number' => $nextOrder,
+            'credit_used' => $creditUsed,
+            'status' => 'confirmed',
+            'signed_up_at' => now(),
+            'added_by' => auth()->id(),
+        ]
+    );
+} else {
+    GroupRoundSignup::create([
+        'group_round_id' => $round->id,
+        'user_id' => null,
+        'guest_name' => $guestName,
+        'order_number' => $nextOrder,
+        'credit_used' => $creditUsed,
+        'status' => 'confirmed',
+        'signed_up_at' => now(),
+        'added_by' => auth()->id(),
+    ]);
+}
 
             return back()->with('success', 'เพิ่ม '.($user?->name ?? $guestName)." เป็นลำดับที่ {$nextOrder} แล้ว");
         });

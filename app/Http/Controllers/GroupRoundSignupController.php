@@ -127,15 +127,20 @@ class GroupRoundSignupController extends Controller
                 ->where('group_round_id', $round->id)
                 ->max('order_number')) + 1;
 
-            GroupRoundSignup::create([
-                'group_round_id' => $round->id,
-                'user_id' => $lockedUser->id,
-                'order_number' => $nextOrder,
-                'credit_used' => $round->credit_cost,
-                'status' => 'confirmed',
-                'signed_up_at' => now(),
-                'added_by' => null,
-            ]);
+            GroupRoundSignup::updateOrCreate(
+    [
+        'group_round_id' => $round->id,
+        'user_id' => $lockedUser->id,
+    ],
+    [
+        'order_number' => $nextOrder,
+        'credit_used' => $round->credit_cost,
+        'status' => 'confirmed',
+        'signed_up_at' => now(),
+        'added_by' => null,
+        'guest_name' => null,
+    ]
+);
 
             return redirect()->route('home')->with(
                 'success',
