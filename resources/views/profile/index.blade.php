@@ -219,26 +219,15 @@
 
                     {{-- RIGHT: avatar upload (staff only: coach / court_assistant) --}}
                     @if ($isStaff)
-                    @php
-                        $staffProfileImageUrl = $user->staffProfile?->profile_image_url;
-                        $staffDefaultImage = match ($user->staffProfile?->gender ?? null) {
-                            'male' => Storage::disk('public')->url('defaults/coach-male.png'),
-                            'female' => Storage::disk('public')->url('defaults/coach-female.png'),
-                            default => Storage::disk('public')->url('defaults/coach-default.svg'),
-                        };
-                    @endphp
                     <div class="avatar-wrap">
                         <div class="avatar-frame" onclick="document.getElementById('avatarInput').click()">
-                            @if (!empty($staffProfileImageUrl))
-                                <img id="avatarPreview" src="{{ $staffProfileImageUrl }}"
+                            @if (!empty($user->avatar))
+                                <img id="avatarPreview" src="{{ asset('storage/' . $user->avatar) }}"
                                      alt="Avatar" class="avatar-preview">
-                            @elseif(!empty($staffDefaultImage))
-                                <img id="avatarPreview" src="{{ $staffDefaultImage }}"
-                                     alt="Staff default avatar" class="avatar-preview">
                             @else
                                 <div id="avatarPreview" class="avatar-preview">
                                     <div class="avatar-placeholder-box">
-                                        <span class="avatar-placeholder-text">{{ mb_substr($user->name, 0, 1) }}</span>
+                                        <span class="avatar-placeholder-text">No Image</span>
                                     </div>
                                 </div>
                             @endif
@@ -251,9 +240,9 @@
                             </div>
                         </div>
 
-                        <input type="file" name="profile_image" id="avatarInput" accept="image/*" class="hidden">
+                        <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden">
                         <div class="avatar-hint">คลิกที่รูปเพื่อเปลี่ยนรูปโปรไฟล์<br>(JPG, PNG ไม่เกิน 2MB)</div>
-                        @error('profile_image') <div class="form-error text-center">{{ $message }}</div> @enderror
+                        @error('avatar') <div class="form-error text-center">{{ $message }}</div> @enderror
                     </div>
                     @endif
 
