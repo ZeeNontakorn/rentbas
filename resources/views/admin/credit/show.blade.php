@@ -81,7 +81,7 @@
                             <div class="flex-1 w-full">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">ช่องทางชำระเงิน</label>
                                 <select name="payment_method" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none cursor-pointer">
                                     <option value="">-- เลือกช่องทาง --</option>
                                     <option value="line">LINE / QR Code</option>
                                     <option value="cash_counter">ชำระเงินสดที่เคาน์เตอร์</option>
@@ -90,13 +90,13 @@
                             <div class="flex-1 w-full mx-auto mt-3">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">ชื่อ-นามสกุลผู้ดำเนินการ </label>
                                 <input type="text" name="processed_by_name" required maxlength="100" placeholder="เช่น สมชาย ใจดี"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
                     </div>
 
                     <button type="submit"
-                            class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition whitespace-nowrap">
+                            class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
                         เติมเครดิต
                     </button>
                 </form>

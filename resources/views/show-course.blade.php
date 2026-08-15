@@ -86,10 +86,10 @@
                 @endif
 
                 <div class="mt-4 rounded-xl border-l-4 border-[#f36f21] bg-orange-50 p-4 text-sm leading-6 text-stone-600">
-                    ตอนนี้ยังไม่มีระบบชำระเงินออนไลน์ แอดไลน์เพื่อสอบถามรอบที่ว่าง ราคา และสมัครเรียนกับทีมงานได้โดยตรง
+                    ตอนนี้ระบบยังไม่มีฟีเจอร์ซื้อคอร์สเรียนออนไลน์ กรุณาติดต่อแอดมินผ่านแอปพลิเคชันไลน์ เพื่อสอบถามรายละเอียด และจองคอร์สเรียนได้โดยตรง
                 </div>
                 <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener"
-                   class="mt-4 flex w-full items-center justify-center rounded-xl bg-[#f36f21] px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-[#d95512]">
+                   class="mt-4 flex w-full items-center justify-center rounded-xl bg-green-500 px-4 py-3.5 text-sm font-bold text-white shadow-md shadow-green-200 transition hover:-translate-y-0.5 hover:bg-green-600">
                     แอดไลน์สอบถามและสมัครเรียน
                 </a>
                 <p class="mt-3 text-center text-xs text-slate-500">หรือติดต่อ <a class="font-bold text-[#d95512]" href="tel:0812460000">081-246-0000</a></p>

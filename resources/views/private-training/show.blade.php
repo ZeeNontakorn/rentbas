@@ -142,7 +142,7 @@
 <div id="bookTrainingModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
     <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
         <div class="border-b border-gray-100 bg-gray-50 px-6 py-4">
-            <h3 class="font-bold text-gray-800">ยืนยันคำขอ Private Training</h3>
+            <h3 class="font-bold text-gray-800">ยืนยันคำขอจองเทรนเนอร์ส่วนตัว</h3>
         </div>
         <form action="{{ route('private-training.store') }}" method="POST" class="space-y-4 p-6">
             @csrf
@@ -158,7 +158,7 @@
             <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-700">เลือกแพ็กเกจที่ต้องการใช้ <span class="text-red-500">*</span></label>
                 <select name="package_purchase_id" id="package-purchase-select" required
-                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
                     <option value="">-- กรุณาเลือกแพ็กเกจ --</option>
                     @foreach ($myPackagePurchases as $pp)
                         <option value="{{ $pp->id }}" data-days="{{ json_encode($pp->package->usable_days ?? []) }}">
@@ -174,7 +174,7 @@
             <div>
                 <label for="assistant-requested" class="mb-1.5 block text-xs font-semibold text-gray-700">บริการผู้ช่วยสนามเก็บบาส</label>
                 <select name="assistant_requested" id="assistant-requested" required
-                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
                     <option value="0">ไม่ต้องการ</option>
                     <option value="1">ต้องการผู้ช่วยสนาม</option>
                 </select>
@@ -195,9 +195,9 @@
             <p class="text-xs text-gray-500">ระบบใช้สิทธิ์แพ็กเกจ 1 ครั้งตอนส่งคำขอ และจะไม่หักเครดิตเพิ่มตอนแอดมินจัดสนาม หากคำขอถูกยกเลิกหรือปฏิเสธ ระบบจะคืนสิทธิ์ให้</p>
             <div class="flex gap-2 pt-2">
                 <button type="button" id="cancel-booking-modal"
-                    class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
+                    class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 cursor-pointer">ยกเลิก</button>
                 <button type="submit"
-                    class="w-1/2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">ส่งคำขอ</button>
+                    class="w-1/2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer">ส่งคำขอ</button>
             </div>
         </form>
     </div>

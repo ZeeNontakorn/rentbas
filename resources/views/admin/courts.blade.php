@@ -134,7 +134,7 @@
                     <p class="text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
                 </div>
                 <button type="button" onclick="openCourtModal()"
-                    class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2">
+                    class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M12 5v14m7-7H5" />
                     </svg>
@@ -307,7 +307,7 @@
 
                                     <!-- ปุ่มบันทึก -->
                                     <button type="submit"
-                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3">
+                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3 cursor-pointer">
                                         บันทึก
                                     </button>
                                 </form>
@@ -318,7 +318,7 @@
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
                                     <button type="submit"
-                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center">
+                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center cursor-pointer">
                                         ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
                                     </button>
                                 </form>
@@ -547,9 +547,9 @@
 
                     <div class="flex items-center justify-end gap-3 pt-2">
                         <button type="button" onclick="closeCourtModal()"
-                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition">ยกเลิก</button>
+                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition">ยกเลิก</button>
                         <button type="submit"
-                            class="rounded-lg bg-[#5271ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f5ee8] transition"
+                            class="rounded-lg bg-[#5271ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f5ee8] cursor-pointer transition"
                             id="courtModalSubmit">บันทึก</button>
                     </div>
                 </form>

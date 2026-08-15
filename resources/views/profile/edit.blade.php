@@ -134,7 +134,7 @@
                         </div>
                         <button type="button"
                                 onclick="requestOtp()"
-                                class="w-full py-2.5 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition"
+                                class="w-full py-2.5 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 cursor-pointer transition"
                                 style="font-family:'Kanit',sans-serif;">
                             ส่ง OTP ไปยังอีเมลใหม่
                         </button>
@@ -144,7 +144,7 @@
                     <div class="section-divider" style="margin-top:20px;">บันทึก</div>
 
                     <button type="submit"
-                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px]"
+                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px] cursor-pointer"
                             style="font-family:'Kanit',sans-serif;">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -189,7 +189,7 @@
                     </div>
                     <div class="section-divider" style="margin-top:20px;">บันทึก</div>
                     <button type="submit"
-                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px]"
+                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px] cursor-pointer"
                             style="font-family:'Kanit',sans-serif;">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -198,9 +198,9 @@
                     class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 bg-white resize-none"></textarea>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeRejectModal()"
-                        class="w-1/2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">ยกเลิก</button>
+                        class="w-1/2 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium cursor-pointer">ยกเลิก</button>
                     <button type="submit"
-                        class="w-1/2 px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition font-medium shadow-sm">ยืนยันปฏิเสธ</button>
+                        class="w-1/2 px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition font-medium shadow-sm cursor-pointer">ยืนยันปฏิเสธ</button>
                 </div>
             </form>
         </div>

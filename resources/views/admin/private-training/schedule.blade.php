@@ -35,7 +35,7 @@
             <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
                 <div class="w-full sm:w-72">
                     <label for="staff-filter" class="mb-1.5 block text-xs font-semibold text-slate-600">เลือกบุคลากร</label>
-                    <select id="staff-filter" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                    <select id="staff-filter" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 cursor-pointer">
                         <option value="all" @selected($selectedStaffId === 'all')>ดูรวมทุกคน</option>
                         @foreach($staffs as $staff)
                             <option value="{{ $staff->id }}" @selected($staff->id === $selectedStaffId)>
@@ -44,7 +44,7 @@
                         @endforeach
                     </select>
                 </div>
-                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700">
+                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 cursor-pointer">
                     <span class="text-base leading-none">+</span> เพิ่มกำหนดการ
                 </button>
             </div>
@@ -92,7 +92,7 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="admin-staff-id" class="mb-1 block text-xs font-semibold text-slate-600">เจ้าของ Schedule</label>
-                    <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="">เลือกโค้ชหรือผู้ช่วยสนาม</option>
                         @foreach($staffs as $staff)
                             <option value="{{ $staff->id }}" data-membership="{{ $staff->membership_type }}">{{ $staff->name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}</option>
@@ -101,7 +101,7 @@
                 </div>
                 <div>
                     <label for="admin-event-type" class="mb-1 block text-xs font-semibold text-slate-600">ประเภท</label>
-                    <select id="admin-event-type" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <select id="admin-event-type" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="general">กิจกรรมส่วนตัว</option>
                         <option value="work">งาน</option>
                         <option value="leave">ลางาน</option>
@@ -114,16 +114,16 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2 sm:col-span-1">
                     <label for="admin-event-date" class="mb-1 block text-xs font-semibold text-slate-600">วันที่</label>
-                    <input id="admin-event-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <input id="admin-event-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="admin-event-start" class="mb-1 block text-xs font-semibold text-slate-600">เริ่ม</label>
-                        <input id="admin-event-start" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                        <input id="admin-event-start" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                     </div>
                     <div>
                         <label for="admin-event-end" class="mb-1 block text-xs font-semibold text-slate-600">สิ้นสุด</label>
-                        <input id="admin-event-end" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                        <input id="admin-event-end" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                     </div>
                 </div>
             </div>
@@ -131,7 +131,7 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="admin-event-recurrence" class="mb-1 block text-xs font-semibold text-slate-600">การเกิดซ้ำ</label>
-                    <select id="admin-event-recurrence" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <select id="admin-event-recurrence" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="none">ไม่เกิดซ้ำ</option>
                         <option value="daily">ทุกวัน</option>
                         <option value="weekly">เลือกวันในแต่ละสัปดาห์</option>
@@ -179,8 +179,8 @@
         <div class="flex items-center gap-2 border-t border-slate-100 px-6 py-4">
             <button id="delete-admin-event" type="button" class="hidden rounded-xl px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">ลบ</button>
             <div class="flex-1"></div>
-            <button type="button" data-close-admin-modal class="rounded-xl px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">ยกเลิก</button>
-            <button type="submit" class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700">บันทึก</button>
+            <button type="button" data-close-admin-modal class="rounded-xl px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 cursor-pointer">ยกเลิก</button>
+            <button type="submit" class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700 cursor-pointer">บันทึก</button>
         </div>
     </form>
 </div>
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setCheckedDays(props.recurrenceDays || []);
         selectColor(event?.backgroundColor || '#7986cb');
         field('admin-modal-title').textContent = event ? 'แก้ไขกำหนดการ' : 'เพิ่มกำหนดการ';
-        field('admin-modal-note').textContent = props.recurrence && props.recurrence !== 'none' ? 'การแก้ไขจะมีผลกับ Event ที่เกิดซ้ำทั้งชุด' : 'จัดการ Schedule ของโค้ชหรือผู้ช่วยสนาม';
+        field('admin-modal-note').textContent = props.recurrence && props.recurrence !== 'none' ? 'การแก้ไขจะมีผลกับกำหนดการที่เกิดซ้ำทั้งชุด' : 'จัดการตารางงานของโค้ชหรือผู้ช่วยสนาม';
         field('delete-admin-event').classList.toggle('hidden', !event);
         field('admin-staff-id').disabled = isLegacy;
         field('admin-event-type').disabled = isLegacy;
