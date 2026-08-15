@@ -113,11 +113,20 @@
 </div>
 
 <style>
-    /* เปิดให้กล่องไฮไลต์ (ช่วงเวลาที่ค้างรอยืนยัน) รับคลิกได้ ปกติ FullCalendar ปิดไว้ (pointer-events: none) */
-    #private-calendar .fc-highlight {
-        pointer-events: auto;
+    #private-calendar-confirm-btn {
+        position: absolute;
+        z-index: 20;
+        background: transparent;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 8px;
         cursor: pointer;
-        z-index: 5;
+        white-space: nowrap;
+        display: none;
+        border: none;
+        text-decoration: underline;
+        text-underline-offset: 2px;
     }
     /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือแถบวันนี้ แต่ต่ำกว่า event การจอง */
     #private-calendar .fc-bg-event {
@@ -207,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const maxDurationMs = 5 * 60 * 60 * 1000;
 
     let pendingSelection = null;
-    let needsConfirmClick = false;
+    let isClampingSelection = false;
 
     const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     function filterPackageOptionsForDate(date) {
@@ -251,8 +260,8 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         pendingSelection = null;
-        needsConfirmClick = false;
         calendar.unselect();
+        hideConfirmButton();
     };
 
     async function loadAvailableAssistants() {
@@ -377,6 +386,61 @@ document.addEventListener('DOMContentLoaded', function () {
         return overlay;
     }
 
+    const calendarWrap = calendarEl.parentElement;
+        calendarWrap.style.position = calendarWrap.style.position || 'relative';
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.id = 'private-calendar-confirm-btn';
+        calendarWrap.appendChild(confirmBtn);
+        function hideConfirmButton() {
+            confirmBtn.style.display = 'none';
+        }
+
+        // ซ่อนปุ่มทันทีเมื่อเริ่มลากใหม่ (mousedown/touchstart ในพื้นที่ปฏิทิน)
+        // กันปุ่มจากการเลือกครั้งก่อนค้างอยู่ตำแหน่งเดิมระหว่างลากคอลัมน์ใหม่
+        // ไม่กระทบปุ่มเอง เพราะ confirmBtn อยู่นอก calendarEl (เป็น sibling ใน calendarWrap)
+        calendarEl.addEventListener('mousedown', hideConfirmButton);
+        calendarEl.addEventListener('touchstart', hideConfirmButton, { passive: true });
+
+        function positionConfirmButton(text) {
+            requestAnimationFrame(() => {
+                const highlight = document.querySelector('#private-calendar .fc-highlight');
+                if (!highlight) {
+                    confirmBtn.style.display = 'none';
+                    return;
+                }
+                const rect = highlight.getBoundingClientRect();
+                const wrapRect = calendarWrap.getBoundingClientRect();
+                confirmBtn.textContent = text;
+
+                const durationMs = pendingSelection ? (pendingSelection.end - pendingSelection.start) : 0;
+                const isLong = durationMs > 60 * 60 * 1000; // เกิน 1 ชม.
+
+                if (isLong) {
+                    // กึ่งกลาง highlight
+                    confirmBtn.style.left = `${rect.left - wrapRect.left + rect.width / 2}px`;
+                    confirmBtn.style.top = `${rect.top - wrapRect.top + rect.height / 2}px`;
+                    confirmBtn.style.transform = 'translate(-50%, -50%)';
+                } else {
+                    // ชิดขวาล่างของ highlight
+                    confirmBtn.style.left = `${rect.right - wrapRect.left}px`;
+                    confirmBtn.style.top = `${rect.bottom - wrapRect.top}px`;
+                    confirmBtn.style.transform = 'translate(-100%, -100%)';
+                }
+
+                confirmBtn.style.display = 'block';
+            });
+        }
+
+    function hideConfirmButton() {
+        confirmBtn.style.display = 'none';
+    }
+
+    confirmBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (!pendingSelection) return;
+        openBookingModal(pendingSelection.start, pendingSelection.end);
+    });
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         locale: 'th',
@@ -453,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 && info.start >= new Date()
                 && info.start <= maxSelectableDate
                 && localDate(info.start) === localDate(inclusiveEnd)
-                && (info.end - info.start) <= maxDurationMs;
         },
         dateClick(info) {
             if (info.date > maxSelectableDate) {
@@ -465,30 +528,40 @@ document.addEventListener('DOMContentLoaded', function () {
                 calendar.changeView('timeGridDay', info.date);
                 return;
             }
-
-            if (!pendingSelection) {
-                return;
-            }
-
-            const clickedTime = info.date;
-            const selectionStart = pendingSelection.start;
-            const selectionEnd = pendingSelection.end;
-
-            if (clickedTime >= selectionStart && clickedTime < selectionEnd) {
-                if (needsConfirmClick) {
-                    needsConfirmClick = false;
-                    openBookingModal(selectionStart, selectionEnd);
-                } else {
-                    needsConfirmClick = true;
-                }
-            }
         },
         select(info) {
-            const start = info.start;
-            const end = info.end;
+            if (isClampingSelection) return;
+
+            let start = info.start;
+            let end = info.end;
+            let wasClamped = false;
+
+            if (end - start > maxDurationMs) {
+                end = new Date(start.getTime() + maxDurationMs);
+                wasClamped = true;
+
+                isClampingSelection = true;
+                calendar.unselect();
+                calendar.select(start, end);
+                isClampingSelection = false;
+            }
+
             pendingSelection = { start, end };
-            needsConfirmClick = false;
-            openBookingModal(start, end);
+
+            positionConfirmButton(wasClamped ? 'คลิกเพื่อจอง' : 'คลิกเพื่อจอง');
+
+            if (wasClamped) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'จองได้สูงสุด 5 ชั่วโมงต่อครั้ง',
+                    text: 'ระบบปรับช่วงเวลาให้ไม่เกิน 5 ชม. อัตโนมัติแล้ว',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+            }
         },
         eventClick(info) {
             const props = info.event.extendedProps;
@@ -516,22 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar.render();
 
-    calendarEl.addEventListener('click', (event) => {
-        if (!pendingSelection) return;
 
-        const target = event.target;
-        const interactiveTarget = target.closest('.fc-timegrid-slot, .fc-highlight, .fc-timegrid-bg, .fc-timegrid-col');
-        if (!interactiveTarget) return;
-
-        if (needsConfirmClick) {
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            needsConfirmClick = false;
-            openBookingModal(pendingSelection.start, pendingSelection.end);
-        } else {
-            needsConfirmClick = true;
-        }
-    }, true);
 
     document.getElementById('cancel-booking-modal').addEventListener('click', closeModal);
     assistantRequested.addEventListener('change', loadAvailableAssistants);

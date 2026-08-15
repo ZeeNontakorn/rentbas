@@ -10,6 +10,19 @@
         color: #0f172a !important;
         background-color: #fff;
     }
+    #staff-filter, #staff-filter option,
+    #admin-schedule-modal input, #admin-schedule-modal select, #admin-schedule-modal textarea {
+        color: #0f172a !important;
+        background-color: #fff;
+    }
+
+    /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือพื้นหลังปกติ แต่ต่ำกว่า event กำหนดการจริง */
+    #private-schedule-calendar .fc-bg-event {
+        z-index: 1 !important;
+    }
+    #private-schedule-calendar .fc-timegrid-event-harness {
+        z-index: 3 !important;
+    }
 </style>
 
 <div class="min-h-screen bg-slate-50 py-8 text-slate-900">
@@ -290,6 +303,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const scheduleOpenHour = 8, scheduleCloseHour = 22;
+
+    function buildPastOverlay(rangeStart, rangeEnd) {
+        const overlay = [];
+        const now = new Date();
+        const cursor = new Date(rangeStart);
+        cursor.setHours(0, 0, 0, 0);
+
+        while (cursor < rangeEnd) {
+            const dayOpen = new Date(cursor);
+            dayOpen.setHours(scheduleOpenHour, 0, 0, 0);
+            const dayClose = new Date(cursor);
+            dayClose.setHours(scheduleCloseHour, 0, 0, 0);
+
+            const overlayEnd = now < dayClose ? now : dayClose;
+
+            if (overlayEnd > dayOpen) {
+                overlay.push({
+                    start: dayOpen.toISOString(),
+                    end: overlayEnd.toISOString(),
+                    display: 'background',
+                    backgroundColor: '#e5e7eb',
+                    extendedProps: { kind: 'past' }
+                });
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return overlay;
+    }
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: @js($selectedStaffId === 'all' ? 'listWeek' : 'timeGridWeek'), locale: 'th', firstDay: 1, height: 'auto', nowIndicator: true,
         selectable: true, selectMirror: true, editable: true, eventOverlap: false, selectOverlap: false, slotEventOverlap: false,
@@ -299,11 +341,39 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonText: {today:'วันนี้', month:'เดือน', week:'สัปดาห์', day:'วัน', list:'รายการ'},
         events(info, success, failure) {
             fetch(`${eventsApi}?staff_id=${filter.value}&start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`, {headers:{'Accept':'application/json'}})
-                .then(response => response.ok ? response.json() : Promise.reject(response)).then(success).catch(failure);
+                .then(response => response.ok ? response.json() : Promise.reject(response))
+                .then(realEvents => {
+                    const isTimeGridView = calendar.view.type === 'timeGridWeek' || calendar.view.type === 'timeGridDay';
+                    const merged = isTimeGridView
+                        ? [...realEvents, ...buildPastOverlay(info.start, info.end)]
+                        : realEvents;
+                    success(merged);
+                })
+                .catch(failure);
         },
         selectAllow(info) {
             return staysWithinOneDate(info.start, info.end)
                 && info.start > new Date();
+        },
+        eventDidMount(arg) {
+            if (arg.event.extendedProps.kind !== 'past') return;
+
+            arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+
+            const label = document.createElement('div');
+            label.textContent = 'เลยกำหนด';
+            label.style.cssText = `
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 700;
+                color: #1e293b;
+                pointer-events: none;
+            `;
+            arg.el.appendChild(label);
         },
         eventAllow(dropInfo, event) {
             return ['availability', 'calendar_event'].includes(event.extendedProps.kind)
@@ -325,6 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
             openModal(null, info.start, info.end);
         },
         eventClick(info) {
+            if (info.event.extendedProps.kind === 'past') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'เลยกำหนด',
+                    text: 'ช่วงเวลานี้ผ่านไปแล้ว'
+                });
+                return;
+            }
             if (['availability', 'calendar_event'].includes(info.event.extendedProps.kind)) return openModal(info.event);
             showPrivateTrainingDetails(info.event);
         },

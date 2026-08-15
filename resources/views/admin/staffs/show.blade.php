@@ -70,6 +70,14 @@
             border-radius: 4px;
             z-index: 10;
         }
+
+        /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือพื้นหลังปกติ แต่ต่ำกว่า event กำหนดการจริง */
+        #staff-schedule-calendar .fc-bg-event {
+            z-index: 1 !important;
+        }
+        #staff-schedule-calendar .fc-timegrid-event-harness {
+            z-index: 3 !important;
+        }
     </style>
 
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
@@ -360,6 +368,35 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
     <script>
+        const staffScheduleOpenHour = 8, staffScheduleCloseHour = 22;
+
+        function buildStaffPastOverlay(rangeStart, rangeEnd) {
+            const overlay = [];
+            const now = new Date();
+            const cursor = new Date(rangeStart);
+            cursor.setHours(0, 0, 0, 0);
+
+            while (cursor < rangeEnd) {
+                const dayOpen = new Date(cursor);
+                dayOpen.setHours(staffScheduleOpenHour, 0, 0, 0);
+                const dayClose = new Date(cursor);
+                dayClose.setHours(staffScheduleCloseHour, 0, 0, 0);
+
+                const overlayEnd = now < dayClose ? now : dayClose;
+
+                if (overlayEnd > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: overlayEnd.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'past' }
+                    });
+                }
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return overlay;
+        }
         const staffScheduleCalendar = new FullCalendar.Calendar(
             document.getElementById('staff-schedule-calendar'),
             {
@@ -386,7 +423,39 @@
                     day: 'วัน',
                     list: 'รายการ'
                 },
-                events: @js(route('admin.staffs.schedule-events', $staff)),
+                events(info, success, failure) {
+                    const url = @js(route('admin.staffs.schedule-events', $staff));
+                    fetch(`${url}?start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`, {
+                        headers: { Accept: 'application/json' }
+                    })
+                        .then(response => response.ok ? response.json() : Promise.reject(response))
+                        .then(realEvents => {
+                            const view = staffScheduleCalendar.view.type;
+                            const isTimeGridView = view === 'timeGridWeek' || view === 'timeGridDay';
+                            success(isTimeGridView ? [...realEvents, ...buildStaffPastOverlay(info.start, info.end)] : realEvents);
+                        })
+                        .catch(failure);
+                },
+                eventDidMount(arg) {
+                    if (arg.event.extendedProps.kind !== 'past') return;
+
+                    arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+
+                    const label = document.createElement('div');
+                    label.textContent = 'เลยกำหนด';
+                    label.style.cssText = `
+                        position: absolute;
+                        inset: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: #1e293b;
+                        pointer-events: none;
+                    `;
+                    arg.el.appendChild(label);
+                },
                 select(info) {
                     @if($isCoach)
                         staffScheduleCalendar.unselect();
@@ -408,13 +477,21 @@
                     staffScheduleCalendar.unselect();
                 },
                 eventClick(info) {
+                    if (info.event.extendedProps.kind === 'past') {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'เลยกำหนด',
+                            text: 'ช่วงเวลานี้ผ่านไปแล้ว'
+                        });
+                        return;
+                    }
                     const props = info.event.extendedProps;
                     Swal.fire({
                         icon: 'info',
                         title: info.event.title,
                         text: props.statusLabel || props.detail || 'กำหนดการของบุคลากร'
                     });
-                }
+                },
             }
         );
         staffScheduleCalendar.render();
