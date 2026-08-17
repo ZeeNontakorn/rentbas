@@ -1438,9 +1438,6 @@ html { scroll-behavior: smooth; }
         : 0;
     $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 
-    $myGroupSignup = auth()->check()
-        ? $round->confirmedSignups->firstWhere('user_id', auth()->id())
-        : null;
 @endphp
             <div class="gs-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                 <div class="gs-card-header">
@@ -1464,12 +1461,14 @@ html { scroll-behavior: smooth; }
         <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
         เครดิต {{ $round->credit_cost }} / คน
     </div>
-    @if($round->cancel_deadline)
     <div class="gs-info-line" style="color:#e67700;">
-        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+    <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+    @if($round->cancel_deadline)
         ยกเลิกจองได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
-    </div>
+    @else
+        ยกเลิกจองได้ตลอดเวลา
     @endif
+</div>
 </div>
                     <div class="gs-spots-wrap">
                         <div class="gs-spots-bar">
@@ -1485,17 +1484,20 @@ html { scroll-behavior: smooth; }
         : null;
 @endphp
 
-@if($myGroupSignup)
+@php
+    $mySeatCount = auth()->check() ? $round->bookedSeatsFor(auth()->id()) : 0;
+    $mySeatsRemaining = auth()->check() ? $round->remainingSeatsFor(auth()->id()) : 0;
+@endphp
+
+@if($mySeatCount > 0)
     <div class="gs-btn-row">
-        <span class="gs-card-btn full" style="background:{{ $myGroupSignup->is_reserve ? '#fff3bf' : '#ebfbee' }};color:{{ $myGroupSignup->is_reserve ? '#e67700' : '#2f9e44' }};">
-            {{ $myGroupSignup->is_reserve ? '⏳ คิวสำรอง' : '✓ จองแล้ว' }} &middot; ลำดับที่ {{ $myGroupSignup->order_number }}
+        <span class="gs-card-btn full" style="background:#ebfbee;color:#2f9e44;">
+            ✓ คุณจอง {{ $mySeatCount }}/{{ \App\Models\GroupRound::MAX_SEATS_PER_USER }} ที่
         </span>
-        @if($round->canSelfCancel())
-            <form action="{{ route('group-rounds.cancel', $round) }}" method="POST"
-                onsubmit="return confirm('ยกเลิกการจองรอบนี้และรับเครดิตคืน ฿{{ number_format($myGroupSignup->credit_used, 2) }}?');">
-                @csrf
-                <button type="submit" class="gs-card-btn gs-card-btn-outline" style="width:100%;">ยกเลิกจอง</button>
-            </form>
+        @if($mySeatsRemaining > 0 && !$isFull)
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn gs-card-btn-outline">จองเพิ่ม</a>
+        @else
+            <a href="{{ route('group-rounds.my-bookings') }}" class="gs-card-btn gs-card-btn-outline">จัดการการจอง</a>
         @endif
     </div>
 @elseif($isFull)
