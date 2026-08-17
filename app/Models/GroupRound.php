@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class GroupRound extends Model
 {
+    /** จำนวนที่นั่งสูงสุดที่ 1 สมาชิกจองได้ต่อรอบ (รวมตัวเอง + จองแทนเพื่อน) */
+    const MAX_SEATS_PER_USER = 5;
+
     protected $fillable = [
         'group_session_id',
         'title',
@@ -78,6 +81,26 @@ class GroupRound extends Model
         return max(0, $this->max_players - $this->mainConfirmedCount());
     }
 
+    /** จำนวนที่นั่งที่สมาชิกคนนี้จองไปแล้วในรอบนี้ (ตัวเอง + จองแทนเพื่อน) */
+    public function bookedSeatsFor(?int $userId): int
+    {
+        if (! $userId) {
+            return 0;
+        }
+
+        return $this->confirmedSignups()
+            ->where(function ($q) use ($userId) {
+                $q->where('booked_by', $userId)->orWhere('user_id', $userId);
+            })
+            ->count();
+    }
+
+    /** ที่นั่งที่สมาชิกคนนี้ยังจองเพิ่มได้อีกในรอบนี้ (สูงสุด MAX_SEATS_PER_USER) */
+    public function remainingSeatsFor(?int $userId): int
+    {
+        return max(0, self::MAX_SEATS_PER_USER - $this->bookedSeatsFor($userId));
+    }
+
     /** ยังอยู่ในช่วงเวลาที่สมาชิกยกเลิกจองเองได้ไหม (ไม่ได้ตั้งเดดไลน์ = ยกเลิกได้เสมอ) */
     public function canSelfCancel(): bool
     {
@@ -106,11 +129,13 @@ class GroupRound extends Model
 
         $next->update(['is_reserve' => false]);
 
-        if ($next->user_id) {
+        $notifyUserId = $next->user_id ?? $next->booked_by;
+
+        if ($notifyUserId) {
             Notification::create([
-                'user_id' => $next->user_id,
+                'user_id' => $notifyUserId,
                 'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
-                'message' => "คุณได้เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
+                'message' => "ที่นั่งของ \"{$next->displayName()}\" เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
                 'action_url' => null,
                 'is_read' => false,
             ]);
@@ -122,9 +147,6 @@ class GroupRound extends Model
     /**
      * เมื่อหมดเวลาสละสิทธิ์แล้ว (cancel_deadline ผ่านไปแล้ว) ให้คืนเครดิตให้คิวสำรอง
      * ที่ยังไม่ได้เลื่อนเป็นตัวจริงทั้งหมด แล้วปิดจ็อบไม่ให้ประมวลผลซ้ำอีก
-     *
-     * เรียกแบบ "lazy" — ไม่ต้องตั้ง cron ก็ทำงานได้ แค่เรียกเมธอดนี้ทุกครั้งที่มีคนเปิดดูรอบนี้
-     * (หน้าแรก / หน้า checkout / หน้า admin) ถ้ายังไม่ถึงเวลาหรือประมวลผลไปแล้วจะ return ทันทีไม่ทำอะไร
      */
     public function processExpiredReserves(): void
     {
@@ -149,17 +171,19 @@ class GroupRound extends Model
                 ->get();
 
             foreach ($reserves as $signup) {
-                if ($signup->user_id && $signup->credit_used > 0) {
-                    User::where('id', $signup->user_id)->increment('credit_balance', $signup->credit_used * 100);
+                $payerId = $signup->booked_by ?? $signup->user_id;
+
+                if ($payerId && $signup->credit_used > 0) {
+                    User::where('id', $payerId)->increment('credit_balance', $signup->credit_used * 100);
                 }
 
                 $signup->update(['status' => 'cancelled']);
 
-                if ($signup->user_id) {
+                if ($payerId) {
                     Notification::create([
-                        'user_id' => $signup->user_id,
+                        'user_id' => $payerId,
                         'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',
-                        'message' => "รอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
+                        'message' => "ที่นั่งของ \"{$signup->displayName()}\" ในรอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
                         'action_url' => null,
                         'is_read' => false,
                     ]);

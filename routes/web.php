@@ -313,6 +313,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/group-rounds/{round}/signup', [App\Http\Controllers\GroupRoundSignupController::class, 'store'])
         ->name('group-rounds.signup');
 });
- Route::post('/group-rounds/{round}/cancel', [\App\Http\Controllers\GroupRoundSignupController::class, 'cancel'])
-       ->middleware('auth')
-       ->name('group-rounds.cancel');
+Route::post('/group-rounds/{round}/signups/{signup}/cancel', [\App\Http\Controllers\GroupRoundSignupController::class, 'cancel'])
+    ->middleware('auth')
+    ->name('group-rounds.cancel');

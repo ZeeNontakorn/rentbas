@@ -31,9 +31,13 @@
                 @endif
 
                 &middot; เครดิต {{ $round->credit_cost }}/คน
-@if($round->cancel_deadline)
-    &middot; ยกเลิกได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
-@endif
+            &middot; เครดิต {{ $round->credit_cost }}/คน
+            &middot;
+            @if($round->cancel_deadline)
+                ยกเลิกได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
+            @else
+                ไม่มีกำหนดเวลายกเลิก
+            @endif
             </p>
         </div>
 
@@ -285,7 +289,8 @@
                                 ?? 'ผู้จองภายนอก';
 
                             $addedByName = $signup->addedBy?->name
-                                ?? 'ลงชื่อเอง';
+                            ?? $signup->bookedBy?->name
+                            ?? 'ลงชื่อเอง';
                         @endphp
 
 
