@@ -137,6 +137,12 @@ class CourtController extends Controller
             $fullSection = $selectedCourt->defaultSection();
             $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
 
+            // สำคัญ: ต้องใช้ interval ของสนามนี้จริงๆ (slot_interval_minutes) ไม่ใช่ค่า 30 นาทีตายตัว
+            // เพราะหน้าลูกค้า (BookingController::buildAvailabilityMatrix) ใช้ค่านี้เป็นตัวแบ่งกริดเวลา
+            // ถ้า hardcode 30 ไว้ตรงนี้ พอสนามไหนตั้ง interval เป็น 15/60 นาที กริดของหน้าแอดมินจะไม่ตรง
+            // กับกริดจริงที่ลูกค้าเห็น ทำให้ข้อมูลดูเพี้ยน/ไม่สัมพันธ์กัน
+            $interval = max(5, (int) ($selectedCourt->slot_interval_minutes ?? 30));
+
             // ดึงการจองของวันนี้ทั้งหมดมาครั้งเดียว แล้วเช็ค overlap เอง (แทนการ query แบบ exact-match ต่อชั่วโมง
             // ซึ่งพลาดเคสจองครึ่งสนาม/เวลาไม่เต็มชั่วโมง และไม่รู้จัก court_section conflict)
             $dayBookings = Booking::where('court_id', $selectedCourt->id)
@@ -148,11 +154,13 @@ class CourtController extends Controller
                                 ->where('locked_until', '>', now());
                         });
                 })
-                ->get(['court_section_id', 'start_time', 'end_time', 'status']);
+                ->with('user:id,name')
+                ->get(['id', 'court_section_id', 'start_time', 'end_time', 'status', 'user_id']);
 
-            for ($h = 6; $h < 22; $h++) {
-                $start = sprintf('%02d:00:00', $h);
-                $end = sprintf('%02d:00:00', $h + 1);
+            for ($m = 6 * 60; $m < 22 * 60; $m += $interval) {
+                $start = sprintf('%02d:%02d:00', intdiv($m, 60), $m % 60);
+                $endM = $m + $interval;
+                $end = sprintf('%02d:%02d:00', intdiv($endM, 60), $endM % 60);
 
                 $booking = $dayBookings->first(function ($b) use ($conflictIds, $start, $end) {
                     return in_array($b->court_section_id, $conflictIds, true)
@@ -165,17 +173,20 @@ class CourtController extends Controller
 
                 if ($isGloballyClosed) {
                     $status = 'unavailable'; // Or a specific 'closed' status
+                } elseif ($booking) {
+                    // เช็คการจองจริงของลูกค้าก่อนเสมอ (สำคัญกว่า closure ที่แอดมินตั้งไว้) กันเคสข้อมูล
+                    // เก่าที่แอดมินเคยตั้งปิดทับช่วงที่มีคนจองอยู่แล้วซ่อนสถานะการจองจริงไป
+                    $status = 'booking_' . $booking->status; // 'booking_pending' | 'booking_approved' | 'booking_pending_payment'
                 } elseif ($closureType) {
                     $status = $closureType; // 'maintenance' or 'unavailable'
-                } elseif ($booking) {
-                    $status = 'booking_' . $booking->status; // 'booking_pending' or 'booking_approved'
                 }
 
                 $slots[] = [
-                    'label' => sprintf('%02d:00 - %02d:00', $h, $h + 1),
+                    'label' => sprintf('%02d:%02d - %02d:%02d', intdiv($m, 60), $m % 60, intdiv($endM, 60), $endM % 60),
                     'start' => $start,
                     'end'   => $end,
                     'status' => $status,
+                    'customer_name' => $booking?->user?->name,
                 ];
             }
         }
@@ -206,13 +217,48 @@ class CourtController extends Controller
             'status' => ['required', 'in:available,unavailable,maintenance'],
         ]);
 
+        // ห้ามแก้สถานะทับช่วงเวลาที่มีลูกค้าจองอยู่แล้ว (รออนุมัติ/กำลังชำระเงิน/อนุมัติแล้ว) — ต้องไปจัดการ
+        // ผ่านหน้าอนุมัติ/ยกเลิกการจองโดยตรงก่อน กันแอดมินตั้งสถานะทับจนข้อมูลไม่ตรงกับของจริงที่ลูกค้าเห็น
+        $court = Court::findOrFail($data['court_id']);
+        $fullSection = $court->defaultSection();
+        $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
+
+        $protectedBooking = Booking::where('court_id', $data['court_id'])
+            ->whereDate('booking_date', $data['date'])
+            ->whereIn('court_section_id', $conflictIds)
+            ->where('start_time', '<', $data['end_time'])
+            ->where('end_time', '>', $data['start_time'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['pending', 'approved'])
+                    ->orWhere(function ($lockQuery) {
+                        $lockQuery->where('status', 'pending_payment')
+                            ->where('locked_until', '>', now());
+                    });
+            })
+            ->first();
+
+        if ($protectedBooking) {
+            $statusLabelMap = [
+                'pending_payment' => 'กำลังจอง (รอชำระเงิน)',
+                'pending' => 'รออนุมัติ',
+                'approved' => 'ถูกจองแล้ว',
+            ];
+            $label = $statusLabelMap[$protectedBooking->status] ?? $protectedBooking->status;
+
+            return back()->withErrors([
+                'status' => "ไม่สามารถแก้ไขสถานะช่วงเวลานี้ได้ เนื่องจากมีการจองอยู่แล้ว (สถานะ: {$label}) "
+                    . 'กรุณาอนุมัติ/ปฏิเสธ/ยกเลิกการจองนี้จากหน้ารายการจองก่อน',
+            ]);
+        }
+
         $statusLabel = match ($data['status']) {
             'unavailable' => 'ไม่ว่าง',
             'maintenance' => 'ปิดปรับปรุง',
             default => 'ว่าง',
         };
 
-        // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved)
+        // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved) — ถึงจุดนี้จะเหลือแต่เคสที่ไม่มีการจองจริง
+        // อยู่แล้ว (ผ่านการเช็ค $protectedBooking ด้านบนมาแล้ว) แต่คงโค้ดเดิมไว้เผื่อ edge case อื่นๆ
         $overlappingBookings = Booking::where('court_id', $data['court_id'])
             ->whereDate('booking_date', $data['date'])
             ->whereIn('status', ['pending', 'approved'])

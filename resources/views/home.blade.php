@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'THATA Homecourt - THATA SPORT HQ & Basketball Chonburi ')
+@section('title', 'THATA HOMECOURT - THATA SPORT HQ & Basketball Chonburi ')
 
 @section('content')
 @php
@@ -290,7 +290,7 @@ html { scroll-behavior: smooth; }
     overflow: hidden;
     border: 1px solid rgba(255,255,255,.07);
     transition: border-color .25s, transform .25s;
-    cursor: pointer;
+    cursor: default;
 }
 .court-card:hover { border-color: rgba(232,108,42,.45); transform: translateY(-4px); }
 .court-thumb { height: 130px; position: relative; overflow: hidden; }
@@ -966,6 +966,98 @@ html { scroll-behavior: smooth; }
     color: #fff;
     border-color: var(--ore);
 }
+
+/* ─── PACKAGES SECTION ─── */
+.packages-section {
+    background: var(--navy-d);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.packages-header { text-align: center; margin-bottom: 40px; }
+.packages-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.packages-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: #fff; margin-bottom: 8px; }
+.packages-subtitle { font-size: 13.5px; color: rgba(255,255,255,.45); }
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+@media (max-width: 768px) { .packages-grid { grid-template-columns: 1fr; } }
+
+.package-card2 {
+    background: var(--navy);
+    border-radius: 18px;
+    padding: 28px 24px;
+    border: 1px solid rgba(255,255,255,.07);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+    position: relative;
+}
+.package-card2:hover {
+    transform: translateY(-6px);
+    border-color: rgba(232,108,42,.4);
+    box-shadow: 0 20px 36px rgba(0,0,0,.28);
+}
+.package-card2.featured { border-color: var(--ore); }
+.package-badge-featured {
+    position: absolute; top: 12px; right: 12px; left: auto; z-index: 1;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px; letter-spacing: .03em;
+    box-shadow: 0 4px 10px rgba(232,108,42,.35);
+}
+.package-name {
+    font-family: 'Kanit', sans-serif; font-size: 19px; font-weight: 700;
+    color: #fff; margin-bottom: 8px;
+}
+.package-desc {
+    font-size: 12.5px; color: rgba(255,255,255,.45);
+    line-height: 1.7; margin-bottom: 22px;
+    min-height: 42px;
+}
+.package-price-block {
+    padding-top: 18px; padding-bottom: 22px;
+    border-top: 1px dashed rgba(255,255,255,.1);
+    margin-top: auto;
+}
+.package-price-label {
+    font-size: 10px; font-weight: 700; color: var(--ore);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+}
+.package-price {
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px;
+    color: #fff; letter-spacing: .02em; line-height: 1;
+}
+.package-price small { font-family: 'Sarabun', sans-serif; font-size: 13px; color: rgba(255,255,255,.4); font-weight: 400; }
+.package-btn {
+    display: block; text-align: center;
+    padding: 12px; border-radius: 9px;
+    background: var(--ore); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 13.5px; font-weight: 600;
+    transition: background .2s;
+}
+.package-btn:hover { background: var(--ore-d); }
+
+.packages-empty {
+    text-align: center; color: rgba(255,255,255,.35); padding: 56px 0; font-size: 13.5px;
+}
+.packages-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
+
+
+.package-thumb2 { height: 170px; margin: -28px -24px 20px; position: relative; overflow: hidden; border-radius: 18px 18px 0 0; }
+.package-thumb2 img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.package-card2:hover .package-thumb2 img { transform: scale(1.08); }
+.package-thumb2-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,15,30,.55) 0%, rgba(13,15,30,0) 45%);
+}
 </style>
 
 <div class="home-content">
@@ -990,7 +1082,7 @@ html { scroll-behavior: smooth; }
     <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">THATA SPORT HQ & Basketball Chonburi</p>
-        <h1 class="hero-title">THATA<br><span>Homecourt</span></h1>
+        <h1 class="hero-title">THATA<br><span>HOMECOURT</span></h1>
         <p class="hero-sub">ระบบจองสนามบาสเกตบอลมาตรฐานสากล<br>พร้อมให้บริการ 7 วัน 365 วัน</p>
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="400">
             @guest
@@ -1034,8 +1126,8 @@ html { scroll-behavior: smooth; }
             {{ $site['about_desc'] }}
         </p>
         <div class="about-checks">
-            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 4 สนาม</div>
-            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอ ระบบ LED</div>
+            <div class="check-row"><div class="check-icon">✓</div>สนามได้รับรองมาตรฐาน 2 สนาม</div>
+            <div class="check-row"><div class="check-icon">✓</div>แสงสว่างเพียงพอด้วยระบบ LED</div>
             <div class="check-row"><div class="check-icon">✓</div>บริการลูกค้าตลอด 7 วัน</div>
             <div class="check-row"><div class="check-icon">✓</div>จองออนไลน์ได้ 24 ชั่วโมง</div>
         </div>
@@ -1069,9 +1161,16 @@ html { scroll-behavior: smooth; }
         @endphp
         @foreach($courts as $court)
             @php
-                $isOpen = $court->court_status === 'open' &&
-                    !($court->closed_from && $court->closed_until &&
-                      now()->between($court->closed_from, $court->closed_until));
+                $currentCourtStatus = $court->getRealtimeStatus(now());
+                $isOpen = $currentCourtStatus === 'available';
+                $statusText = match ($currentCourtStatus) {
+                    'pending_payment' => 'กำลังจอง (รอชำระเงิน)',
+                    'booked' => 'ไม่ว่าง',
+                    'maintenance' => 'ปิดปรับปรุง',
+                    'unavailable' => 'ปิดชั่วคราว',
+                    'closed' => 'ปิดให้บริการ',
+                    default => 'พร้อมให้บริการ',
+                };
                 $uploadedImg = \App\Models\Setting::getVal('court_img_' . $court->id);
                 $img = $uploadedImg ?: $courtImgs[$loop->index % count($courtImgs)];
             @endphp
@@ -1091,13 +1190,13 @@ html { scroll-behavior: smooth; }
                     <div class="court-status-row" style="margin-bottom: 16px;">
                         <div class="sdot {{ $isOpen ? 'open' : 'closed' }}"></div>
                         <span class="stext {{ $isOpen ? 'open' : 'closed' }}">
-                            {{ $isOpen ? 'พร้อมให้บริการ' : 'ปิดปรับปรุง' }}
+                            {{ $statusText }}
                         </span>
                     </div>
                     @if($isOpen)
                         <!-- คลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
                         <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
-                        
+
                         <div class="half-court-divider"></div>
                         <div class="half-court-actions">
                             @php
@@ -1116,11 +1215,11 @@ html { scroll-behavior: smooth; }
                                 @php
                                     $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
                                     $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
-                                        $isActive = !isset($s->is_active) || $s->is_active; 
+                                        $isActive = !isset($s->is_active) || $s->is_active;
                                         return $s->id !== $defaultSectionId && $isActive;
                                     });
                                 @endphp
-                                
+
                                 @if($halfSections->isNotEmpty())
                                     @foreach($halfSections as $section)
                                         <a href="javascript:void(0);" class="court-btn-half">
@@ -1159,7 +1258,7 @@ html { scroll-behavior: smooth; }
         {{-- LEFT: Calendar Card --}}
         <div class="bk-cal-card">
             <div class="bk-cal-header">
-                <span class="bk-cal-month-label" id="cal-month">เมษายน 2568</span>
+                <span class="bk-cal-month-label" id="cal-month"></span>
                 <div class="bk-cal-nav-btns">
                     <button onclick="calPrev()">&#8249;</button>
                     <button onclick="calNext()">&#8250;</button>
@@ -1324,6 +1423,76 @@ html { scroll-behavior: smooth; }
 @endif
 </section>
 
+@if($packages->isNotEmpty())
+    {{-- ═══ PACKAGES ═══ --}}
+    <section class="packages-section" id="packages" data-aos="fade-up">
+        <div class="packages-header">
+            <p class="packages-label">Package</p>
+            <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
+            <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
+        </div>
+
+        @if($packages->isEmpty())
+            <div class="packages-empty">
+                <div class="packages-empty-icon">📦</div>
+                ขณะนี้ยังไม่มีแพ็กเกจเปิดให้บริการ
+            </div>
+        @else
+            <div class="packages-grid">
+                @foreach($packages as $package)
+                    <div class="package-card2 {{ $loop->first ? 'featured' : '' }}" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                        <div class="package-thumb2">
+                            <img src="{{ $package->image ? asset('storage/' . $package->image) : 'https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=800&auto=format&fit=crop' }}"
+                                 alt="{{ $package->name }}" {!! $imageFallback !!}>
+                            <div class="package-thumb2-overlay"></div>
+                        </div>
+                        <p class="package-name">{{ $package->name }}</p>
+                        <p class="package-desc">{{ $package->description }}</p>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                ใช้ได้ <strong style="color:#fff;">{{ $package->num_of_use }}</strong> ครั้ง
+                            </span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                @php
+                                    $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                                    $usableDays = $package->usable_days ?? [];
+                                @endphp
+                                @if(empty($usableDays))
+                                    ใช้ได้ <strong style="color:#fff;">ทุกวัน</strong>
+                                @else
+                                    ใช้ได้เฉพาะวัน <strong style="color:#fff;">{{ collect($usableDays)->map(fn($d) => $dayLabels[$d] ?? $d)->implode(', ') }}</strong>
+                                @endif
+                            </span>
+                        </div>
+                        <div class="package-price-block">
+                            <p class="package-price-label">ราคา</p>
+                            <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
+                        </div>
+                        @guest
+                        <a href="{{ route('login') }}" class="package-btn">เข้าสู่ระบบเพื่อซื้อ</a>
+                        @else
+                        <form action="{{ route('package-checkout.purchase', $package) }}" method="POST" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="package-btn" style="width:100%;border:none;cursor:pointer;font:inherit;">
+                                เลือกแพ็กเกจนี้
+                            </button>
+                        </form>
+                        @endguest
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+@endif
+
 {{-- ═══ PROMOTIONS ═══ --}}
 <section class="promo-section" data-aos="fade-up">
     <div class="promo-header">
@@ -1384,7 +1553,7 @@ html { scroll-behavior: smooth; }
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
                     <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://128/174/174855.png" alt="">thata_homecourt
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">THATA Homecourt
                     </a>
                     <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
@@ -1445,7 +1614,7 @@ const HERO_SLIDES = @json($heroSlides);
             return $s->id !== $defaultSectionId && $isActive;
         });
 
-        // ถ้ามีข้อมูล Sections ให้ใช้ 
+        // ถ้ามีข้อมูล Sections ให้ใช้
         if ($halfSections->isNotEmpty()) {
             $sectionsList = $halfSections->map(fn($s) => ['id' => $c->id, 'section_id' => $s->id, 'name' => $s->name])->values();
         } else {
@@ -1483,7 +1652,7 @@ function getActiveCourts() {
     return court.sections.map(s => ({
         id: court.id,
         section_id: s.section_id,
-        name: s.name 
+        name: s.name
     }));
 }
 
@@ -1558,7 +1727,7 @@ window.addEventListener('scroll', () => {
 function buildCourtHeaders() {
     const pills = document.getElementById('bk-court-pills');
     const thead = document.getElementById('sch-thead');
-    
+
     // 1. สร้างปุ่มแท็บรายชื่อสนามในแถบสีดำ
     let pillsHtml = '';
     COURTS_DATA.forEach(c => {
@@ -1593,7 +1762,7 @@ const MONTHS = ['มกราคม','กุมภาพันธ์','มีน
                 'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
 let calYear, calMonth, selDate = null;
-let monthStatus = {}; 
+let monthStatus = {};
 
 // โหลดสถานะการจองรายเดือนจากระบบเพื่อทำจุดสีแสดงสถานะในปฏิทิน
 async function loadMonthStatus() {
@@ -1625,7 +1794,7 @@ function renderCal() {
         const isPast = new Date(calYear, calMonth, d) < new Date(td.getFullYear(), td.getMonth(), td.getDate());
         if (td.getFullYear()===calYear && td.getMonth()===calMonth && td.getDate()===d) cls += ' today';
         if (selDate === ds) cls += ' selected';
-        const dsStatus = monthStatus[ds]; 
+        const dsStatus = monthStatus[ds];
         if (isPast || dsStatus === 'past') {
             /* วันในอดีต */
         } else if (dsStatus === 'full') {
@@ -1663,10 +1832,12 @@ async function renderSch(ds) {
     tb.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#adb5bd;font-size:13px;">กำลังโหลดข้อมูล...</td></tr>`;
 
     let slots = {};
+    let sectionSlots = {};
     try {
         const res  = await fetch('{{ route("schedule") }}?date=' + ds);
         const data = await res.json();
         slots = data.slots || {};
+        sectionSlots = data.section_slots || {};
     } catch (e) {
         tb.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#e53e3e;font-size:13px;">ไม่สามารถโหลดข้อมูลได้</td></tr>`;
         return;
@@ -1698,10 +1869,17 @@ async function renderSch(ds) {
 
         activeCourts.forEach(c => {
             let courtSlots = slots[c.id] || {};
-            let status = courtSlots[startTime] || 'available';
+            const hasNumericSectionId = c.section_id !== null
+                && c.section_id !== undefined
+                && c.section_id !== ''
+                && !Number.isNaN(Number(c.section_id));
 
-            if (c.section_id && slots[c.section_id]) {
-                status = slots[c.section_id][startTime] || status;
+            let status;
+            if (hasNumericSectionId) {
+                const secSlots = sectionSlots[String(c.section_id)] || {};
+                status = secSlots[startTime] || courtSlots[startTime] || 'available';
+            } else {
+                status = courtSlots[startTime] || 'available';
             }
 
             if (isTimePast) {
@@ -1712,7 +1890,7 @@ async function renderSch(ds) {
             if (status === 'pending_payment') {
                 html += '<td><span class="slot-badge slot-checkout"><span class="slot-dot"></span>กำลังจอง</span></td>';
             } else if (status === 'booked') {
-                html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>จอง</span></td>';
+                html += '<td><span class="slot-badge slot-booked"><span class="slot-dot"></span>ถูกจอง</span></td>';
             } else if (status === 'past') {
                 html += '<td><span class="slot-badge slot-past"><span class="slot-dot"></span>ผ่านมาแล้ว</span></td>';
             } else if (status === 'closed') {
@@ -1720,7 +1898,7 @@ async function renderSch(ds) {
             } else if (status === 'maintenance') {
                 html += '<td><span class="slot-badge slot-maintenance"><span class="slot-dot"></span>ปิดปรับปรุง</span></td>';
             } else if (status === 'unavailable') {
-                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ปิดชั่วคราว</span></td>';
+                html += '<td><span class="slot-badge slot-unavailable"><span class="slot-dot"></span>ไม่ว่าง</span></td>';
             } else {
                 html += `<td><span class="slot-badge slot-free" onclick="bookSlot('${startStr}',${c.id},'${c.section_id}','${ds}')"><span class="slot-dot"></span>ว่าง</span></td>`;
             }
@@ -1766,7 +1944,7 @@ calYear = now2.getFullYear();
 calMonth = now2.getMonth();
 buildCourtHeaders();
 renderCal();
-loadMonthStatus();   
+loadMonthStatus();
 const todayDs = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(now2.getDate()).padStart(2,'0');
 selectDate(todayDs, now2.getDate());
 initHeroSlideshow();

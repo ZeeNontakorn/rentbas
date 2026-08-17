@@ -17,10 +17,10 @@
 
 @section('content')
 <div class="min-h-screen bg-slate-50 py-8 text-gray-900">
-    <div class="container mx-auto max-w-7xl px-6">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-800">จัดการคอร์ส</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการคอร์ส</h1>
                 <p class="mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการคอร์สเรียนทั้งหมดในระบบ</p>
             </div>
             <!-- Search และ ปุ่มเพิ่มคอร์ส -->
@@ -28,7 +28,7 @@
                 <form method="GET" action="{{ route('admin.courses') }}" class="flex w-full md:w-auto">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ระบุชื่อคอร์สที่ต้องการค้นหา..."
                            class="w-full rounded-l-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400 md:w-72">
-                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600">
+                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 cursor-pointer">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
                         ค้นหาคอร์ส
                     </button>
@@ -46,49 +46,57 @@
                     <svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 002 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
                     รายการคอร์สทั้งหมด
                 </h2>
-                <span class="hidden text-xs text-gray-400 sm:inline">เลื่อนตารางเพื่อดูข้อมูลเพิ่มเติม</span>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-[1160px] w-full table-fixed text-left text-sm">
-                    <colgroup>
-                        <col class="w-[110px]"><col class="w-[260px]"><col class="w-[115px]"><col class="w-[330px]"><col class="w-[170px]"><col class="w-[140px]"><col class="w-[175px]">
-                    </colgroup>
+            <div class="overflow-x-hidden">
+                <table class="w-full table-auto text-left text-sm">
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
-                            <th class="px-7 py-4 font-medium">ภาพ</th>
-                            <th class="px-5 py-4 font-medium">ชื่อคอร์ส / กลุ่มเป้าหมาย</th>
-                            <th class="px-5 py-4 font-medium">ช่วงอายุ</th>
-                            <th class="px-5 py-4 font-medium">วันและเวลาเรียน</th>
-                            <th class="px-5 py-4 font-medium">แพ็กเกจ</th>
-                            <th class="px-5 py-4 font-medium">สถานะ</th>
-                            <th class="px-5 py-4 font-medium">จัดการ</th>
+                            <th class="px-3 py-4 font-medium sm:px-7">ภาพ</th>
+                            <th class="px-3 py-4 font-medium sm:px-5">ชื่อคอร์ส / กลุ่มเป้าหมาย</th>
+                            <th class="hidden px-5 py-4 font-medium md:table-cell">ช่วงอายุ</th>
+                            <th class="hidden px-5 py-4 font-medium xl:table-cell">วันและเวลาเรียน</th>
+                            <th class="hidden px-5 py-4 font-medium lg:table-cell">แพ็กเกจ</th>
+                            <th class="px-3 py-4 font-medium sm:px-5">สถานะ</th>
+                            <th class="px-3 py-4 font-medium sm:px-5">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($courses as $course)
-                            @php $package = $course->packages->first(); @endphp
+                            @php
+                                $package = $course->packages->first();
+                                $courseIsActive = $course->packages->contains(fn ($coursePackage) => $coursePackage->is_active);
+                            @endphp
                             <tr class="align-top transition hover:bg-slate-50/80">
-                                <td class="px-7 py-6">
+                                <td class="px-3 py-4 sm:px-7 sm:py-6 w-[120px] sm:w-[160px] md:w-[200px]">
                                     @if ($course->image_url)
-                                        <img src="{{ $course->image_url }}" alt="{{ $course->course_name }}" class="h-14 w-14 rounded-xl border border-gray-200 object-cover shadow-sm">
+                                        <img src="{{ $course->image_url }}" alt="{{ $course->course_name }}"
+                                            class="w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 rounded-xl border border-gray-200 object-cover shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md cursor-pointer">
                                     @else
-                                        <div class="flex h-14 w-14 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300">
-                                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <div class="flex w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300 transition-all duration-300 hover:scale-105 cursor-pointer">
+                                            <svg class="h-6 w-6 sm:h-8 sm:w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-5 py-6">
-                                    <p class="font-semibold leading-6 text-gray-800">
+                                <td class="max-w-[220px] px-3 py-4 sm:max-w-none sm:px-5 sm:py-6">
+                                    <p class="font-semibold leading-6 text-gray-800 break-words">
                                         {{ $course->course_name }}
+                                        </span>
                                         @if ($package && $package->is_featured)<span class="ml-1" title="แพ็กเกจแนะนำ">⭐</span>@endif
                                     </p>
                                     <div class="mt-1.5 flex items-center gap-2 text-xs leading-5">
-                                        <span class="text-gray-400">{{ $course->targetGroups->pluck('target_group')->implode(', ') ?: '—' }}</span>
+                                        <span class="text-gray-400 break-words">{{ $course->targetGroups->pluck('target_group')->implode(', ') ?: '—' }}</span>
                                     </div>
+                                    <!-- สรุปย่อสำหรับจอเล็ก แทนคอลัมน์ที่ถูกซ่อน -->
+                                    <p class="mt-1.5 text-xs text-gray-400 md:hidden">
+                                        {{ $course->age_range_label }}
+                                        @if ($package)
+                                            · {{ $package->total_sessions }} ครั้ง / {{ number_format($package->total_price, 0) }} บาท
+                                        @endif
+                                    </p>
                                 </td>
-                                <td class="px-5 py-6"><span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $course->age_range_label }}</span></td>
-                                <td class="px-5 py-5">
+                                <td class="hidden px-5 py-6 md:table-cell"><span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $course->age_range_label }}</span></td>
+                                <td class="hidden max-w-[280px] px-5 py-5 xl:table-cell">
                                     <div class="space-y-2.5">
                                         @forelse ($course->schedules as $schedule)
                                             <div class="rounded-lg border border-slate-100 bg-slate-50 px-3.5 py-3">
@@ -112,7 +120,7 @@
                                         @endforelse
                                     </div>
                                 </td>
-                                <td class="px-5 py-6">
+                                <td class="hidden px-5 py-6 lg:table-cell">
                                     @if ($package)
                                         <div class="space-y-1.5">
                                             @foreach($course->packages as $coursePackage)
@@ -123,12 +131,12 @@
                                         <span class="text-gray-400">ยังไม่มีแพ็กเกจ</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-6">
+                                <td class="px-3 py-4 sm:px-5 sm:py-6">
                                     @if ($package)
-                                        <form action="{{ route('admin.courses.toggleStatus', $course) }}" method="POST" class="inline-flex items-center gap-2.5">
+                                        <form action="{{ route('admin.courses.toggleStatus', $course) }}" method="POST" class="inline-flex items-center gap-2">
                                             @csrf @method('PATCH')
-                                            <label class="switch" title="คลิกเพื่อ{{ $package->is_active ? 'ปิด' : 'เปิด' }}ใช้งานคอร์สนี้">
-                                                <input type="checkbox" {{ $package->is_active ? 'checked' : '' }} onchange="this.form.submit()">
+                                            <label class="switch" title="คลิกเพื่อ{{ $courseIsActive ? 'ปิด' : 'เปิด' }}ใช้งานคอร์สนี้">
+                                                <input type="checkbox" {{ $courseIsActive ? 'checked' : '' }} onchange="this.form.submit()">
                                                 <div class="slider">
                                                     <div class="circle">
                                                         <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -144,28 +152,34 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                            <span class="text-xs font-medium {{ $package->is_active ? 'text-green-700' : 'text-gray-400' }}">
-                                                {{ $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
+                                            <span class="hidden text-xs font-medium sm:inline {{ $courseIsActive ? 'text-green-700' : 'text-gray-400' }}">
+                                                {{ $courseIsActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
                                             </span>
                                         </form>
                                     @else
-                                        <div class="inline-flex items-center gap-2.5">
+                                        <div class="inline-flex items-center gap-2">
                                             <label class="switch is-disabled opacity-50" title="ยังไม่มีแพ็กเกจ จึงเปิดใช้งานไม่ได้">
                                                 <input type="checkbox" disabled>
                                                 <div class="slider">
                                                     <div class="circle"></div>
                                                 </div>
                                             </label>
-                                            <span class="text-xs font-medium text-gray-400">ยังไม่มีแพ็กเกจ</span>
+                                            <span class="hidden text-xs font-medium text-gray-400 sm:inline">ยังไม่มีแพ็กเกจ</span>
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-5 py-6 text-center">
-                                    <div class="inline-flex items-center gap-2">
-                                        <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-4 py-2.5 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600">แก้ไข</a>
+                                <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
+                                    <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                                        <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $course->id }}" action="{{ route('admin.courses.destroy', $course) }}" method="POST">
                                             @csrf @method('DELETE')
-                                            <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-4 py-2.5 text-xs font-medium text-white shadow-sm transition hover:bg-red-600">ลบ</button>
+                                            <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 gap-1.5 cursor-pointer">
+                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                ลบ</button>
                                         </form>
                                     </div>
                                 </td>

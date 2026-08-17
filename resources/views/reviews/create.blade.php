@@ -10,11 +10,11 @@
         <div class="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="bg-[#13162a] px-6 py-8 text-white sm:px-10">
                 <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-400">Share your experience</p>
-                <h1 class="text-3xl font-bold sm:text-4xl">เขียนรีวิว THATA Homecourt</h1>
+                <h1 class="text-3xl font-bold sm:text-4xl">เขียนรีวิว THATA HOMECOURT</h1>
                 <p class="mt-3 max-w-2xl text-sm leading-7 text-white/60">ให้คะแนนสถานที่และสิ่งอำนวยความสะดวกที่คุณได้ใช้ ความคิดเห็นของคุณช่วยให้เราพัฒนาบริการให้ดีขึ้น</p>
             </div>
 
-            <form method="POST" action="{{ route('reviews.store') }}" enctype="multipart/form-data" class="space-y-8 p-6 sm:p-10" id="review-form">
+            <form method="POST" action="{{ route('reviews.store') }}" enctype="multipart/form-data" class="space-y-8 p-6 sm:p-10" id="review-form" novalidate>
                 @csrf
 
                 <div class="flex items-center gap-4 rounded-2xl bg-orange-50 px-5 py-4">
@@ -51,6 +51,7 @@
                         @endfor
                         <span class="ml-2 text-sm text-gray-500" data-rating-label>ยังไม่ได้ให้คะแนน</span>
                     </div>
+                    <p id="overall-rating-error" class="mt-2 hidden text-sm text-red-600">กรุณาให้คะแนนประสบการณ์โดยรวมก่อนส่งรีวิว</p>
                 </section>
 
                 <section>
@@ -81,6 +82,7 @@
                             </article>
                         @endforeach
                     </div>
+                    <p id="facility-rating-error" class="mt-2 hidden text-sm text-red-600">กรุณาให้คะแนนอย่างน้อย 1 รายการ</p>
                 </section>
 
                 <section>
@@ -89,6 +91,7 @@
                               class="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-orange-500"
                               placeholder="เล่าประสบการณ์ของคุณ เช่น คาเฟ่บริการดี ห้องน้ำสะอาด หรือพื้นที่นั่งพักสะดวก...">{{ old('comment') }}</textarea>
                     <p class="mt-1 text-right text-xs text-gray-400"><span id="comment-count">0</span>/1000</p>
+                    <p id="comment-error" class="hidden text-sm text-red-600"></p>
                 </section>
 
                 <section>
@@ -103,7 +106,7 @@
 
                 <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
                     <a href="{{ route('home') }}#facility-reviews" class="rounded-xl border border-gray-300 px-6 py-3 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50">ยกเลิก</a>
-                    <button type="submit" class="rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white transition hover:bg-orange-600">ส่งรีวิว</button>
+                    <button type="submit" class="rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white cursor-pointer transition hover:bg-orange-600">ส่งรีวิว</button>
                 </div>
             </form>
         </div>
@@ -134,6 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
             input.disabled = false;
             input.value = star.dataset.score;
             render(Number(star.dataset.score));
+            // ซ่อนข้อความ error ทันทีที่ผู้ใช้เลือกดาว
+            if (input.id === 'overall-rating') {
+                document.getElementById('overall-rating-error')?.classList.add('hidden');
+            } else if (input.id.startsWith('facility-rating-')) {
+                document.getElementById('facility-rating-error')?.classList.add('hidden');
+            }
         }));
 
         const clear = group.querySelector('[data-clear-rating]');
@@ -152,7 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const comment = document.getElementById('comment');
     const count = document.getElementById('comment-count');
     const updateCount = () => count.textContent = comment.value.length;
-    comment.addEventListener('input', updateCount);
+    comment.addEventListener('input', () => {
+        updateCount();
+        const commentError = document.getElementById('comment-error');
+        if (comment.value.trim().length >= 10) {
+            commentError?.classList.add('hidden');
+        }
+    });
     updateCount();
 
     const imageInput = document.getElementById('review-images');
@@ -184,6 +199,61 @@ document.addEventListener('DOMContentLoaded', () => {
             image.alt = 'ตัวอย่างรูปรีวิว';
             image.className = 'aspect-[4/3] w-full rounded-xl object-cover';
             previews.appendChild(image);
+        }
+    });
+
+    // ---- Client-side validation ก่อน submit ----
+    // จุดสำคัญ: ถ้าข้อมูลไม่ครบ เราจะ preventDefault() ไม่ให้ฟอร์ม
+    // ส่งออกไปที่ server เลย ดังนั้นหน้าเว็บจะไม่ reload
+    // และรูปที่เลือกไว้ใน input file จะไม่หายไปไหน
+    const form = document.getElementById('review-form');
+    form.addEventListener('submit', (event) => {
+        let hasError = false;
+
+        const overallRating = document.getElementById('overall-rating');
+        const overallError = document.getElementById('overall-rating-error');
+        if (!overallRating.value) {
+            overallError.classList.remove('hidden');
+            hasError = true;
+        } else {
+            overallError.classList.add('hidden');
+        }
+
+        // ต้องมีอย่างน้อย 1 รายการสิ่งอำนวยความสะดวกที่ให้คะแนน
+        const facilityError = document.getElementById('facility-rating-error');
+        const facilityRatingInputs = Array.from(
+            document.querySelectorAll('input[id^="facility-rating-"]')
+        );
+        const hasAtLeastOneFacilityRating = facilityRatingInputs.some(
+            input => !input.disabled && input.value
+        );
+        if (!hasAtLeastOneFacilityRating) {
+            facilityError.classList.remove('hidden');
+            hasError = true;
+        } else {
+            facilityError.classList.add('hidden');
+        }
+
+        const commentError = document.getElementById('comment-error');
+        const commentLength = comment.value.trim().length;
+        const MIN_COMMENT_LENGTH = 10; // ต้องตรงกับ min:10 ฝั่ง server (ปรับให้ตรงกับ rule จริงถ้าไม่ใช่ 10)
+        if (commentLength === 0) {
+            commentError.textContent = 'กรุณาเขียนความคิดเห็น';
+            commentError.classList.remove('hidden');
+            hasError = true;
+        } else if (commentLength < MIN_COMMENT_LENGTH) {
+            commentError.textContent = `ความคิดเห็นต้องมีอย่างน้อย ${MIN_COMMENT_LENGTH} ตัวอักษร (ตอนนี้ ${commentLength} ตัวอักษร)`;
+            commentError.classList.remove('hidden');
+            hasError = true;
+        } else {
+            commentError.classList.add('hidden');
+        }
+
+        if (hasError) {
+            event.preventDefault();
+            // เลื่อนไปยัง error แรกที่เจอ ให้ผู้ใช้เห็นชัดเจน
+            const firstError = form.querySelector('.text-red-600:not(.hidden)');
+            firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
 });

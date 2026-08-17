@@ -4,6 +4,7 @@
     enctype="multipart/form-data" id="courseForm" class="space-y-6" novalidate>
     @csrf
     @if($isEdit) @method('PUT') @endif
+    <input type="hidden" name="course_form_version" value="2">
 
     @if ($errors->any())
         <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -17,8 +18,8 @@
     @endif
 
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3"><b
-                class="grid h-7 w-7 place-items-center rounded-lg bg-orange-50 text-sm text-orange-600">1</b>
+        <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <b class="grid h-7 w-7 place-items-center rounded-lg bg-orange-50 text-sm text-orange-600">1</b>
             <h2 class="text-lg font-semibold text-slate-900">ข้อมูลทั่วไปของคลาสเรียน</h2>
         </div>
         <div class="mb-6">
@@ -26,7 +27,7 @@
                 <span class="text-xs text-red-500"> *</span>
             </label>
             <input id="course_name_input" name="course_name" value="{{ old('course_name', $isEdit ? $course->course_name : '') }}"
-                maxlength="255"
+                maxlength="50"
                 class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 bg-white placeholder:text-slate-400 [color-scheme:light] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="เช่น Standard Class">
             <p id="course_name_error" class="hidden mt-1.5 text-xs text-red-600">กรุณากรอกชื่อคลาสเรียน</p>
@@ -75,7 +76,7 @@
         </div>
         <div id="scheduleRows" class="space-y-3"></div>
         <button type="button" id="addSchedule"
-            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มรอบเวลาเรียน</button>
+            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50 cursor-pointer">＋ เพิ่มรอบเวลาเรียน</button>
         <div id="scheduleInputs"></div>
     </section>
 
@@ -90,7 +91,7 @@
         </div>
         <div id="packageRows" class="space-y-3"></div>
         <button type="button" id="addPackage"
-            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มแพ็กเกจ</button>
+            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50 cursor-pointer">＋ เพิ่มแพ็กเกจ</button>
     </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -136,13 +137,13 @@
     </section>
     <div class="flex justify-end gap-4 border-t border-slate-200 pt-4"><a href="{{ route('admin.courses') }}"
             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm text-slate-700 hover:bg-slate-50">ยกเลิก</a><button
-            class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">{{ $isEdit ? 'บันทึกการแก้ไข' : 'บันทึกคอร์ส' }}</button>
+            class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 cursor-pointer">{{ $isEdit ? 'บันทึกการแก้ไข' : 'บันทึกคอร์ส' }}</button>
     </div>
 
     <template id="scheduleTemplate">
         <div class="schedule rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
             <div class="flex justify-between"><b class="text-sm text-slate-700">รอบเวลาเรียน <span class="text-xs text-red-500"> *</span></b><button type="button"
-                    class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบรอบ</button></div>
+                    class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100 cursor-pointer">ลบรอบ</button></div>
 
             <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน <span class="text-xs text-red-500"> *</span></label>
             <div class="days flex flex-wrap gap-2">
@@ -180,14 +181,16 @@
     </template>
     <template id="packageTemplate">
         <div class="package rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
+            <input type="hidden" class="packageId">
             <div class="flex justify-between"><b class="text-sm text-slate-700">แพ็กเกจ <span class="text-xs text-red-500"> *</span></b><button type="button"
-                    class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบแพ็กเกจ</button></div>
+                    class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100 cursor-pointer">ลบแพ็กเกจ</button></div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">ประเภทคอร์ส <span class="text-xs text-red-500"> *</span></label>
                     <select class="packageType w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 bg-white [color-scheme:light]">
-                        <option value="group">Standard Group Class</option>
-                        <option value="private">Private Class</option>
+                        @foreach($courseTypes as $courseType)
+                            <option value="{{ $courseType->id }}">{{ $courseType->name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
@@ -232,10 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
         packages = document.getElementById('packageRows'),
         scheduleTemplate = document.getElementById('scheduleTemplate'),
         packageTemplate = document.getElementById('packageTemplate'),
-        oldSchedules = @json($existingSchedules),
-        oldPackages = @json($existingPackages);
+        oldSchedules = @json(old('schedules', $existingSchedules)),
+        oldPackages = @json(old('packages', $existingPackages));
 
     const MAX_PACKAGE_PRICE = {{ $maxPackagePrice }};
+    const COURSE_NAME_MAX_LENGTH = 50;
     const INVALID_CLASSES = ['!border-red-600', '!bg-red-50'];
 
     // ---------- helper: error แบบ field เดี่ยว (ใช้กับ error element ที่มี id ตายตัว) ----------
@@ -296,9 +300,13 @@ document.addEventListener('DOMContentLoaded', () => {
         end: '00:00'
     }) {
         const row = scheduleTemplate.content.firstElementChild.cloneNode(true);
-        row.querySelector('.start').value = data.start;
-        row.querySelector('.end').value = data.end;
-        row.querySelector('.limited').checked = !!data.limited;
+        row.dataset.scheduleId = data.id || '';
+        row.dataset.dayType = data.day_type || 'weekday';
+        row.dataset.courtSectionId = data.court_section_id || '';
+        row.querySelector('.start').value = data.start || data.start_time || '';
+        row.querySelector('.end').value = data.end || data.end_time || '';
+        const isLimited = [true, 1, '1'].includes(data.limited ?? data.is_limited_spots);
+        row.querySelector('.limited').checked = isLimited;
         row.querySelector('.capacity').value = data.capacity || '';
         const setCapacityVisible = visible => {
             const wrap = row.querySelector('.capacityWrap');
@@ -306,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wrap.classList.toggle('flex', visible);
             if (!visible) row.querySelector('.capacity').value = '';
         };
-        setCapacityVisible(!!data.limited);
+        setCapacityVisible(isLimited);
         row.querySelectorAll('.day').forEach(input => input.checked = data.weekdays.includes(input.value));
 
         const clearDayError = () => clearRowErrorEl(row, '.day-error');
@@ -328,7 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addPackage(data = {}) {
         const row = packageTemplate.content.firstElementChild.cloneNode(true);
-        row.querySelector('.packageType').value = data.package_type || 'group';
+        row.querySelector('.packageId').value = data.id || '';
+        row.querySelector('.packageType').value = data.course_type_id || @json($courseTypes->firstWhere('slug', 'standard')?->id ?? $courseTypes->first()?->id);
         row.querySelector('.sessions').value = data.total_sessions || '';
         row.querySelector('.price').value = data.total_price || '';
         row.querySelector('.validity').value = data.validity_value || '';
@@ -353,7 +362,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addPackage').onclick = () => addPackage();
 
     document.getElementById('course_name_input').addEventListener('input', function () {
-        clearFieldError('course_name_error', this);
+        if (this.value.length > COURSE_NAME_MAX_LENGTH) {
+            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน ' + COURSE_NAME_MAX_LENGTH + ' ตัวอักษร';
+            showFieldError(this, 'course_name_error');
+        } else {
+            clearFieldError('course_name_error', this);
+        }
     });
     ['min_age_input', 'max_age_input'].forEach(id => {
         document.getElementById(id).addEventListener('input', function () {
@@ -468,15 +482,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let firstInvalidEl = null;
         const markInvalid = el => { firstInvalidEl = firstInvalidEl || el; isValid = false; };
 
-        // 1) ชื่อคลาสเรียน: ห้ามว่าง, ห้ามยาวเกิน 255 ตัวอักษร
+        // 1) ชื่อคลาสเรียน: ห้ามว่าง, ห้ามยาวเกิน 50 ตัวอักษร
         const courseNameInput = document.getElementById('course_name_input');
         const courseNameVal = courseNameInput.value.trim();
         if (!courseNameVal) {
             document.getElementById('course_name_error').textContent = 'กรุณากรอกชื่อคลาสเรียน';
             showFieldError(courseNameInput, 'course_name_error');
             markInvalid(courseNameInput);
-        } else if (courseNameVal.length > 255) {
-            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน 255 ตัวอักษร';
+        } else if (courseNameVal.length > COURSE_NAME_MAX_LENGTH) {
+            document.getElementById('course_name_error').textContent = 'ชื่อคลาสเรียนต้องไม่เกิน ' + COURSE_NAME_MAX_LENGTH + ' ตัวอักษร';
             showFieldError(courseNameInput, 'course_name_error');
             markInvalid(courseNameInput);
         }
@@ -598,8 +612,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (!isInt(validityVal)) {
                 showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องเป็นตัวเลข', [validityInput]);
                 markInvalid(validityInput);
-            } else if (Number(validityVal) < 0) {
-                showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องมากกว่าหรือเท่ากับ 0', [validityInput]);
+            } else if (Number(validityVal) < 1) {
+                showRowError(row, '.validity-error', 'อายุแพ็กเกจต้องมากกว่า 0', [validityInput]);
                 markInvalid(validityInput);
             }
         });
@@ -624,12 +638,14 @@ document.addEventListener('DOMContentLoaded', () => {
         [...schedules.children].forEach((row, index) => {
             const days = [...row.querySelectorAll('.day:checked')].map(input => input.value);
             const fields = {
-                day_type: 'weekday',
+                day_type: row.dataset.dayType || 'weekday',
+                court_section_id: row.dataset.courtSectionId || '',
                 start_time: row.querySelector('.start').value,
                 end_time: row.querySelector('.end').value,
                 is_limited_spots: row.querySelector('.limited').checked ? '1' : '0',
                 capacity: row.querySelector('.capacity').value
             };
+            if (row.dataset.scheduleId) fields.id = row.dataset.scheduleId;
             Object.entries(fields).forEach(([key, value]) => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -645,15 +661,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 hidden.append(input)
             })
         });
-        [...packages.children].forEach((row, index) => [
-            ['package_type', '.packageType'],
-            ['total_sessions', '.sessions'],
-            ['total_price', '.price'],
-            ['validity_value', '.validity'],
-            ['validity_unit', '.unit'],
-            ['recommendation_text', '.recommendation']
-        ].forEach(([key, selector]) => row.querySelector(selector).name =
-            `packages[${index}][${key}]`));
+        [...packages.children].forEach((row, index) => {
+            const fields = [
+                ['course_type_id', '.packageType'],
+                ['total_sessions', '.sessions'],
+                ['total_price', '.price'],
+                ['validity_value', '.validity'],
+                ['validity_unit', '.unit'],
+                ['recommendation_text', '.recommendation']
+            ];
+            if (row.querySelector('.packageId').value) fields.unshift(['id', '.packageId']);
+            fields.forEach(([key, selector]) => row.querySelector(selector).name =
+                `packages[${index}][${key}]`);
+        });
     }
 });
 </script>

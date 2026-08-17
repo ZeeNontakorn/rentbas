@@ -4,12 +4,12 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen min-w-screen py-8">
-    <div class="container mx-auto px-6 max-w-4xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         {{-- Header --}}
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">จัดการเว็บไซต์</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเว็บไซต์</h1>
                 <p class="text-sm text-gray-500 mt-1">จัดการเนื้อหา รูปภาพ สิ่งอำนวยความสะดวก และรีวิวที่แสดงบนหน้า Home</p>
             </div>
         </div>
@@ -47,7 +47,7 @@
         <div class="space-y-6">
 
             {{-- ─── Section 1: About Court ─── --}}
-            <form action="{{ route('admin.edit.text.update') }}" method="POST" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
+            <form action="{{ route('admin.edit.text.update') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 js-setting-form" data-section="about">
                 @csrf
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
@@ -95,8 +95,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
-                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                    <x-form-action-button type="reset" variant="reset" class="cursor-pointer">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check" class="cursor-pointer">บันทึก</x-form-action-button>
                 </div>
             </form>
 
@@ -179,8 +179,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
-                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                    <x-form-action-button type="reset" variant="reset" class="cursor-pointer">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check" class="cursor-pointer">บันทึก</x-form-action-button>
                 </div>
             </form>
 
@@ -237,8 +237,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
-                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                    <x-form-action-button type="reset" variant="reset" class="cursor-pointer">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check" class="cursor-pointer">บันทึก</x-form-action-button>
                 </div>
             </form>
 
@@ -276,8 +276,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <x-form-action-button type="reset" variant="reset">ยกเลิก</x-form-action-button>
-                    <x-form-action-button type="submit" icon="check">บันทึก</x-form-action-button>
+                    <x-form-action-button type="reset" variant="reset" class="cursor-pointer">ยกเลิก</x-form-action-button>
+                    <x-form-action-button type="submit" icon="check" class="cursor-pointer">บันทึก</x-form-action-button>
                 </div>
             </form>
 
@@ -325,7 +325,7 @@
                         </div>
                     </div>
                     <div class="mt-4 flex justify-end">
-                        <button type="submit" class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600">เพิ่มการ์ด</button>
+                        <button type="submit" class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 cursor-pointer">เพิ่มการ์ด</button>
                     </div>
                 </form>
 
@@ -376,9 +376,9 @@
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-[1fr_auto] gap-2">
-                                    <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700">บันทึกการ์ด</button>
+                                    <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 cursor-pointer">บันทึกการ์ด</button>
                                     <button type="submit" form="delete-facility-{{ $facility->id }}"
-                                            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white">
+                                            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white cursor-pointer">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
@@ -402,7 +402,7 @@
                         <p class="text-xs text-gray-400">รีวิวใหม่จะรอตรวจสอบ และจะแสดงบนหน้า Home หลัง Admin กดเผยแพร่เท่านั้น</p>
                     </div>
                     <div class="flex gap-2 text-xs">
-                        <span class="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700">รอตรวจ {{ $reviews->where('status', 'pending')->count() }}</span>
+                        <span class="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700">รอตรวจ {{ $pendingReviewsCount }}</span>
                     </div>
                 </div>
 
@@ -457,7 +457,7 @@
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="published">
-                                        <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700">เผยแพร่</button>
+                                        <button type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 cursor-pointer">เผยแพร่</button>
                                     </form>
                                 @endif
                                 @if($review->status !== 'hidden')
@@ -465,11 +465,11 @@
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="hidden">
-                                        <button type="submit" class="rounded-lg bg-gray-700 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800">ซ่อนรีวิว</button>
+                                        <button type="submit" class="rounded-lg bg-gray-700 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 cursor-pointer">ซ่อนรีวิว</button>
                                     </form>
                                 @endif
                                 <button type="submit" form="delete-review-{{ $review->id }}"
-                                        class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white">
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-600 hover:bg-red-600 hover:text-white cursor-pointer">
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                     </svg>

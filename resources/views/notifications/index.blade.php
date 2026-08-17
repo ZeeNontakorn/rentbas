@@ -3,7 +3,7 @@
 @section('title', 'แจ้งเตือนของฉัน')
 
 @section('content')
-<div class="container mx-auto max-w-4xl py-10 px-4">
+<div class="container mx-auto px-4 sm:px-6 max-w-7xl">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">แจ้งเตือนของฉัน</h2>
 
@@ -25,20 +25,26 @@
         <div class="space-y-3">
 @foreach($notifications as $n)
     @php
-        $accentBorder = $n->is_read ? '' : 'border-l-4 border-orange-500';
-        $accentText = 'text-gray-800';
-        if ($n->title === 'การจองได้รับการอนุมัติ') {
-            $accentBorder = $n->is_read ? 'border-l-4 border-green-200' : 'border-l-4 border-green-500';
-            $accentText = 'text-green-700';
-        } elseif ($n->title === 'การจองถูกปฏิเสธ') {
-            $accentBorder = $n->is_read ? 'border-l-4 border-red-200' : 'border-l-4 border-red-500';
-            $accentText = 'text-red-700';
-        }
+        $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
+            || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
+        $visual = match ($n->visualType()) {
+            'success' => ['border' => 'border-l-emerald-500', 'bg' => 'bg-emerald-50/70', 'title' => 'text-emerald-800', 'iconBg' => 'bg-emerald-100', 'icon' => 'text-emerald-600', 'path' => 'M5 13l4 4L19 7'],
+            'danger' => ['border' => 'border-l-rose-500', 'bg' => 'bg-rose-50/70', 'title' => 'text-rose-800', 'iconBg' => 'bg-rose-100', 'icon' => 'text-rose-600', 'path' => 'M6 18L18 6M6 6l12 12'],
+            'warning' => ['border' => 'border-l-amber-500', 'bg' => 'bg-amber-50/70', 'title' => 'text-amber-800', 'iconBg' => 'bg-amber-100', 'icon' => 'text-amber-600', 'path' => 'M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'],
+            default => ['border' => 'border-l-sky-500', 'bg' => 'bg-sky-50/70', 'title' => 'text-sky-800', 'iconBg' => 'bg-sky-100', 'icon' => 'text-sky-600', 'path' => 'M12 8h.01M11 12h1v4h1m8-4a9 9 0 11-18 0 9 9 0 0118 0z'],
+        };
     @endphp
-    <div class="bg-white p-4 rounded-xl shadow flex justify-between items-center
-                {{ $accentBorder }} {{ $n->is_read ? 'opacity-70' : '' }}">
-        <div>
-            <div class="font-semibold">{{ $n->title }}</div>
+    <div class="{{ $visual['bg'] }} p-4 rounded-xl border border-gray-200 border-l-4 {{ $visual['border'] }} shadow-sm flex items-start gap-3
+                {{ $n->is_read ? 'opacity-65' : '' }}">
+        <span class="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full {{ $visual['iconBg'] }} {{ $visual['icon'] }}">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
+        </span>
+        <div class="min-w-0 flex-1">
+            @if($isCourtBookingNotification)
+                <span class="font-semibold {{ $visual['title'] }}">{{ $n->title }}</span>
+            @else
+                <a href="{{ route('notifications.open', $n) }}" class="font-semibold {{ $visual['title'] }} hover:underline">{{ $n->title }}</a>
+            @endif
 
             {{-- ส่วนที่แก้ไข --}}
             <div class="text-sm text-gray-600">
@@ -52,17 +58,20 @@
 
                 {{-- if there's a second segment, show it on the next line --}}
                 @if(isset($msgParts[1]) && trim($msgParts[1]) !== '')
-                    <div class="mt-1 font-medium {{ $accentText }}">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
+                    <div class="mt-1 font-medium {{ $visual['title'] }}">{!! nl2br(e(trim($msgParts[1]))) !!}</div>
                 @endif
             </div>
 
             <div class="text-xs text-gray-400 mt-1">{{ $n->created_at->format('d M Y H:i') }}</div>
+            @unless($isCourtBookingNotification)
+                <a href="{{ route('notifications.open', $n) }}" class="mt-2 inline-flex text-xs font-semibold {{ $visual['title'] }} hover:underline">เปิดดูรายละเอียด →</a>
+            @endunless
         </div>
 
         @if(!$n->is_read)
-            <form method="POST" action="{{ route('notifications.read', $n) }}">
+            <form class="flex-shrink-0" method="POST" action="{{ route('notifications.read', $n) }}">
                 @csrf
-                <button class="text-sm text-blue-600 hover:underline">ทำเครื่องหมายว่าอ่านแล้ว</button>
+                <button class="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 shadow-sm hover:bg-gray-50">อ่านแล้ว</button>
             </form>
         @endif
     </div>

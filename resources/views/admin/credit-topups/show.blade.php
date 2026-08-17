@@ -13,7 +13,7 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-3xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         @include('components.mail-loading-overlay')
 
@@ -90,34 +90,121 @@
                     <form method="POST" action="{{ route('admin.credit-topups.approve', $topupRequest) }}" class="flex-1"
                           onsubmit="showMailLoadingOverlay('กำลังอนุมัติและส่งอีเมลใบเสร็จให้ลูกค้า...'); this.querySelector('button').disabled = true;">
                         @csrf
-                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 transition">
-                            ✓ อนุมัติและเติมเครดิต
+                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                            อนุมัติและเติมเครดิต
                         </button>
                     </form>
 
-                    <form method="POST" action="{{ route('admin.credit-topups.reject', $topupRequest) }}" class="flex-1 flex gap-2" onsubmit="return promptRejectReason(this)">
-                        @csrf
-                        <input type="hidden" name="reason" class="reject-reason-input">
-                        <button type="submit" class="w-full text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 transition">
-                            ✕ ปฏิเสธคำขอ
-                        </button>
-                    </form>
+                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                            ปฏิเสธคำขอ
+                    </button>
                 </div>
             @endif
         </div>
     </div>
 </div>
 
+<div id="rejectTopupModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-lg overflow-hidden rounded-3xl border border-red-100 bg-white shadow-2xl">
+        <div class="flex items-start justify-between gap-4 border-b border-red-50 bg-gradient-to-r from-red-50 to-white px-6 py-5">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-red-400">Credit topup rejection</p>
+                <h3 class="mt-1 text-lg font-bold text-gray-900">ปฏิเสธคำขอเติมเครดิต #{{ $topupRequest->id }}</h3>
+                <p class="mt-1 text-sm text-gray-500">ระบุเหตุผลสั้นๆ เพื่อส่งแจ้งลูกค้าและบันทึกไว้ในระบบ</p>
+            </div>
+            <button type="button" onclick="closeRejectTopupModal()" class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700" aria-label="ปิด modal">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ route('admin.credit-topups.reject', $topupRequest) }}" class="p-6" onsubmit="return submitRejectTopup(this)">
+            @csrf
+            <input type="hidden" name="reason" class="reject-reason-input">
+
+            <div class="rounded-2xl border border-gray-100 bg-slate-50 p-4">
+                <p class="text-xs font-semibold text-gray-400">ข้อมูลคำขอ</p>
+                <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                    <div>
+                        <p class="text-xs text-gray-400">ผู้ใช้</p>
+                        <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">ยอดชำระ</p>
+                        <p class="font-medium text-gray-800">฿{{ number_format($topupRequest->price_satang / 100, 2) }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <label for="rejectTopupReason" class="mb-1.5 block text-sm font-semibold text-gray-800">เหตุผลที่ปฏิเสธ <span class="text-red-500">*</span></label>
+                <textarea id="rejectTopupReason" rows="4" maxlength="500" required
+                    placeholder="เช่น ยอดเงินไม่ตรงกับสลิป / ไม่พบรายการโอน / ชื่อผู้โอนไม่ตรงกับคำขอ"
+                    class="w-full resize-none rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"></textarea>
+                <p class="mt-2 text-xs text-gray-400">ระบบจะส่งเหตุผลนี้ไปยังอีเมลของลูกค้า และเก็บไว้เป็นบันทึกคำขอ</p>
+            </div>
+
+            <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onclick="closeRejectTopupModal()" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 cursor-pointer">
+                    ยกเลิก
+                </button>
+                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 cursor-pointer">
+                    ปฏิเสธและส่งอีเมลแจ้งลูกค้า
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @push('scripts')
 <script>
-function promptRejectReason(form) {
-    const reason = prompt('ระบุเหตุผลที่ปฏิเสธคำขอนี้:');
-    if (!reason || !reason.trim()) return false;
-    form.querySelector('.reject-reason-input').value = reason.trim();
+const rejectTopupModal = document.getElementById('rejectTopupModal');
+const rejectTopupReason = document.getElementById('rejectTopupReason');
+
+function openRejectTopupModal() {
+    if (!rejectTopupModal || !rejectTopupReason) return;
+    rejectTopupModal.classList.remove('hidden');
+    rejectTopupModal.classList.add('flex');
+    rejectTopupReason.value = '';
+    window.requestAnimationFrame(() => rejectTopupReason.focus());
+}
+
+function closeRejectTopupModal() {
+    if (!rejectTopupModal || !rejectTopupReason) return;
+    rejectTopupModal.classList.add('hidden');
+    rejectTopupModal.classList.remove('flex');
+    rejectTopupReason.value = '';
+}
+
+function submitRejectTopup(form) {
+    const reasonValue = rejectTopupReason ? rejectTopupReason.value.trim() : '';
+    if (!reasonValue) {
+        rejectTopupReason?.focus();
+        rejectTopupReason?.setCustomValidity('กรุณาระบุเหตุผล');
+        rejectTopupReason?.reportValidity();
+        rejectTopupReason?.setCustomValidity('');
+        return false;
+    }
+
+    form.querySelector('.reject-reason-input').value = reasonValue;
     showMailLoadingOverlay('กำลังปฏิเสธคำขอและส่งอีเมลแจ้งลูกค้า...');
-    form.querySelector('button').disabled = true;
+    form.querySelector('button[type="submit"]').disabled = true;
     return true;
 }
+
+document.addEventListener('click', (event) => {
+    if (!rejectTopupModal || !event.target) return;
+    if (event.target === rejectTopupModal) {
+        closeRejectTopupModal();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && rejectTopupModal && !rejectTopupModal.classList.contains('hidden')) {
+        closeRejectTopupModal();
+    }
+});
 </script>
 @endpush
 @endsection

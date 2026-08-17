@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CourseSchedule extends Model
 {
@@ -35,6 +36,11 @@ class CourseSchedule extends Model
         return $this->belongsTo(CourtSection::class);
     }
 
+    public function overrides(): HasMany
+    {
+        return $this->hasMany(CourseCalendarOverride::class);
+    }
+
     public function getDayTypeLabelAttribute(): string
     {
         if (! empty($this->weekdays)) {
@@ -43,24 +49,15 @@ class CourseSchedule extends Model
                 'fri' => 'ศุกร์', 'sat' => 'เสาร์', 'sun' => 'อาทิตย์',
             ];
 
-            $weekdayDays = collect($this->weekdays)->filter(fn ($day) => in_array($day, ['mon', 'tue', 'wed', 'thu', 'fri'], true));
-            $weekendDays = collect($this->weekdays)->filter(fn ($day) => in_array($day, ['sat', 'sun'], true));
-            $parts = [];
-
-            if ($weekdayDays->isNotEmpty()) {
-                $parts[] = 'วันธรรมดา: '.$weekdayDays->map(fn ($day) => $labels[$day])->implode(', ');
-            }
-            if ($weekendDays->isNotEmpty()) {
-                $parts[] = 'เสาร์-อาทิตย์: '.$weekendDays->map(fn ($day) => $labels[$day])->implode(', ');
-            }
-
-            return implode(' | ', $parts);
+            return collect($this->weekdays)
+                ->filter(fn ($day) => isset($labels[$day]))
+                ->map(fn ($day) => $labels[$day])
+                ->implode(', ');
         }
 
-        return $this->day_type === 'weekday' ? 'วันธรรมดา (จ, พ, ศ)' : 'เสาร์-อาทิตย์ (ส, อา)';
+        return $this->day_type === 'weekday' ? 'จันทร์, พุธ, ศุกร์' : 'เสาร์, อาทิตย์';
     }
 
-    // เช่น "1.30 ชั่วโมง" (ชั่วโมง.นาที) ตามที่โชว์ในฟอร์มของ Gemini
     public function getDurationLabelAttribute(): string
     {
         $start = Carbon::parse($this->start_time);

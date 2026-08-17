@@ -70,10 +70,18 @@
             border-radius: 4px;
             z-index: 10;
         }
+
+        /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือพื้นหลังปกติ แต่ต่ำกว่า event กำหนดการจริง */
+        #staff-schedule-calendar .fc-bg-event {
+            z-index: 1 !important;
+        }
+        #staff-schedule-calendar .fc-timegrid-event-harness {
+            z-index: 3 !important;
+        }
     </style>
 
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-        <div class="container mx-auto px-6 max-w-7xl">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             <a href="{{ route('admin.staffs.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
@@ -93,12 +101,12 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-start gap-6">
                     <div
-                        class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
+                        class="w-20 h-20 rounded-full {{ $isCoach ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600' }} flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
                         @if($staffProfile?->profile_image)
                             <img src="{{ $staffProfile->profile_image_url }}"
                                 alt="รูปโปรไฟล์ของ {{ $staff->name }}" class="h-full w-full object-cover">
                         @else
-                            <span class="text-orange-600 text-3xl font-bold">{{ strtoupper(substr($staff->name, 0, 1)) }}</span>
+                            <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($staff->name, 0, 1)) }}</span>
                         @endif
                     </div>
 
@@ -163,16 +171,13 @@
                         <h3 class="font-bold text-gray-800 text-lg">{{ $roleTitle }} Schedule Calendar</h3>
                         <p class="text-xs text-gray-500 mt-0.5">ตารางงานของ {{ $staff->name }} แบบรายเดือน รายสัปดาห์ และรายวัน</p>
                     </div>
-                    @if($isCoach)
-                        <a href="{{ route('admin.private-schedule.index', ['coach_id' => $staff->id]) }}"
-                            class="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-700">
-                            จัดการ Private Schedule
-                        </a>
-                    @endif
+                    <a href="{{ route('admin.private-schedule.index', ['staff_id' => $staff->id]) }}"
+                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
+                        จัดการ Schedule
+                    </a>
                 </div>
 
                 <div class="mb-4 flex flex-wrap gap-4 text-xs text-gray-600">
-                    <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-emerald-500"></i>ว่าง</span>
                     <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-slate-500"></i>ไม่ว่าง</span>
                     @if($isCoach)
                         <span class="flex items-center gap-1.5"><i class="h-3 w-3 rounded-sm bg-orange-500"></i>คำขอ Private</span>
@@ -207,28 +212,13 @@
                 <input type="hidden" name="court_id" id="modal-court-id">
                 <input type="hidden" name="start_time" id="modal-time-start">
                 <input type="hidden" name="end_time" id="modal-time-end">
+                <input type="hidden" name="status" id="status-booked" value="booked">
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-2">สถานะผู้ช่วยสนาม/โค้ช</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="available" id="status-available" class="peer sr-only"
-                                required>
-                            <div
-                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
-                                <span class="w-2.5 h-2.5 inline-block bg-[#10b981] rounded-sm mr-1"></span>
-                                <span class="text-gray-700">ว่าง</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="status" value="booked" id="status-booked" class="peer sr-only"
-                                required>
-                            <div
-                                class="text-center px-2 py-2 border border-gray-200 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 transition hover:bg-gray-50 text-sm font-medium flex items-center justify-center">
-                                <span class="w-2.5 h-2.5 inline-block bg-[#f97316] rounded-sm mr-1"></span>
-                                <span class="text-gray-700">ไม่ว่าง</span>
-                            </div>
-                        </label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-2">สถานะ</label>
+                    <div class="flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
+                        <span class="mr-2 inline-block h-2.5 w-2.5 rounded-sm bg-slate-500"></span>
+                        ช่วงเวลานี้ไม่ว่าง
                     </div>
                 </div>
 
@@ -272,7 +262,7 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span
                             class="text-red-500">*</span></label>
                     <select name="membership_type" required
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white cursor-pointer">
                         <option value="court_assistant" {{ old('membership_type', $staff->membership_type) === 'court_assistant' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
                         <option value="coach" {{ old('membership_type', $staff->membership_type) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
                     </select>
@@ -296,7 +286,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">เพศ</label>
                     <select name="gender"
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white cursor-pointer">
                         <option value="">ไม่ระบุ</option>
                         <option value="male" {{ old('gender', $staffProfile?->gender) === 'male' ? 'selected' : '' }}>ชาย
                         </option>
@@ -358,7 +348,7 @@
                             {{ $staffProfile?->profile_image ? 'ใช้รูปโปรไฟล์เดิม' : '' }}
                         </p>
                         <button type="button" id="remove-staff-image-btn"
-                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer">
                             ลบภาพ
                         </button>
                         <input type="hidden" name="remove_profile_image" id="remove-staff-image-input" value="0">
@@ -367,9 +357,9 @@
 
                 <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 md:col-span-2">
                     <button type="button" onclick="toggleModal('staffProfileModal', false)"
-                        class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">ยกเลิก</button>
+                        class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium cursor-pointer">ยกเลิก</button>
                     <button type="submit"
-                        class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium shadow-sm">บันทึกข้อมูล</button>
+                        class="px-4 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg font-medium shadow-sm cursor-pointer">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
@@ -378,6 +368,35 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
     <script>
+        const staffScheduleOpenHour = 8, staffScheduleCloseHour = 22;
+
+        function buildStaffPastOverlay(rangeStart, rangeEnd) {
+            const overlay = [];
+            const now = new Date();
+            const cursor = new Date(rangeStart);
+            cursor.setHours(0, 0, 0, 0);
+
+            while (cursor < rangeEnd) {
+                const dayOpen = new Date(cursor);
+                dayOpen.setHours(staffScheduleOpenHour, 0, 0, 0);
+                const dayClose = new Date(cursor);
+                dayClose.setHours(staffScheduleCloseHour, 0, 0, 0);
+
+                const overlayEnd = now < dayClose ? now : dayClose;
+
+                if (overlayEnd > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: overlayEnd.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'past' }
+                    });
+                }
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return overlay;
+        }
         const staffScheduleCalendar = new FullCalendar.Calendar(
             document.getElementById('staff-schedule-calendar'),
             {
@@ -386,7 +405,7 @@
                 firstDay: 1,
                 height: 'auto',
                 nowIndicator: true,
-                selectable: true,
+                selectable: @js(!$isCoach),
                 selectMirror: true,
                 allDaySlot: false,
                 slotMinTime: '08:00:00',
@@ -404,8 +423,44 @@
                     day: 'วัน',
                     list: 'รายการ'
                 },
-                events: @js(route('admin.staffs.schedule-events', $staff)),
+                events(info, success, failure) {
+                    const url = @js(route('admin.staffs.schedule-events', $staff));
+                    fetch(`${url}?start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`, {
+                        headers: { Accept: 'application/json' }
+                    })
+                        .then(response => response.ok ? response.json() : Promise.reject(response))
+                        .then(realEvents => {
+                            const view = staffScheduleCalendar.view.type;
+                            const isTimeGridView = view === 'timeGridWeek' || view === 'timeGridDay';
+                            success(isTimeGridView ? [...realEvents, ...buildStaffPastOverlay(info.start, info.end)] : realEvents);
+                        })
+                        .catch(failure);
+                },
+                eventDidMount(arg) {
+                    if (arg.event.extendedProps.kind !== 'past') return;
+
+                    arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+
+                    const label = document.createElement('div');
+                    label.textContent = 'เลยกำหนด';
+                    label.style.cssText = `
+                        position: absolute;
+                        inset: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: #1e293b;
+                        pointer-events: none;
+                    `;
+                    arg.el.appendChild(label);
+                },
                 select(info) {
+                    @if($isCoach)
+                        staffScheduleCalendar.unselect();
+                        return;
+                    @endif
                     const pad = value => String(value).padStart(2, '0');
                     const formatDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
                     const formatTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -417,19 +472,26 @@
                     document.getElementById('modal-court-name').textContent =
                         info.start.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
                     document.getElementById('modal-court-id').value = '';
-                    document.getElementById('status-available').checked = true;
-                    toggleDetailInput('available');
+                    toggleDetailInput('booked');
                     toggleModal('dragActionModal', true);
                     staffScheduleCalendar.unselect();
                 },
                 eventClick(info) {
+                    if (info.event.extendedProps.kind === 'past') {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'เลยกำหนด',
+                            text: 'ช่วงเวลานี้ผ่านไปแล้ว'
+                        });
+                        return;
+                    }
                     const props = info.event.extendedProps;
                     Swal.fire({
                         icon: 'info',
                         title: info.event.title,
                         text: props.statusLabel || props.detail || 'กำหนดการของบุคลากร'
                     });
-                }
+                },
             }
         );
         staffScheduleCalendar.render();
@@ -589,7 +651,7 @@
                 const detailText = this.getAttribute('data-detail');
                 globalTooltip.querySelector('#tt-title').innerText = `${this.getAttribute('data-court-name')} (${this.getAttribute('data-status')})`;
                 globalTooltip.querySelector('#tt-time').innerText = `เวลา: ${this.getAttribute('data-time-start')} - ${this.getAttribute('data-time-end')} น.`;
-                globalTooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่มีรายละเอียด/งานว่าง';
+                globalTooltip.querySelector('#tt-detail').innerText = detailText ? `รายละเอียด: ${detailText}` : 'ไม่ระบุรายละเอียด';
             });
 
             slot.addEventListener('mouseleave', function () {
@@ -612,19 +674,9 @@
                 document.getElementById('modal-time-start').value = firstSlot.getAttribute('data-time-start');
                 document.getElementById('modal-time-end').value = lastSlot.getAttribute('data-time-end');
 
-                const isBooked = firstSlot.classList.contains('bg-[#f97316]');
-                document.getElementById('status-booked').checked = isBooked;
-                document.getElementById('status-available').checked = !isBooked;
-
-                toggleDetailInput(isBooked ? 'booked' : 'available');
+                toggleDetailInput('booked');
                 toggleModal('dragActionModal', true);
             }
-        });
-
-        document.querySelectorAll('input[name="status"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                toggleDetailInput(this.value);
-            });
         });
 
         document.addEventListener('click', function (e) {

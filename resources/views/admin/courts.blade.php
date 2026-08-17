@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pb-10">
+    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
 
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -86,6 +86,14 @@
                 color: #fff;
             }
 
+            /* ช่วงเวลาที่มีลูกค้าจองอยู่แล้ว — แก้ไขสถานะทับไม่ได้ ต้องไปจัดการที่หน้ารายการจอง */
+            .slot-card.booking_pending,
+            .slot-card.booking_pending_payment,
+            .slot-card.booking_approved,
+            .slot-card.booked {
+                cursor: not-allowed;
+            }
+
             .court-item {
                 padding: 8px 12px;
                 cursor: pointer;
@@ -116,24 +124,17 @@
             }
         </style>
 
-        <div class="bk-main max-w-[1200px] mx-auto px-4 py-8">
+        <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             <div class="mb-6 flex justify-between items-end">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
-                        <a href="{{ route('admin.dashboard') }}"
-                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 hover:text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                            </svg>
-                        </a>
                         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการสนาม</h1>
                     </div>
                     <p class="text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
                 </div>
                 <button type="button" onclick="openCourtModal()"
-                    class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2">
+                    class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M12 5v14m7-7H5" />
                     </svg>
@@ -264,9 +265,10 @@
                                     <div class="flex flex-col gap-3 mb-4">
                                         {{-- เต็มสนาม (FULL) --}}
                                         <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3">
-                                            <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">FULL</span>
-                                            <input type="text" name="name_full" value="{{ $fullSec->name ?? 'เต็มสนาม' }}" maxlength="100"
-                                                class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                            <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">Half</span>
+                                            <label class="flex-1 min-w-0 rounded-lg px-3 py-1.5 text-sm text-gray-900 outline-none">
+                                                ครึ่งสนาม
+                                            </label>
                                             <div class="shrink-0 w-[115px] text-right px-1">
                                                 <span class="text-[12px] text-gray-400 whitespace-nowrap">เปิดใช้งานเสมอ</span>
                                             </div>
@@ -305,7 +307,7 @@
 
                                     <!-- ปุ่มบันทึก -->
                                     <button type="submit"
-                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3">
+                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3 cursor-pointer">
                                         บันทึก
                                     </button>
                                 </form>
@@ -316,7 +318,7 @@
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
                                     <button type="submit"
-                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center">
+                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center cursor-pointer">
                                         ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
                                     </button>
                                 </form>
@@ -325,23 +327,16 @@
                                 {{-- ---------------------------------------------------- --}}
                                 {{-- กรณีที่ 2: ยกเลิกการแบ่งสนามแล้ว / จองเฉพาะเต็มสนาม   --}}
                                 {{-- ---------------------------------------------------- --}}
-                                
+
                                 {{-- แก้ไขชื่อเต็มสนาม --}}
                                 @if ($fullSec)
-                                    <form method="POST" action="{{ route('admin.court-sections.update', $fullSec->id) }}"
-                                        class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 mb-4">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="return_date" value="{{ $date }}">
+                                    <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3 mb-4">
                                         <span class="text-xs font-bold px-2 py-1 rounded bg-gray-900 text-white">FULL</span>
-                                        <input type="text" name="name" value="{{ $fullSec->name }}" maxlength="100"
-                                            class="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-[#5271ff]/20 focus:border-[#5271ff] outline-none">
+                                        <label class="flex-1 min-w-0 rounded-lg px-3 py-1.5 text-sm text-gray-900 outline-none">
+                                            {{ $fullSec->name }}
+                                        </label>
                                         <span class="text-[12px] text-gray-400 px-2 whitespace-nowrap">เปิดใช้งานเสมอ</span>
-                                        <button type="submit"
-                                            class="text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-1.5 transition whitespace-nowrap">
-                                            บันทึก
-                                        </button>
-                                    </form>
+                                    </div>
                                 @endif
 
                                 {{-- ฟอร์มแบ่งครึ่งสนามใหม่ --}}
@@ -407,6 +402,11 @@
                                         onclick="selectAdminTime('{{ $slot['start'] }}', '{{ $slot['end'] }}', '{{ $slot['status'] }}', this)">
                                         <div class="slot-time">{{ $slot['label'] }}</div>
                                         <div class="slot-btn">{{ $sLabel }}</div>
+                                        @if(!empty($slot['customer_name']))
+                                            <div class="text-[11px] text-gray-600 mt-1.5 truncate" title="{{ $slot['customer_name'] }}">
+                                                {{ $slot['customer_name'] }}
+                                            </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
@@ -547,9 +547,9 @@
 
                     <div class="flex items-center justify-end gap-3 pt-2">
                         <button type="button" onclick="closeCourtModal()"
-                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition">ยกเลิก</button>
+                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition">ยกเลิก</button>
                         <button type="submit"
-                            class="rounded-lg bg-[#5271ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f5ee8] transition"
+                            class="rounded-lg bg-[#5271ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f5ee8] cursor-pointer transition"
                             id="courtModalSubmit">บันทึก</button>
                     </div>
                 </form>
@@ -828,43 +828,32 @@
                 });
 
                 function selectAdminTime(start, end, status, el) {
-                    const applySelection = () => {
-                        if (selEl) {
-                            selEl.classList.remove('selected');
-                        }
-
-                        el.classList.add('selected');
-                        selEl = el;
-
-                        document.getElementById('st_val').value = start;
-                        document.getElementById('en_val').value = end;
-                        document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end
-                            .substring(0, 5);
-
-                        document.getElementById('statusBox').classList.remove('hidden');
-                    };
-
-                    // Check if it's booked by user, maybe warn before allowing override
+                    // ห้ามแก้สถานะทับช่วงที่มีลูกค้าจองอยู่แล้วโดยเด็ดขาด (ล็อกไว้ทั้ง client และ server)
+                    // ต้องไปจัดการผ่านหน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) เท่านั้น
                     if (status.includes('book')) {
                         Swal.fire({
-                            icon: 'warning',
-                            title: 'ยืนยันการแก้ไขสถานะ?',
-                            text: 'ช่วงเวลานี้มีการจองโดยผู้ใช้งานอยู่แล้ว ต้องการแก้ไขสถานะทับซ้อนหรือไม่? (ระบบจะนับเฉพาะสถานะใหม่ที่คุณเลือก)',
-                            showCancelButton: true,
-                            confirmButtonText: 'ยืนยัน',
-                            cancelButtonText: 'ยกเลิก',
+                            icon: 'info',
+                            title: 'แก้ไขสถานะไม่ได้',
+                            text: 'ช่วงเวลานี้มีลูกค้าจองอยู่แล้ว ไม่สามารถแก้ไขสถานะทับได้ กรุณาไปจัดการที่หน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) ก่อน',
+                            confirmButtonText: 'เข้าใจแล้ว',
                             confirmButtonColor: '#5271ff',
-                            cancelButtonColor: '#6b7280',
-                            reverseButtons: true,
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                applySelection();
-                            }
                         });
                         return;
                     }
 
-                    applySelection();
+                    if (selEl) {
+                        selEl.classList.remove('selected');
+                    }
+
+                    el.classList.add('selected');
+                    selEl = el;
+
+                    document.getElementById('st_val').value = start;
+                    document.getElementById('en_val').value = end;
+                    document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end
+                        .substring(0, 5);
+
+                    document.getElementById('statusBox').classList.remove('hidden');
                 }
 
                 setInterval(() => {

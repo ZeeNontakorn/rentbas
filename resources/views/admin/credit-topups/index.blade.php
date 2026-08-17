@@ -17,11 +17,11 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-6 max-w-6xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
             <div>
-                <h1 class="text-xl font-bold text-gray-800">คำขอเติมเครดิต</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">คำขอเติมเครดิต</h1>
                 <p class="text-sm text-gray-400 mt-0.5">ตรวจสอบสลิป/หลักฐานการชำระเงิน แล้วอนุมัติหรือปฏิเสธคำขอของผู้ใช้</p>
             </div>
             <a href="{{ route('admin.credit-topup-packages.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">
@@ -38,13 +38,14 @@
             </div>
         @endif
 
-        <div class="flex gap-2 mb-5">
+        {{-- ส่วนแสดง Tabs สถานะ --}}
+        <div class="flex gap-2 -mb-px overflow-x-auto select-none border-b border-gray-200 mb-6">
             @foreach(['pending' => 'รอตรวจสอบ', 'approved' => 'อนุมัติแล้ว', 'rejected' => 'ปฏิเสธแล้ว', 'all' => 'ทั้งหมด'] as $key => $label)
                 <a href="{{ route('admin.credit-topups.index', ['status' => $key]) }}"
-                   class="px-4 py-1.5 rounded-full text-xs font-semibold transition {{ $status === $key ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-400' }}">
+                    class="px-5 py-2.5 text-sm font-medium border-b-2 transition-all cursor-pointer flex items-center gap-1.5 {{ $status === $key ? 'border-orange-500 text-orange-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     {{ $label }}
                     @if($key === 'pending' && $pendingCount > 0)
-                        <span class="ml-1 bg-amber-400 text-amber-900 rounded-full px-1.5">{{ $pendingCount }}</span>
+                        <span class="bg-amber-400 text-amber-900 text-[10px] rounded-full px-1.5 leading-4">{{ $pendingCount }}</span>
                     @endif
                 </a>
             @endforeach
