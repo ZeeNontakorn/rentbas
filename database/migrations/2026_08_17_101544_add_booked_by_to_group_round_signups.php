@@ -13,8 +13,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('group_round_signups', function (Blueprint $table) {
-            $table->foreignId('booked_by')->nullable()->after('added_by')
-                ->constrained('users')->nullOnDelete();
+            $table->foreignId('booked_by')
+                ->nullable()
+                ->after('added_by')
+                ->constrained('users')
+                ->nullOnDelete();
         });
     }
 
