@@ -14,10 +14,13 @@
     @if($isEdit) @method('PUT') @endif
 
     <div class="md:col-span-2">
-        <label class="block text-[11px] font-medium text-gray-500 mb-1">ชื่อแพ็กเกจ (แสดงให้ลูกค้าเห็น)</label>
-        <input type="text" name="label" required maxlength="150"
+        <label class="block text-[11px] font-medium text-gray-500 mb-1">ชื่อแพ็กเกจ (แสดงให้ลูกค้าเห็น) <span class="text-red-500">*</span></label>
+        <input type="text" name="label" maxlength="150"
                value="{{ old('label', $isEdit ? $package->label : '') }}"
-               class="package-label-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="package-label-input w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('label') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('label')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
         <p class="text-[11px] text-gray-400 mt-1.5">
             รหัสภายใน (auto):
             <code class="package-code-preview font-mono text-gray-600">{{ old('code', $isEdit ? $package->code : '') ?: '—' }}</code>
@@ -25,15 +28,18 @@
         </p>
         <input type="text" name="code" maxlength="50" placeholder="เช่น personal-shooting-2-hours"
                value="{{ old('code', $isEdit ? $package->code : '') }}"
-               class="package-code-input hidden w-full mt-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="package-code-input {{ $errors->has('code') ? '' : 'hidden' }} w-full mt-1.5 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('code') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('code')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div class="relative" data-category-combobox>
-        <label class="block text-[11px] font-medium text-gray-500 mb-1">หมวดหมู่ (คลิกเลือกของเดิม หรือพิมพ์เพื่อสร้างใหม่)</label>
-        <input type="text" name="category" required maxlength="50" autocomplete="off"
+        <label class="block text-[11px] font-medium text-gray-500 mb-1">หมวดหมู่ (คลิกเลือกของเดิม หรือพิมพ์เพื่อสร้างใหม่) <span class="text-red-500">*</span></label>
+        <input type="text" name="category" maxlength="50" autocomplete="off"
                value="{{ old('category', $isEdit ? $package->category : '') }}"
                placeholder="เช่น personal, group, private, หรือชื่อกลุ่มใหม่"
-               class="category-combobox-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="category-combobox-input w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('category') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
         <div class="category-combobox-dropdown hidden absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
             @forelse ($existingCategories as $existingCategory)
                 <button type="button" class="category-combobox-option w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition" data-value="{{ $existingCategory }}">
@@ -43,23 +49,29 @@
             @endforelse
             <div class="category-combobox-empty hidden px-3 py-2 text-xs text-gray-400">ไม่พบหมวดหมู่ที่ตรงกัน — พิมพ์ต่อเพื่อสร้างหมวดหมู่ใหม่</div>
         </div>
+        @error('category')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div>
         <label class="block text-[11px] font-medium text-gray-500 mb-1">ประเภทสนามที่ใช้โปรได้ (เงื่อนไขจริงตอนจอง)</label>
-        <select name="court_type" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+        <select name="court_type" class="cursor-pointer w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('court_type') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
             @php $ct = old('court_type', $isEdit ? $package->court_type : null); @endphp
             <option value="" @selected($ct === null || $ct === '')>ใช้ได้ทั้งเต็มสนามและครึ่งสนาม</option>
             <option value="full" @selected($ct === 'full')>เต็มสนามเท่านั้น</option>
             <option value="half" @selected($ct === 'half')>ครึ่งสนามเท่านั้น</option>
         </select>
+        @error('court_type')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div class="md:col-span-2">
         <label class="block text-[11px] font-medium text-gray-500 mb-1">วันที่ใช้โปรนี้ได้ (เงื่อนไขจริงตอนจอง — ไม่เลือก = ใช้ได้ทุกวัน)</label>
-        <div class="flex flex-wrap gap-x-6 gap-y-2 bg-slate-50 border border-gray-200 rounded-lg px-3 py-2.5">
+        <div data-field-wrap="available_days" class="flex flex-wrap gap-x-6 gap-y-2 bg-slate-50 rounded-lg px-3 py-2.5 border {{ $errors->has('available_days') || $errors->has('available_days.*') ? 'border-red-500' : 'border-gray-200' }}">
             @foreach (['weekday' => 'จันทร์-ศุกร์', 'weekend' => 'เสาร์-อาทิตย์', 'holiday' => 'วันหยุดนักขัตฤกษ์'] as $val => $lbl)
-                <label class="inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+                <label class="relative inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
                     <input type="checkbox" name="available_days[]" value="{{ $val }}" class="peer sr-only"
                            @checked(in_array($val, $availableDays ?? []))>
                     <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
@@ -67,19 +79,28 @@
                 </label>
             @endforeach
         </div>
+        @error('available_days.*')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div>
         <label class="block text-[11px] font-medium text-gray-500 mb-1">ใช้โปรได้ตั้งแต่เวลา (ไม่ระบุ = ไม่จำกัด)</label>
         <input type="text" name="available_start_time" placeholder="เช่น 09:00"
                value="{{ old('available_start_time', $isEdit && $package->available_start_time ? substr($package->available_start_time,0,5) : '') }}"
-               class="time-picker w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="time-picker w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('available_start_time') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('available_start_time')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
     <div>
         <label class="block text-[11px] font-medium text-gray-500 mb-1">ใช้โปรได้ถึงเวลา (ไม่ระบุ = ไม่จำกัด)</label>
         <input type="text" name="available_end_time" placeholder="เช่น 16:00"
                value="{{ old('available_end_time', $isEdit && $package->available_end_time ? substr($package->available_end_time,0,5) : '') }}"
-               class="time-picker w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="time-picker w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('available_end_time') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('available_end_time')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div>
@@ -87,27 +108,39 @@
         <input type="number" step="1" min="1" max="24" name="duration_hours"
                value="{{ old('duration_hours', $isEdit ? $package->duration_hours : '') }}"
                placeholder="เว้นว่าง = ไม่บังคับ"
-               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('duration_hours') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('duration_hours')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
     <div>
-        <label class="block text-[11px] font-medium text-gray-500 mb-1">จำนวนคนสูงสุด</label>
-        <input type="number" min="1" max="1000" name="max_people" required
+        <label class="block text-[11px] font-medium text-gray-500 mb-1">จำนวนคนสูงสุด <span class="text-red-500">*</span></label>
+        <input type="number" min="1" max="1000" name="max_people"
                value="{{ old('max_people', $isEdit ? $package->max_people : 1) }}"
-               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('max_people') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('max_people')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div>
-        <label class="block text-[11px] font-medium text-gray-500 mb-1">ราคาปกติ (บาท)</label>
-        <input type="number" step="0.01" min="0" name="base_price" required
+        <label class="block text-[11px] font-medium text-gray-500 mb-1">ราคาปกติ (บาท) <span class="text-red-500">*</span></label>
+        <input type="number" step="0.01" min="0" name="base_price"
                value="{{ old('base_price', $isEdit ? number_format($package->base_price / 100, 2, '.', '') : '') }}"
-               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('base_price') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('base_price')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
     <div>
         <label class="block text-[11px] font-medium text-gray-500 mb-1">ราคาวันหยุดนักขัตฤกษ์ (ไม่ระบุ = ใช้ราคาปกติ)</label>
         <input type="number" step="0.01" min="0" name="holiday_price"
                value="{{ old('holiday_price', $isEdit && $package->holiday_price !== null ? number_format($package->holiday_price / 100, 2, '.', '') : '') }}"
                placeholder="ไม่มี"
-               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('holiday_price') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('holiday_price')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div class="md:col-span-2 grid grid-cols-3 gap-3 bg-slate-50 border border-gray-200 rounded-lg p-3">
@@ -116,19 +149,28 @@
             <input type="number" step="0.01" min="0" name="weekend_special_price"
                    value="{{ old('weekend_special_price', $isEdit && $package->weekend_special_price !== null ? number_format($package->weekend_special_price / 100, 2, '.', '') : '') }}"
                    placeholder="ไม่มี"
-                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                   class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('weekend_special_price') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+            @error('weekend_special_price')
+                <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+            @enderror
         </div>
         <div>
-            <label class="block text-[11px] font-medium text-gray-500 mb-1">ตั้งแต่เวลา</label>
+            <label class="block text-[11px] font-medium text-gray-500 mb-1">ตั้งแต่เวลา <span class="text-red-500">*</span><span class="text-gray-400 font-normal">(ถ้าใส่ราคาพิเศษ)</span></label>
             <input type="text" name="weekend_special_start" placeholder="เช่น 07:00"
                    value="{{ old('weekend_special_start', $isEdit && $package->weekend_special_start ? substr($package->weekend_special_start,0,5) : '') }}"
-                   class="time-picker w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                   class="time-picker w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('weekend_special_start') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+            @error('weekend_special_start')
+                <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+            @enderror
         </div>
         <div>
-            <label class="block text-[11px] font-medium text-gray-500 mb-1">ถึงเวลา</label>
+            <label class="block text-[11px] font-medium text-gray-500 mb-1">ถึงเวลา <span class="text-red-500">*</span><span class="text-gray-400 font-normal">(ถ้าใส่ราคาพิเศษ)</span></label>
             <input type="text" name="weekend_special_end" placeholder="เช่น 11:00"
                    value="{{ old('weekend_special_end', $isEdit && $package->weekend_special_end ? substr($package->weekend_special_end,0,5) : '') }}"
-                   class="time-picker w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                   class="time-picker w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('weekend_special_end') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+            @error('weekend_special_end')
+                <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+            @enderror
         </div>
     </div>
 
@@ -137,24 +179,30 @@
         <input type="number" min="1" max="255" name="session_count"
                value="{{ old('session_count', $isEdit ? $package->session_count : '') }}"
                placeholder="ไม่มี"
-               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('session_count') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('session_count')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
     <div>
         <label class="block text-[11px] font-medium text-gray-500 mb-1">อายุแพ็กเกจ (วัน)</label>
         <input type="number" min="1" max="3650" name="validity_days"
                value="{{ old('validity_days', $isEdit ? $package->validity_days : '') }}"
                placeholder="ไม่มี"
-               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+               class="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 {{ $errors->has('validity_days') ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+        @error('validity_days')
+            <p class="text-[11px] text-red-500 mt-1">{{ $message }}</p>
+        @enderror
     </div>
 
     <div class="md:col-span-2 flex items-center gap-6 pt-1">
-        <label class="inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+        <label class="relative inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
             <input type="checkbox" name="requires_verification" value="1" class="peer sr-only"
                    @checked(old('requires_verification', $isEdit ? $package->requires_verification : false))>
             <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-amber-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
             <span>ต้องยืนยันสถานะ (เช่น บัตรนักเรียน/นักศึกษา)</span>
         </label>
-        <label class="inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+        <label class="relative inline-flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
             <input type="checkbox" name="is_active" value="1" class="peer sr-only"
                    @checked(old('is_active', $isEdit ? $package->is_active : true))>
             <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
@@ -165,11 +213,11 @@
     <div class="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-gray-100 mt-1">
         @if($isEdit)
             <button type="button" onclick="resetPkgForm(this.closest('form')); closePkgDrawer('{{ $formId ?? null }}')"
-                    class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-2 transition">
+                    class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-2 cursor-pointer transition">
                 ยกเลิก
             </button>
         @endif
-        <button type="submit" class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition">
+        <button type="submit" class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 cursor-pointer transition">
             {{ $isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มแพ็กเกจ' }}
         </button>
     </div>
@@ -266,5 +314,107 @@
                 }
             });
         }
+
+        // ─── ส่งฟอร์มด้วย AJAX แทนการ submit ปกติ: กันไม่ให้หน้ารีโหลด/ลิ้นชักฟอร์มหุบไปตอน
+        // validation ไม่ผ่าน — error จะโชว์กรอบแดง + ข้อความใต้ช่องนั้นๆ ทันทีโดยไม่ต้องเปิดฟอร์มใหม่
+        // (ถ้า JS พังหรือถูกปิด ฟอร์มยัง fallback เป็น native submit ตามปกติได้อยู่) ───
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        function clearFieldErrors() {
+            form.querySelectorAll('.js-field-error').forEach((el) => el.remove());
+            form.querySelectorAll('input:not([type=checkbox]), select').forEach((el) => {
+                el.classList.remove('border-red-500', 'focus:ring-red-500/20', 'focus:border-red-500');
+                el.classList.add('border-gray-300', 'focus:ring-emerald-500/20', 'focus:border-emerald-500');
+            });
+            const daysWrap = form.querySelector('[data-field-wrap="available_days"]');
+            if (daysWrap) {
+                daysWrap.classList.remove('border-red-500');
+                daysWrap.classList.add('border-gray-200');
+            }
+        }
+
+        function setFieldError(field, message) {
+            let target;
+            if (field.startsWith('available_days')) {
+                target = form.querySelector('[data-field-wrap="available_days"]');
+                if (target) {
+                    target.classList.remove('border-gray-200');
+                    target.classList.add('border-red-500');
+                }
+            } else {
+                target = form.querySelector(`[name="${field}"]`);
+                if (target) {
+                    target.classList.remove('border-gray-300', 'focus:ring-emerald-500/20', 'focus:border-emerald-500', 'hidden');
+                    target.classList.add('border-red-500', 'focus:ring-red-500/20', 'focus:border-red-500');
+                }
+            }
+            if (!target) return;
+            const p = document.createElement('p');
+            p.className = 'js-field-error text-[11px] text-red-500 mt-1';
+            p.textContent = message;
+            target.insertAdjacentElement('afterend', p);
+        }
+
+        function showToast(icon, title) {
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true, position: 'top-end', icon, title,
+                    showConfirmButton: false, timer: 3000, timerProgressBar: true,
+                });
+            } else {
+                alert(title);
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearFieldErrors();
+
+            const originalLabel = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'กำลังบันทึก...';
+            }
+
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(form),
+                });
+
+                if (res.status === 422) {
+                    const payload = await res.json();
+                    const errors = payload.errors || {};
+                    Object.entries(errors).forEach(([field, messages]) => {
+                        setFieldError(field, Array.isArray(messages) ? messages[0] : messages);
+                    });
+                    const firstErrorEl = form.querySelector('.border-red-500');
+                    if (firstErrorEl) {
+                        firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    showToast('error', 'กรอกข้อมูลไม่ถูกต้อง กรุณาตรวจสอบช่องที่มีกรอบสีแดง');
+                    return;
+                }
+
+                if (!res.ok) {
+                    throw new Error('save failed: ' + res.status);
+                }
+
+                // สำเร็จ: รีโหลดหน้าเพื่อให้รายการแพ็กเกจอัปเดตตามข้อมูลล่าสุด
+                window.location.reload();
+            } catch (err) {
+                console.error(err);
+                showToast('error', 'บันทึกไม่สำเร็จ กรุณาลองใหม่');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalLabel;
+                }
+            }
+        });
     })();
 </script>

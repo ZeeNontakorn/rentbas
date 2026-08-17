@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'THATA Homecourt - THATA SPORT HQ & Basketball Chonburi ')
+@section('title', 'THATA HOMECOURT - THATA SPORT HQ & Basketball Chonburi ')
 
 @section('content')
 @php
@@ -290,7 +290,7 @@ html { scroll-behavior: smooth; }
     overflow: hidden;
     border: 1px solid rgba(255,255,255,.07);
     transition: border-color .25s, transform .25s;
-    cursor: pointer;
+    cursor: default;
 }
 .court-card:hover { border-color: rgba(232,108,42,.45); transform: translateY(-4px); }
 .court-thumb { height: 130px; position: relative; overflow: hidden; }
@@ -1168,7 +1168,7 @@ html { scroll-behavior: smooth; }
     <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">THATA SPORT HQ & Basketball Chonburi</p>
-        <h1 class="hero-title">THATA<br><span>Homecourt</span></h1>
+        <h1 class="hero-title">THATA<br><span>HOMECOURT</span></h1>
         <p class="hero-sub">ระบบจองสนามบาสเกตบอลมาตรฐานสากล<br>พร้อมให้บริการ 7 วัน 365 วัน</p>
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="400">
             @guest
@@ -1344,7 +1344,7 @@ html { scroll-behavior: smooth; }
         {{-- LEFT: Calendar Card --}}
         <div class="bk-cal-card">
             <div class="bk-cal-header">
-                <span class="bk-cal-month-label" id="cal-month">เมษายน 2568</span>
+                <span class="bk-cal-month-label" id="cal-month"></span>
                 <div class="bk-cal-nav-btns">
                     <button onclick="calPrev()">&#8249;</button>
                     <button onclick="calNext()">&#8250;</button>
@@ -1652,6 +1652,22 @@ html { scroll-behavior: smooth; }
                                 ใช้ได้ <strong style="color:#fff;">{{ $package->num_of_use }}</strong> ครั้ง
                             </span>
                         </div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                @php
+                                    $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                                    $usableDays = $package->usable_days ?? [];
+                                @endphp
+                                @if(empty($usableDays))
+                                    ใช้ได้ <strong style="color:#fff;">ทุกวัน</strong>
+                                @else
+                                    ใช้ได้เฉพาะวัน <strong style="color:#fff;">{{ collect($usableDays)->map(fn($d) => $dayLabels[$d] ?? $d)->implode(', ') }}</strong>
+                                @endif
+                            </span>
+                        </div>
                         <div class="package-price-block">
                             <p class="package-price-label">ราคา</p>
                             <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
@@ -1666,7 +1682,7 @@ html { scroll-behavior: smooth; }
                             </button>
                         </form>
                         @endguest
-                        </div>
+                    </div>
                 @endforeach
             </div>
         @endif

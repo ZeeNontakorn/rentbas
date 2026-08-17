@@ -54,7 +54,7 @@
 
         {{-- LINE URL --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 class="font-medium text-gray-700 text-sm mb-4">ลิงก์ LINE สำหรับปุ่ม "เติมผ่าน LINE ไวกว่า"</h2>
+            <h2 class="font-medium text-gray-700 text-sm mb-4">ลิงก์ LINE สำหรับปุ่ม "เติมผ่าน LINE"</h2>
             <form method="POST" action="{{ route('admin.credit-topup-packages.line-url') }}" class="flex flex-col sm:flex-row gap-3 items-start">
                 @csrf
                 <div class="flex-1">
@@ -67,7 +67,7 @@
                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-                <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 transition whitespace-nowrap">บันทึกลิงก์</button>
+                <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">บันทึกลิงก์</button>
             </form>
         </div>
 
@@ -117,7 +117,7 @@
                     @enderror
                 </div>
 
-                <button type="submit" class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition">+ เพิ่ม</button>
+                <button type="submit" class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition cursor-pointer">+ เพิ่ม</button>
             </form>
         </div>
 
@@ -192,7 +192,7 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-3 text-center whitespace-nowrap">
-                                    <button type="button" onclick="confirmDeletePackage('{{ $pkg->id }}', '{{ addslashes($pkg->label) }}')" class="text-red-500 hover:text-red-600 font-medium text-xs">ลบ</button>
+                                    <button type="button" onclick="confirmDeletePackage('{{ $pkg->id }}', '{{ addslashes($pkg->label) }}')" class="rounded-lg px-4 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100 cursor-pointer">ลบ</button>
                                 </td>
                             </tr>
                         @empty
@@ -451,6 +451,7 @@ function confirmDeletePackage(packageId, packageLabel) {
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#3085d6',
+        reverseButtons: true,
         confirmButtonText: 'ยืนยันการลบ',
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {

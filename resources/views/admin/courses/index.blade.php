@@ -28,7 +28,7 @@
                 <form method="GET" action="{{ route('admin.courses') }}" class="flex w-full md:w-auto">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ระบุชื่อคอร์สที่ต้องการค้นหา..."
                            class="w-full rounded-l-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400 md:w-72">
-                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600">
+                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 cursor-pointer">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
                         ค้นหาคอร์ส
                     </button>
@@ -173,7 +173,13 @@
                                         <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $course->id }}" action="{{ route('admin.courses.destroy', $course) }}" method="POST">
                                             @csrf @method('DELETE')
-                                            <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5">ลบ</button>
+                                            <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 gap-1.5 cursor-pointer">
+                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                ลบ</button>
                                         </form>
                                     </div>
                                 </td>

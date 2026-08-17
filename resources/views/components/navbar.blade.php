@@ -135,7 +135,7 @@
 
                     <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
                     @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
-                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             ตารางงาน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
