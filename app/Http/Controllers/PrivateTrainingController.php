@@ -95,8 +95,10 @@ class PrivateTrainingController extends Controller
         $this->bookingLifecycle->expireUnprocessedBookings();
         $this->assertIsCoach($coach);
 
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
         $today = now()->toDateString();
-        $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString();
+        $maxDate = now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString();
 
         $myUpcoming = PrivateTrainingBooking::with('courtAssistant')
             ->where('coach_id', $coach->id)
@@ -125,7 +127,7 @@ class PrivateTrainingController extends Controller
             ->orderBy('label')
             ->get();
 
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }
@@ -266,7 +268,7 @@ class PrivateTrainingController extends Controller
             'coach_id' => ['required', 'integer', 'exists:users,id'],
             'date' => [
                 'required', 'date', 'after_or_equal:today',
-                'before_or_equal:'.now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString(),
+                'before_or_equal:'.now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString(),
             ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
@@ -486,7 +488,9 @@ class PrivateTrainingController extends Controller
             // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
-        return view('admin.private-training.index', compact('bookings', 'status'));
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
+        return view('admin.private-training.index', compact('bookings', 'status', 'advanceBookingDays'));
     }
 
     public function availableAssistants(Request $request): JsonResponse
@@ -805,6 +809,17 @@ class PrivateTrainingController extends Controller
         }
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
+    }
+
+    public function updateAdvanceBookingDays(Request $request)
+    {
+        $request->validate([
+            'advance_booking_days' => ['required', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        \App\Models\Setting::setVal('advance_booking_days', $request->advance_booking_days);
+
+        return back()->with('success', 'อัปเดตจำนวนวันจองล่วงหน้าเรียบร้อย');
     }
 
     /* =====================================================================

@@ -35,7 +35,29 @@
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเทรนเนอร์ส่วนตัว</h1>
                 <p class="text-sm text-gray-500 mt-1">ตรวจสอบและอนุมัติคำขอจองเทรนเนอร์ส่วนตัวของลูกค้า</p>
             </div>
-
+            <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <form method="POST" action="{{ route('admin.private-training.advance-booking-days.update') }}"
+                    class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <label for="advance_booking_days" class="mb-1 block text-xs font-semibold text-gray-700">
+                            จองล่วงหน้าได้สูงสุด (วัน)
+                        </label>
+                        <input type="number" name="advance_booking_days" id="advance_booking_days"
+                            value="{{ old('advance_booking_days', $advanceBookingDays) }}"
+                            min="1" max="365" required
+                            class="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <button type="submit"
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 cursor-pointer">
+                        บันทึก
+                    </button>
+                    @error('advance_booking_days')
+                        <p class="w-full text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                </form>
+            </div>
             {{-- ส่วนแสดง Tabs สถานะ --}}
             <div class="flex gap-2 -mb-px overflow-x-auto select-none border-b border-gray-200 mb-6">
                 @foreach($tabs as $key => $label)
