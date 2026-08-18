@@ -117,7 +117,7 @@
                             <th class="px-6 py-3 font-medium">วันที่</th>
                             <th class="px-6 py-3 font-medium">ประเภท</th>
                             <th class="px-6 py-3 font-medium">การจองที่เกี่ยวข้อง</th>
-                            <th class="px-6 py-3 font-medium">หมายเหตุ</th>
+                            <th class="px-6 py-3 font-medium">รายละเอียด</th>
                             <th class="px-6 py-3 font-medium text-right">จำนวนเงิน</th>
                             <th class="px-6 py-3 font-medium text-right">คงเหลือหลังทำรายการ</th>
                         </tr>
@@ -140,12 +140,12 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 text-gray-500 max-w-[220px] truncate" title="{{ $tx->note }}">
-                                    {{ $tx->note ?? '—' }}
                                     @if($tx->admin)
                                         <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->name }}</span>
                                         <span class="block text-[11px] text-gray-400">ช่องทาง: {{ $tx->payment_method ?? '—' }}</span>
                                         <span class="block text-[11px] text-gray-400">ดำเนินการโดย: {{ $tx->processed_by_name ?? '—' }}</span>
                                     @endif
+                                    <span class="block text-[11px] text-gray-400">หมายเหตุ: {{ $tx->note ?? '—' }}</span>
                                 </td>
                                 <td class="px-6 py-3 text-right font-medium {{ $meta['text'] }}">
                                     {{ $meta['sign'] }}฿{{ number_format($tx->amount / 100, 2) }}
