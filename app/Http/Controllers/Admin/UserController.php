@@ -20,7 +20,7 @@ class UserController extends Controller
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
+                    $q->where('us_name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
                 });
             })
