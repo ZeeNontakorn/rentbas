@@ -1058,6 +1058,92 @@ html { scroll-behavior: smooth; }
     position: absolute; inset: 0;
     background: linear-gradient(to top, rgba(13,15,30,.55) 0%, rgba(13,15,30,0) 45%);
 }
+/* ─── GROUP SESSIONS (กลุ่มเล่นบาสค่ำ) ─── */
+.groupsession-section {
+    background: var(--cream);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.groupsession-header { text-align: center; margin-bottom: 40px; }
+.groupsession-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.groupsession-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.groupsession-subtitle { font-size: 13.5px; color: #868e96; }
+
+.groupsession-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+@media (max-width: 768px) { .groupsession-grid { grid-template-columns: 1fr; } }
+
+.gs-card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #edeff2;
+    box-shadow: 0 2px 10px rgba(13,15,30,.04);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+.gs-card:hover { transform: translateY(-6px); box-shadow: 0 20px 36px rgba(13,15,30,.12); }
+.gs-card-header {
+    background: var(--ink);
+    padding: 18px 20px;
+    position: relative;
+}
+.gs-card-day {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: #fff;
+    letter-spacing: .04em;
+}
+.gs-card-date { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
+.gs-card-badge {
+    position: absolute; top: 14px; right: 16px;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+}
+.gs-card-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
+.gs-card-title { font-family: 'Kanit', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.gs-card-info { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.gs-info-line { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #495057; }
+.gs-info-icon { width: 14px; height: 14px; color: var(--ore); flex-shrink: 0; }
+.gs-spots-wrap { margin-top: auto; padding-top: 14px; border-top: 1px solid #f1f3f5; }
+.gs-spots-bar { height: 6px; border-radius: 4px; background: #f1f3f5; overflow: hidden; margin-bottom: 8px; }
+.gs-spots-fill { height: 100%; background: var(--ore); border-radius: 4px; }
+.gs-spots-text { font-size: 11.5px; color: #868e96; margin-bottom: 12px; }
+.gs-card-btn {
+    display: block; text-align: center;
+    padding: 11px; border-radius: 9px;
+    background: var(--ore); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 600;
+    transition: background .2s;
+}
+.gs-card-btn:hover { background: var(--ore-d); }
+.gs-card-btn.full {
+    background: #f1f3f5; color: #adb5bd; pointer-events: none;
+}
+
+.groupsession-empty {
+    text-align: center; color: #adb5bd; padding: 56px 0; font-size: 13.5px;
+}
+.groupsession-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
+.gs-btn-row { display: flex; gap: 8px; }
+.gs-btn-row > * { flex: 1 1 0; min-width: 0; }
+.gs-btn-row .gs-card-btn { width: 100%; }
+.gs-card-btn-outline {
+    background: #4b5563;
+    color: #fff;
+    border: 1px solid #4b5563;
+}
+.gs-card-btn-outline:hover { background: #374151; color: #fff; }
 </style>
 
 <div class="home-content">
@@ -1330,6 +1416,116 @@ html { scroll-behavior: smooth; }
         </p>
     </div>
 </section>
+{{-- ═══ GROUP SESSIONS (กลุ่มเล่นบาสค่ำ) ═══ --}}
+@if(($upcomingGroupRounds ?? collect())->isNotEmpty())
+<section id="group-sessions" class="groupsession-section" data-aos="fade-up">
+    <div class="groupsession-header">
+        <p class="groupsession-label">Group Play</p>
+        <h2 class="groupsession-title">กลุ่มเล่นบาส</h2>
+        <p class="groupsession-subtitle">ร่วมสนุกกับกลุ่มเล่นบาสประจำสัปดาห์ ลงชื่อจองที่ได้เลย</p>
+    </div>
+
+    <div class="groupsession-grid">
+        @foreach($upcomingGroupRounds as $round)
+            @php
+    $round->processExpiredReserves();
+
+    $mainCount = $round->mainConfirmedCount();
+    $spotsLeft = max(0, $round->max_players - $mainCount);
+    $isFull = $spotsLeft <= 0;
+    $percentFull = $round->max_players > 0
+        ? min(100, round(($mainCount / $round->max_players) * 100))
+        : 0;
+    $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+
+@endphp
+            <div class="gs-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                <div class="gs-card-header">
+                    <div class="gs-card-day">{{ $dayNames[$round->play_date->dayOfWeek] }}</div>
+                    <div class="gs-card-date">{{ $round->play_date->format('d/m/Y') }}</div>
+                </div>
+                <div class="gs-card-body">
+                    <div class="gs-card-title">{{ $round->title }}</div>
+                    <div class="gs-card-info">
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ \Carbon\Carbon::parse($round->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($round->end_time)->format('H:i') }} น.
+    </div>
+    @if($round->court)
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        {{ $round->court->name }}
+    </div>
+    @endif
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
+        เครดิต {{ $round->credit_cost }} / คน
+    </div>
+    <div class="gs-info-line" style="color:#e67700;">
+    <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+    @if($round->cancel_deadline)
+        ยกเลิกจองได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
+    @else
+        ยกเลิกจองได้ตลอดเวลา
+    @endif
+</div>
+</div>
+                    <div class="gs-spots-wrap">
+                        <div class="gs-spots-bar">
+                            <div class="gs-spots-fill" style="width: {{ $percentFull }}%;"></div>
+                        </div>
+                        <p class="gs-spots-text">
+                            ลงชื่อแล้ว {{ $mainCount }}/{{ $round->max_players }} คน
+                            @if(!$isFull) &middot; เหลือ {{ $spotsLeft }} ที่ @endif
+                        </p>
+                       @php
+    $myGroupSignup = auth()->check()
+        ? $round->confirmedSignups->firstWhere('user_id', auth()->id())
+        : null;
+@endphp
+
+@php
+    $mySeatCount = auth()->check() ? $round->bookedSeatsFor(auth()->id()) : 0;
+    $mySeatsRemaining = auth()->check() ? $round->remainingSeatsFor(auth()->id()) : 0;
+@endphp
+
+@if($mySeatCount > 0)
+    <div class="gs-btn-row">
+        <span class="gs-card-btn full" style="background:#ebfbee;color:#2f9e44;">
+            ✓ คุณจอง {{ $mySeatCount }}/{{ \App\Models\GroupRound::MAX_SEATS_PER_USER }} ที่
+        </span>
+        @if($mySeatsRemaining > 0 && !$isFull)
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn gs-card-btn-outline">จองเพิ่ม</a>
+        @else
+            <a href="{{ route('group-rounds.my-bookings') }}" class="gs-card-btn gs-card-btn-outline">จัดการการจอง</a>
+        @endif
+    </div>
+@elseif($isFull)
+    <div class="gs-btn-row">
+        @auth
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
+        @else
+            <a href="{{ route('login') }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
+        @endauth
+        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+    </div>
+@else
+    <div class="gs-btn-row">
+        @auth
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn">ลงชื่อจอง</a>
+        @else
+            <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
+        @endauth
+        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+    </div>
+@endif
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</section>
+@endif
 
 {{-- ═══ COURSES / BASKETBALL SCHOOL ═══ --}}
 <section class="courses-section" data-aos="fade-up">
