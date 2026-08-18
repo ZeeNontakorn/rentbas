@@ -31,7 +31,6 @@
                 @endif
 
                 &middot; เครดิต {{ $round->credit_cost }}/คน
-            &middot; เครดิต {{ $round->credit_cost }}/คน
             &middot;
             @if($round->cancel_deadline)
                 ยกเลิกได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
