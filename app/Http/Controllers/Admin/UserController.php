@@ -19,7 +19,10 @@ class UserController extends Controller
         $users = User::whereIn('role', ['admin','user','staff', 'superadmin'])
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
-                $query->where('us_name', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+                });
             })
             ->orderBy('id', 'desc')
             ->paginate(15)

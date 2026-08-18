@@ -74,6 +74,7 @@
                             <th class="px-6 py-3 font-medium text-center">ลำดับ</th>
                             <th class="px-6 py-3 font-medium text-center">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium text-center">อีเมล</th>
+                            <th class="px-6 py-3 font-medium text-center">เบอร์โทรศัพท์</th>
                             <th class="px-6 py-3 font-medium text-center">Role</th>
                             <th class="px-6 py-3 font-medium text-center">สถานะยืนยัน (OTP)</th>
                             <th class="px-6 py-3 font-medium text-center">ประเภทสมาชิก</th>
@@ -86,24 +87,32 @@
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">
-                                    <span class="copy-text inline-block max-w-[140px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
-                                          title="{{ $u->us_name }}" data-copy="{{ $u->us_name }}" onclick="copyToClipboard(this, event)">{{ $u->us_name }}</span>
+                                    <span class="copy-text inline-block max-w-[70px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                          title="{{ $u->name }}" data-copy="{{ $u->name }}" onclick="copyToClipboard(this, event)">{{ $u->name }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">
-                                    <span class="copy-text inline-block max-w-[180px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                    <span class="copy-text inline-block max-w-[100px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
                                           title="{{ $u->email }}" data-copy="{{ $u->email }}" onclick="copyToClipboard(this, event)">{{ $u->email }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500 text-center">
+                                    @if($u->phone)
+                                        <span class="copy-text inline-block max-w-[100px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                            title="{{ $u->phone }}" data-copy="{{ $u->phone }}" onclick="copyToClipboard(this, event)">{{ $u->phone }}</span>
+                                    @else
+                                        <span class="text-gray-300 text-xs">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($u->role === 'superadmin')
                                         @if($isSuperadmin && $u->id !== auth()->id())
                                             <button type="button"
-                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->us_name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 Super Admin
                                             </button>
                                         @else
-                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
+                                            <span class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
                                                 Super Admin
                                             </span>
                                         @endif
@@ -118,13 +127,13 @@
                                         @endphp
                                         @if($u->id !== auth()->id())
                                             <button type="button"
-                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->us_name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 {{ ucfirst($u->role) }}
                                             </button>
                                         @else
-                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
+                                            <span class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
                                                 {{ ucfirst($u->role) }}
                                             </span>
                                         @endif
