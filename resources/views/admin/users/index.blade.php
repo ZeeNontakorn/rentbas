@@ -165,7 +165,7 @@
                                             <button type="button"
                                                 class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                 data-user-id="{{ $u->id }}"
-                                                data-name="{{ $u->name }}"
+                                                data-name="{{ $u->us_name }}"
                                                 data-value="{{ $u->membership_type }}"
                                                 data-url="{{ route('admin.users.updateMembershipType', $u) }}"
                                                 data-role="{{ $u->role }}"

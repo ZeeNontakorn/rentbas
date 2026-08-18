@@ -50,7 +50,7 @@
         </div>
 
         <div class="body">
-            <p class="greet">สวัสดี {{ $booking->user->name }},</p>
+            <p class="greet">สวัสดี {{ $booking->user->us_name }},</p>
             <p class="lead">ขออภัยในความไม่สะดวก การจองของคุณด้านล่างนี้ถูกยกเลิกโดยผู้ดูแลระบบ</p>
 
             <table class="detail-table">

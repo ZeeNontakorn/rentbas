@@ -96,7 +96,7 @@ class UserController extends Controller
 
         $user->update($updates);
 
-        return back()->with('success', "เปลี่ยน role ของ {$user->name} เป็น {$newRole} เรียบร้อยแล้ว");
+        return back()->with('success', "เปลี่ยน role ของ {$user->us_name} เป็น {$newRole} เรียบร้อยแล้ว");
     }
 
     // แก้ไขประเภทสมาชิก (ชุดตัวเลือกจะต่างกันตาม role ของ user คนนั้น)
@@ -126,7 +126,7 @@ class UserController extends Controller
             ]);
         }
 
-        return back()->with('success', "อัปเดตประเภทสมาชิกของ {$user->name} เรียบร้อย");
+        return back()->with('success', "อัปเดตประเภทสมาชิกของ {$user->us_name} เรียบร้อย");
     }
 
     public function destroy(Request $request, User $user)
@@ -142,7 +142,7 @@ class UserController extends Controller
         );
 
         $profileImage = $user->staffProfile?->profile_image;
-        $name = $user->name;
+        $name = $user->us_name;
 
         $user->delete();
 

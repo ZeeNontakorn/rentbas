@@ -9,14 +9,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-// #[Fillable(['name', 'email', 'phone', 'password', 'role', 'is_verified'])]
+// #[Fillable(['us_name', 'name', 'email', 'phone', 'password', 'role', 'is_verified'])]
 // #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'phone', 'password', 'role', 'is_verified', 'membership_type'];
+    protected $fillable = ['us_name', 'name', 'email', 'phone', 'password', 'role', 'is_verified', 'membership_type'];
 
     protected $hidden = ['password', 'remember_token'];
 

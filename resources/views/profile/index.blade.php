@@ -99,7 +99,7 @@
         <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent"></div>
         <div class="absolute inset-y-0 left-0 flex flex-col justify-center px-8 text-white">
             <p class="text-[11px] font-semibold tracking-[.18em] uppercase text-[#e86c2a] mb-1">Member Profile</p>
-            <h2 class="text-[22px] font-bold tracking-wide">{{ $user->name }}</h2>
+            <h2 class="text-[22px] font-bold tracking-wide">{{ $user->us_name }}</h2>
             <p class="text-gray-300 text-[13px] mt-1">{{ $user->email }}</p>
         </div>
     </div>
@@ -138,7 +138,18 @@
             <form method="POST" action="{{ route('profile.update') }}" id="profileForm">
                 @csrf
 
-                <div class="flex flex-col md:flex-row gap-6 items-start">
+                <div class="info-row">
+                    <div class="info-icon">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="info-label">ชื่อผู้ใช้</div>
+                        <div class="info-value">{{ $user->us_name }}</div>
+                    </div>
+                </div>
 
                     {{-- LEFT: fields --}}
                     <div class="w-full {{ $isStaff ? 'md:w-[65%]' : '' }}">

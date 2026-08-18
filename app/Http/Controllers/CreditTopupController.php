@@ -116,7 +116,7 @@ class CreditTopupController extends Controller
         $admins = User::whereIn('role', ['admin', 'superadmin'])->get();
 
         $amountText = number_format($topupRequest->price_satang / 100, 2);
-        $requesterName = $topupRequest->user->name ?? 'ผู้ใช้';
+        $requesterName = $topupRequest->user->us_name ?? 'ผู้ใช้';
 
         // 1) แจ้งเตือนในเว็บ (ขึ้นกระดิ่ง) — ทำก่อนอีเมล และแยก try/catch ต่อแอดมินแต่ละคน
         foreach ($admins as $admin) {

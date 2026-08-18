@@ -32,8 +32,8 @@ class CalendarController extends Controller
         $coaches = User::query()
             ->where('role', 'staff')
             ->where('membership_type', 'coach')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+            ->orderBy('us_name')
+            ->get(['id', 'us_name']);
 
         return view('admin.calendars.course-calendar', compact('coaches', 'courtSections'));
     }
@@ -147,7 +147,7 @@ class CalendarController extends Controller
         $eventStart = $start ?? $event->starts_at;
 
         return ['id' => 'event-'.$event->id.'-'.$eventStart->format('YmdHis'), 'title' => $event->title, 'start' => $eventStart->toIso8601String(), 'end' => ($end ?? $event->ends_at)?->toIso8601String(), 'allDay' => $event->all_day, 'backgroundColor' => $event->color, 'borderColor' => $event->color,
-            'extendedProps' => ['kind' => 'personal', 'eventId' => $event->id, 'eventType' => $event->event_type, 'coachId' => $event->coach_id, 'coach' => $event->coach?->name ?? $event->coach_name, 'students' => $event->student_names ?? [], 'description' => $event->description, 'recurrence' => $event->recurrence, 'recurrenceUntil' => $event->recurrence_until?->toDateString(),
+            'extendedProps' => ['kind' => 'personal', 'eventId' => $event->id, 'eventType' => $event->event_type, 'coachId' => $event->coach_id, 'coach' => $event->coach?->us_name ?? $event->coach_name, 'students' => $event->student_names ?? [], 'description' => $event->description, 'recurrence' => $event->recurrence, 'recurrenceUntil' => $event->recurrence_until?->toDateString(),
                 'recurrenceDays' => $event->recurrence_days ?? [],
                 'packageTypeValue' => $event->package_type,
                 'packageType' => $event->package_type === 'private' ? 'Private Class (ส่วนตัว)' : ($event->package_type === 'group' ? 'Standard Group Class (กลุ่มเรียนรวม)' : 'ยังไม่ระบุประเภทแพ็กเกจ'),
