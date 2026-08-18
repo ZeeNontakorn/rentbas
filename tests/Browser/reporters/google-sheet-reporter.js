@@ -8,20 +8,23 @@ export default class GoogleSheetReporter {
     }
 
     onTestEnd(test, result) {
-        if (!this.webhookUrl) {
+        if (!this.webhookUrl || result.status === 'skipped') {
             return;
         }
 
-        this.pendingUpdates.push(this.reportTest(test, result));
+        this.pendingUpdates.push({ test, result });
     }
 
     async onEnd() {
-        await Promise.all(this.pendingUpdates);
+        for (const { test, result } of this.pendingUpdates) {
+            await this.reportTest(test, result);
+        }
     }
 
     async reportTest(test, result) {
 
-        const testId = test.title.match(/\b[A-Z]+-\d+\b/)?.[0];
+        // Supports both AUTH-01 and multi-part IDs such as GROUP-BAS-01.
+        const testId = test.title.match(/\b[A-Z]+(?:-[A-Z]+)*-\d+\b/)?.[0];
         if (!testId) {
             console.warn(`[Google Sheet] No Test Case ID found in: ${test.title}`);
             return;
@@ -30,25 +33,31 @@ export default class GoogleSheetReporter {
         const screenshot = result.attachments.find(
             ({ contentType, path }) => contentType === 'image/png' && path,
         );
+        const includeScreenshot = process.env.GOOGLE_SHEET_SCREENSHOTS !== 'failed'
+            || result.status !== 'passed';
 
-        const response = await fetch(this.webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-                secret: this.secret,
-                testId,
-                status: result.status === 'passed' ? 'Passed' : 'Failed',
-                durationMs: result.duration,
-                error: result.error?.message ?? '',
-                screenshotName: `${testId}-${Date.now()}.png`,
-                screenshotBase64: screenshot
-                    ? (await readFile(screenshot.path)).toString('base64')
-                    : '',
-            }),
+        const body = JSON.stringify({
+            secret: this.secret,
+            testId,
+            status: result.status === 'passed' ? 'Passed' : 'Failed',
+            durationMs: result.duration,
+            error: result.error?.message ?? '',
+            screenshotName: `${testId}-${Date.now()}.png`,
+            screenshotBase64: screenshot && includeScreenshot
+                ? (await readFile(screenshot.path)).toString('base64')
+                : '',
         });
 
-        if (!response.ok) {
-            throw new Error(`Google Sheet webhook returned HTTP ${response.status}`);
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            const response = await fetch(this.webhookUrl, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body,
+            });
+            if (!response.ok) throw new Error(`Google Sheet webhook returned HTTP ${response.status}`);
+
+            const payload = await response.json();
+            if (payload.ok) return;
+            if (attempt === 3) throw new Error(`Google Sheet update failed: ${payload.error ?? 'Unknown error'}`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 500));
         }
     }
 }

@@ -28,6 +28,12 @@ use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Models\OtpToken;
+use App\Models\Court;
+use App\Models\GroupRound;
+use App\Models\GroupRoundSignup;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\GroupSessionController;
 
@@ -160,6 +166,188 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
         abort_unless($otp, 404);
 
         return response()->json(['otp' => $otp]);
+    });
+
+    Route::post('/__e2e/group-rounds/seed', function () {
+        return DB::transaction(function () {
+            $prefix = '[E2E GROUP]';
+
+            GroupRound::where('title', 'like', $prefix.'%')->delete();
+
+            $court = Court::updateOrCreate(
+                ['name' => 'สนาม E2E กลุ่มบาส'],
+                ['court_status' => 'open']
+            );
+            $user = User::updateOrCreate(
+                ['email' => 'group-player@e2e.local'],
+                [
+                    'name' => 'ชาตรี E2E',
+                    'phone' => '0890000001',
+                    'password' => '123456',
+                    'role' => 'user',
+                    'membership_type' => 'customer',
+                    'is_verified' => true,
+                    'email_verified_at' => now(),
+                    'credit_balance' => 100000,
+                ]
+            );
+
+            $today = Carbon::today('Asia/Bangkok');
+            $makeRound = function (string $key, array $attributes) use ($prefix, $court) {
+                return GroupRound::create(array_merge([
+                    'title' => "{$prefix} {$key}",
+                    'play_date' => Carbon::today('Asia/Bangkok')->addDays(7),
+                    'start_time' => '18:00:00',
+                    'end_time' => '20:00:00',
+                    'court_id' => $court->id,
+                    'max_players' => 6,
+                    'credit_cost' => 120,
+                    'cancel_deadline' => null,
+                    'status' => 'open',
+                ], $attributes));
+            };
+
+            $rounds = [
+                'OPEN' => $makeRound('OPEN', [
+                    'play_date' => $today->copy()->addDays(7),
+                    'cancel_deadline' => $today->copy()->addDays(6)->setTime(17, 30),
+                ]),
+                'CLOSED' => $makeRound('CLOSED', ['play_date' => $today->copy()->addDays(8), 'status' => 'closed']),
+                'CANCELLED' => $makeRound('CANCELLED', ['play_date' => $today->copy()->addDays(9), 'status' => 'cancelled']),
+                'PAST' => $makeRound('PAST', ['play_date' => $today->copy()->subDay()]),
+                'NO-DEADLINE' => $makeRound('NO-DEADLINE', ['play_date' => $today->copy()->addDays(10)]),
+                'FOUR-OF-SIX' => $makeRound('FOUR-OF-SIX', ['play_date' => $today->copy()->addDays(11)]),
+                'FULL' => $makeRound('FULL', ['play_date' => $today->copy()->addDays(12)]),
+            ];
+
+            foreach (['FOUR-OF-SIX' => 4, 'FULL' => 6] as $key => $count) {
+                foreach (range(1, $count) as $order) {
+                    GroupRoundSignup::create([
+                        'group_round_id' => $rounds[$key]->id,
+                        'user_id' => null,
+                        'guest_name' => "ผู้เล่นทดสอบ {$order}",
+                        'order_number' => $order,
+                        'credit_used' => 120,
+                        'status' => 'confirmed',
+                        'is_reserve' => false,
+                        'signed_up_at' => now()->addSeconds($order),
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'user' => ['email' => $user->email, 'password' => '123456'],
+                'credit_balance' => $user->credit_balance,
+                'rounds' => collect($rounds)->map(fn ($round) => [
+                    'id' => $round->id,
+                    'title' => $round->title,
+                    'play_date' => $round->play_date->format('d/m/Y'),
+                    'credit_cost' => $round->credit_cost,
+                    'max_players' => $round->max_players,
+                ]),
+                'deadline' => $rounds['OPEN']->cancel_deadline->format('d/m/Y H:i'),
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/group-rounds/state', function () {
+        $user = User::where('email', 'group-player@e2e.local')->firstOrFail();
+
+        return response()->json([
+            'credit_balance' => $user->credit_balance,
+            'signups_count' => GroupRoundSignup::whereHas(
+                'round',
+                fn ($query) => $query->where('title', 'like', '[E2E GROUP]%')
+            )->count(),
+        ]);
+    });
+
+    Route::post('/__e2e/group-rounds/case', function (\Illuminate\Http\Request $request) {
+        return DB::transaction(function () use ($request) {
+            $prefix = '[E2E CASE]';
+            if (! $request->boolean('preserve')) {
+                GroupRound::where('title', 'like', $prefix.'%')->delete();
+            }
+
+            $court = Court::updateOrCreate(['name' => 'สนาม E2E กลุ่มบาส'], ['court_status' => 'open']);
+            $users = collect([
+                ['email' => 'group-case-a@e2e.local', 'name' => 'ผู้เล่น A'],
+                ['email' => 'group-case-b@e2e.local', 'name' => 'ผู้เล่น B'],
+            ])->map(function ($account) use ($request) {
+                $user = User::updateOrCreate(['email' => $account['email']], [
+                    'name' => $account['name'], 'phone' => '0890000002', 'password' => '123456',
+                    'role' => 'user', 'membership_type' => 'customer', 'is_verified' => true,
+                    'email_verified_at' => now(),
+                ]);
+                $user->forceFill(['credit_balance' => (int) $request->input('credit_balance', 1000) * 100])->save();
+                $user->notifications()->delete();
+                return $user;
+            });
+
+            $deadline = match ($request->input('deadline', 'future')) {
+                'past' => now()->subHour(),
+                'none' => null,
+                default => now()->addDay(),
+            };
+            $round = GroupRound::create([
+                'title' => $prefix.' '.($request->input('title', 'ROUND')).' '.now()->format('Hisv'),
+                'play_date' => today()->addDays(7), 'start_time' => '18:00:00', 'end_time' => '20:00:00',
+                'court_id' => $court->id, 'max_players' => (int) $request->input('max_players', 6),
+                'credit_cost' => (int) $request->input('credit_cost', 100),
+                'cancel_deadline' => $deadline, 'status' => $request->input('status', 'open'),
+            ]);
+
+            $order = 1;
+            foreach (range(1, (int) $request->input('other_main', 0)) as $i) {
+                if ((int) $request->input('other_main', 0) === 0) break;
+                GroupRoundSignup::create(['group_round_id' => $round->id, 'guest_name' => "บุคคลอื่น {$i}",
+                    'order_number' => $order++, 'credit_used' => $round->credit_cost, 'status' => 'confirmed',
+                    'is_reserve' => false, 'signed_up_at' => now()->addSeconds($order)]);
+            }
+            foreach ((array) $request->input('booked_names', []) as $name) {
+                GroupRoundSignup::create(['group_round_id' => $round->id, 'guest_name' => $name,
+                    'order_number' => $order++, 'credit_used' => $round->credit_cost, 'status' => 'confirmed',
+                    'is_reserve' => ($order - 1) > $round->max_players, 'signed_up_at' => now()->addSeconds($order),
+                    'booked_by' => $users[0]->id]);
+            }
+            foreach ((array) $request->input('reserve_names', []) as $name) {
+                GroupRoundSignup::create(['group_round_id' => $round->id, 'guest_name' => $name,
+                    'order_number' => $order++, 'credit_used' => $round->credit_cost, 'status' => 'confirmed',
+                    'is_reserve' => true, 'signed_up_at' => now()->addSeconds($order), 'booked_by' => $users[1]->id]);
+            }
+
+            return response()->json([
+                'round' => [
+                    'id' => $round->id, 'title' => $round->title,
+                    'credit_cost' => $round->credit_cost, 'max_players' => $round->max_players,
+                ],
+                'users' => $users->map(fn ($u) => [
+                    'id' => $u->id, 'email' => $u->email, 'password' => '123456',
+                    'credit_balance' => $u->credit_balance / 100,
+                ])->values(),
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::post('/__e2e/group-rounds/{round}/mutate', function (GroupRound $round, \Illuminate\Http\Request $request) {
+        if ($request->has('status')) $round->update(['status' => $request->input('status')]);
+        if ($request->has('deadline')) $round->update(['cancel_deadline' => $request->input('deadline') === 'past' ? now()->subHour() : now()->addDay()]);
+        if ($request->has('credit_balance')) User::where('email', 'group-case-a@e2e.local')->update(['credit_balance' => (int) $request->input('credit_balance') * 100]);
+        if ($request->boolean('cancel_round')) app(\App\Http\Controllers\Admin\GroupSessionController::class)->cancelRound($round);
+        return response()->json(['ok' => true]);
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/group-rounds/{round}/case-state', function (GroupRound $round) {
+        $users = User::whereIn('email', ['group-case-a@e2e.local', 'group-case-b@e2e.local'])->get()->keyBy('email');
+        return response()->json([
+            'round_status' => $round->fresh()->status,
+            'credits' => $users->map(fn ($u) => $u->credit_balance / 100),
+            'notifications' => $users->map(fn ($u) => $u->notifications()->count()),
+            'signups' => $round->signups()->get()->map(fn ($s) => [
+                'id' => $s->id, 'name' => $s->displayName(), 'order' => $s->order_number,
+                'status' => $s->status, 'reserve' => $s->is_reserve, 'booked_by' => $s->booked_by,
+            ]),
+        ]);
     });
 }
 

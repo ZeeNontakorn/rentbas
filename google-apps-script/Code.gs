@@ -9,7 +9,8 @@ function doPost(e) {
       throw new Error('Unauthorized');
     }
 
-    const sheetName = String(payload.testId).split('-')[0];
+    // AUTH-01 -> AUTH, GROUP-BAS-01 -> GROUP-BAS
+    const sheetName = String(payload.testId).replace(/-\d+$/, '');
     const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
     if (!sheet) throw new Error(`Sheet not found: ${sheetName}`);
 
