@@ -298,4 +298,10 @@ if ($payerId && $signup->credit_used > 0) {
             ->route('admin.group-sessions.index')
             ->with('success', 'ยกเลิกรอบและคืนเครดิตให้ทุกคนแล้ว');
     }
+    public function destroySession(GroupSession $session): RedirectResponse
+{
+    $session->delete();
+
+    return back()->with('success', 'ลบเทมเพลตรอบประจำเรียบร้อยแล้ว');
+}
 }

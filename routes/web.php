@@ -315,3 +315,6 @@ Route::middleware('auth')->group(function () {
 Route::post('/group-rounds/{round}/signups/{signup}/cancel', [\App\Http\Controllers\GroupRoundSignupController::class, 'cancel'])
     ->middleware('auth')
     ->name('group-rounds.cancel');
+    Route::delete('/{session}', [GroupSessionController::class, 'destroySession'])->name('destroy');
+    Route::delete('admin/group-sessions/{session}', [GroupSessionController::class, 'destroy'])
+    ->name('admin.group-sessions.destroy');
