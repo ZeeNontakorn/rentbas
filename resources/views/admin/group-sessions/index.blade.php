@@ -66,7 +66,7 @@
             credit_cost: {{ $s->credit_cost }},
             play_date: '{{ $s->nextOccurrence()->format('Y-m-d') }}'
         }"
-        class="text-orange-600 hover:text-orange-800 font-medium">เปิดรอบ</button>
+        class="text-orange-600 hover:text-orange-800 font-medium">เปิดรับสมัครรอบใหม่</button>
     <button
         @click="showEditForm = true; editSession = {
             id: {{ $s->id }},
@@ -79,6 +79,12 @@
             credit_cost: {{ $s->credit_cost }}
         }"
         class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200">แก้ไข</button>
+        <form action="{{ route('admin.group-sessions.destroy', $s) }}" method="POST" class="inline"
+    onsubmit="return confirm('ลบเทมเพลต &quot;{{ addslashes($s->name) }}&quot; ทิ้งถาวร?\n\nรอบที่เคยเปิดจากเทมเพลตนี้จะไม่หายไป แค่จะไม่ผูกกับเทมเพลตนี้อีกต่อไป');">
+    @csrf
+    @method('DELETE')
+    <button class="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg hover:bg-red-100">ลบ</button>
+</form>
 </td>
                 </tr>
                 @empty
