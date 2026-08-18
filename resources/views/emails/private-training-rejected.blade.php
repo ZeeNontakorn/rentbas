@@ -51,13 +51,13 @@
         </div>
 
         <div class="body">
-            <p class="greet">เรียนคุณ {{ $booking->user->name }},</p>
+            <p class="greet">เรียนคุณ {{ $booking->user->us_name }},</p>
             <p class="lead">ขออภัยในความไม่สะดวก คำขอจองเทรนเนอร์ส่วนตัวของคุณด้านล่างนี้ถูกปฏิเสธ</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">โค้ช</td>
-                    <td class="v">{{ $booking->coach->name }}</td>
+                    <td class="v">{{ $booking->coach->us_name }}</td>
                 </tr>
                 <tr>
                     <td class="k">สนาม</td>

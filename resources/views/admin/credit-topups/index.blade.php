@@ -71,7 +71,7 @@
                             @php $meta = $statusMeta[$req->status]; @endphp
                             <tr>
                                 <td class="px-6 py-3 text-gray-500 whitespace-nowrap">{{ $req->created_at->format('d/m/Y H:i') }}</td>
-                                <td class="px-6 py-3 text-gray-700">{{ $req->user->name }}</td>
+                                <td class="px-6 py-3 text-gray-700">{{ $req->user->us_name }}</td>
                                 <td class="px-6 py-3 text-gray-500">{{ $req->topper_name }}</td>
                                 <td class="px-6 py-3 text-gray-500">{{ $methodMeta[$req->payment_method] ?? $req->payment_method }}</td>
                                 <td class="px-6 py-3 text-right text-gray-700">฿{{ number_format($req->price_satang / 100, 2) }}</td>

@@ -7,7 +7,7 @@
 </head>
 <body style="font-family:sans-serif;line-height:1.6;color:#111;">
     <h1>มีคำขอเติมเครดิตใหม่รอตรวจสอบ</h1>
-    <p>ลูกค้า <strong>{{ $topupRequest->user->name }}</strong> ({{ $topupRequest->user->email }}) แจ้งโอนเงินและแนบสลิปเพื่อขอเติมเครดิต</p>
+    <p>ลูกค้า <strong>{{ $topupRequest->user->us_name }}</strong> ({{ $topupRequest->user->email }}) แจ้งโอนเงินและแนบสลิปเพื่อขอเติมเครดิต</p>
     <ul>
         <li>คำขอเลขที่: #{{ $topupRequest->id }}</li>
         <li>จำนวนเงินที่แจ้ง: {{ number_format($topupRequest->price_satang / 100, 2) }} บาท</li>

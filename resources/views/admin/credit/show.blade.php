@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'จัดการเครดิต: ' . $user->name)
+@section('title', 'จัดการเครดิต: ' . $user->us_name)
 
 @php
     $typeMeta = [
@@ -44,10 +44,10 @@
             <div class="md:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-emerald-500">
                 <div class="flex items-center gap-3 mb-5">
                     <div class="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <span class="text-orange-600 text-lg font-bold">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                        <span class="text-orange-600 text-lg font-bold">{{ strtoupper(substr($user->us_name, 0, 1)) }}</span>
                     </div>
                     <div>
-                        <h1 class="font-semibold text-gray-800 leading-tight">{{ $user->name }}</h1>
+                        <h1 class="font-semibold text-gray-800 leading-tight">{{ $user->us_name }}</h1>
                         <p class="text-xs text-gray-400">{{ $user->email }}</p>
                     </div>
                 </div>
@@ -141,7 +141,7 @@
                                 </td>
                                 <td class="px-6 py-3 text-gray-500 max-w-[220px] truncate" title="{{ $tx->note }}">
                                     @if($tx->admin)
-                                        <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->name }}</span>
+                                        <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->us_name }}</span>
                                         <span class="block text-[11px] text-gray-400">ช่องทาง: {{ $tx->payment_method ?? '—' }}</span>
                                         <span class="block text-[11px] text-gray-400">ดำเนินการโดย: {{ $tx->processed_by_name ?? '—' }}</span>
                                     @endif

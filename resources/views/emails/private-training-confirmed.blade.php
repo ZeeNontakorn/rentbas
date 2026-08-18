@@ -60,16 +60,16 @@
         </div>
 
         <div class="body">
-            <p class="greet">เรียนคุณ {{ $booking->user->name }},</p>
+            <p class="greet">เรียนคุณ {{ $booking->user->us_name }},</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">ผู้จอง</td>
-                    <td class="v">{{ $booking->user->name }}</td>
+                    <td class="v">{{ $booking->user->us_name }}</td>
                 </tr>
                 <tr>
                     <td class="k">โค้ช</td>
-                    <td class="v">{{ $booking->coach->name }}</td>
+                    <td class="v">{{ $booking->coach->us_name }}</td>
                 </tr>
                 <tr>
                     <td class="k">สนาม</td>
