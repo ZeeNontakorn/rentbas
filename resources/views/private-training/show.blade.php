@@ -172,6 +172,16 @@
                 <p class="mt-1 text-[11px] text-gray-400">ระบบจะหักสิทธิ์จากแพ็กเกจที่คุณเลือกทันทีที่ส่งคำขอ</p>
             </div>
             <div>
+                <label for="participant-count" class="mb-1.5 block text-xs font-semibold text-gray-700">จำนวนผู้เข้าร่วม <span class="text-red-500">*</span></label>
+                <select name="participant_count" id="participant-count" required
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
+                    @for ($count = 1; $count <= 6; $count++)
+                        <option value="{{ $count }}" @selected((int) old('participant_count', 1) === $count)>{{ $count }} คน</option>
+                    @endfor
+                </select>
+                <p class="mt-1 text-[11px] text-gray-400">รวมผู้จองแล้ว รับได้สูงสุด 6 คน</p>
+            </div>
+            <div>
                 <label for="assistant-requested" class="mb-1.5 block text-xs font-semibold text-gray-700">บริการผู้ช่วยสนามเก็บบาส</label>
                 <select name="assistant_requested" id="assistant-requested" required
                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
