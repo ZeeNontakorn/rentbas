@@ -1749,7 +1749,7 @@ html { scroll-behavior: smooth; }
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
                     <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">THATA Homecourt
+                        <img class="icon-footer" src="https://128/174/174855.png" alt="">thata_homecourt
                     </a>
                     <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
