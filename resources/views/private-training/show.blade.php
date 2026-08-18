@@ -218,6 +218,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let pendingSelection = null;
     let isClampingSelection = false;
 
+    // วันนี้จองไม่ได้ ต้องจองล่วงหน้าอย่างน้อย 1 วัน
+    function isToday(date) {
+        return localDate(date) === localDate(new Date());
+    }
+
     const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     function filterPackageOptionsForDate(date) {
         const select = document.getElementById('package-purchase-select');
@@ -331,6 +336,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function showTodayBlockedMessage() {
+        Swal.fire({
+            icon: 'info',
+            title: 'จองวันนี้ไม่ได้',
+            text: 'กรุณาเลือกจองล่วงหน้าอย่างน้อย 1 วัน',
+            confirmButtonText: 'เข้าใจแล้ว',
+            confirmButtonColor: '#f97316'
+        });
+    }
+
     function showUnavailableDetails(event) {
         const props = event.extendedProps || {};
         const dateLabel = event.start
@@ -363,6 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function buildPastOverlay(rangeStart, rangeEnd) {
         const overlay = [];
         const now = new Date();
+        const todayStr = localDate(now);
         const cursor = new Date(rangeStart);
         cursor.setHours(0, 0, 0, 0);
         while (cursor < rangeEnd) {
@@ -370,16 +386,31 @@ document.addEventListener('DOMContentLoaded', function () {
             dayOpen.setHours(openHour, 0, 0, 0);
             const dayClose = new Date(cursor);
             dayClose.setHours(closeHour, 0, 0, 0);
-            // ครอบเฉพาะช่วงที่ผ่านมาแล้วจริง ๆ ของวันนั้น (ไม่เกิน "ตอนนี้" และไม่เกินเวลาปิด)
-            const overlayEnd = now < dayClose ? now : dayClose;
-            if (overlayEnd > dayOpen) {
-                overlay.push({
-                    start: dayOpen.toISOString(),
-                    end: overlayEnd.toISOString(),
-                    display: 'background',
-                    backgroundColor: '#e5e7eb',
-                    extendedProps: { kind: 'past', selectable: false }
-                });
+            const isCursorToday = localDate(cursor) === todayStr;
+
+            if (isCursorToday) {
+                // วันนี้จองไม่ได้ทั้งวัน (ทั้งช่วงที่ผ่านมาแล้วและช่วงที่เหลือของวันนี้)
+                if (dayClose > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: dayClose.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'today-blocked', selectable: false }
+                    });
+                }
+            } else {
+                // ครอบเฉพาะช่วงที่ผ่านมาแล้วจริง ๆ ของวันนั้น (ไม่เกิน "ตอนนี้" และไม่เกินเวลาปิด)
+                const overlayEnd = now < dayClose ? now : dayClose;
+                if (overlayEnd > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: overlayEnd.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'past', selectable: false }
+                    });
+                }
             }
             cursor.setDate(cursor.getDate() + 1);
         }
@@ -461,15 +492,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         eventDidMount(arg) {
             const props = arg.event.extendedProps;
-            const isPastAvailable = props.kind === 'past' && arg.event.end <= new Date();
-            if (arg.event.extendedProps.kind !== 'past') return;
+            if (props.kind !== 'past' && props.kind !== 'today-blocked') return;
 
             arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
             arg.el.style.opacity = '0.4';
 
-
             const label = document.createElement('div');
-            label.textContent = 'เลยกำหนด';
+            label.textContent = props.kind === 'today-blocked' ? 'จองวันนี้ไม่ได้' : 'เลยกำหนด';
             label.style.cssText = `
                 position: absolute;
                 inset: 0;
@@ -514,6 +543,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // (ลบ 1 ms) เพื่อยืนยันว่าช่วงที่เลือกทั้งหมดอยู่ภายในวันเดียวกัน
             const inclusiveEnd = new Date(info.end.getTime() - 1);
             return calendar.view.type !== 'dayGridMonth'
+                && !isToday(info.start)
                 && info.start >= new Date()
                 && info.start <= maxSelectableDate
                 && localDate(info.start) === localDate(inclusiveEnd)
@@ -526,6 +556,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (info.view.type === 'dayGridMonth') {
                 calendar.changeView('timeGridDay', info.date);
+                return;
+            }
+
+            if (isToday(info.date)) {
+                showTodayBlockedMessage();
                 return;
             }
         },
@@ -568,6 +603,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (props.isMine) {
                 showPrivateTrainingDetails(info.event);
+                return;
+            }
+
+            if (props.kind === 'today-blocked') {
+                showTodayBlockedMessage();
                 return;
             }
 
