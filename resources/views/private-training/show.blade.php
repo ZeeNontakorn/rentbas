@@ -71,7 +71,7 @@
                     <h2 class="text-lg font-bold text-gray-800">เลือกวันและเวลาฝึก</h2>
                     <p class="mt-1 text-xs text-gray-500">ลากเลือกพื้นที่ว่างในปฏิทิน เวลา 08:00–22:00 น. ช่วงที่มี Schedule หรือมีรายการจองแล้วจะเลือกไม่ได้</p>
                     <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
+                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ $advanceBookingDays }} วัน
                     </p>
                     @if($myPackagePurchases->isNotEmpty())
                         @php
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
     // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
     const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
-    const advanceLimitMessage = @js('สามารถจอง Private Training ล่วงหน้าได้สูงสุด '.\App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS.' วัน');
+    const advanceLimitMessage = @js('สามารถจอง Private Training ล่วงหน้าได้สูงสุด '.$advanceBookingDays.' วัน');
 
     function showAdvanceLimitMessage() {
         Swal.fire({
