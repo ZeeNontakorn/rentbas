@@ -14,6 +14,8 @@ export class LoginPage {
             name: 'ลืมรหัสผ่าน / รีเซ็ตรหัสผ่าน',
         });
         this.errorMessage = page.locator('.auth-error');
+        this.emailError = page.locator('#error-email');
+        this.passwordError = page.locator('#error-password');
     }
 
     async goto() {
@@ -37,5 +39,9 @@ export class LoginPage {
 
     async openForgotPassword() {
         await this.forgotPasswordLink.click();
+    }
+
+    async logout() {
+        await this.page.locator('#logout-form').evaluate((form) => form.requestSubmit());
     }
 }

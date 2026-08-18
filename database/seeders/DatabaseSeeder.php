@@ -13,7 +13,10 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $this->call(CourtSeeder::class);
+        $this->call([
+            CourtSeeder::class,
+            AuthTestUserSeeder::class,
+        ]);
 
         User::updateOrCreate(
             ['email' => 'admin@court.local'],

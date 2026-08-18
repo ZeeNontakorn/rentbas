@@ -27,6 +27,7 @@ use App\Http\Controllers\PackageCheckoutController;
 use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
+use App\Models\OtpToken;
 use Illuminate\Support\Facades\Route;
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
@@ -140,6 +141,25 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
 });
 
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+// Playwright reads OTPs through the same browser session. This route is never
+// registered in development or production environments.
+if (app()->environment('e2e') || env('E2E_TESTING', false)) {
+    Route::get('/__e2e/otp', function () {
+        if (session()->has('reset_otp.code')) {
+            return response()->json(['otp' => session('reset_otp.code')]);
+        }
+
+        $userId = session('pending_otp_user_id');
+        $otp = $userId
+            ? OtpToken::where('user_id', $userId)->latest()->value('otp_code')
+            : null;
+
+        abort_unless($otp, 404);
+
+        return response()->json(['otp' => $otp]);
+    });
+}
 
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

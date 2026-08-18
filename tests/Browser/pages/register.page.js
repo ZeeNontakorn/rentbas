@@ -11,6 +11,11 @@ export class RegisterPage {
             'input[name="password_confirmation"]',
         );
         this.registerButton = page.getByRole('button', { name: 'สมัครสมาชิก' });
+        this.consentModal = page.locator('#consentModal');
+        this.acceptPolicyCheckbox = page.locator('#acceptPolicy');
+        this.confirmConsentButton = page.locator('#confirmConsentBtn');
+        this.errorMessage = page.locator('.auth-error');
+        this.fieldErrors = page.locator('.field-error.show');
         this.loginLink = page
             .locator('.auth-tabs')
             .getByRole('link', { name: 'เข้าสู่ระบบ' });
@@ -20,13 +25,26 @@ export class RegisterPage {
         await this.page.goto('/register');
     }
 
-    async register({ name, email, phone, password }) {
+    async fill({ name, email, phone, password, passwordConfirmation = password }) {
         await this.nameInput.fill(name);
         await this.emailInput.fill(email);
         await this.phoneInput.fill(phone);
         await this.passwordInput.fill(password);
-        await this.passwordConfirmationInput.fill(password);
+        await this.passwordConfirmationInput.fill(passwordConfirmation);
+    }
+
+    async submit({ acceptPolicy = true } = {}) {
         await this.registerButton.click();
+
+        if (acceptPolicy && await this.consentModal.isVisible()) {
+            await this.acceptPolicyCheckbox.check();
+            await this.confirmConsentButton.click();
+        }
+    }
+
+    async register(data) {
+        await this.fill(data);
+        await this.submit();
     }
 
     async openLogin() {
