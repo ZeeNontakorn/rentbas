@@ -88,7 +88,7 @@ class ReviewController extends Controller
                 Notification::create([
                     'user_id' => $adminId,
                     'title' => 'มีรีวิวใหม่รอตรวจสอบ',
-                    'message' => "รีวิว #{$review->id} จาก {$request->user()->name} |คะแนนรวม {$review->overall_rating}/5 กรุณาตรวจสอบก่อนเผยแพร่",
+                    'message' => "รีวิว #{$review->id} จาก {$request->user()->us_name} |คะแนนรวม {$review->overall_rating}/5 กรุณาตรวจสอบก่อนเผยแพร่",
                 ]);
             });
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'ข้อมูลผู้ใช้: ' . $user->name)
+@section('title', 'ข้อมูลผู้ใช้: ' . $user->us_name)
 
 @php
     function getStatusDetails($status) {
@@ -33,10 +33,10 @@
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                 {{-- Avatar --}}
                 <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                    <span class="text-orange-600 text-xl font-bold">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                    <span class="text-orange-600 text-xl font-bold">{{ strtoupper(substr($user->us_name, 0, 1)) }}</span>
                 </div>
                 <div class="flex-1">
-                    <h1 class="text-xl font-semibold text-gray-800">{{ $user->name }}</h1>
+                    <h1 class="text-xl font-semibold text-gray-800">{{ $user->us_name }}</h1>
                     <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
                         <span class="flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

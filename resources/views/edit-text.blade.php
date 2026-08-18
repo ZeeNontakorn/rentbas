@@ -412,7 +412,7 @@
                             <form action="{{ route('admin.website.reviews.destroy', $review) }}" method="POST"
                                   id="delete-review-{{ $review->id }}" class="js-confirm-delete hidden"
                                   data-title="ลบรีวิวนี้?"
-                                  data-text="รีวิวของ {{ $review->user->name }} จะถูกลบถาวร"
+                                  data-text="รีวิวของ {{ $review->user->us_name }} จะถูกลบถาวร"
                                   data-confirm-text="ลบรีวิว">
                                 @csrf
                                 @method('DELETE')
@@ -420,7 +420,7 @@
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <p class="font-semibold text-gray-900">{{ $review->user->name }}</p>
+                                        <p class="font-semibold text-gray-900">{{ $review->user->us_name }}</p>
                                         <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold
                                             {{ $review->status === 'published' ? 'bg-emerald-100 text-emerald-700' : ($review->status === 'hidden' ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-700') }}">
                                             {{ $review->status === 'published' ? 'เผยแพร่แล้ว' : ($review->status === 'hidden' ? 'ซ่อนอยู่' : 'รอตรวจสอบ') }}

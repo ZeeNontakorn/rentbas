@@ -345,7 +345,7 @@
 
             <div class="form-group">
                 <label class="form-label">ชื่อผู้ใช้</label>
-                <input type="text" name="name" id="regName" value="{{ old('name') }}" placeholder="username"
+                <input type="text" name="us_name" id="regName" value="{{ old('us_name') }}" placeholder="username"
                     class="form-input">
                 <span class="field-error" id="error-name"></span>
             </div>

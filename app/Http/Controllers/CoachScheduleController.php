@@ -103,7 +103,7 @@ class CoachScheduleController extends Controller
 
                 return [
                     'id' => 'private-'.$booking->id,
-                    'title' => ($booking->coach_id === $coach->id ? 'Private: ' : 'ผู้ช่วยสนาม: ').$booking->user->name,
+                    'title' => ($booking->coach_id === $coach->id ? 'Private: ' : 'ผู้ช่วยสนาม: ').$booking->user->us_name,
                     'start' => $booking->date->toDateString().'T'.substr($booking->start_time, 0, 8),
                     'end' => $booking->date->toDateString().'T'.substr($booking->end_time, 0, 8),
                     'backgroundColor' => $color,
@@ -116,11 +116,11 @@ class CoachScheduleController extends Controller
                         'statusLabel' => $this->statusLabel($booking->status),
                         'roleLabel' => $booking->coach_id === $coach->id ? 'โค้ชผู้สอน' : 'ผู้ช่วยสนาม',
                         'roleCaption' => 'หน้าที่ของคุณ',
-                        'customerName' => $booking->user->name,
+                        'customerName' => $booking->user->us_name,
                         'customerEmail' => $booking->user->email,
                         'customerPhone' => $booking->user->phone,
-                        'coachName' => $booking->coach->name,
-                        'assistantName' => $booking->courtAssistant?->name,
+                        'coachName' => $booking->coach->us_name,
+                        'assistantName' => $booking->courtAssistant?->us_name,
                         'court' => $booking->court
                             ? $booking->court->name.($booking->courtSection ? ' — '.$booking->courtSection->name : '')
                             : null,

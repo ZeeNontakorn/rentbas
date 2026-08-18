@@ -42,7 +42,7 @@
         <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent"></div>
         <div class="absolute inset-y-0 left-0 flex flex-col justify-center px-8 text-white">
             <p class="text-[11px] font-semibold tracking-[.18em] uppercase text-[#e86c2a] mb-1">Member Profile</p>
-            <h2 class="text-[22px] font-bold tracking-wide">{{ $user->name }}</h2>
+            <h2 class="text-[22px] font-bold tracking-wide">{{ $user->us_name }}</h2>
             <p class="text-gray-300 text-[13px] mt-1">{{ $user->email }}</p>
         </div>
     </div>
@@ -74,7 +74,7 @@
                     </div>
                     <div>
                         <div class="info-label">ชื่อผู้ใช้</div>
-                        <div class="info-value">{{ $user->name }}</div>
+                        <div class="info-value">{{ $user->us_name }}</div>
                     </div>
                 </div>
 

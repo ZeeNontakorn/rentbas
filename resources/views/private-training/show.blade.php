@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'จองเทรนเนอร์ส่วนตัว: ' . $coach->name)
+@section('title', 'จองเทรนเนอร์ส่วนตัว: ' . $coach->us_name)
 
 @section('content')
 @include('private-training._calendar-theme')
@@ -15,15 +15,15 @@
             <div class="flex flex-col gap-6 sm:flex-row sm:items-start">
                 <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-orange-100 shadow-sm">
                     @if($staffProfile?->profile_image_url)
-                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->name }}"
+                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->us_name }}"
                             class="h-full w-full object-cover">
                     @else
-                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->name, 0, 1)) }}</span>
+                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->us_name, 0, 1)) }}</span>
                     @endif
                 </div>
                 <div class="flex-1">
                     <div class="flex flex-wrap items-center gap-3">
-                        <h1 class="text-2xl font-bold text-gray-800">{{ $coach->name }}</h1>
+                        <h1 class="text-2xl font-bold text-gray-800">{{ $coach->us_name }}</h1>
                         <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">ผู้ฝึกสอน (Coach)</span>
                     </div>
                     <div class="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
@@ -57,7 +57,7 @@
                                     } }}
                             </span>
                             @if($booking->courtAssistant)
-                                <span class="ml-1 text-xs text-blue-600">· ผู้ช่วย {{ $booking->courtAssistant->name }}</span>
+                                <span class="ml-1 text-xs text-blue-600">· ผู้ช่วย {{ $booking->courtAssistant->us_name }}</span>
                             @endif
                         </div>
                     @endforeach
@@ -151,7 +151,7 @@
             <input type="hidden" name="start_time" id="booking-start">
             <input type="hidden" name="end_time" id="booking-end">
             <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-center">
-                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->name }}</p>
+                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->us_name }}</p>
                 <p id="booking-date-label" class="mt-1 font-bold text-blue-800"></p>
                 <p id="booking-time-label" class="text-lg font-extrabold text-blue-700"></p>
             </div>

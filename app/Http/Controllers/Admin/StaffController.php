@@ -31,7 +31,7 @@ class StaffController extends Controller
             ->whereIn('membership_type', ['coach', 'court_assistant'])
             ->when($type && in_array($type, ['coach', 'court_assistant']), fn ($query) => $query->where('membership_type', $type))
             ->when($search, fn ($query) => $query->where(
-                fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")
+                fn ($q) => $q->where('us_name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")
             ))
             ->with('staffProfile')
             ->paginate(10)
@@ -135,7 +135,7 @@ class StaffController extends Controller
             ->get()
             ->map(fn (PrivateTrainingBooking $booking) => [
                 'id' => 'private-'.$booking->id,
-                'title' => ($staff->membership_type === 'coach' ? 'Private: ' : 'ผู้ช่วยสนาม: ').$booking->user->name,
+                'title' => ($staff->membership_type === 'coach' ? 'Private: ' : 'ผู้ช่วยสนาม: ').$booking->user->us_name,
                 'start' => $booking->date->toDateString().'T'.substr($booking->start_time, 0, 8),
                 'end' => $booking->date->toDateString().'T'.substr($booking->end_time, 0, 8),
                 'backgroundColor' => match ($booking->status) {
@@ -181,7 +181,7 @@ class StaffController extends Controller
         $this->assertIsStaff($staff);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'us_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$staff->id,
             'membership_type' => self::MEMBERSHIP_TYPE_RULE,
             'phone' => 'nullable|string|max:20',
@@ -196,7 +196,7 @@ class StaffController extends Controller
             'profile_image.max' => 'รูปโปรไฟล์ต้องมีขนาดไม่เกิน 20MB',
         ]);
 
-        $staff->update($request->only(['name', 'email', 'membership_type', 'phone']));
+        $staff->update($request->only(['us_name', 'email', 'membership_type', 'phone']));
 
         $staffProfile = $staff->staffProfile()->firstOrNew(
             ['user_id' => $staff->id]
@@ -226,7 +226,7 @@ class StaffController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'us_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
             'membership_type' => self::MEMBERSHIP_TYPE_RULE,

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'ข้อมูลบุคลากร: ' . $staff->name)
+@section('title', 'ข้อมูลบุคลากร: ' . $staff->us_name)
 
 @php
     $startHour = 8;
@@ -104,16 +104,16 @@
                         class="w-20 h-20 rounded-full {{ $isCoach ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600' }} flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
                         @if($staffProfile?->profile_image)
                             <img src="{{ $staffProfile->profile_image_url }}"
-                                alt="รูปโปรไฟล์ของ {{ $staff->name }}" class="h-full w-full object-cover">
+                                alt="รูปโปรไฟล์ของ {{ $staff->us_name }}" class="h-full w-full object-cover">
                         @else
-                            <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($staff->name, 0, 1)) }}</span>
+                            <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($staff->us_name, 0, 1)) }}</span>
                         @endif
                     </div>
 
                     <div class="flex-1">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
-                                <h1 class="text-2xl font-bold text-gray-800">{{ $staff->name }}</h1>
+                                <h1 class="text-2xl font-bold text-gray-800">{{ $staff->us_name }}</h1>
                                 <span class="px-3 py-1 text-xs rounded-full font-medium {{ $badgeClass }}">
                                     {{ $roleLabel }}
                                 </span>
@@ -169,7 +169,7 @@
                 <div class="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div>
                         <h3 class="font-bold text-gray-800 text-lg">{{ $roleTitle }} Schedule Calendar</h3>
-                        <p class="text-xs text-gray-500 mt-0.5">ตารางงานของ {{ $staff->name }} แบบรายเดือน รายสัปดาห์ และรายวัน</p>
+                        <p class="text-xs text-gray-500 mt-0.5">ตารางงานของ {{ $staff->us_name }} แบบรายเดือน รายสัปดาห์ และรายวัน</p>
                     </div>
                     <a href="{{ route('admin.private-schedule.index', ['staff_id' => $staff->id]) }}"
                         class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50">
@@ -254,7 +254,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ชื่อ-นามสกุล <span
                             class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $staff->name) }}" required
+                    <input type="text" name="us_name" value="{{ old('us_name', $staff->us_name) }}" required
                         class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
                 </div>
 

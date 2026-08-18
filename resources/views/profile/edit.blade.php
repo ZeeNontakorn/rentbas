@@ -93,9 +93,9 @@
 
                     <div class="form-group">
                         <label class="form-label">ชื่อผู้ใช้</label>
-                        <input type="text" name="name" value="{{ $user->name }}" required
+                        <input type="text" name="us_name" value="{{ $user->us_name }}" required
                                placeholder="กรอกชื่อของคุณ" class="form-input">
-                        @error('name') <div class="form-error">{{ $message }}</div> @enderror
+                        @error('us_name') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="form-group">

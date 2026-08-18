@@ -64,12 +64,12 @@
         </div>
 
         <div class="body">
-            <p class="greet">สวัสดี {{ $booking->user->name }},</p>
+            <p class="greet">สวัสดี {{ $booking->user->us_name }},</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">ผู้จอง</td>
-                    <td class="v">{{ $booking->user->name }}</td>
+                    <td class="v">{{ $booking->user->us_name }}</td>
                 </tr>
                 @if($booking->user->phone)
                 <tr>

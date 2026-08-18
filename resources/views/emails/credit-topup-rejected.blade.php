@@ -7,7 +7,7 @@
 </head>
 <body style="font-family:sans-serif;line-height:1.6;color:#111;">
     <h1>คำขอเติมเครดิตของคุณไม่ผ่านการตรวจสอบ</h1>
-    <p>สวัสดีคุณ {{ $topupRequest->user->name }} คำขอเติมเครดิต #{{ $topupRequest->id }} จำนวน
+    <p>สวัสดีคุณ {{ $topupRequest->user->us_name }} คำขอเติมเครดิต #{{ $topupRequest->id }} จำนวน
         {{ number_format($topupRequest->price_satang / 100, 2) }} บาท ที่คุณส่งเมื่อ {{ $topupRequest->created_at->format('d/m/Y H:i') }}
         ไม่ผ่านการตรวจสอบจากแอดมิน</p>
     @if($topupRequest->rejected_reason)

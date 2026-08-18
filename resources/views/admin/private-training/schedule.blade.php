@@ -39,7 +39,7 @@
                         <option value="all" @selected($selectedStaffId === 'all')>ดูรวมทุกคน</option>
                         @foreach($staffs as $staff)
                             <option value="{{ $staff->id }}" @selected($staff->id === $selectedStaffId)>
-                                {{ $staff->name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}
+                                {{ $staff->us_name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}
                             </option>
                         @endforeach
                     </select>
@@ -95,7 +95,7 @@
                     <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="">เลือกโค้ชหรือผู้ช่วยสนาม</option>
                         @foreach($staffs as $staff)
-                            <option value="{{ $staff->id }}" data-membership="{{ $staff->membership_type }}">{{ $staff->name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}</option>
+                            <option value="{{ $staff->id }}" data-membership="{{ $staff->membership_type }}">{{ $staff->us_name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}</option>
                         @endforeach
                     </select>
                 </div>

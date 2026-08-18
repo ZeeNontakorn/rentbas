@@ -87,7 +87,7 @@
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">
                                     <span class="copy-text inline-block max-w-[140px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
-                                          title="{{ $u->name }}" data-copy="{{ $u->name }}" onclick="copyToClipboard(this, event)">{{ $u->name }}</span>
+                                          title="{{ $u->us_name }}" data-copy="{{ $u->us_name }}" onclick="copyToClipboard(this, event)">{{ $u->us_name }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">
                                     <span class="copy-text inline-block max-w-[180px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
@@ -97,7 +97,7 @@
                                     @if($u->role === 'superadmin')
                                         @if($isSuperadmin && $u->id !== auth()->id())
                                             <button type="button"
-                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->us_name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
                                                     class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 Super Admin
@@ -118,7 +118,7 @@
                                         @endphp
                                         @if($u->id !== auth()->id())
                                             <button type="button"
-                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
+                                                    onclick="openRoleModal('{{ $u->id }}', '{{ $u->us_name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
                                                     class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 {{ ucfirst($u->role) }}
@@ -156,7 +156,7 @@
                                             <button type="button"
                                                 class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                 data-user-id="{{ $u->id }}"
-                                                data-name="{{ $u->name }}"
+                                                data-name="{{ $u->us_name }}"
                                                 data-value="{{ $u->membership_type }}"
                                                 data-url="{{ route('admin.users.updateMembershipType', $u) }}"
                                                 data-role="{{ $u->role }}"
