@@ -91,6 +91,7 @@
                                         &nbsp;•&nbsp; เวลา {{ substr($b->start_time, 0, 5) }} - {{ substr($b->end_time, 0, 5) }}
                                         น.
                                     </p>
+                                    <p class="text-xs text-gray-500 mt-1">ผู้เข้าร่วม: {{ $b->participant_count ?? 1 }} คน</p>
                                     @if($b->note)
                                         <p class="text-xs text-gray-500 mt-1">หมายเหตุ: {{ $b->note }}</p>
                                     @endif

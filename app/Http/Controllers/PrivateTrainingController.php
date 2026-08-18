@@ -272,6 +272,7 @@ class PrivateTrainingController extends Controller
             ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'participant_count' => ['required', 'integer', 'min:1', 'max:6'],
             'note' => ['nullable', 'string', 'max:500'],
             'package_purchase_id' => ['required', 'integer', 'exists:package_purchases,id'],
             'assistant_requested' => ['required', 'boolean'],
@@ -388,6 +389,7 @@ class PrivateTrainingController extends Controller
 
             return PrivateTrainingBooking::create([
                 'user_id' => $request->user()->id,
+                'participant_count' => $data['participant_count'],
                 'coach_id' => $coach->id,
                 'assistant_requested' => (bool) $data['assistant_requested'],
                 'court_assistant_id' => $assistant?->id,
@@ -411,7 +413,7 @@ class PrivateTrainingController extends Controller
             : '';
         $this->notifyAdmins(
             'คำขอจองเทรนเนอร์ส่วนตัวใหม่',
-            "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}{$assistantLine}",
+            "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}\nผู้เข้าร่วม {$data['participant_count']} คน{$assistantLine}",
             route('admin.private-training.index', ['status' => 'pending']),
         );
 
