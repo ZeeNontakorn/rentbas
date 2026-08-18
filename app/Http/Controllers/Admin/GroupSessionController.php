@@ -241,13 +241,12 @@ $user->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
     }
 
     return DB::transaction(function () use ($round, $signup) {
-        $user = $signup->user_id
-            ? User::lockForUpdate()->findOrFail($signup->user_id)
-            : null;
 
-        if ($user && $signup->credit_used > 0) {
-            $user->increment(self::CREDIT_COLUMN, $signup->credit_used);
-        }
+        $payerId = $signup->booked_by ?? $signup->user_id;
+
+if ($payerId && $signup->credit_used > 0) {
+    User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+}
 
         $signup->update(['status' => 'cancelled']);
 
@@ -283,12 +282,14 @@ $user->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
                 ->get();
 
             foreach ($signups as $signup) {
-            
-if ($signup->user_id && $signup->credit_used > 0) {
-    User::where('id', $signup->user_id)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+    $payerId = $signup->booked_by ?? $signup->user_id;
+
+    if ($payerId && $signup->credit_used > 0) {
+        User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+    }
+
+    $signup->update(['status' => 'cancelled']);
 }
-                $signup->update(['status' => 'cancelled']);
-            }
 
             $round->update(['status' => 'cancelled']);
         });
