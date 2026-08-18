@@ -6,6 +6,7 @@ use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Court;
 use App\Models\CourtSection;
+use App\Models\Credit;
 use App\Models\Notification;
 use App\Models\Package;
 use App\Models\PackagePurchase;
@@ -150,7 +151,7 @@ class PrivateTrainingWorkflowTest extends TestCase
     {
         $admin = $this->user('admin');
         $customer = $this->user('user', 'customer');
-        $customer->forceFill(['credit_balance' => 250000])->save();
+        $this->grantCredit($customer, 250000);
         $coach = $this->user('staff', 'coach');
         $package = Package::create([
             'name' => 'Private 5 ครั้ง',
@@ -206,7 +207,7 @@ class PrivateTrainingWorkflowTest extends TestCase
     {
         $admin = $this->user('admin');
         $customer = $this->user('user', 'customer');
-        $customer->forceFill(['credit_balance' => 125000])->save();
+        $this->grantCredit($customer, 125000);
         $coach = $this->user('staff', 'coach');
         $court = Court::create(['name' => 'Court Legacy', 'court_status' => 'open']);
         $section = CourtSection::create([
@@ -341,7 +342,17 @@ class PrivateTrainingWorkflowTest extends TestCase
             'role' => $role,
             'membership_type' => $membershipType,
             'is_verified' => true,
-            'credit_balance' => 0,
+        ]);
+    }
+
+    private function grantCredit(User $user, int $amountSatang): Credit
+    {
+        return Credit::create([
+            'user_id' => $user->id,
+            'amount_satang' => $amountSatang,
+            'remaining_satang' => $amountSatang,
+            'expires_at' => null,
+            'source' => 'admin_manual',
         ]);
     }
 
@@ -356,8 +367,42 @@ class PrivateTrainingWorkflowTest extends TestCase
             $table->string('role')->default('user');
             $table->string('membership_type')->default('customer');
             $table->boolean('is_verified')->default(true);
-            $table->unsignedBigInteger('credit_balance')->default(0);
             $table->rememberToken();
+            $table->timestamps();
+        });
+        Schema::create('credits', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('amount_satang');
+            $table->unsignedBigInteger('remaining_satang');
+            $table->timestamp('expires_at')->nullable();
+            $table->string('source');
+            $table->unsignedBigInteger('credit_topup_request_id')->nullable();
+            $table->unsignedBigInteger('admin_id')->nullable();
+            $table->string('note')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('credit_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->default('topup');
+            $table->unsignedBigInteger('amount');
+            $table->unsignedBigInteger('balance_after');
+            $table->unsignedBigInteger('booking_id')->nullable();
+            $table->unsignedBigInteger('admin_id')->nullable();
+            $table->string('note')->nullable();
+            $table->unsignedBigInteger('private_training_booking_id')->nullable();
+            $table->unsignedBigInteger('package_purchase_id')->nullable();
+            $table->unsignedBigInteger('credit_topup_request_id')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('processed_by_name')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('credit_transaction_lots', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('credit_transaction_id');
+            $table->unsignedBigInteger('credit_id');
+            $table->unsignedBigInteger('amount_satang');
             $table->timestamps();
         });
         Schema::create('notifications', function (Blueprint $table) {
