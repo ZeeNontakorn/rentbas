@@ -51,6 +51,12 @@ class PrivateTrainingController extends Controller
             })
             ->exists();
 
+        // มีแพ็กเกจ Private Training ที่เปิดขายอยู่ในระบบเลยไหม (ไม่ผูกกับ user คนใดคนหนึ่ง)
+        // ใช้เช็คว่าควรให้ปุ่ม "ซื้อแพ็กเกจ" กดไปที่ไหนได้จริงหรือไม่
+        $hasAnyPackagesInSystem = PromotionPackage::where('is_active', true)
+            ->where('category', 'private')
+            ->exists();
+
         $myRequests = PrivateTrainingBooking::with('coach')
             ->where('user_id', $request->user()->id)
             ->whereDate('date', '>=', now()->toDateString())
@@ -81,7 +87,7 @@ class PrivateTrainingController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches', 'hasAnyPackagesInSystem'));
     }
 
     public function show(User $coach)
