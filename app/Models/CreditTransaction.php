@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CreditTransaction extends Model
 {
@@ -38,5 +39,13 @@ class CreditTransaction extends Model
     public function topupRequest(): BelongsTo
     {
         return $this->belongsTo(CreditTopupRequest::class);
+    }
+
+    /**
+     * ก้อนเครดิต (credits) ที่ transaction นี้หัก/เติมไป พร้อมจำนวนที่ตัดต่อก้อน
+     */
+    public function lots(): HasMany
+    {
+        return $this->hasMany(CreditTransactionLot::class);
     }
 }

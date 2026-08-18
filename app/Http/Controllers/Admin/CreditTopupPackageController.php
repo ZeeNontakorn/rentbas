@@ -29,6 +29,7 @@ class CreditTopupPackageController extends Controller
             'label' => ['required', 'string', 'max:50'],
             'price' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'credit' => ['required', 'numeric', 'min:1', 'max:1000000'],
+            'expiry_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
@@ -47,6 +48,8 @@ class CreditTopupPackageController extends Controller
             'credit.numeric' => 'กรุณากรอกจำนวนเครดิตที่ได้เป็นตัวเลข',
             'credit.min' => 'จำนวนเครดิตที่ได้ต้องไม่ต่ำกว่า 1 เครดิต',
             'credit.max' => 'จำนวนเครดิตที่ได้ต้องไม่เกิน 1,000,000 เครดิต',
+            'expiry_days.integer' => 'จำนวนวันหมดอายุต้องเป็นตัวเลขจำนวนเต็มเท่านั้น',
+            'expiry_days.min' => 'จำนวนวันหมดอายุต้องอย่างน้อย 1 วัน',
             'sort_order.integer' => 'ลำดับต้องเป็นตัวเลขจำนวนเต็มเท่านั้น',
             'sort_order.min' => 'ลำดับต้องไม่ติดลบ',
         ];
@@ -61,6 +64,7 @@ class CreditTopupPackageController extends Controller
             'label' => $data['label'],
             'price_satang' => (int) round($data['price'] * 100),
             'credit_satang' => (int) round($data['credit'] * 100),
+            'expiry_days' => $data['expiry_days'] ?? null,
             'is_active' => $request->boolean('is_active', true),
             'sort_order' => $data['sort_order'] ?? 0,
         ]);
@@ -78,6 +82,7 @@ class CreditTopupPackageController extends Controller
             'label' => $data['label'],
             'price_satang' => (int) round($data['price'] * 100),
             'credit_satang' => (int) round($data['credit'] * 100),
+            'expiry_days' => $data['expiry_days'] ?? null,
             // ไม่ใส่ default true ตรงนี้ — ถ้าแอดมินไม่ติ๊กช่อง แปลว่าตั้งใจปิดการแสดงผล (checkbox ที่ไม่ติ๊ก
             // จะไม่ถูกส่งมาใน request เลย ต่างจากตอนสร้างใหม่ที่ยังไม่มี checkbox ให้เลือก)
             'is_active' => $request->boolean('is_active'),

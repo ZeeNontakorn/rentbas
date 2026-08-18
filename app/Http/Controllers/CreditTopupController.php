@@ -91,11 +91,18 @@ class CreditTopupController extends Controller
             $slipPath = $request->file('slip')->store('credit-topup-slips', 'public');
         }
 
+        // snapshot จำนวนวันหมดอายุจากแพ็กเกจไว้ตอนยื่นคำขอ (เหมือน price_satang/credit_satang ด้านบน)
+        // กันแพ็กเกจถูกแก้ expiry_days ทีหลังแล้วกระทบคำขอที่ยื่นไปแล้ว
+        $expiryDays = ! empty($data['package_id'])
+            ? CreditTopupPackage::find($data['package_id'])?->expiry_days
+            : null;
+
         $topupRequest = CreditTopupRequest::create([
             'user_id' => $request->user()->id,
             'credit_topup_package_id' => $data['package_id'] ?? null,
             'price_satang' => $data['price_satang'],
             'credit_satang' => $data['credit_satang'],
+            'expiry_days' => $expiryDays,
             'payment_method' => 'promptpay',
             'slip_path' => $slipPath,
         ]);

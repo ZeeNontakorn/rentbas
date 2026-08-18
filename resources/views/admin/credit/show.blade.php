@@ -5,7 +5,7 @@
 @php
     $typeMeta = [
         'topup' => ['label' => 'เติมเครดิต', 'bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'sign' => '+'],
-        'deduct' => ['label' => 'หักค่าจอง', 'bg' => 'bg-red-100', 'text' => 'text-red-600', 'sign' => '-'],
+        'deduct' => ['label' => 'หักเครดิต', 'bg' => 'bg-red-100', 'text' => 'text-red-600', 'sign' => '-'],
         'refund' => ['label' => 'คืนเครดิต', 'bg' => 'bg-blue-100', 'text' => 'text-blue-700', 'sign' => '+'],
     ];
 @endphp
@@ -72,6 +72,11 @@
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
                             </div>
                             <div class="flex-1 w-full mx-auto mt-3">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">หมดอายุใน (วัน) — เว้นว่างถ้าไม่หมดอายุ</label>
+                                <input type="number" step="1" min="1" max="3650" name="expiry_days" placeholder="เช่น 365"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                            <div class="flex-1 w-full mx-auto mt-3">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">หมายเหตุ (ถ้ามี)</label>
                                 <input type="text" name="note" maxlength="255" placeholder="เช่น เติมเงินสดหน้าเคาน์เตอร์"
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
@@ -101,6 +106,108 @@
                     </button>
                 </form>
             </div>
+        </div>
+
+        {{-- Manual deduct form --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="font-medium text-gray-700 text-sm mb-1">หักเครดิต (แก้ไข/ปรับยอด)</h2>
+            <p class="text-xs text-gray-400 mb-4">ใช้สำหรับแก้ไขข้อผิดพลาด เช่น เติมผิดจำนวน — ระบบจะหักจากก้อนที่เติมล่าสุดก่อน</p>
+
+            <form method="POST" action="{{ route('admin.credits.deduct', $user) }}" class="flex flex-col sm:flex-row items-end gap-3"
+                  onsubmit="return confirm('ยืนยันหักเครดิตของ {{ $user->us_name }} จำนวนนี้ใช่ไหม?');">
+                @csrf
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">จำนวนเงิน (บาท)</label>
+                    <input type="number" step="0.01" min="1" name="deduct_amount" required
+                        placeholder="เช่น 200"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none">
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">เหตุผล/หมายเหตุ</label>
+                    <input type="text" name="deduct_note" maxlength="255" placeholder="เช่น เติมผิดจำนวน แก้ไขยอด"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none">
+                </div>
+                <button type="submit"
+                        class="text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
+                    หักเครดิต
+                </button>
+            </form>
+        </div>
+
+        {{-- Credit lots (ก้อนเครดิต + วันหมดอายุ) --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <h2 class="font-medium text-gray-700 text-sm">ก้อนเครดิต (Lots)</h2>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-gray-400 text-xs uppercase tracking-wide border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">ที่มา</th>
+                            <th class="px-6 py-3 font-medium text-right">ยอดเดิม</th>
+                            <th class="px-6 py-3 font-medium text-right">คงเหลือ</th>
+                            <th class="px-6 py-3 font-medium">หมดอายุ</th>
+                            <th class="px-6 py-3 font-medium">สถานะ</th>
+                            <th class="px-6 py-3 font-medium">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @php
+                            $sourceLabels = [
+                                'topup_request' => 'อนุมัติคำขอเติมเครดิต',
+                                'admin_manual' => 'แอดมินเติมให้',
+                                'refund' => 'คืนเครดิต',
+                                'migration_seed' => 'ยอดเครดิตเดิม',
+                            ];
+                        @endphp
+                        @forelse ($credits as $lot)
+                            @php
+                                $isExpired = $lot->expires_at && $lot->expires_at->isPast();
+                                $isExhausted = $lot->remaining_satang <= 0;
+                            @endphp
+                            <tr>
+                                <td class="px-6 py-3 text-gray-600">{{ $sourceLabels[$lot->source] ?? $lot->source }}</td>
+                                <td class="px-6 py-3 text-right text-gray-500">฿{{ number_format($lot->amount_satang / 100, 2) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-gray-700">฿{{ number_format($lot->remaining_satang / 100, 2) }}</td>
+                                <td class="px-6 py-3 text-gray-500">{{ $lot->expires_at ? $lot->expires_at->format('d/m/Y') : 'ไม่มีวันหมดอายุ' }}</td>
+                                <td class="px-6 py-3">
+                                    @if ($isExhausted)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">ใช้หมดแล้ว</span>
+                                    @elseif ($isExpired)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">หมดอายุแล้ว</span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">ใช้ได้</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3">
+                                    @if ($lot->remaining_satang > 0 && !$isExpired)
+                                        <form method="POST" action="{{ route('admin.credits.void-lot', $lot) }}" class="flex items-center gap-1"
+                                              onsubmit="return confirm('ยืนยันหัก/ยกเลิกเครดิตก้อนนี้จำนวนที่ระบุใช่ไหม?');">
+                                            @csrf
+                                            <input type="number" step="0.01" min="0.01" max="{{ $lot->remaining_satang / 100 }}"
+                                                   name="void_amount" value="{{ number_format($lot->remaining_satang / 100, 2, '.', '') }}"
+                                                   class="w-20 rounded border border-gray-300 px-2 py-1 text-xs text-center">
+                                            <button type="submit" class="text-xs text-red-600 hover:underline whitespace-nowrap cursor-pointer">ยกเลิก</button>
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-10 text-center text-gray-400">ยังไม่มีก้อนเครดิต</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($credits->hasPages())
+                <div class="px-6 py-4 border-t border-gray-100">
+                    {{ $credits->links() }}
+                </div>
+            @endif
         </div>
 
         {{-- Transaction history --}}
