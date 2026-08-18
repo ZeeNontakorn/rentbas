@@ -180,7 +180,7 @@
         document.querySelectorAll('.btn-need-package').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 if (!hasAnyPackagesInSystem) {
-                    showToast('ไม่มีแพ็กเกจในตอนนี้',false)
+                    showToast('ไม่มีแพ็กเกจในขณะนี้',false)
                     return; // Alert here
                 }
 
