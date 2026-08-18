@@ -36,22 +36,17 @@ class CreditController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'payment_method' => ['required', 'in:line,cash_counter'],
-            'processed_by_name' => [
-                'required', 'string', 'max:100',
-                'regex:/^[\p{Thai}]+(?:\s+[\p{Thai}]+)+$/u',
-            ],
             'note' => ['nullable', 'string', 'max:255'],
         ],[
             'payment_method.required' => 'กรุณาเลือกรูปแบบการชำระเงินที่ลูกค้าใช้จ่ายจริง',
-            'processed_by_name.required' => 'กรุณากรอกชื่อ-นามสกุลจริงของผู้ดำเนินการ (ภาษาไทย)',
-            'processed_by_name.regex' => 'กรุณากรอกเป็นชื่อ-นามสกุลภาษาไทยเท่านั้น เช่น "สมชาย ใจดี"',
         ]);
 
+        $processedByName = $data['processed_by_name'] ?? $request->user()->name;
 
         $amountSatang = (int) round($data['amount'] * 100);
 
         try {
-            $tx = $this->creditService->topup($user, $amountSatang, $request->user(), $data['note'] ?? null, $data['payment_method'], $data['processed_by_name']);
+            $tx = $this->creditService->topup($user, $amountSatang, $request->user(), $data['note'] ?? null, $data['payment_method'], $processedByName);
         } catch (RuntimeException $e) {
             return back()->withErrors(['amount' => $e->getMessage()]);
         }
