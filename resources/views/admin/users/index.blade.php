@@ -74,7 +74,6 @@
                             <th class="px-6 py-3 font-medium text-center">ลำดับ</th>
                             <th class="px-6 py-3 font-medium text-center">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium text-center">อีเมล</th>
-                            <th class="px-6 py-3 font-medium text-center">เบอร์โทรศัพท์</th>
                             <th class="px-6 py-3 font-medium text-center">Role</th>
                             <th class="px-6 py-3 font-medium text-center">สถานะยืนยัน (OTP)</th>
                             <th class="px-6 py-3 font-medium text-center">ประเภทสมาชิก</th>
@@ -87,32 +86,24 @@
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">
-                                    <span class="copy-text inline-block max-w-[80px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                    <span class="copy-text inline-block max-w-[140px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
                                           title="{{ $u->name }}" data-copy="{{ $u->name }}" onclick="copyToClipboard(this, event)">{{ $u->name }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">
-                                    <span class="copy-text inline-block max-w-[100px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                    <span class="copy-text inline-block max-w-[180px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
                                           title="{{ $u->email }}" data-copy="{{ $u->email }}" onclick="copyToClipboard(this, event)">{{ $u->email }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-500 text-center">
-                                    @if($u->phone)
-                                        <span class="copy-text inline-block max-w-[120px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
-                                            title="{{ $u->phone }}" data-copy="{{ $u->phone }}" onclick="copyToClipboard(this, event)">{{ $u->phone }}</span>
-                                    @else
-                                        <span class="text-gray-300 text-xs">-</span>
-                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($u->role === 'superadmin')
                                         @if($isSuperadmin && $u->id !== auth()->id())
                                             <button type="button"
                                                     onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                    class="inline-flex items-center justify-center w-[122px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
+                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 Super Admin
                                             </button>
                                         @else
-                                            <span class="inline-flex items-center justify-center w-[122px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
+                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
                                                 Super Admin
                                             </span>
                                         @endif
@@ -128,12 +119,12 @@
                                         @if($u->id !== auth()->id())
                                             <button type="button"
                                                     onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                    class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
+                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 {{ ucfirst($u->role) }}
                                             </button>
                                         @else
-                                            <span class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
+                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
                                                 {{ ucfirst($u->role) }}
                                             </span>
                                         @endif
@@ -155,7 +146,7 @@
                                 <td class="px-6 py-4">
                                     @if(in_array($u->role, ['admin', 'superadmin'], true))
                                         {{-- แอดมิน: ป้ายพื้นหลังสีเทา มีกรอบ เหมือนป้ายประเภทสมาชิกอื่นๆ --}}
-                                        <span class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
+                                        <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
                                     @else
                                         {{-- ประเภทสมาชิก: ป้ายทั้งก้อนคลิกได้เพื่อเปิดโมดัลแก้ไข (สไตล์เดียวกับ Role) --}}
                                         @php
@@ -163,7 +154,7 @@
                                         @endphp
                                         <div class="membership-cell" data-user-id="{{ $u->id }}">
                                             <button type="button"
-                                                class="membership-label membership-edit-btn inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
+                                                class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                 data-user-id="{{ $u->id }}"
                                                 data-name="{{ $u->name }}"
                                                 data-value="{{ $u->membership_type }}"
@@ -176,7 +167,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-[22px] py-4 text-center">
+                                <td class="px-6 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route('admin.users.show', $u) }}"
                                            class="inline-flex items-center gap-1.5 bg-gray-800 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm">
