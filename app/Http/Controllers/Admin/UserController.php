@@ -14,18 +14,21 @@ class UserController extends Controller
     // หน้าค้นหาและแสดงรายชื่อผู้ใช้
     public function index(Request $request)
     {
-        $search = $request->query('search');
+    $search = $request->query('search');
 
-        $users = User::whereIn('role', ['admin','user','staff', 'superadmin'])
-            ->where('id', '>', 0)
-            ->when($search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%");
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+    $users = User::whereIn('role', ['admin','user','staff', 'superadmin'])
+        ->where('id', '>', 0)
+        ->when($search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        })
+        ->orderBy('id', 'desc')
+        ->paginate(15)
+        ->withQueryString();
 
-        return view('admin.users.index', compact('users', 'search'));
+    return view('admin.users.index', compact('users', 'search'));
     }
 
     // หน้าแสดงข้อมูลเชิงลึกของผู้ใช้ 1 คน (ประวัติ/คำขอปัจจุบัน)
