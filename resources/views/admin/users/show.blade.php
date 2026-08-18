@@ -361,12 +361,14 @@
                         <input type="hidden" name="role" value="{{ $user->role }}">
                         <select id="roleSelect" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-500 outline-none">
                             <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>ผู้ใช้งาน (User)</option>
+                            <option value="staff" {{ $user->role === 'staff' ? 'selected' : '' }}>พนักงาน (Staff)</option>
                             <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
                             <option value="superadmin" {{ $user->role === 'superadmin' ? 'selected' : '' }}>ผู้ดูแลระบบสูงสุด (Super Admin)</option>
                         </select>
                     @else
                         <select name="role" id="roleSelect" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
                             <option value="user" {{ old('role', $user->role) === 'user' ? 'selected' : '' }}>ผู้ใช้งาน (User)</option>
+                            <option value="staff" {{ old('role', $user->role) === 'staff' ? 'selected' : '' }}>พนักงาน (Staff)</option>
                             <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
                             
                             @if(auth()->user()->role === 'superadmin')
@@ -377,12 +379,9 @@
                 </div>
 
                 <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">ประเภทลูกค้า <span class="text-red-500">*</span></label>
+                    <label class="mb-1.5 block text-xs font-medium text-gray-600">ประเภทสมาชิก <span class="text-red-500">*</span></label>
                     <select name="membership_type" id="membershipSelect" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                        @foreach($user->membershipTypeOptions() as $value => $label)
-                            <option value="{{ $value }}" {{ old('membership_type', $user->membership_type) === $value ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                        <option value="admin" id="adminOption" class="hidden">ผู้ดูแลระบบ</option>
+                        
                     </select>
                 </div>
 
@@ -436,6 +435,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // ─── ระบบ Tab สลับการแสดงผล Bookings ───
     const secCurrent = document.getElementById('current-bookings');
     const secPast = document.getElementById('past-bookings');
     const tabs = document.querySelectorAll('.booking-tab');
@@ -463,38 +463,67 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setBookingTab('current');
 
-    // ─── ระบบจัดการ Role & Membership Type ───
+    // ─── ระบบจัดการ Role & Membership Type (Dynamic Options) ───
     const roleSelect = document.getElementById('roleSelect');
     const membershipSelect = document.getElementById('membershipSelect');
-    const adminOption = document.getElementById('adminOption');
-    
-    let previousMembershipValue = membershipSelect.value !== 'admin' ? membershipSelect.value : (membershipSelect.options[0]?.value || '');
 
-    function toggleMembershipType() {
+    // ดึง Constants จาก PHP Model มาทำเป็น JS Objects
+    const userTypes = @json(\App\Models\User::MEMBERSHIP_TYPES);
+    const staffTypes = @json(\App\Models\User::STAFF_TYPES);
+    const adminTypes = { 'admin': 'ผู้ดูแลระบบ' };
+
+    // ค่าเริ่มต้นของผู้ใช้ที่ดึงจาก Database
+    let initialValue = @json(old('membership_type', $user->membership_type));
+
+    function updateMembershipOptions(isRoleChangedByUser = false) {
         if (!roleSelect || !membershipSelect) return;
 
-        const isRoleAdmin = roleSelect.value === 'admin' || roleSelect.value === 'superadmin';
+        const selectedRole = roleSelect.value;
+        let optionsMap = {};
 
-        if (isRoleAdmin) {
-            if (membershipSelect.value !== 'admin') {
-                previousMembershipValue = membershipSelect.value;
-            }
-            if(adminOption) adminOption.classList.remove('hidden');
-            membershipSelect.value = 'admin';
-            membershipSelect.disabled = true; 
-        } else {
+        // 1. เลือกชุดตัวเลือกให้ตรงกับ Role
+        if (selectedRole === 'admin' || selectedRole === 'superadmin') {
+            optionsMap = adminTypes;
+            membershipSelect.disabled = true;
+        } else if (selectedRole === 'staff') {
+            optionsMap = staffTypes;
             membershipSelect.disabled = false;
-            if(adminOption) adminOption.classList.add('hidden');
-            
-            if (membershipSelect.value === 'admin') {
-                membershipSelect.value = previousMembershipValue;
+        } else {
+            // role === 'user'
+            optionsMap = userTypes;
+            membershipSelect.disabled = false;
+        }
+
+        // 2. เคลียร์ตัวเลือกเดิมใน Select ทั้งหมด
+        membershipSelect.innerHTML = '';
+
+        // 3. สร้าง <option> ขึ้นมาใหม่ตาม Role
+        Object.entries(optionsMap).forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = label;
+
+            // หากเป็นค่าเดิมของผู้ใช้ ให้เลือกตัวเลือกนี้
+            if (!isRoleChangedByUser && value === initialValue) {
+                opt.selected = true;
             }
+
+            membershipSelect.appendChild(opt);
+        });
+
+        // หากผู้ใช้คลิกเปลี่ยน Role เอง ให้เลือก Option แรกของ Role นั้นเป็นค่าเริ่มต้น
+        if (isRoleChangedByUser && membershipSelect.options.length > 0) {
+            membershipSelect.value = membershipSelect.options[0].value;
         }
     }
 
-    if (roleSelect) {
-        roleSelect.addEventListener('change', toggleMembershipType);
-        toggleMembershipType();
+    if (roleSelect && membershipSelect) {
+        roleSelect.addEventListener('change', function () {
+            updateMembershipOptions(true); // แจ้งว่าเกิดจากการคลิกเปลี่ยน Role
+        });
+
+        // ทำงานทันทีตอนโหลดหน้า เพื่อสร้าง Option ชุดแรก
+        updateMembershipOptions(false);
     }
 
     // ─── ระบบตรวจสอบการเปลี่ยนอีเมล (OTP) ───
@@ -518,6 +547,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+// ─── ฟังก์ชันจัดการ Modal ───
 function openUserProfileModal() {
     const modal = document.getElementById('userProfileModal');
     if (!modal) return;
@@ -545,6 +575,7 @@ if (userProfileModal) {
     });
 }
 
+// ─── ฟังก์ชันส่งขอรหัส OTP ───
 function requestOtp() {
     const emailInput = document.getElementById('emailInput');
     const email = emailInput.value.trim();
