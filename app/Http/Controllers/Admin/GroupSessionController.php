@@ -304,4 +304,30 @@ if ($payerId && $signup->credit_used > 0) {
 
     return back()->with('success', 'ลบเทมเพลตรอบประจำเรียบร้อยแล้ว');
 }
+public function history(\Illuminate\Http\Request $request)
+{
+    $search = $request->input('search');
+    $date = $request->input('date');
+
+    $pastRounds = GroupRound::with('court')
+        ->where(function ($q) {
+            $q->where('play_date', '<', now()->toDateString())
+              ->orWhere('status', 'closed');
+        })
+        ->when($search, fn ($q) => $q->where('title', 'like', "%{$search}%"))
+        ->when($date, fn ($q) => $q->whereDate('play_date', $date))
+        ->withCount(['confirmedSignups as players_count'])
+        ->orderByDesc('play_date')
+        ->paginate(20)
+        ->withQueryString();
+
+    return view('admin.group-sessions.history', compact('pastRounds', 'search', 'date'));
+}
+
+public function showRoundHistory(GroupRound $round)
+{
+    $round->load(['court', 'confirmedSignups']);
+
+    return view('admin.group-sessions.history-show', compact('round'));
+}
 }

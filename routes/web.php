@@ -494,6 +494,9 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
 // จัดการ Group Sessions (ระบบ Round/Group) — ต้องเป็น admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
     Route::get('/', [GroupSessionController::class, 'index'])->name('index');
+    Route::get('/history', [GroupSessionController::class, 'history'])->name('history');
+    Route::get('/history', [GroupSessionController::class, 'history'])->name('history');
+    Route::get('/history/{round}', [GroupSessionController::class, 'showRoundHistory'])->name('history.show');  
     Route::post('/', [GroupSessionController::class, 'storeSession'])->name('store');
     Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');
     Route::delete('/{session}', [GroupSessionController::class, 'destroySession'])->name('destroy');
