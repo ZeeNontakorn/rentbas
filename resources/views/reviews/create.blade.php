@@ -10,7 +10,7 @@
         <div class="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="bg-[#13162a] px-6 py-8 text-white sm:px-10">
                 <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-400">Share your experience</p>
-                <h1 class="text-3xl font-bold sm:text-4xl">เขียนรีวิว THATA Homecourt</h1>
+                <h1 class="text-3xl font-bold sm:text-4xl">เขียนรีวิว THATA HOMECOURT</h1>
                 <p class="mt-3 max-w-2xl text-sm leading-7 text-white/60">ให้คะแนนสถานที่และสิ่งอำนวยความสะดวกที่คุณได้ใช้ ความคิดเห็นของคุณช่วยให้เราพัฒนาบริการให้ดีขึ้น</p>
             </div>
 
@@ -106,7 +106,7 @@
 
                 <div class="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
                     <a href="{{ route('home') }}#facility-reviews" class="rounded-xl border border-gray-300 px-6 py-3 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50">ยกเลิก</a>
-                    <button type="submit" class="rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white transition hover:bg-orange-600">ส่งรีวิว</button>
+                    <button type="submit" class="rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white cursor-pointer transition hover:bg-orange-600">ส่งรีวิว</button>
                 </div>
             </form>
         </div>

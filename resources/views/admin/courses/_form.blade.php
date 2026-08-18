@@ -76,7 +76,7 @@
         </div>
         <div id="scheduleRows" class="space-y-3"></div>
         <button type="button" id="addSchedule"
-            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มรอบเวลาเรียน</button>
+            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50 cursor-pointer">＋ เพิ่มรอบเวลาเรียน</button>
         <div id="scheduleInputs"></div>
     </section>
 
@@ -91,7 +91,7 @@
         </div>
         <div id="packageRows" class="space-y-3"></div>
         <button type="button" id="addPackage"
-            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50">＋ เพิ่มแพ็กเกจ</button>
+            class="mt-4 inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors duration-150 hover:bg-blue-50 cursor-pointer">＋ เพิ่มแพ็กเกจ</button>
     </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -137,13 +137,13 @@
     </section>
     <div class="flex justify-end gap-4 border-t border-slate-200 pt-4"><a href="{{ route('admin.courses') }}"
             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm text-slate-700 hover:bg-slate-50">ยกเลิก</a><button
-            class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">{{ $isEdit ? 'บันทึกการแก้ไข' : 'บันทึกคอร์ส' }}</button>
+            class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 cursor-pointer">{{ $isEdit ? 'บันทึกการแก้ไข' : 'บันทึกคอร์ส' }}</button>
     </div>
 
     <template id="scheduleTemplate">
         <div class="schedule rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
             <div class="flex justify-between"><b class="text-sm text-slate-700">รอบเวลาเรียน <span class="text-xs text-red-500"> *</span></b><button type="button"
-                    class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบรอบ</button></div>
+                    class="remove rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100 cursor-pointer">ลบรอบ</button></div>
 
             <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน <span class="text-xs text-red-500"> *</span></label>
             <div class="days flex flex-wrap gap-2">
@@ -183,7 +183,7 @@
         <div class="package rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors duration-150">
             <input type="hidden" class="packageId">
             <div class="flex justify-between"><b class="text-sm text-slate-700">แพ็กเกจ <span class="text-xs text-red-500"> *</span></b><button type="button"
-                    class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100">ลบแพ็กเกจ</button></div>
+                    class="removePackage rounded-lg px-2 py-1 text-sm text-red-500 transition-colors duration-150 hover:bg-red-100 cursor-pointer">ลบแพ็กเกจ</button></div>
             <div class="mt-4 grid gap-3 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-medium text-slate-500">ประเภทคอร์ส <span class="text-xs text-red-500"> *</span></label>

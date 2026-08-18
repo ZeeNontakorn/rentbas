@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'THATA Homecourt - THATA SPORT HQ & Basketball Chonburi ')
+@section('title', 'THATA HOMECOURT - THATA SPORT HQ & Basketball Chonburi ')
 
 @section('content')
 @php
@@ -290,7 +290,7 @@ html { scroll-behavior: smooth; }
     overflow: hidden;
     border: 1px solid rgba(255,255,255,.07);
     transition: border-color .25s, transform .25s;
-    cursor: pointer;
+    cursor: default;
 }
 .court-card:hover { border-color: rgba(232,108,42,.45); transform: translateY(-4px); }
 .court-thumb { height: 130px; position: relative; overflow: hidden; }
@@ -1082,7 +1082,7 @@ html { scroll-behavior: smooth; }
     <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">THATA SPORT HQ & Basketball Chonburi</p>
-        <h1 class="hero-title">THATA<br><span>Homecourt</span></h1>
+        <h1 class="hero-title">THATA<br><span>HOMECOURT</span></h1>
         <p class="hero-sub">ระบบจองสนามบาสเกตบอลมาตรฐานสากล<br>พร้อมให้บริการ 7 วัน 365 วัน</p>
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="400">
             @guest
@@ -1258,7 +1258,7 @@ html { scroll-behavior: smooth; }
         {{-- LEFT: Calendar Card --}}
         <div class="bk-cal-card">
             <div class="bk-cal-header">
-                <span class="bk-cal-month-label" id="cal-month">เมษายน 2568</span>
+                <span class="bk-cal-month-label" id="cal-month"></span>
                 <div class="bk-cal-nav-btns">
                     <button onclick="calPrev()">&#8249;</button>
                     <button onclick="calNext()">&#8250;</button>
@@ -1553,7 +1553,7 @@ html { scroll-behavior: smooth; }
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
                     <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://128/174/174855.png" alt="">thata_homecourt
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">THATA Homecourt
                     </a>
                     <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt

@@ -70,6 +70,14 @@
             border-radius: 4px;
             z-index: 10;
         }
+
+        /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือพื้นหลังปกติ แต่ต่ำกว่า event กำหนดการจริง */
+        #staff-schedule-calendar .fc-bg-event {
+            z-index: 1 !important;
+        }
+        #staff-schedule-calendar .fc-timegrid-event-harness {
+            z-index: 3 !important;
+        }
     </style>
 
     <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
@@ -254,7 +262,7 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">ตำแหน่ง (Role) <span
                             class="text-red-500">*</span></label>
                     <select name="membership_type" required
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white cursor-pointer">
                         <option value="court_assistant" {{ old('membership_type', $staff->membership_type) === 'court_assistant' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
                         <option value="coach" {{ old('membership_type', $staff->membership_type) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
                     </select>
@@ -278,7 +286,7 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1.5">เพศ</label>
                     <select name="gender"
-                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white">
+                        class="w-full border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white cursor-pointer">
                         <option value="">ไม่ระบุ</option>
                         <option value="male" {{ old('gender', $staffProfile?->gender) === 'male' ? 'selected' : '' }}>ชาย
                         </option>
@@ -340,7 +348,7 @@
                             {{ $staffProfile?->profile_image ? 'ใช้รูปโปรไฟล์เดิม' : '' }}
                         </p>
                         <button type="button" id="remove-staff-image-btn"
-                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+                            class="{{ $staffProfile?->profile_image ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer">
                             ลบภาพ
                         </button>
                         <input type="hidden" name="remove_profile_image" id="remove-staff-image-input" value="0">
@@ -349,9 +357,9 @@
 
                 <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 md:col-span-2">
                     <button type="button" onclick="toggleModal('staffProfileModal', false)"
-                        class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">ยกเลิก</button>
+                        class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium cursor-pointer">ยกเลิก</button>
                     <button type="submit"
-                        class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium shadow-sm">บันทึกข้อมูล</button>
+                        class="px-4 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg font-medium shadow-sm cursor-pointer">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
@@ -360,6 +368,35 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
     <script>
+        const staffScheduleOpenHour = 8, staffScheduleCloseHour = 22;
+
+        function buildStaffPastOverlay(rangeStart, rangeEnd) {
+            const overlay = [];
+            const now = new Date();
+            const cursor = new Date(rangeStart);
+            cursor.setHours(0, 0, 0, 0);
+
+            while (cursor < rangeEnd) {
+                const dayOpen = new Date(cursor);
+                dayOpen.setHours(staffScheduleOpenHour, 0, 0, 0);
+                const dayClose = new Date(cursor);
+                dayClose.setHours(staffScheduleCloseHour, 0, 0, 0);
+
+                const overlayEnd = now < dayClose ? now : dayClose;
+
+                if (overlayEnd > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: overlayEnd.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'past' }
+                    });
+                }
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return overlay;
+        }
         const staffScheduleCalendar = new FullCalendar.Calendar(
             document.getElementById('staff-schedule-calendar'),
             {
@@ -386,7 +423,39 @@
                     day: 'วัน',
                     list: 'รายการ'
                 },
-                events: @js(route('admin.staffs.schedule-events', $staff)),
+                events(info, success, failure) {
+                    const url = @js(route('admin.staffs.schedule-events', $staff));
+                    fetch(`${url}?start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`, {
+                        headers: { Accept: 'application/json' }
+                    })
+                        .then(response => response.ok ? response.json() : Promise.reject(response))
+                        .then(realEvents => {
+                            const view = staffScheduleCalendar.view.type;
+                            const isTimeGridView = view === 'timeGridWeek' || view === 'timeGridDay';
+                            success(isTimeGridView ? [...realEvents, ...buildStaffPastOverlay(info.start, info.end)] : realEvents);
+                        })
+                        .catch(failure);
+                },
+                eventDidMount(arg) {
+                    if (arg.event.extendedProps.kind !== 'past') return;
+
+                    arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+
+                    const label = document.createElement('div');
+                    label.textContent = 'เลยกำหนด';
+                    label.style.cssText = `
+                        position: absolute;
+                        inset: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: #1e293b;
+                        pointer-events: none;
+                    `;
+                    arg.el.appendChild(label);
+                },
                 select(info) {
                     @if($isCoach)
                         staffScheduleCalendar.unselect();
@@ -408,13 +477,21 @@
                     staffScheduleCalendar.unselect();
                 },
                 eventClick(info) {
+                    if (info.event.extendedProps.kind === 'past') {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'เลยกำหนด',
+                            text: 'ช่วงเวลานี้ผ่านไปแล้ว'
+                        });
+                        return;
+                    }
                     const props = info.event.extendedProps;
                     Swal.fire({
                         icon: 'info',
                         title: info.event.title,
                         text: props.statusLabel || props.detail || 'กำหนดการของบุคลากร'
                     });
-                }
+                },
             }
         );
         staffScheduleCalendar.render();
