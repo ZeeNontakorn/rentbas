@@ -4,15 +4,21 @@
 @section('content')
 <div class="max-w-6xl mx-auto px-4 py-6" x-data="{ showSessionForm: false, showEditForm: false, showRoundForm: false, prefillSession: null, editSession: null }">
 
-    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900">กลุ่มเล่นบาส</h1>
             <p class="text-sm text-gray-500 mt-1">จัดการรอบประจำ และเปิดรอบให้สมาชิกลงชื่อ</p>
         </div>
-        <button @click="showSessionForm = true"
-            class="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
-            + สร้างรอบประจำใหม่
-        </button>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.group-sessions.history') }}"
+                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                ประวัติกลุ่มเล่นบาส
+            </a>
+            <button @click="showSessionForm = true"
+                class="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+                + สร้างรอบประจำใหม่
+            </button>
+        </div>
     </div>
 
     @if(session('success'))
