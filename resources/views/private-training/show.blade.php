@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
     // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
     const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
-    const advanceLimitMessage = @js('สามารถจอง Private Training ล่วงหน้าได้สูงสุด '.$advanceBookingDays.' วัน');
+    const advanceLimitMessage = @js('สามารถจองเทรนเนอร์ส่วนตัวล่วงหน้าได้สูงสุด '.$advanceBookingDays.' วัน');
 
     function showAdvanceLimitMessage() {
         Swal.fire({
