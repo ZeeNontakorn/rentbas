@@ -134,12 +134,10 @@ class UserController extends Controller
         $actor = $request->user();
         $actorIsSuperadmin = $actor->role === 'superadmin';
 
-        // 1. ป้องกันไม่ให้แอดมินธรรมดาแก้ไขข้อมูลของ Super Admin
         if (! $actorIsSuperadmin && $user->role === 'superadmin') {
             abort(403, 'ไม่สามารถแก้ไขข้อมูลของ superadmin ได้');
         }
 
-        // 2. กำหนด Role ที่อนุญาตให้เปลี่ยนได้ตามสิทธิ์ของคนแก้
         $allowedRoles = $actorIsSuperadmin
             ? ['user', 'staff', 'admin', 'superadmin']
             : ['user', 'staff', 'admin'];
@@ -150,11 +148,10 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
             'role' => ['required', Rule::in($allowedRoles)],
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Validation สำหรับรูปภาพ
         ];
 
-        // 3. ถ้า Role ใหม่ที่ส่งมา ไม่ใช่แอดมิน จำเป็นต้องตรวจสอบประเภทสมาชิกด้วย
         if (! in_array($request->role, ['admin', 'superadmin'], true)) {
-            // อนุญาตค่า membership_type ทั้งแบบ staff และ user (รวม Array Keys เข้าด้วยกัน)
             $validMembershipTypes = array_merge(array_keys(User::MEMBERSHIP_TYPES), array_keys(User::STAFF_TYPES));
             $rules['membership_type'] = ['required', Rule::in($validMembershipTypes)];
         }
@@ -169,24 +166,56 @@ class UserController extends Controller
             'role.in' => 'บทบาทไม่ถูกต้อง',
             'membership_type.required' => 'กรุณาเลือกประเภทสมาชิก',
             'membership_type.in' => 'ประเภทสมาชิกไม่ถูกต้อง',
+            'avatar.image' => 'ไฟล์ที่อัปโหลดต้องเป็นรูปภาพเท่านั้น',
+            'avatar.mimes' => 'รองรับเฉพาะไฟล์ jpeg, png, jpg และ webp',
+            'avatar.max' => 'ขนาดรูปภาพต้องไม่เกิน 2MB',
         ]);
 
-        // 4. อัปเดตข้อมูลทั่วไป
+        // 1. กรณีสั่งลบรูปภาพ
+        if ($request->input('remove_avatar') == '1') {
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = null;
+
+            // อัปเดตให้ฝั่งโปรไฟล์โค้ชว่างเปล่าด้วย (ถ้ามีข้อมูล)
+            if ($user->staffProfile) {
+                $user->staffProfile->profile_image = null;
+                $user->staffProfile->save();
+            }
+        }
+
+        // 2. จัดการอัปโหลดรูปภาพโปรไฟล์ใหม่
+        if ($request->hasFile('avatar')) {
+            // ลบรูปภาพเดิมใน storage ถ้ามี
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            
+            // บันทึกรูปใหม่และเก็บ path
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
+
+            // ซิงค์ path รูปภาพเดียวกันให้กับฝั่งโปรไฟล์โค้ชด้วย (ถ้ามีข้อมูล)
+            if ($user->staffProfile) {
+                $user->staffProfile->profile_image = $avatarPath;
+                $user->staffProfile->save();
+            }
+        }
+
         $user->fill($request->only(['name', 'us_name', 'email', 'phone']));
         $user->role = $validated['role'];
 
-        // 5. จัดการ Membership Type ตามเงื่อนไขของ Role
         if (in_array($validated['role'], ['admin', 'superadmin'], true)) {
-            $user->membership_type = 'admin'; // บังคับเป็น admin
+            $user->membership_type = 'admin';
         } else {
             if ($request->filled('membership_type')) {
                 $user->membership_type = $validated['membership_type'];
             } else {
-                // กรณีฉุกเฉิน fallback
                 $user->membership_type = $validated['role'] === 'staff' ? 'permanent' : 'customer';
             }
         }
-
+        
         $user->save();
 
         return redirect()->back()->with('success', "อัปเดตข้อมูลส่วนตัวของ {$user->name} เรียบร้อยแล้ว");

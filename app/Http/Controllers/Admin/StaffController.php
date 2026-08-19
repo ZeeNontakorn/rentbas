@@ -203,22 +203,34 @@ class StaffController extends Controller
         );
         $staffProfile->fill($request->only(['specialty', 'bio', 'gender']));
 
+        // จัดการลบ/ซิงค์รูปภาพระหว่าง Staff Profile และ User Avatar
         if ($request->hasFile('profile_image')) {
-            if ($staffProfile->profile_image) {
+            // ลบไฟล์รูปเดิม
+            if ($staffProfile->profile_image && Storage::disk('public')->exists($staffProfile->profile_image)) {
                 Storage::disk('public')->delete($staffProfile->profile_image);
             }
+            if ($staff->avatar && $staff->avatar !== $staffProfile->profile_image && Storage::disk('public')->exists($staff->avatar)) {
+                Storage::disk('public')->delete($staff->avatar);
+            }
 
-            $staffProfile->profile_image = $request->file('profile_image')
-                ->store('coach-profiles', 'public');
+            $path = $request->file('profile_image')->store('coach-profiles', 'public');
+            $staffProfile->profile_image = $path;
+            $staff->avatar = $path; // ซิงค์รูปใหม่ไปยังตาราง users
         } elseif ($request->boolean('remove_profile_image')) {
-            if ($staffProfile->profile_image) {
+            // ลบไฟล์รูปเมื่อสั่งลบ
+            if ($staffProfile->profile_image && Storage::disk('public')->exists($staffProfile->profile_image)) {
                 Storage::disk('public')->delete($staffProfile->profile_image);
+            }
+            if ($staff->avatar && $staff->avatar !== $staffProfile->profile_image && Storage::disk('public')->exists($staff->avatar)) {
+                Storage::disk('public')->delete($staff->avatar);
             }
 
             $staffProfile->profile_image = null;
+            $staff->avatar = null; // เคลียร์ค่า avatar ในตาราง users เป็น null
         }
 
         $staffProfile->save();
+        $staff->save(); // บันทึกข้อมูล $staff (avatar) ลงฐานข้อมูล
 
         return redirect()->back()->with('success', 'แก้ไขข้อมูลโปรไฟล์สำเร็จเรียบร้อย!');
     }
