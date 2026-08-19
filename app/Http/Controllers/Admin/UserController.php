@@ -134,10 +134,12 @@ class UserController extends Controller
         $actor = $request->user();
         $actorIsSuperadmin = $actor->role === 'superadmin';
 
+        // 1. ป้องกันไม่ให้แอดมินธรรมดาแก้ไขข้อมูลของ Super Admin
         if (! $actorIsSuperadmin && $user->role === 'superadmin') {
             abort(403, 'ไม่สามารถแก้ไขข้อมูลของ superadmin ได้');
         }
 
+        // 2. กำหนด Role ที่อนุญาตให้เปลี่ยนได้ตามสิทธิ์ของคนแก้
         $allowedRoles = $actorIsSuperadmin
             ? ['user', 'staff', 'admin', 'superadmin']
             : ['user', 'staff', 'admin'];
@@ -148,10 +150,12 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
             'role' => ['required', Rule::in($allowedRoles)],
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Validation สำหรับรูปภาพ
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
 
+        // 3. ถ้า Role ใหม่ที่ส่งมา ไม่ใช่แอดมิน จำเป็นต้องตรวจสอบประเภทสมาชิกด้วย
         if (! in_array($request->role, ['admin', 'superadmin'], true)) {
+            // อนุญาตค่า membership_type ทั้งแบบ staff และ user (รวม Array Keys เข้าด้วยกัน)
             $validMembershipTypes = array_merge(array_keys(User::MEMBERSHIP_TYPES), array_keys(User::STAFF_TYPES));
             $rules['membership_type'] = ['required', Rule::in($validMembershipTypes)];
         }
@@ -208,14 +212,24 @@ class UserController extends Controller
 
         if (in_array($validated['role'], ['admin', 'superadmin'], true)) {
             $user->membership_type = 'admin';
+        }
+
+        // 4. อัปเดตข้อมูลทั่วไป
+        $user->fill($request->only(['name', 'us_name', 'email', 'phone']));
+        $user->role = $validated['role'];
+
+        // 5. จัดการ Membership Type ตามเงื่อนไขของ Role
+        if (in_array($validated['role'], ['admin', 'superadmin'], true)) {
+            $user->membership_type = 'admin'; // บังคับเป็น admin
         } else {
             if ($request->filled('membership_type')) {
                 $user->membership_type = $validated['membership_type'];
             } else {
+                // กรณีฉุกเฉิน fallback
                 $user->membership_type = $validated['role'] === 'staff' ? 'permanent' : 'customer';
             }
         }
-        
+
         $user->save();
 
         return redirect()->back()->with('success', "อัปเดตข้อมูลส่วนตัวของ {$user->name} เรียบร้อยแล้ว");

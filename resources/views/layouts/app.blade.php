@@ -105,6 +105,15 @@
             });
         });
     </script>
+    <script>
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            // หน้านี้ถูกดึงจาก bfcache (กด back/forward) ให้โหลดใหม่จาก server
+            // เพื่อไม่ให้ flash message เก่า (เช่น toast แจ้งเตือน) ค้างแสดงซ้ำ
+            window.location.reload();
+        }
+    });
+</script>
 
     @stack('scripts')
 </body>

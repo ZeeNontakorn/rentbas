@@ -71,7 +71,7 @@
                     <h2 class="text-lg font-bold text-gray-800">เลือกวันและเวลาฝึก</h2>
                     <p class="mt-1 text-xs text-gray-500">ลากเลือกพื้นที่ว่างในปฏิทิน เวลา 08:00–22:00 น. ช่วงที่มี Schedule หรือมีรายการจองแล้วจะเลือกไม่ได้</p>
                     <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
+                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ $advanceBookingDays }} วัน
                     </p>
                     @if($myPackagePurchases->isNotEmpty())
                         @php
@@ -172,6 +172,16 @@
                 <p class="mt-1 text-[11px] text-gray-400">ระบบจะหักสิทธิ์จากแพ็กเกจที่คุณเลือกทันทีที่ส่งคำขอ</p>
             </div>
             <div>
+                <label for="participant-count" class="mb-1.5 block text-xs font-semibold text-gray-700">จำนวนผู้เข้าร่วม <span class="text-red-500">*</span></label>
+                <select name="participant_count" id="participant-count" required
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
+                    @for ($count = 1; $count <= 6; $count++)
+                        <option value="{{ $count }}" @selected((int) old('participant_count', 1) === $count)>{{ $count }} คน</option>
+                    @endfor
+                </select>
+                <p class="mt-1 text-[11px] text-gray-400">รวมผู้จองแล้ว รับได้สูงสุด 6 คน</p>
+            </div>
+            <div>
                 <label for="assistant-requested" class="mb-1.5 block text-xs font-semibold text-gray-700">บริการผู้ช่วยสนามเก็บบาส</label>
                 <select name="assistant_requested" id="assistant-requested" required
                     class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
@@ -217,6 +227,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let pendingSelection = null;
     let isClampingSelection = false;
+
+    // วันนี้จองไม่ได้ ต้องจองล่วงหน้าอย่างน้อย 1 วัน
+    function isToday(date) {
+        return localDate(date) === localDate(new Date());
+    }
 
     const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     function filterPackageOptionsForDate(date) {
@@ -319,13 +334,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
     // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
     const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
-    const advanceLimitMessage = @js('สามารถจอง Private Training ล่วงหน้าได้สูงสุด '.\App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS.' วัน');
+    const advanceLimitMessage = @js('สามารถจองเทรนเนอร์ส่วนตัวล่วงหน้าได้สูงสุด '.$advanceBookingDays.' วัน');
 
     function showAdvanceLimitMessage() {
         Swal.fire({
             icon: 'info',
             title: 'วันที่นี้ยังจองไม่ได้',
             text: advanceLimitMessage,
+            confirmButtonText: 'เข้าใจแล้ว',
+            confirmButtonColor: '#f97316'
+        });
+    }
+
+    function showTodayBlockedMessage() {
+        Swal.fire({
+            icon: 'info',
+            title: 'จองวันนี้ไม่ได้',
+            text: 'กรุณาเลือกจองล่วงหน้าอย่างน้อย 1 วัน',
             confirmButtonText: 'เข้าใจแล้ว',
             confirmButtonColor: '#f97316'
         });
@@ -363,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function buildPastOverlay(rangeStart, rangeEnd) {
         const overlay = [];
         const now = new Date();
+        const todayStr = localDate(now);
         const cursor = new Date(rangeStart);
         cursor.setHours(0, 0, 0, 0);
         while (cursor < rangeEnd) {
@@ -370,16 +396,31 @@ document.addEventListener('DOMContentLoaded', function () {
             dayOpen.setHours(openHour, 0, 0, 0);
             const dayClose = new Date(cursor);
             dayClose.setHours(closeHour, 0, 0, 0);
-            // ครอบเฉพาะช่วงที่ผ่านมาแล้วจริง ๆ ของวันนั้น (ไม่เกิน "ตอนนี้" และไม่เกินเวลาปิด)
-            const overlayEnd = now < dayClose ? now : dayClose;
-            if (overlayEnd > dayOpen) {
-                overlay.push({
-                    start: dayOpen.toISOString(),
-                    end: overlayEnd.toISOString(),
-                    display: 'background',
-                    backgroundColor: '#e5e7eb',
-                    extendedProps: { kind: 'past', selectable: false }
-                });
+            const isCursorToday = localDate(cursor) === todayStr;
+
+            if (isCursorToday) {
+                // วันนี้จองไม่ได้ทั้งวัน (ทั้งช่วงที่ผ่านมาแล้วและช่วงที่เหลือของวันนี้)
+                if (dayClose > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: dayClose.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'today-blocked', selectable: false }
+                    });
+                }
+            } else {
+                // ครอบเฉพาะช่วงที่ผ่านมาแล้วจริง ๆ ของวันนั้น (ไม่เกิน "ตอนนี้" และไม่เกินเวลาปิด)
+                const overlayEnd = now < dayClose ? now : dayClose;
+                if (overlayEnd > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: overlayEnd.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'past', selectable: false }
+                    });
+                }
             }
             cursor.setDate(cursor.getDate() + 1);
         }
@@ -461,15 +502,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         eventDidMount(arg) {
             const props = arg.event.extendedProps;
-            const isPastAvailable = props.kind === 'past' && arg.event.end <= new Date();
-            if (arg.event.extendedProps.kind !== 'past') return;
+            if (props.kind !== 'past' && props.kind !== 'today-blocked') return;
 
             arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
             arg.el.style.opacity = '0.4';
 
-
             const label = document.createElement('div');
-            label.textContent = 'เลยกำหนด';
+            label.textContent = props.kind === 'today-blocked' ? 'จองวันนี้ไม่ได้' : 'เลยกำหนด';
             label.style.cssText = `
                 position: absolute;
                 inset: 0;
@@ -514,6 +553,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // (ลบ 1 ms) เพื่อยืนยันว่าช่วงที่เลือกทั้งหมดอยู่ภายในวันเดียวกัน
             const inclusiveEnd = new Date(info.end.getTime() - 1);
             return calendar.view.type !== 'dayGridMonth'
+                && !isToday(info.start)
                 && info.start >= new Date()
                 && info.start <= maxSelectableDate
                 && localDate(info.start) === localDate(inclusiveEnd)
@@ -526,6 +566,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (info.view.type === 'dayGridMonth') {
                 calendar.changeView('timeGridDay', info.date);
+                return;
+            }
+
+            if (isToday(info.date)) {
+                showTodayBlockedMessage();
                 return;
             }
         },
@@ -568,6 +613,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (props.isMine) {
                 showPrivateTrainingDetails(info.event);
+                return;
+            }
+
+            if (props.kind === 'today-blocked') {
+                showTodayBlockedMessage();
                 return;
             }
 
