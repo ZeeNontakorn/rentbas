@@ -165,16 +165,13 @@ class CheckoutController extends Controller
      */
     public function show(Booking $booking, Request $request)
     {
-        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
         abort_unless($booking->user_id === $request->user()->id, 403);
 
         if ($booking->status !== 'pending_payment' || ($booking->locked_until && $booking->locked_until->isPast())) {
             return redirect()->route('booking.index')->withErrors(['booking' => 'รายการนี้หมดเวลาแล้ว กรุณาจองใหม่']);
         }
 
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
-            'staffProfile' => $coach->staffProfile,
-        ]);
+        return view('checkout.show', compact('booking'));
     }
 
     /**
