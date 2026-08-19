@@ -86,8 +86,25 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 border-t-4 border-t-orange-500">
             <div class="flex flex-col sm:flex-row sm:items-start gap-4">
                 {{-- Avatar --}}
+                @php
+                    // เช็คว่ามีรูปใน User หรือ รูปจากโปรไฟล์พนักงาน/โค้ช หรือไม่
+                    $displayAvatarUrl = null;
+                    
+                    // เพิ่มการเช็คว่ามีค่าใน DB และ ไฟล์ต้องมีอยู่จริงในโฟลเดอร์ storage 
+                    if (!empty($user->avatar) && \Storage::disk('public')->exists($user->avatar)) {
+                        $displayAvatarUrl = asset('storage/' . $user->avatar);
+                    } elseif (!empty($user->staffProfile?->profile_image)) {
+                        $displayAvatarUrl = $user->staffProfile->profile_image_url;
+                    }
+                @endphp
+
                 <div class="w-20 h-20 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm overflow-hidden">
-                    <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($user->us_name, 0, 1)) }}</span>
+                    @if(!empty($displayAvatarUrl))
+                        <img src="{{ $displayAvatarUrl }}" alt="{{ $user->name ?? $user->us_name }}" class="w-full h-full object-cover">
+                    @else
+                        {{-- ถ้าไม่มีรูป หรือรูปถูกลบไปแล้ว ให้แสดงตัวอักษรตัวแรก --}}
+                        <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
+                    @endif
                 </div>
                 
                 <div class="flex-1 w-full">
@@ -336,12 +353,37 @@
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100">
         <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4">
             <h3 class="text-lg font-bold text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
-            <button type="button" onclick="closeUserProfileModal()" class="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-gray-400 transition hover:bg-gray-200 hover:text-gray-700" aria-label="ปิด modal">&times;</button>
         </div>
 
-        <form action="{{ route('admin.users.profile.update', $user) }}" method="POST" class="space-y-4 bg-white p-6">
+        <form action="{{ route('admin.users.profile.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-4 bg-white p-6">
             @csrf
             @method('PUT')
+
+            {{-- ช่องอัปโหลดรูปโปรไฟล์ --}}
+            <div class="md:col-span-2">
+                <label class="mb-1.5 block text-xs font-medium text-gray-600">รูปโปรไฟล์</label>
+                <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <div class="w-16 h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 border border-gray-200 overflow-hidden relative">
+                        <img id="avatarPreview" src="{{ $displayAvatarUrl ?? '' }}" class="{{ $displayAvatarUrl ? '' : 'hidden' }} w-full h-full object-cover">
+                        <span id="avatarFallback" class="{{ $displayAvatarUrl ? 'hidden' : '' }} text-2xl font-bold">{{ mb_strtoupper(mb_substr($user->us_name, 0, 1)) }}</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                            <input type="file" name="avatar" id="avatarInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer">
+                            
+                            {{-- ปุ่มลบภาพ --}}
+                            <button type="button" id="removeAvatarBtn" class="{{ $user->avatar ? '' : 'hidden' }} shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                ลบรูป
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
+                        
+                        {{-- Input สำหรับส่งค่าไปบอก Backend ว่าให้ลบรูป --}}
+                        <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
+                    </div>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
@@ -564,10 +606,6 @@ function closeUserProfileModal() {
 
 const userProfileModal = document.getElementById('userProfileModal');
 if (userProfileModal) {
-    userProfileModal.addEventListener('click', function (e) {
-        if (e.target === this) closeUserProfileModal();
-    });
-
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !userProfileModal.classList.contains('hidden')) {
             closeUserProfileModal();
@@ -612,6 +650,56 @@ function requestOtp() {
             box.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ'; 
             box.className = 'otp-msg err'; 
         });
+}
+
+// พรีวิวและลบรูปภาพก่อนบันทึก
+const avatarInput = document.getElementById('avatarInput');
+const avatarPreview = document.getElementById('avatarPreview');
+const avatarFallback = document.getElementById('avatarFallback');
+const removeAvatarBtn = document.getElementById('removeAvatarBtn');
+const removeAvatarInput = document.getElementById('removeAvatarInput');
+
+if (avatarInput) {
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // เช็คขนาดไฟล์ไม่เกิน 2MB
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไฟล์ใหญ่เกินไป',
+                    text: 'กรุณาอัปโหลดรูปภาพขนาดไม่เกิน 2MB'
+                });
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                avatarPreview.src = e.target.result;
+                avatarPreview.classList.remove('hidden');
+                if (avatarFallback) avatarFallback.classList.add('hidden');
+                
+                if (removeAvatarBtn) removeAvatarBtn.classList.remove('hidden');
+                if (removeAvatarInput) removeAvatarInput.value = '0';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+if (removeAvatarBtn) {
+    removeAvatarBtn.addEventListener('click', function() {
+        avatarPreview.classList.add('hidden');
+        avatarPreview.src = '';
+        if (avatarFallback) avatarFallback.classList.remove('hidden');
+        
+        if (avatarInput) avatarInput.value = '';
+        this.classList.add('hidden');
+        
+        // ส่งค่าไปบอกระบบหลังบ้านให้ลบไฟล์เดิม
+        if (removeAvatarInput) removeAvatarInput.value = '1';
+    });
 }
 </script>
 @endsection
