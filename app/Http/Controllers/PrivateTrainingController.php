@@ -51,6 +51,12 @@ class PrivateTrainingController extends Controller
             })
             ->exists();
 
+        // มีแพ็กเกจ Private Training ที่เปิดขายอยู่ในระบบเลยไหม (ไม่ผูกกับ user คนใดคนหนึ่ง)
+        // ใช้เช็คว่าควรให้ปุ่ม "ซื้อแพ็กเกจ" กดไปที่ไหนได้จริงหรือไม่
+        $hasAnyPackagesInSystem = PromotionPackage::where('is_active', true)
+            ->where('category', 'private')
+            ->exists();
+
         $myRequests = PrivateTrainingBooking::with('coach')
             ->where('user_id', $request->user()->id)
             ->whereDate('date', '>=', now()->toDateString())
@@ -68,10 +74,10 @@ class PrivateTrainingController extends Controller
                 ->where('membership_type', 'coach')
                 ->with('staffProfile')
                 ->when($search, fn ($q) => $q->where(
-                    fn ($qq) => $qq->where('name', 'like', "%{$search}%")
+                    fn ($qq) => $qq->where('us_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                 ))
-                ->orderBy('name')
+                ->orderBy('us_name')
                 ->get()
             : collect();
 
@@ -81,7 +87,7 @@ class PrivateTrainingController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches', 'hasAnyPackagesInSystem'));
     }
 
     public function show(User $coach)
@@ -89,8 +95,10 @@ class PrivateTrainingController extends Controller
         $this->bookingLifecycle->expireUnprocessedBookings();
         $this->assertIsCoach($coach);
 
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
         $today = now()->toDateString();
-        $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString();
+        $maxDate = now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString();
 
         $myUpcoming = PrivateTrainingBooking::with('courtAssistant')
             ->where('coach_id', $coach->id)
@@ -119,7 +127,7 @@ class PrivateTrainingController extends Controller
             ->orderBy('label')
             ->get();
 
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }
@@ -197,7 +205,7 @@ class PrivateTrainingController extends Controller
             ->map(function (PrivateTrainingBooking $booking) use ($request, $viewerIsCoach) {
                 $mine = $booking->user_id === $request->user()->id;
                 $title = $viewerIsCoach
-                    ? 'Private: '.$booking->user->name
+                    ? 'Private: '.$booking->user->us_name
                     : ($mine ? 'คำขอของคุณ' : 'ไม่ว่าง');
                 $color = $mine
                     ? match ($booking->status) {
@@ -222,14 +230,14 @@ class PrivateTrainingController extends Controller
                         'status' => $mine ? $booking->status : null,
                         'statusKey' => $mine ? $booking->status : null,
                         'statusLabel' => $mine ? $this->statusLabel($booking->status) : null,
-                        'customerName' => $mine ? $booking->user->name : null,
+                        'customerName' => $mine ? $booking->user->us_name : null,
                         'customerEmail' => $mine ? $booking->user->email : null,
                         'customerPhone' => $mine ? $booking->user->phone : null,
-                        'coachName' => $mine ? $booking->coach->name : null,
+                        'coachName' => $mine ? $booking->coach->us_name : null,
                         'court' => $mine && $booking->court
                             ? $booking->court->name.($booking->courtSection ? ' — '.$booking->courtSection->name : '')
                             : null,
-                        'assistantName' => $mine ? $booking->courtAssistant?->name : null,
+                        'assistantName' => $mine ? $booking->courtAssistant?->us_name : null,
                         'packageName' => $mine ? $booking->packagePurchase?->package?->name : null,
                         'note' => $mine ? $booking->note : null,
                         'unavailableReason' => $mine ? null : 'ช่วงเวลานี้มีรายการ Private Training แล้ว',
@@ -260,10 +268,11 @@ class PrivateTrainingController extends Controller
             'coach_id' => ['required', 'integer', 'exists:users,id'],
             'date' => [
                 'required', 'date', 'after_or_equal:today',
-                'before_or_equal:'.now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString(),
+                'before_or_equal:'.now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString(),
             ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'participant_count' => ['required', 'integer', 'min:1', 'max:6'],
             'note' => ['nullable', 'string', 'max:500'],
             'package_purchase_id' => ['required', 'integer', 'exists:package_purchases,id'],
             'assistant_requested' => ['required', 'boolean'],
@@ -380,6 +389,7 @@ class PrivateTrainingController extends Controller
 
             return PrivateTrainingBooking::create([
                 'user_id' => $request->user()->id,
+                'participant_count' => $data['participant_count'],
                 'coach_id' => $coach->id,
                 'assistant_requested' => (bool) $data['assistant_requested'],
                 'court_assistant_id' => $assistant?->id,
@@ -399,11 +409,11 @@ class PrivateTrainingController extends Controller
 
         $timeLabel = $this->formatTimeRange($data['start_time'], $data['end_time']);
         $assistantLine = $result->court_assistant_id
-            ? "\nผู้ช่วยสนาม: {$result->courtAssistant->name}"
+            ? "\nผู้ช่วยสนาม: {$result->courtAssistant->us_name}"
             : '';
         $this->notifyAdmins(
             'คำขอจองเทรนเนอร์ส่วนตัวใหม่',
-            "คุณ {$request->user()->name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->name} |วันที่ {$date}\nเวลา {$timeLabel}{$assistantLine}",
+            "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}\nผู้เข้าร่วม {$data['participant_count']} คน{$assistantLine}",
             route('admin.private-training.index', ['status' => 'pending']),
         );
 
@@ -480,7 +490,9 @@ class PrivateTrainingController extends Controller
             // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
-        return view('admin.private-training.index', compact('bookings', 'status'));
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
+        return view('admin.private-training.index', compact('bookings', 'status', 'advanceBookingDays'));
     }
 
     public function availableAssistants(Request $request): JsonResponse
@@ -497,8 +509,8 @@ class PrivateTrainingController extends Controller
         $assistants = User::query()
             ->where('role', 'staff')
             ->where('membership_type', 'court_assistant')
-            ->orderBy('name')
-            ->get(['id', 'name'])
+            ->orderBy('us_name')
+            ->get(['id', 'us_name'])
             ->filter(fn (User $assistant) => $this->assistantIsAvailable(
                 $assistant,
                 $data['date'],
@@ -507,7 +519,7 @@ class PrivateTrainingController extends Controller
                 isset($data['ignore_booking_id']) ? (int) $data['ignore_booking_id'] : null,
             ))
             ->values()
-            ->map(fn (User $assistant) => ['id' => $assistant->id, 'name' => $assistant->name]);
+            ->map(fn (User $assistant) => ['id' => $assistant->id, 'name' => $assistant->us_name]);
 
         return response()->json(['assistants' => $assistants]);
     }
@@ -573,7 +585,7 @@ class PrivateTrainingController extends Controller
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'คำขอ Private Training ผ่านการพิจารณา',
-            "คำขอกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')}\nเวลา {$timeLabel}\nกำลังรอแอดมินจัดสนาม",
+            "คำขอกับโค้ช {$privateTrainingBooking->coach->us_name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')}\nเวลา {$timeLabel}\nกำลังรอแอดมินจัดสนาม",
             route('private-training.index'),
         );
 
@@ -706,12 +718,12 @@ class PrivateTrainingController extends Controller
 
         $privateTrainingBooking->refresh()->load(['coach', 'court', 'courtSection', 'courtAssistant', 'user']);
         $assistantLine = $privateTrainingBooking->courtAssistant
-            ? "\nผู้ช่วยสนาม {$privateTrainingBooking->courtAssistant->name}"
+            ? "\nผู้ช่วยสนาม {$privateTrainingBooking->courtAssistant->us_name}"
             : '';
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'ยืนยันการจอง Private Training แล้ว',
-            "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
+            "โค้ช {$privateTrainingBooking->coach->us_name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
             route('private-training.index'),
         );
 
@@ -785,7 +797,7 @@ class PrivateTrainingController extends Controller
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ',
-            "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
+            "การจองกับโค้ช {$privateTrainingBooking->coach->us_name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
             route('private-training.index'),
         );
 
@@ -799,6 +811,17 @@ class PrivateTrainingController extends Controller
         }
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
+    }
+
+    public function updateAdvanceBookingDays(Request $request)
+    {
+        $request->validate([
+            'advance_booking_days' => ['required', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        \App\Models\Setting::setVal('advance_booking_days', $request->advance_booking_days);
+
+        return back()->with('success', 'อัปเดตจำนวนวันจองล่วงหน้าเรียบร้อย');
     }
 
     /* =====================================================================

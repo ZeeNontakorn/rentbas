@@ -14,7 +14,7 @@ class StaffSeeder extends Seeder
         $coach = User::firstOrCreate(
             ['email' => 'somchai@test.com'],
             [
-                'name' => 'โค้ชสมชาย สายเสมอ',
+                'us_name' => 'โค้ชสมชาย สายเสมอ',
                 'password' => Hash::make('password'),
                 'role' => 'staff',
                 'membership_type' => 'coach',
@@ -24,7 +24,7 @@ class StaffSeeder extends Seeder
         $staff = User::firstOrCreate(
             ['email' => 'somsri@test.com'],
             [
-                'name' => 'ผู้ช่วยสมศรี ขยันยิ่ง',
+                'us_name' => 'ผู้ช่วยสมศรี ขยันยิ่ง',
                 'password' => Hash::make('password'),
                 'role' => 'staff',
                 'membership_type' => 'coach',

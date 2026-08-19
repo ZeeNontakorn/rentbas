@@ -19,11 +19,11 @@
 
                 <div class="flex items-center gap-4 rounded-2xl bg-orange-50 px-5 py-4">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 font-bold text-white">
-                        {{ mb_substr($reviewer->name, 0, 1) }}
+                        {{ mb_substr($reviewer->us_name, 0, 1) }}
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">รีวิวโดย</p>
-                        <p class="font-semibold text-gray-900">{{ $reviewer->name }}</p>
+                        <p class="font-semibold text-gray-900">{{ $reviewer->us_name }}</p>
                         <p class="text-xs text-emerald-600">✓ สมาชิกที่เข้าสู่ระบบแล้ว</p>
                     </div>
                 </div>

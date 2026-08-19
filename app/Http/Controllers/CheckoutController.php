@@ -165,13 +165,16 @@ class CheckoutController extends Controller
      */
     public function show(Booking $booking, Request $request)
     {
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
         abort_unless($booking->user_id === $request->user()->id, 403);
 
         if ($booking->status !== 'pending_payment' || ($booking->locked_until && $booking->locked_until->isPast())) {
             return redirect()->route('booking.index')->withErrors(['booking' => 'รายการนี้หมดเวลาแล้ว กรุณาจองใหม่']);
         }
 
-        return view('checkout.show', compact('booking'));
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
+            'staffProfile' => $coach->staffProfile,
+        ]);
     }
 
     /**
@@ -224,7 +227,7 @@ class CheckoutController extends Controller
                 Notification::create([
                     'user_id' => $adminId,
                     'title' => 'มีการจองสนามบาสใหม่',
-                    'message' => "การจอง #{$confirmed->id} จาก {$confirmed->user->name} |{$confirmed->court->name} — {$confirmed->courtSection->name}\nวันที่ {$confirmed->booking_date->toDateString()} เวลา ".
+                    'message' => "การจอง #{$confirmed->id} จาก {$confirmed->user->us_name} |{$confirmed->court->name} — {$confirmed->courtSection->name}\nวันที่ {$confirmed->booking_date->toDateString()} เวลา ".
                         substr($confirmed->start_time, 0, 5).'-'.substr($confirmed->end_time, 0, 5).
                         "\nยอดชำระ ฿".number_format($confirmed->price / 100, 2).' ผ่านเครดิต',
                     'action_url' => route('admin.bookings'),
@@ -234,7 +237,7 @@ class CheckoutController extends Controller
         $this->notifyAdminsOfPayment(
             'การจองสนาม',
             $confirmed->id,
-            $confirmed->user->name ?? '-',
+            $confirmed->user->us_name ?? '-',
             "{$confirmed->court->name} — {$confirmed->courtSection->name} | "
                 . "{$confirmed->booking_date->toDateString()} " . substr($confirmed->start_time, 0, 5) . '-' . substr($confirmed->end_time, 0, 5),
             $confirmed->price,

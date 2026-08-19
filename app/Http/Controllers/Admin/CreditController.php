@@ -68,6 +68,6 @@ class CreditController extends Controller
             Log::error("ส่งอีเมลใบเสร็จเติมเครดิตแบบ manual (user #{$user->id}) ไม่สำเร็จ: " . $e->getMessage());
         }
 
-        return back()->with('success', "เติมเครดิตให้ {$user->name} จำนวน {$data['amount']} บาท สำเร็จ");
+        return back()->with('success', "เติมเครดิตให้ {$user->us_name} จำนวน {$data['amount']} บาท สำเร็จ");
     }
 }

@@ -51,13 +51,17 @@
         </div>
 
         <div class="body">
-            <p class="greet">เรียนคุณ {{ $booking->user->name }},</p>
+            <p class="greet">เรียนคุณ {{ $booking->user->us_name }},</p>
             <p class="lead">ขออภัยในความไม่สะดวก คำขอจองเทรนเนอร์ส่วนตัวของคุณด้านล่างนี้ถูกปฏิเสธ</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">โค้ช</td>
-                    <td class="v">{{ $booking->coach->name }}</td>
+                    <td class="v">{{ $booking->coach->us_name }}</td>
+                </tr>
+                <tr>
+                    <td class="k">ผู้ช่วยสนาม</td>
+                    <td class="v">{{ $booking->courtAssistant->us_name ?? 'ไม่มี' }}</td>
                 </tr>
                 <tr>
                     <td class="k">สนาม</td>
@@ -71,6 +75,10 @@
                             ยังไม่ได้จัดสนาม
                         @endif
                     </td>
+                </tr>
+                <tr>
+                    <td class="k">จำนวนผู้เข้าร่วม</td>
+                    <td class="v">{{ $booking->participant_count ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="k">วันที่</td>

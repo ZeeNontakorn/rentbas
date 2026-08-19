@@ -35,7 +35,29 @@
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเทรนเนอร์ส่วนตัว</h1>
                 <p class="text-sm text-gray-500 mt-1">ตรวจสอบและอนุมัติคำขอจองเทรนเนอร์ส่วนตัวของลูกค้า</p>
             </div>
-
+            <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <form method="POST" action="{{ route('admin.private-training.advance-booking-days.update') }}"
+                    class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <label for="advance_booking_days" class="mb-1 block text-xs font-semibold text-gray-700">
+                            จองล่วงหน้าได้สูงสุด (วัน)
+                        </label>
+                        <input type="number" name="advance_booking_days" id="advance_booking_days"
+                            value="{{ old('advance_booking_days', $advanceBookingDays) }}"
+                            min="1" max="365" required
+                            class="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <button type="submit"
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 cursor-pointer">
+                        บันทึก
+                    </button>
+                    @error('advance_booking_days')
+                        <p class="w-full text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                </form>
+            </div>
             {{-- ส่วนแสดง Tabs สถานะ --}}
             <div class="flex gap-2 -mb-px overflow-x-auto select-none border-b border-gray-200 mb-6">
                 @foreach($tabs as $key => $label)
@@ -55,20 +77,21 @@
                                 <div>
                                     <div class="flex items-center gap-2 mb-1">
                                         <span class="text-xs px-2 py-0.5 border border-gray-300 rounded">โค้ช
-                                            {{ $b->coach->name }}</span>
+                                            {{ $b->coach->us_name }}</span>
                                         <span
                                             class="text-xs px-2 py-0.5 {{ $sInfo['text'] }} {{ $sInfo['bg'] }} rounded flex items-center">
                                             <span class="w-1.5 h-1.5 rounded-full bg-current mr-1"></span>
                                             {{ $sInfo['label'] }}
                                         </span>
                                     </div>
-                                    <p class="text-sm font-medium text-gray-800">ลูกค้า: {{ $b->user->name }}
+                                    <p class="text-sm font-medium text-gray-800">ลูกค้า: {{ $b->user->us_name }}
                                         ({{ $b->user->email }})</p>
                                     <p class="text-xs text-gray-500 mt-1">
                                         วันที่ {{ $b->date->format('d/m/Y') }}
                                         &nbsp;•&nbsp; เวลา {{ substr($b->start_time, 0, 5) }} - {{ substr($b->end_time, 0, 5) }}
                                         น.
                                     </p>
+                                    <p class="text-xs text-gray-500 mt-1">ผู้เข้าร่วม: {{ $b->participant_count ?? 1 }} คน</p>
                                     @if($b->note)
                                         <p class="text-xs text-gray-500 mt-1">หมายเหตุ: {{ $b->note }}</p>
                                     @endif
@@ -81,7 +104,7 @@
                                         </p>
                                     @endif
                                     <p class="mt-1 text-xs {{ $b->assistant_requested ? 'font-medium text-blue-700' : 'text-gray-400' }}">
-                                        ผู้ช่วยสนาม: {{ $b->assistant_requested ? ($b->courtAssistant?->name ?? 'รอเลือกผู้ช่วย') : 'ไม่ใช้บริการ' }}
+                                        ผู้ช่วยสนาม: {{ $b->assistant_requested ? ($b->courtAssistant?->us_name ?? 'รอเลือกผู้ช่วย') : 'ไม่ใช้บริการ' }}
                                     </p>
                                 </div>
 

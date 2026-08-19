@@ -60,16 +60,20 @@
         </div>
 
         <div class="body">
-            <p class="greet">เรียนคุณ {{ $booking->user->name }},</p>
+            <p class="greet">เรียนคุณ {{ $booking->user->us_name }},</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">ผู้จอง</td>
-                    <td class="v">{{ $booking->user->name }}</td>
+                    <td class="v">{{ $booking->user->us_name }}</td>
                 </tr>
                 <tr>
                     <td class="k">โค้ช</td>
-                    <td class="v">{{ $booking->coach->name }}</td>
+                    <td class="v">{{ $booking->coach->us_name }}</td>
+                </tr>
+                <tr>
+                    <td class="k">ผู้ช่วยสนาม</td>
+                    <td class="v">{{ $booking->courtAssistant->us_name ?? 'ไม่มี' }}</td>
                 </tr>
                 <tr>
                     <td class="k">สนาม</td>
@@ -77,6 +81,10 @@
                         {{ $booking->court->name }}
                         <br><span style="font-weight:400;color:#6b7280;font-size:12px;">({{ $booking->courtSection->name }})</span>
                     </td>
+                </tr>
+                <tr>
+                    <td class="k">จำนวนผู้เข้าร่วม</td>
+                    <td class="v">{{ $booking->participant_count ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="k">วันที่</td>

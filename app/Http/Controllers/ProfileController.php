@@ -28,7 +28,7 @@ class ProfileController extends Controller
     public function updateProfile(Request $request){
 
         $request->validate([
-            'name' => 'sometimes|string|max:100',
+            'us_name' => 'sometimes|string|max:100',
             'email' => 'sometimes|email|unique:users,email,' . Auth::id(),
             'phone' => 'sometimes|nullable|max:10',
             'profile_image' => 'prohibited',
@@ -36,8 +36,8 @@ class ProfileController extends Controller
             'password' => 'nullable|required_with:current_password|string|min:6|confirmed',
             'otp' => 'nullable|string|size:6'
         ],[
-            'name.string' => 'กรุณากรอกชื่อให้ถูกต้อง',
-            'name.max' => 'ชื่อต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'us_name.string' => 'กรุณากรอกชื่อให้ถูกต้อง',
+            'us_name.max' => 'ชื่อต้องมีความยาวไม่เกิน :max ตัวอักษร',
             'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
             'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
             'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
@@ -53,7 +53,7 @@ class ProfileController extends Controller
         ]);
 
         $user = Auth::user();
-        $name = $request->has('name') ? $request->name : $user->name;
+        $name = $request->has('us_name') ? $request->us_name : $user->us_name;
         $email = $request->has('email') ? $request->email : $user->email;
         $phone = $request->has('phone') ? $request->phone : $user->phone;
         $emailChanged = $user->email !== $email;
@@ -87,7 +87,7 @@ class ProfileController extends Controller
         }
 
         // อัปเดตข้อมูลทั้งหมด
-        $user->name = $name;
+        $user->us_name = $name;
         $user->email = $email;
         $user->phone = $phone;
 

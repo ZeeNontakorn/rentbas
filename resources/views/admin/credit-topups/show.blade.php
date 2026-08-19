@@ -42,7 +42,7 @@
             <div class="grid sm:grid-cols-2 gap-x-6 gap-y-4 text-sm mb-6">
                 <div>
                     <p class="text-xs text-gray-400 mb-1">ผู้ใช้</p>
-                    <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->user->us_name }}</p>
                     <p class="text-xs text-gray-400">{{ $topupRequest->user->email }}</p>
                 </div>
                 <div>
@@ -64,7 +64,7 @@
                 @if($topupRequest->approver)
                     <div>
                         <p class="text-xs text-gray-400 mb-1">ดำเนินการโดย</p>
-                        <p class="font-medium text-gray-800">{{ $topupRequest->approver->name }} · {{ $topupRequest->approved_at?->format('d/m/Y H:i') }}</p>
+                        <p class="font-medium text-gray-800">{{ $topupRequest->approver->us_name }} · {{ $topupRequest->approved_at?->format('d/m/Y H:i') }}</p>
                     </div>
                 @endif
             </div>
@@ -128,7 +128,7 @@
                 <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                     <div>
                         <p class="text-xs text-gray-400">ผู้ใช้</p>
-                        <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
+                        <p class="font-medium text-gray-800">{{ $topupRequest->user->us_name }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-400">ยอดชำระ</p>
