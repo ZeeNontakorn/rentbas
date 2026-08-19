@@ -212,44 +212,85 @@ class CourtController extends Controller
         $data = $request->validate([
             'court_id' => ['required', 'exists:courts,id'],
             'date' => ['required', 'date'],
-            'start_time' => ['required', 'date_format:H:i:s'],
-            'end_time' => ['required', 'date_format:H:i:s'],
             'status' => ['required', 'in:available,unavailable,maintenance'],
+            // ช่วงเวลาหลายช่วง ส่งมาเป็น JSON string เช่น
+            // [{"start":"12:00:00","end":"12:30:00"},{"start":"13:00:00","end":"13:30:00"}]
+            'slots' => ['nullable', 'string'],
+            // เก็บไว้เผื่อโค้ดเดิม/ที่อื่นยังเรียกแบบช่วงเดียว (backward compatible)
+            'start_time' => ['nullable', 'date_format:H:i:s'],
+            'end_time' => ['nullable', 'date_format:H:i:s'],
+            // ทำซ้ำสถานะนี้ทุกวัน ตั้งแต่ 'date' ไปจนถึงวันนี้ (ไม่บังคับ — ถ้าไม่ส่งมาจะตั้งแค่วันเดียว)
+            'repeat_until_date' => ['nullable', 'date', 'after_or_equal:date'],
         ]);
 
-        // ห้ามแก้สถานะทับช่วงเวลาที่มีลูกค้าจองอยู่แล้ว (รออนุมัติ/กำลังชำระเงิน/อนุมัติแล้ว) — ต้องไปจัดการ
-        // ผ่านหน้าอนุมัติ/ยกเลิกการจองโดยตรงก่อน กันแอดมินตั้งสถานะทับจนข้อมูลไม่ตรงกับของจริงที่ลูกค้าเห็น
+        // ---------- แปลง input ให้เป็น array ของ ['start' => .., 'end' => ..] เสมอ ----------
+        $slots = [];
+
+        if (!empty($data['slots'])) {
+            $decoded = json_decode($data['slots'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $item) {
+                    if (!empty($item['start']) && !empty($item['end'])) {
+                        $slots[] = ['start' => $item['start'], 'end' => $item['end']];
+                    }
+                }
+            }
+        }
+
+        // ไม่มี slots (หรือ decode ไม่ได้) -> fallback ไปใช้ start_time/end_time แบบเดิม
+        if (empty($slots)) {
+            if (empty($data['start_time']) || empty($data['end_time'])) {
+                return back()->withErrors([
+                    'status' => 'กรุณาเลือกอย่างน้อย 1 ช่วงเวลาก่อนเปลี่ยนสถานะ',
+                ]);
+            }
+            $slots = [['start' => $data['start_time'], 'end' => $data['end_time']]];
+        }
+
+        // validate format ของแต่ละช่วงเวลาให้ชัวร์อีกชั้น (กันของแปลกที่หลุดมาจาก JSON)
+        foreach ($slots as $slot) {
+            $ok = preg_match('/^\d{2}:\d{2}:\d{2}$/', $slot['start'])
+                && preg_match('/^\d{2}:\d{2}:\d{2}$/', $slot['end']);
+            if (!$ok) {
+                return back()->withErrors([
+                    'status' => 'รูปแบบช่วงเวลาที่เลือกไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
+                ]);
+            }
+        }
+
+        // ---------- สร้างรายการวันที่ที่จะตั้งสถานะ (ทำซ้ำทุกวันถ้ามี repeat_until_date) ----------
+        $startDate = Carbon::parse($data['date']);
+        $endDate = !empty($data['repeat_until_date'])
+            ? Carbon::parse($data['repeat_until_date'])
+            : $startDate->copy();
+
+        if ($endDate->lt($startDate)) {
+            $endDate = $startDate->copy();
+        }
+
+        // กันตั้งค่าทำซ้ำยาวเกินไปโดยไม่ตั้งใจ (เผื่อกดผิด)
+        if ($startDate->diffInDays($endDate) > 366) {
+            return back()->withErrors([
+                'status' => 'สามารถทำซ้ำได้ไม่เกิน 1 ปี กรุณาเลือกวันที่ให้เหมาะสม',
+            ]);
+        }
+
+        $dates = [];
+        $cursor = $startDate->copy();
+        while ($cursor->lte($endDate)) {
+            $dates[] = $cursor->toDateString();
+            $cursor->addDay();
+        }
+
         $court = Court::findOrFail($data['court_id']);
         $fullSection = $court->defaultSection();
         $conflictIds = $fullSection ? $fullSection->conflictingSectionIds() : [];
 
-        $protectedBooking = Booking::where('court_id', $data['court_id'])
-            ->whereDate('booking_date', $data['date'])
-            ->whereIn('court_section_id', $conflictIds)
-            ->where('start_time', '<', $data['end_time'])
-            ->where('end_time', '>', $data['start_time'])
-            ->where(function ($query) {
-                $query->whereIn('status', ['pending', 'approved'])
-                    ->orWhere(function ($lockQuery) {
-                        $lockQuery->where('status', 'pending_payment')
-                            ->where('locked_until', '>', now());
-                    });
-            })
-            ->first();
-
-        if ($protectedBooking) {
-            $statusLabelMap = [
-                'pending_payment' => 'กำลังจอง (รอชำระเงิน)',
-                'pending' => 'รออนุมัติ',
-                'approved' => 'ถูกจองแล้ว',
-            ];
-            $label = $statusLabelMap[$protectedBooking->status] ?? $protectedBooking->status;
-
-            return back()->withErrors([
-                'status' => "ไม่สามารถแก้ไขสถานะช่วงเวลานี้ได้ เนื่องจากมีการจองอยู่แล้ว (สถานะ: {$label}) "
-                    . 'กรุณาอนุมัติ/ปฏิเสธ/ยกเลิกการจองนี้จากหน้ารายการจองก่อน',
-            ]);
-        }
+        $statusLabelMap = [
+            'pending_payment' => 'กำลังจอง (รอชำระเงิน)',
+            'pending' => 'รออนุมัติ',
+            'approved' => 'ถูกจองแล้ว',
+        ];
 
         $statusLabel = match ($data['status']) {
             'unavailable' => 'ไม่ว่าง',
@@ -257,57 +298,106 @@ class CourtController extends Controller
             default => 'ว่าง',
         };
 
-        // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved) — ถึงจุดนี้จะเหลือแต่เคสที่ไม่มีการจองจริง
-        // อยู่แล้ว (ผ่านการเช็ค $protectedBooking ด้านบนมาแล้ว) แต่คงโค้ดเดิมไว้เผื่อ edge case อื่นๆ
-        $overlappingBookings = Booking::where('court_id', $data['court_id'])
-            ->whereDate('booking_date', $data['date'])
-            ->whereIn('status', ['pending', 'approved'])
-            ->where('start_time', '<', $data['end_time'])
-            ->where('end_time', '>', $data['start_time'])
-            ->get();
+        $totalUpdated = 0;
+        $totalCancelledBookings = 0;
+        $skipped = []; // ช่วงเวลา/วันที่ที่ข้ามไป เพราะมีลูกค้าจองอยู่แล้ว
 
-        // Delete existing closure if any
-        CourtClosure::where('court_id', $data['court_id'])
-            ->where('date', $data['date'])
-            ->where('start_time', '<', $data['end_time'])
-            ->where('end_time', '>', $data['start_time'])
-            ->delete();
+        // ---------- วนอัปเดตทีละวัน x ทีละช่วงเวลา ----------
+        // ใช้วิธี "ข้ามเฉพาะช่วงที่ติดปัญหา แล้วทำที่เหลือต่อ" (ไม่ใช่ all-or-nothing) เพราะเมื่อทำซ้ำหลายวัน
+        // การให้วันใดวันหนึ่งมีลูกค้าจองแล้วบล็อกทั้งชุดจะสร้างปัญหาการใช้งานจริงมากกว่า
+        foreach ($dates as $dateStr) {
+            foreach ($slots as $slot) {
+                $protectedBooking = Booking::where('court_id', $data['court_id'])
+                    ->whereDate('booking_date', $dateStr)
+                    ->whereIn('court_section_id', $conflictIds)
+                    ->where('start_time', '<', $slot['end'])
+                    ->where('end_time', '>', $slot['start'])
+                    ->where(function ($query) {
+                        $query->whereIn('status', ['pending', 'approved'])
+                            ->orWhere(function ($lockQuery) {
+                                $lockQuery->where('status', 'pending_payment')
+                                    ->where('locked_until', '>', now());
+                            });
+                    })
+                    ->first();
 
-        if ($data['status'] !== 'available') {
-            CourtClosure::create([
-                'court_id' => $data['court_id'],
-                'date' => $data['date'],
-                'start_time' => $data['start_time'],
-                'end_time' => $data['end_time'],
-                'type' => $data['status'],
-            ]);
-        }
+                if ($protectedBooking) {
+                    $label = $statusLabelMap[$protectedBooking->status] ?? $protectedBooking->status;
+                    $skipped[] = Carbon::parse($dateStr)->format('d/m') . ' '
+                        . substr($slot['start'], 0, 5) . '-' . substr($slot['end'], 0, 5)
+                        . " ({$label})";
+                    continue;
+                }
 
-        foreach ($overlappingBookings as $booking) {
-            $reason = "ช่วงเวลานี้ถูกตั้งเป็น '{$statusLabel}' โดยผู้ดูแลระบบ";
-                $booking->update([
-                    'status' => 'rejected',
-                    'rejection_reason' => $reason,
-                ]);
+                // หา booking ที่ทับซ้อนช่วงเวลานี้ (pending/approved) — ถึงจุดนี้จะเหลือแต่เคสที่ไม่มีการจองจริง
+                // อยู่แล้ว (ผ่านการเช็ค protectedBooking ด้านบนมาแล้ว) แต่คงโค้ดเดิมไว้เผื่อ edge case อื่นๆ
+                $overlappingBookings = Booking::where('court_id', $data['court_id'])
+                    ->whereDate('booking_date', $dateStr)
+                    ->whereIn('status', ['pending', 'approved'])
+                    ->where('start_time', '<', $slot['end'])
+                    ->where('end_time', '>', $slot['start'])
+                    ->get();
 
+                // Delete existing closure if any
+                CourtClosure::where('court_id', $data['court_id'])
+                    ->where('date', $dateStr)
+                    ->where('start_time', '<', $slot['end'])
+                    ->where('end_time', '>', $slot['start'])
+                    ->delete();
 
-            Notification::create([
-                'user_id' => $booking->user_id,
-                'title' => 'การจองถูกยกเลิกโดยระบบ',
-                'message' => "การจอง {$booking->court->name} วันที่ {$data['date']} เวลา "
-                    . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5)
-                    . " ถูกยกเลิก เนื่องจาก{$reason}",
-            ]);
+                if ($data['status'] !== 'available') {
+                    CourtClosure::create([
+                        'court_id' => $data['court_id'],
+                        'date' => $dateStr,
+                        'start_time' => $slot['start'],
+                        'end_time' => $slot['end'],
+                        'type' => $data['status'],
+                    ]);
+                }
 
-            if ($booking->user?->email) {
-                Mail::to($booking->user->email)
-                    ->send(new BookingCancelledByAdminMail($booking, $reason));
+                foreach ($overlappingBookings as $booking) {
+                    $reason = "ช่วงเวลานี้ถูกตั้งเป็น '{$statusLabel}' โดยผู้ดูแลระบบ";
+                    $booking->update([
+                        'status' => 'rejected',
+                        'rejection_reason' => $reason,
+                    ]);
+
+                    Notification::create([
+                        'user_id' => $booking->user_id,
+                        'title' => 'การจองถูกยกเลิกโดยระบบ',
+                        'message' => "การจอง {$booking->court->name} วันที่ {$dateStr} เวลา "
+                            . substr($booking->start_time, 0, 5) . '-' . substr($booking->end_time, 0, 5)
+                            . " ถูกยกเลิก เนื่องจาก{$reason}",
+                    ]);
+
+                    if ($booking->user?->email) {
+                        Mail::to($booking->user->email)
+                            ->send(new BookingCancelledByAdminMail($booking, $reason));
+                    }
+                }
+
+                $totalCancelledBookings += $overlappingBookings->count();
+                $totalUpdated++;
             }
         }
 
-        $message = 'อัปเดตสถานะช่วงเวลาเรียบร้อยแล้ว';
-        if ($overlappingBookings->isNotEmpty()) {
-            $message .= " (ยกเลิกการจองลูกค้า {$overlappingBookings->count()} รายการ และแจ้งเตือนแล้ว)";
+        // ---------- สรุปข้อความแจ้งผล ----------
+        if (count($dates) > 1) {
+            $message = "ตั้งสถานะ \"{$statusLabel}\" เรียบร้อยแล้ว {$totalUpdated} ช่วงเวลา "
+                . 'ตั้งแต่วันที่ ' . $startDate->format('d/m/Y') . ' ถึง ' . $endDate->format('d/m/Y');
+        } else {
+            $message = "ตั้งสถานะ \"{$statusLabel}\" เรียบร้อยแล้ว {$totalUpdated} ช่วงเวลา";
+        }
+
+        if ($totalCancelledBookings > 0) {
+            $message .= " (ยกเลิกการจองลูกค้า {$totalCancelledBookings} รายการ และแจ้งเตือนแล้ว)";
+        }
+
+        if (!empty($skipped)) {
+            $preview = array_slice($skipped, 0, 5);
+            $message .= ' | ข้าม ' . count($skipped) . ' ช่วงเวลาที่มีลูกค้าจองอยู่แล้ว: '
+                . implode(', ', $preview)
+                . (count($skipped) > 5 ? ' และอื่นๆ' : '');
         }
 
         return back()->with('success', $message);
@@ -539,4 +629,5 @@ class CourtController extends Controller
             'message' => 'ลบสนามเรียบร้อยแล้ว'
         ], 200);
     }
+    
 }
