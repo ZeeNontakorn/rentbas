@@ -326,7 +326,7 @@ public function history(\Illuminate\Http\Request $request)
 
 public function showRoundHistory(GroupRound $round)
 {
-    $round->load(['court', 'confirmedSignups']);
+    $round->load(['court', 'confirmedSignups.user', 'confirmedSignups.addedBy']);
 
     return view('admin.group-sessions.history-show', compact('round'));
 }
