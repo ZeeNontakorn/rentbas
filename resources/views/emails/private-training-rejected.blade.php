@@ -60,6 +60,10 @@
                     <td class="v">{{ $booking->coach->us_name }}</td>
                 </tr>
                 <tr>
+                    <td class="k">ผู้ช่วยสนาม</td>
+                    <td class="v">{{ $booking->courtAssistant->us_name ?? 'ไม่มี' }}</td>
+                </tr>
+                <tr>
                     <td class="k">สนาม</td>
                     <td class="v">
                         @if($booking->court)
@@ -71,6 +75,10 @@
                             ยังไม่ได้จัดสนาม
                         @endif
                     </td>
+                </tr>
+                <tr>
+                    <td class="k">จำนวนผู้เข้าร่วม</td>
+                    <td class="v">{{ $booking->participant_count ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="k">วันที่</td>
