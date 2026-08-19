@@ -19,7 +19,10 @@ class UserController extends Controller
         $users = User::whereIn('role', ['admin','user','staff', 'superadmin'])
             ->where('id', '>', 0)
             ->when($search, function ($query, $search) {
-                $query->where('us_name', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+                });
             })
             ->orderBy('id', 'desc')
             ->paginate(15)
@@ -124,6 +127,69 @@ class UserController extends Controller
         }
 
         return back()->with('success', "อัปเดตประเภทสมาชิกของ {$user->us_name} เรียบร้อย");
+    }
+
+    public function updateProfile(Request $request, User $user)
+    {
+        $actor = $request->user();
+        $actorIsSuperadmin = $actor->role === 'superadmin';
+
+        // 1. ป้องกันไม่ให้แอดมินธรรมดาแก้ไขข้อมูลของ Super Admin
+        if (! $actorIsSuperadmin && $user->role === 'superadmin') {
+            abort(403, 'ไม่สามารถแก้ไขข้อมูลของ superadmin ได้');
+        }
+
+        // 2. กำหนด Role ที่อนุญาตให้เปลี่ยนได้ตามสิทธิ์ของคนแก้
+        $allowedRoles = $actorIsSuperadmin
+            ? ['user', 'staff', 'admin', 'superadmin']
+            : ['user', 'staff', 'admin'];
+
+        $rules = [
+            'name' => 'required|string|max:255',
+            'us_name' => 'required|string|max:255|unique:users,us_name,'.$user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20',
+            'role' => ['required', Rule::in($allowedRoles)],
+        ];
+
+        // 3. ถ้า Role ใหม่ที่ส่งมา ไม่ใช่แอดมิน จำเป็นต้องตรวจสอบประเภทสมาชิกด้วย
+        if (! in_array($request->role, ['admin', 'superadmin'], true)) {
+            // อนุญาตค่า membership_type ทั้งแบบ staff และ user (รวม Array Keys เข้าด้วยกัน)
+            $validMembershipTypes = array_merge(array_keys(User::MEMBERSHIP_TYPES), array_keys(User::STAFF_TYPES));
+            $rules['membership_type'] = ['required', Rule::in($validMembershipTypes)];
+        }
+
+        $validated = $request->validate($rules, [
+            'name.required' => 'กรุณากรอกชื่อ-นามสกุล',
+            'name.max' => 'ชื่อ-นามสกุลต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'us_name.required' => 'กรุณากรอกชื่อบัญชีผู้ใช้',
+            'us_name.unique' => 'ชื่อบัญชีผู้ใช้นี้ถูกใช้แล้ว',
+            'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
+            'role.required' => 'กรุณาเลือกบทบาท',
+            'role.in' => 'บทบาทไม่ถูกต้อง',
+            'membership_type.required' => 'กรุณาเลือกประเภทสมาชิก',
+            'membership_type.in' => 'ประเภทสมาชิกไม่ถูกต้อง',
+        ]);
+
+        // 4. อัปเดตข้อมูลทั่วไป
+        $user->fill($request->only(['name', 'us_name', 'email', 'phone']));
+        $user->role = $validated['role'];
+
+        // 5. จัดการ Membership Type ตามเงื่อนไขของ Role
+        if (in_array($validated['role'], ['admin', 'superadmin'], true)) {
+            $user->membership_type = 'admin'; // บังคับเป็น admin
+        } else {
+            if ($request->filled('membership_type')) {
+                $user->membership_type = $validated['membership_type'];
+            } else {
+                // กรณีฉุกเฉิน fallback
+                $user->membership_type = $validated['role'] === 'staff' ? 'permanent' : 'customer';
+            }
+        }
+
+        $user->save();
+
+        return redirect()->back()->with('success', "อัปเดตข้อมูลส่วนตัวของ {$user->name} เรียบร้อยแล้ว");
     }
 
     public function destroy(Request $request, User $user)
