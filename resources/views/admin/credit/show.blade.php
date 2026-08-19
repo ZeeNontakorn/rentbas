@@ -122,8 +122,7 @@
             <h2 class="font-medium text-gray-700 text-sm mb-1">หักเครดิต (แก้ไข/ปรับยอด)</h2>
             <p class="text-xs text-gray-400 mb-4">ใช้สำหรับแก้ไขข้อผิดพลาด เช่น เติมผิดจำนวน</p>
 
-            <form method="POST" action="{{ route('admin.credits.deduct', $user) }}" class="flex flex-col sm:flex-row items-end gap-3"
-                  onsubmit="return confirm('ยืนยันหักเครดิตของ {{ $user->us_name }} จำนวนนี้ใช่ไหม?');">
+            <form id="deductCreditForm" method="POST" action="{{ route('admin.credits.deduct', $user) }}" class="flex flex-col sm:flex-row items-end gap-3">
                 @csrf
                 <div class="flex-1 w-full">
                     <label class="block text-xs font-medium text-gray-500 mb-1">จำนวนเงิน (บาท)</label>
@@ -136,7 +135,7 @@
                     <input type="text" name="deduct_note" maxlength="255" placeholder="เช่น เติมผิดจำนวน แก้ไขยอด"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none">
                 </div>
-                <button type="submit"
+                <button type="button" onclick="confirmDeductCredit()"
                         class="text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
                     หักเครดิต
                 </button>
@@ -210,4 +209,31 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeductCredit() {
+    const form = document.getElementById('deductCreditForm');
+    if (!form.reportValidity()) return;
+
+    const amount = form.querySelector('input[name="deduct_amount"]').value;
+
+    Swal.fire({
+        title: 'ยืนยันหักเครดิตใช่ไหม?',
+        text: `หักเครดิตของ {{ $user->us_name }} จำนวน ${amount} บาท จะไม่สามารถกู้คืนได้`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true,
+        confirmButtonText: 'ยืนยันการหัก',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection
