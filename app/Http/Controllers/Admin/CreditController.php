@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\CreditTopupReceiptMail;
-use App\Models\Credit;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\CreditService;
@@ -25,13 +24,13 @@ class CreditController extends Controller
     public function show(User $user)
     {
         $transactions = $user->creditTransactions()->latest()->paginate(20);
-        $credits = $user->credits()->latest()->paginate(20, ['*'], 'credits_page');
 
-        return view('admin.credit.show', compact('user', 'transactions', 'credits'));
+        return view('admin.credit.show', compact('user', 'transactions'));
     }
 
     /**
      * เติมเครดิตให้ผู้ใช้ที่ระบุ — amount รับเป็น "บาท" จากฟอร์ม แปลงเป็นสตางค์ก่อนบันทึก
+     * ต้องระบุ expiry_days เสมอ (ระบบไม่มีแนวคิด "ไม่มีวันหมดอายุ" อีกต่อไป)
      */
     public function topup(Request $request, User $user)
     {
@@ -39,9 +38,10 @@ class CreditController extends Controller
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'payment_method' => ['required', 'in:line,cash_counter'],
             'note' => ['nullable', 'string', 'max:255'],
-            'expiry_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            'expiry_days' => ['required', 'integer', 'min:1', 'max:365'],
         ],[
             'payment_method.required' => 'กรุณาเลือกรูปแบบการชำระเงินที่ลูกค้าใช้จ่ายจริง',
+            'expiry_days.required' => 'กรุณาระบุจำนวนวันหมดอายุของเครดิต',
         ]);
 
         $processedByName = $data['processed_by_name'] ?? $request->user()->name;
@@ -49,7 +49,7 @@ class CreditController extends Controller
         $amountSatang = (int) round($data['amount'] * 100);
 
         try {
-            $tx = $this->creditService->topup($user, $amountSatang, $request->user(), $data['note'] ?? null, $data['payment_method'], $processedByName, $data['expiry_days'] ?? null);
+            $tx = $this->creditService->topup($user, $amountSatang, $request->user(), $data['note'] ?? null, $data['payment_method'], $processedByName, $data['expiry_days']);
         } catch (RuntimeException $e) {
             return back()->withErrors(['amount' => $e->getMessage()]);
         }
@@ -70,7 +70,7 @@ class CreditController extends Controller
     }
 
     /**
-     * แอดมินหักเครดิตของผู้ใช้ด้วยตนเอง (เช่น แก้ไขเติมผิด/เติมเกิน) — หักจากก้อนที่เติมล่าสุดก่อน (LIFO)
+     * แอดมินหักเครดิตของผู้ใช้ด้วยตนเอง (เช่น แก้ไขเติมผิด/เติมเกิน)
      */
     public function deduct(Request $request, User $user)
     {
@@ -88,26 +88,5 @@ class CreditController extends Controller
         }
 
         return back()->with('success', "หักเครดิตของ {$user->us_name} จำนวน {$data['deduct_amount']} บาท สำเร็จ");
-    }
-
-    /**
-     * แอดมินยกเลิก/ปรับยอดก้อนเครดิตก้อนใดก้อนหนึ่งโดยเจาะจง (เช่น เติมผิดก้อน ต้องการหักคืนเฉพาะก้อนนั้น)
-     */
-    public function voidLot(Request $request, Credit $credit)
-    {
-        $data = $request->validate([
-            'void_amount' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
-            'void_note' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $amountSatang = (int) round($data['void_amount'] * 100);
-
-        try {
-            $this->creditService->voidLot($credit, $amountSatang, $request->user(), $data['void_note'] ?? null);
-        } catch (RuntimeException $e) {
-            return back()->withErrors(['void_amount' => $e->getMessage()]);
-        }
-
-        return back()->with('success', 'ปรับยอดก้อนเครดิตเรียบร้อยแล้ว');
     }
 }

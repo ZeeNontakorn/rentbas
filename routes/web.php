@@ -223,7 +223,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
     Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
     Route::post('/users/{user}/credit/deduct', [CreditController::class, 'deduct'])->name('credits.deduct');
-    Route::post('/credits/{credit}/void', [CreditController::class, 'voidLot'])->name('credits.void-lot');
 
     // คำขอเติมเครดิตที่ผู้ใช้ยื่นเอง (แนบสลิป/แจ้งช่องทางชำระเงิน) — แอดมินตรวจสอบและอนุมัติ/ปฏิเสธ
     Route::get('/credit-topups', [AdminCreditTopupController::class, 'index'])->name('credit-topups.index');

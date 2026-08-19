@@ -119,7 +119,7 @@
 
                 <div class="relative">
                     <label class="block text-xs font-medium text-gray-500 mb-1">หมดอายุใน (วัน)</label>
-                    <input type="number" step="1" min="1" max="3650" name="expiry_days" value="{{ old('expiry_days') }}" placeholder="เว้นว่าง = ไม่หมดอายุ"
+                    <input type="number" step="1" min="1" max="365" name="expiry_days" value="{{ old('expiry_days') }}" placeholder="เว้นว่าง = ไม่หมดอายุ"
                            class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
                                   {{ $errors->createPackage->has('expiry_days')
                                       ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
@@ -191,7 +191,7 @@
                                 </td>
                                 <td class="px-6 py-3 text-center">
                                     @php $rowExpiryDays = $rowErrors->any() ? old('expiry_days', $pkg->expiry_days) : $pkg->expiry_days; @endphp
-                                    <input form="editPkg{{ $pkg->id }}" type="number" step="1" min="1" max="3650" name="expiry_days" value="{{ $rowExpiryDays }}" placeholder="ไม่หมดอายุ"
+                                    <input form="editPkg{{ $pkg->id }}" type="number" step="1" min="1" max="365" name="expiry_days" value="{{ $rowExpiryDays }}" placeholder="ไม่หมดอายุ"
                                            class="no-spinner w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('expiry_days') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
                                     @error('expiry_days', "editPkg{$pkg->id}")
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>

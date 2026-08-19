@@ -46,8 +46,8 @@
                     <p class="text-xs text-gray-400">{{ $topupRequest->user->email }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-400 mb-1">เติมโดย (ชื่อ-นามสกุลที่แจ้ง)</p>
-                    <p class="font-medium text-gray-800">{{ $topupRequest->topper_name }}</p>
+                    <p class="text-xs text-gray-400 mb-1">เติมโดย</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 mb-1">ยอดชำระ / เครดิตที่ได้รับ</p>
@@ -90,6 +90,17 @@
                     <form method="POST" action="{{ route('admin.credit-topups.approve', $topupRequest) }}" class="flex-1"
                           onsubmit="showMailLoadingOverlay('กำลังอนุมัติและส่งอีเมลใบเสร็จให้ลูกค้า...'); this.querySelector('button').disabled = true;">
                         @csrf
+                        @if ($topupRequest->expiry_days)
+                            <p class="text-xs text-gray-400 mb-2">เครดิตนี้จะหมดอายุใน {{ $topupRequest->expiry_days }} วัน (ตามแพ็กเกจที่เลือก)</p>
+                        @else
+                            <div class="mb-3">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">
+                                    คำขอนี้ไม่ได้ผูกกับแพ็กเกจที่มีวันหมดอายุ — กรุณาระบุจำนวนวันหมดอายุของเครดิต
+                                </label>
+                                <input type="number" step="1" min="1" max="365" name="expiry_days" required placeholder="เช่น 365"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                        @endif
                         <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 cursor-pointer transition">
                             อนุมัติและเติมเครดิต
                         </button>
