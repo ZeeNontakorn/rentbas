@@ -8,6 +8,7 @@
         "test:e2e": "playwright test",
         "test:e2e:auth": "php artisan db:seed --class=AuthTestUserSeeder --force && playwright test tests/Browser/auth.spec.js",
         "test:e2e:group-bas": "playwright test tests/Browser/group-basketball.spec.js",
+        "test:e2e:ptb": "playwright test tests/Browser/private-training.spec.js",
         "test:e2e:headed": "playwright test --headed",
         "test:e2e:ui": "playwright test --ui"
     },

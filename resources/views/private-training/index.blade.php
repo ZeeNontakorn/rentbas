@@ -147,6 +147,9 @@
                                     @if($r->assistant_requested)
                                         <p class="mt-1 text-xs text-blue-600">ผู้ช่วยสนาม: {{ $r->courtAssistant?->us_name ?? 'รอดำเนินการ' }}</p>
                                     @endif
+                                    @if($r->status === 'rejected' && $r->reject_reason)
+                                        <p class="mt-1 text-xs text-red-500">เหตุผลที่ปฏิเสธ: {{ $r->reject_reason }}</p>
+                                    @endif
                                     <div class="flex items-center justify-between mt-2">
                                         <span class="text-xs px-2.5 py-1 rounded-full font-medium {{ $sInfo['bg'] }} {{ $sInfo['text'] }}">{{ $sInfo['label'] }}</span>
                                         @if(in_array($r->status, ['pending', 'awaiting_court'], true))

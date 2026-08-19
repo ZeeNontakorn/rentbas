@@ -28,9 +28,15 @@ use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Models\OtpToken;
+use App\Models\Availability;
 use App\Models\Court;
+use App\Models\CreditTransaction;
 use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
+use App\Models\Package;
+use App\Models\PackagePurchase;
+use App\Models\PrivateTrainingBooking;
+use App\Models\PromotionPackage;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -347,6 +353,199 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
                 'id' => $s->id, 'name' => $s->displayName(), 'order' => $s->order_number,
                 'status' => $s->status, 'reserve' => $s->is_reserve, 'booked_by' => $s->booked_by,
             ]),
+        ]);
+    });
+
+    Route::post('/__e2e/private-training/case', function (\Illuminate\Http\Request $request) {
+        return DB::transaction(function () use ($request) {
+            $emails = [
+                'ptb-user@e2e.local',
+                'ptb-admin@e2e.local',
+                'ptb-coach@e2e.local',
+                'ptb-assistant-free@e2e.local',
+                'ptb-assistant-busy@e2e.local',
+            ];
+            $oldUsers = User::whereIn('email', $emails)->get();
+            $oldUserIds = $oldUsers->pluck('id');
+            $oldPackageIds = Package::where('name', 'like', '[E2E PTB]%')->pluck('id');
+
+            PrivateTrainingBooking::whereIn('user_id', $oldUserIds)
+                ->orWhereIn('coach_id', $oldUserIds)
+                ->orWhereIn('court_assistant_id', $oldUserIds)
+                ->delete();
+            CreditTransaction::whereIn('user_id', $oldUserIds)->delete();
+            PackagePurchase::whereIn('user_id', $oldUserIds)->delete();
+            Availability::whereIn('user_id', $oldUserIds)->delete();
+            foreach ($oldUsers as $oldUser) {
+                $oldUser->notifications()->delete();
+            }
+            Package::whereIn('id', $oldPackageIds)->delete();
+            PromotionPackage::where('code', 'like', 'e2e-ptb-%')->delete();
+
+            $account = function (string $email, string $name, string $role, string $membershipType) {
+                $user = User::updateOrCreate(['email' => $email], [
+                    'name' => $name,
+                    'us_name' => $name,
+                    'phone' => '0891000000',
+                    'password' => '123456',
+                    'role' => $role,
+                    'membership_type' => $membershipType,
+                    'is_verified' => true,
+                ]);
+                $user->forceFill(['email_verified_at' => now()])->save();
+
+                return $user;
+            };
+
+            $user = $account('ptb-user@e2e.local', 'ผู้ใช้ PTB E2E', 'user', 'customer');
+            $admin = $account('ptb-admin@e2e.local', 'ผู้ดูแล PTB E2E', 'admin', 'customer');
+            $coach = $account('ptb-coach@e2e.local', 'โค้ช PTB E2E', 'staff', 'coach');
+            $freeAssistant = $account('ptb-assistant-free@e2e.local', 'ผู้ช่วยสนาม A ว่าง', 'staff', 'court_assistant');
+            $busyAssistant = $account('ptb-assistant-busy@e2e.local', 'ผู้ช่วยสนาม B ไม่ว่าง', 'staff', 'court_assistant');
+
+            $creditBaht = (int) $request->input('credit_balance', 2000);
+            $user->forceFill(['credit_balance' => $creditBaht * 100])->save();
+            $admin->forceFill(['credit_balance' => 0])->save();
+
+            $weekdayPackage = Package::create([
+                'name' => '[E2E PTB] แพ็กเกจจันทร์-ศุกร์',
+                'type' => 'private',
+                'description' => 'แพ็กเกจทดสอบสำหรับวันทำการ',
+                'price' => 1000,
+                'num_of_use' => 4,
+                'day' => 60,
+                'usable_days' => ['mon', 'tue', 'wed', 'thu', 'fri'],
+                'is_active' => true,
+            ]);
+            $weekendPackage = Package::create([
+                'name' => '[E2E PTB] แพ็กเกจเสาร์-อาทิตย์',
+                'type' => 'private',
+                'description' => 'แพ็กเกจทดสอบสำหรับวันหยุด',
+                'price' => 1000,
+                'num_of_use' => 4,
+                'day' => 60,
+                'usable_days' => ['sat', 'sun'],
+                'is_active' => true,
+            ]);
+            PromotionPackage::create([
+                'code' => 'e2e-ptb-private',
+                'label' => '[E2E PTB] Private Training',
+                'category' => 'private',
+                'duration_hours' => 1,
+                'max_people' => 6,
+                'base_price' => 100000,
+                'session_count' => 4,
+                'validity_days' => 60,
+                'is_active' => true,
+            ]);
+
+            $requestedPurchases = (array) $request->input('purchases', []);
+            $remainingUse = (int) $request->input('remaining_use', 4);
+            $purchases = collect();
+            foreach (['weekday' => $weekdayPackage, 'weekend' => $weekendPackage] as $key => $package) {
+                if (! in_array($key, $requestedPurchases, true)) {
+                    continue;
+                }
+                $purchases[$key] = PackagePurchase::create([
+                    'user_id' => $user->id,
+                    'package_id' => $package->id,
+                    'price' => (int) round($package->price * 100),
+                    'status' => 'approved',
+                    'booking_source' => 'credit',
+                    'payment_method' => 'credit',
+                    'payment_status' => 'paid',
+                    'remaining_use' => $remainingUse,
+                    'paid_at' => now(),
+                    'expired_at' => now()->addDays(60),
+                ]);
+            }
+
+            $weekday = Carbon::today('Asia/Bangkok')->next(Carbon::WEDNESDAY);
+            $weekend = Carbon::today('Asia/Bangkok')->next(Carbon::SUNDAY);
+            foreach ([$weekday, $weekend] as $date) {
+                Availability::create([
+                    'user_id' => $busyAssistant->id,
+                    'date' => $date->toDateString(),
+                    'start_time' => '18:00:00',
+                    'end_time' => '19:00:00',
+                    'status' => 'booked',
+                    'detail' => 'ผู้ช่วยไม่ว่างสำหรับ E2E',
+                ]);
+            }
+            Availability::create([
+                'user_id' => $coach->id,
+                'date' => $weekday->toDateString(),
+                'start_time' => '14:00:00',
+                'end_time' => '15:30:00',
+                'status' => 'booked',
+                'detail' => 'โค้ชไม่ว่างสำหรับ E2E',
+            ]);
+
+            return response()->json([
+                'user' => ['id' => $user->id, 'name' => $user->us_name, 'email' => $user->email, 'password' => '123456', 'credit_balance' => $creditBaht],
+                'admin' => ['id' => $admin->id, 'email' => $admin->email, 'password' => '123456'],
+                'coach' => ['id' => $coach->id, 'name' => $coach->us_name],
+                'assistants' => [
+                    'free' => ['id' => $freeAssistant->id, 'name' => $freeAssistant->us_name],
+                    'busy' => ['id' => $busyAssistant->id, 'name' => $busyAssistant->us_name],
+                ],
+                'packages' => [
+                    'weekday' => ['id' => $weekdayPackage->id, 'name' => $weekdayPackage->name, 'price' => (float) $weekdayPackage->price],
+                    'weekend' => ['id' => $weekendPackage->id, 'name' => $weekendPackage->name, 'price' => (float) $weekendPackage->price],
+                ],
+                'purchases' => $purchases->map(fn ($purchase) => ['id' => $purchase->id, 'remaining_use' => $purchase->remaining_use]),
+                'dates' => [
+                    'today' => Carbon::today('Asia/Bangkok')->toDateString(),
+                    'weekday' => $weekday->toDateString(),
+                    'weekend' => $weekend->toDateString(),
+                ],
+                'times' => ['available_start' => '18:00', 'available_end' => '19:00', 'busy_start' => '14:00', 'busy_end' => '15:00'],
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/private-training/state', function () {
+        $user = User::where('email', 'ptb-user@e2e.local')->firstOrFail();
+
+        return response()->json([
+            'credit_balance' => $user->credit_balance / 100,
+            'purchases' => PackagePurchase::with('package')
+                ->where('user_id', $user->id)
+                ->orderBy('id')
+                ->get()
+                ->map(fn ($purchase) => [
+                    'id' => $purchase->id,
+                    'package' => $purchase->package?->name,
+                    'status' => $purchase->status,
+                    'remaining_use' => $purchase->remaining_use,
+                    'price' => $purchase->price / 100,
+                ]),
+            'transactions' => CreditTransaction::where('user_id', $user->id)
+                ->orderBy('id')
+                ->get()
+                ->map(fn ($transaction) => [
+                    'type' => $transaction->type,
+                    'amount' => $transaction->amount / 100,
+                    'balance_after' => $transaction->balance_after / 100,
+                    'note' => $transaction->note,
+                    'package_purchase_id' => $transaction->package_purchase_id,
+                ]),
+            'bookings' => PrivateTrainingBooking::where('user_id', $user->id)
+                ->orderBy('id')
+                ->get()
+                ->map(fn ($booking) => [
+                    'id' => $booking->id,
+                    'date' => $booking->date->toDateString(),
+                    'start_time' => substr($booking->start_time, 0, 5),
+                    'end_time' => substr($booking->end_time, 0, 5),
+                    'participant_count' => $booking->participant_count,
+                    'assistant_requested' => $booking->assistant_requested,
+                    'court_assistant_id' => $booking->court_assistant_id,
+                    'status' => $booking->status,
+                    'reject_reason' => $booking->reject_reason,
+                    'package_purchase_id' => $booking->package_purchase_id,
+                    'note' => $booking->note,
+                ]),
         ]);
     });
 }
