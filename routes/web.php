@@ -28,6 +28,8 @@ use App\Http\Controllers\PrivateTrainingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\GroupSessionController;
+
 
 // 1. Landing Page — ใครๆ ก็เข้าได้
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -144,9 +146,6 @@ Route::get('/courses/{course}', [CourseController::class, 'show'])->name('course
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Logout
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
@@ -240,12 +239,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/credit-topup-packages/reorder', [CreditTopupPackageController::class, 'reorder'])->name('credit-topup-packages.reorder');
 
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
-    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
     Route::put('/pricing/rules/bulk-update', [PricingController::class, 'bulkUpdateRules'])->name('pricing.rules.bulkUpdate');
-    Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
-    Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
-    Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
-    Route::delete('/pricing/packages/{promotionPackage}', [PricingController::class, 'destroyPackage'])->name('pricing.packages.destroy');
     Route::put('/pricing/rules/{pricingRule}', [PricingController::class, 'updateRule'])->name('pricing.rules.update');
     Route::post('/pricing/packages', [PricingController::class, 'storePackage'])->name('pricing.packages.store');
     Route::put('/pricing/packages/{promotionPackage}', [PricingController::class, 'updatePackage'])->name('pricing.packages.update');
@@ -259,6 +253,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
     Route::delete('packages/{package}', [PackageController::class, 'delete'])->name('packages.delete');
     Route::patch('packages/{package}/toggle-status', [PackageController::class, 'toggleStatus'])->name('packages.toggleStatus');
+
+    // จัดการให้จอง Private Training ได้สูงสุดกี่วัน
+    Route::put('private-training/advance-booking-days', [PrivateTrainingController::class, 'updateAdvanceBookingDays'])
+    ->name('private-training.advance-booking-days.update');
 });
 
 // 6. Password Reset via OTP
@@ -289,3 +287,34 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
     Route::post('/bookings/bulk-approve', [BookingController::class, 'bulkApprove'])->name('bookings.bulkApprove');
     Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
 });
+
+// จัดการ Group Sessions (ระบบ Round/Group) — ต้องเป็น admin เท่านั้น
+Route::middleware(['auth', 'admin'])->prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
+    Route::get('/', [GroupSessionController::class, 'index'])->name('index');
+    Route::get('/history', [GroupSessionController::class, 'history'])->name('history');
+    Route::get('/history', [GroupSessionController::class, 'history'])->name('history');
+    Route::get('/history/{round}', [GroupSessionController::class, 'showRoundHistory'])->name('history.show');  
+    Route::post('/', [GroupSessionController::class, 'storeSession'])->name('store');
+    Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');
+    Route::delete('/{session}', [GroupSessionController::class, 'destroySession'])->name('destroy');
+    Route::post('/rounds', [GroupSessionController::class, 'openRound'])->name('rounds.open');
+    Route::get('/rounds/{round}', [GroupSessionController::class, 'showRound'])->name('rounds.show');
+    Route::post('/rounds/{round}/players', [GroupSessionController::class, 'addPlayer'])->name('rounds.addPlayer');
+    Route::delete('/rounds/{round}/players/{signup}', [GroupSessionController::class, 'removePlayer'])->name('rounds.removePlayer');
+    Route::patch('/rounds/{round}/close', [GroupSessionController::class, 'closeRound'])->name('rounds.close');
+    Route::patch('/rounds/{round}/reopen', [GroupSessionController::class, 'reopenRound'])->name('rounds.reopen');
+    Route::delete('/rounds/{round}/cancel', [GroupSessionController::class, 'cancelRound'])->name('rounds.cancel');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/group-rounds/my-bookings', [App\Http\Controllers\GroupRoundSignupController::class, 'myBookings'])
+        ->name('group-rounds.my-bookings');
+    Route::get('/group-rounds/{round}/checkout', [App\Http\Controllers\GroupRoundSignupController::class, 'checkout'])
+        ->name('group-rounds.checkout');
+    Route::post('/group-rounds/{round}/signup', [App\Http\Controllers\GroupRoundSignupController::class, 'store'])
+        ->name('group-rounds.signup');
+});
+
+Route::post('/group-rounds/{round}/signups/{signup}/cancel', [\App\Http\Controllers\GroupRoundSignupController::class, 'cancel'])
+    ->middleware('auth')
+    ->name('group-rounds.cancel');

@@ -16,6 +16,7 @@ class PrivateTrainingBooking extends Model
 
     protected $fillable = [
         'user_id',
+        'participant_count',
         'coach_id',
         'assistant_requested',
         'court_assistant_id',
