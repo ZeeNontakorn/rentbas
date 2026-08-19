@@ -154,7 +154,7 @@ class CourtController extends Controller
                                 ->where('locked_until', '>', now());
                         });
                 })
-                ->with('user:id,name')
+                ->with('user:id,us_name')
                 ->get(['id', 'court_section_id', 'start_time', 'end_time', 'status', 'user_id']);
 
             for ($m = 6 * 60; $m < 22 * 60; $m += $interval) {
@@ -186,7 +186,7 @@ class CourtController extends Controller
                     'start' => $start,
                     'end'   => $end,
                     'status' => $status,
-                    'customer_name' => $booking?->user?->name,
+                    'customer_name' => $booking?->user?->us_name,
                 ];
             }
         }

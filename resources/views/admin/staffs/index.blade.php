@@ -108,14 +108,14 @@
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs overflow-hidden {{ $themeClass }}">
                                             @if($staffProfile?->profile_image)
                                                 <img src="{{ $staffProfile->profile_image_url }}"
-                                                    alt="รูปโปรไฟล์ของ {{ $s->name }}"
+                                                    alt="รูปโปรไฟล์ของ {{ $s->us_name }}"
                                                     class="h-full w-full object-cover">
                                             @else
-                                                <span>{{ mb_strtoupper(mb_substr($s->name, 0, 1)) }}</span>
+                                                <span>{{ mb_strtoupper(mb_substr($s->us_name, 0, 1)) }}</span>
                                             @endif
                                         </div>
                                         <div>
-                                            <p>{{ $s->name }}</p>
+                                            <p>{{ $s->us_name }}</p>
                                             <p class="text-xs text-gray-500 font-normal">{{ $s->email ?? 'ไม่มีอีเมล' }}</p>
                                         </div>
                                     </div>
@@ -181,7 +181,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         ชื่อ-นามสกุล <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="name" value="{{ old('name') }}" required placeholder="สมชาย ขยันยิ่งใหญ่"
+                    <input type="text" name="us_name" value="{{ old('us_name') }}" required placeholder="สมชาย ขยันยิ่งใหญ่"
                             class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-700">
                 </div>
 

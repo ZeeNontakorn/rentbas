@@ -55,14 +55,14 @@
                                 <div>
                                     <div class="flex items-center gap-2 mb-1">
                                         <span class="text-xs px-2 py-0.5 border border-gray-300 rounded">โค้ช
-                                            {{ $b->coach->name }}</span>
+                                            {{ $b->coach->us_name }}</span>
                                         <span
                                             class="text-xs px-2 py-0.5 {{ $sInfo['text'] }} {{ $sInfo['bg'] }} rounded flex items-center">
                                             <span class="w-1.5 h-1.5 rounded-full bg-current mr-1"></span>
                                             {{ $sInfo['label'] }}
                                         </span>
                                     </div>
-                                    <p class="text-sm font-medium text-gray-800">ลูกค้า: {{ $b->user->name }}
+                                    <p class="text-sm font-medium text-gray-800">ลูกค้า: {{ $b->user->us_name }}
                                         ({{ $b->user->email }})</p>
                                     <p class="text-xs text-gray-500 mt-1">
                                         วันที่ {{ $b->date->format('d/m/Y') }}
@@ -81,7 +81,7 @@
                                         </p>
                                     @endif
                                     <p class="mt-1 text-xs {{ $b->assistant_requested ? 'font-medium text-blue-700' : 'text-gray-400' }}">
-                                        ผู้ช่วยสนาม: {{ $b->assistant_requested ? ($b->courtAssistant?->name ?? 'รอเลือกผู้ช่วย') : 'ไม่ใช้บริการ' }}
+                                        ผู้ช่วยสนาม: {{ $b->assistant_requested ? ($b->courtAssistant?->us_name ?? 'รอเลือกผู้ช่วย') : 'ไม่ใช้บริการ' }}
                                     </p>
                                 </div>
 

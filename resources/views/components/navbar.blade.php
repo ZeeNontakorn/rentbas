@@ -293,8 +293,8 @@
                 <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
                 <div class="relative flex-shrink-0">
                     <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap cursor-pointer">
-                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
-                        {{ auth()->user()->name }}
+                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->us_name }}">
+                        {{ auth()->user()->us_name }}
                     </span>
                     <svg class="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -303,7 +303,7 @@
                     <div id="adminMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
                         <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
                             <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
-                            <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                            <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                         </div>
                         @if($isAdminLike)
                             <a href="{{ route('admin.users.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
@@ -490,7 +490,7 @@
             @if($isAdminLike)
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
-                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                     <div class="flex flex-col">
                         <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
@@ -502,7 +502,7 @@
             @else
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
-                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                     <div class="flex flex-col">
                         <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
                     </div>
