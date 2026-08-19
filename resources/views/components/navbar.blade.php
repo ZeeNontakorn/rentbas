@@ -73,13 +73,14 @@
                     </a>
                     <!-- จัดการสนาม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             จัดการสนาม
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
                             <a href="{{ route('admin.courts') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : '' }}">จัดการสนาม</a>
                             <a href="{{ route('admin.pricing.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : '' }}">ตั้งราคา</a>
+                            <a href="{{ route('admin.group-sessions.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.group-sessions.*') ? 'text-orange-500 font-bold' : '' }}">จัดการกลุ่มเล่นบาส</a>
                         </div>
                     </div>
 
@@ -126,6 +127,10 @@
 
                     <a href="{{ route('booking.index') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
+                    </a>
+
+                    <a href="{{ route('group-rounds.my-bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('group-rounds.my-bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        กลุ่มเล่นบาส
                     </a>
 
                     <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
@@ -383,13 +388,14 @@
                         หน้าแรก
                     </a>
                     <div class="border-t border-gray-800" data-mobile-nav-dropdown>
-                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'true' : 'false' }}">
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? 'true' : 'false' }}">
                             จัดการสนาม
-                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
-                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? '' : 'hidden' }}">
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? '' : 'hidden' }}">
                             <a href="{{ route('admin.courts') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการสนาม</a>
                             <a href="{{ route('admin.pricing.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ตั้งราคา</a>
+                            <a href="{{ route('admin.group-sessions.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.group-sessions.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการกลุ่มเล่นบาส</a>
                         </div>
                     </div>
                     <div class="border-t border-gray-800" data-mobile-nav-dropdown>
@@ -433,6 +439,9 @@
                     </a>
                     <a href="{{ route('booking.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
+                    </a>
+                    <a href="{{ route('group-rounds.my-bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('group-rounds.my-bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        กลุ่มเล่นบาส
                     </a>
                     @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
                         <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
