@@ -29,7 +29,7 @@ class CreditTopupPackageController extends Controller
             'label' => ['required', 'string', 'max:50'],
             'price' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'credit' => ['required', 'numeric', 'min:1', 'max:1000000'],
-            'expiry_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            'expiry_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

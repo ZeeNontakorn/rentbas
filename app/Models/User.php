@@ -43,11 +43,11 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_verified' => 'boolean',
+            'credit_balance' => 'integer', // หน่วยสตางค์
+            'credit_expires_at' => 'datetime',
+            'credit_expiry_notified_for' => 'datetime',
         ];
     }
-
-    // cache ผลรวมยอดเครดิตต่อ request เดียว กัน query ซ้ำๆ (เช่น navbar เรียก credit_balance หลายครั้งต่อหน้า)
-    private ?int $creditBalanceCache = null;
 
     public function bookings(): HasMany
     {
@@ -72,11 +72,6 @@ class User extends Authenticatable
     public function creditTransactions(): HasMany
     {
         return $this->hasMany(CreditTransaction::class);
-    }
-
-    public function credits(): HasMany
-    {
-        return $this->hasMany(Credit::class);
     }
 
     public function creditTopupRequests(): HasMany
@@ -145,26 +140,6 @@ class User extends Authenticatable
     public function assistedPrivateTrainingBookings(): HasMany
     {
         return $this->hasMany(PrivateTrainingBooking::class, 'court_assistant_id');
-    }
-
-    /**
-     * ยอดเครดิตคงเหลือรวม (หน่วยสตางค์) คำนวณจากผลรวมก้อนเครดิต (credits) ที่ยังไม่หมดอายุ
-     * แทนคอลัมน์ credit_balance เดิม — ตั้งชื่อ accessor เดิมไว้เพื่อให้โค้ด/view ที่อ่าน
-     * $user->credit_balance อยู่แล้วไม่ต้องแก้ไข
-     */
-    public function getCreditBalanceAttribute(): int
-    {
-        if ($this->creditBalanceCache !== null) {
-            return $this->creditBalanceCache;
-        }
-
-        if ($this->relationLoaded('credits')) {
-            return $this->creditBalanceCache = (int) $this->credits
-                ->filter(fn (Credit $c) => $c->remaining_satang > 0 && ($c->expires_at === null || $c->expires_at->isFuture()))
-                ->sum('remaining_satang');
-        }
-
-        return $this->creditBalanceCache = (int) $this->credits()->valid()->sum('remaining_satang');
     }
 
     /**
