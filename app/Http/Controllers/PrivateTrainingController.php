@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
 use App\Services\CourtAvailabilityService;
 use App\Services\PrivateTrainingBookingLifecycleService;
+use App\Mail\PrivateTrainingRequestedMail;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -416,6 +417,8 @@ class PrivateTrainingController extends Controller
             "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}\nผู้เข้าร่วม {$data['participant_count']} คน{$assistantLine}",
             route('admin.private-training.index', ['status' => 'pending']),
         );
+
+        $this->notifyAdminsByEmail($result->load(['user', 'coach', 'courtAssistant']));
 
         return back()->with('success', 'ส่งคำขอจองเทรนเนอร์ส่วนตัวเรียบร้อย รอแอดมินอนุมัติ');
     }
@@ -929,6 +932,21 @@ class PrivateTrainingController extends Controller
         $admins = User::whereIn('role', ['admin', 'superadmin'])->pluck('id');
         foreach ($admins as $adminId) {
             $this->notifyUser($adminId, $title, $message, $actionUrl);
+        }
+    }
+
+    private function notifyAdminsByEmail(PrivateTrainingBooking $booking): void
+    {
+        $adminEmails = User::whereIn('role', ['admin', 'superadmin'])
+            ->whereNotNull('email')
+            ->pluck('email');
+
+        foreach ($adminEmails as $email) {
+            try {
+                Mail::to($email)->send(new PrivateTrainingRequestedMail($booking));
+            } catch (\Throwable $e) {
+                Log::error("ส่งอีเมลแจ้งเตือนแอดมิน ({$email}) เรื่องคำขอ Private Training ใหม่ไม่สำเร็จ: ".$e->getMessage());
+            }
         }
     }
 }

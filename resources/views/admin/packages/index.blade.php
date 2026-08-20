@@ -7,7 +7,7 @@
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการ Package</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการแพ็กเกจ</h1>
                 <p class="mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการแพ็กเกจทั้งหมดในระบบ</p>
             </div>
             <!-- Search และ ปุ่มเพิ่มแพ็กเกจ -->
