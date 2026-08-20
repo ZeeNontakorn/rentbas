@@ -86,7 +86,7 @@
                 <div class="flex items-center gap-5 mb-5 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
                     <div class="relative w-[72px] h-[72px] rounded-full border-2 border-white shadow-sm bg-orange-50 flex items-center justify-center overflow-hidden group cursor-pointer flex-shrink-0" onclick="document.getElementById('profileImageInput').click()">
                         <img id="imagePreview" src="{{ !empty($user->avatar) ? asset('storage/' . $user->avatar) : '' }}" class="{{ !empty($user->avatar) ? '' : 'hidden' }} w-full h-full object-cover">
-                        <span id="imageFallback" class="{{ !empty($user->avatar) ? 'hidden' : '' }} text-3xl font-kanit font-bold text-orange-400">{{ mb_strtoupper(mb_substr($user->us_name ?? 'U', 0, 1)) }}</span>
+                        <span id="imageFallback" class="{{ !empty($user->avatar) ? 'hidden' : '' }} text-3xl font-kanit font-bold text-orange-400">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
                         
                         <div class="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center transition">
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>

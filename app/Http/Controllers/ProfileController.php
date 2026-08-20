@@ -32,7 +32,7 @@ class ProfileController extends Controller
             'name' => 'sometimes|nullable|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . Auth::id(),
             'phone' => 'sometimes|nullable|max:10',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // แก้เป็น avatar
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'current_password' => 'required_with:password|string',
             'password' => 'nullable|required_with:current_password|string|min:6|confirmed',
             'otp' => 'nullable|string|size:6'
@@ -43,9 +43,9 @@ class ProfileController extends Controller
             'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
             'email.unique' => 'อีเมลนี้ถูกใช้งานแล้ว',
             'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
-            'avatar.image' => 'ไฟล์ที่อัปโหลดต้องเป็นรูปภาพเท่านั้น', // แก้เป็น avatar
-            'avatar.mimes' => 'รองรับไฟล์รูปภาพประเภท jpeg, png, jpg, webp เท่านั้น', // แก้เป็น avatar
-            'avatar.max' => 'ขนาดไฟล์รูปภาพต้องไม่เกิน 2MB', // แก้เป็น avatar
+            'avatar.image' => 'ไฟล์ที่อัปโหลดต้องเป็นรูปภาพเท่านั้น',
+            'avatar.mimes' => 'รองรับไฟล์รูปภาพประเภท jpeg, png, jpg, webp เท่านั้น',
+            'avatar.max' => 'ขนาดไฟล์รูปภาพต้องไม่เกิน 2MB',
             'current_password.required_with' => 'กรุณากรอกรหัสผ่านเดิมเพื่อเปลี่ยนรหัสผ่านใหม่',
             'current_password.string' => 'กรุณากรอกรหัสผ่านเดิมให้ถูกต้อง',
             'password.required_with' => 'กรุณากรอกรหัสผ่านใหม่',
