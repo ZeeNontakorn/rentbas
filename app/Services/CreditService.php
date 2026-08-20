@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\CreditExpiredMail;
 use App\Mail\CreditExpiringSoonMail;
 use App\Models\Booking;
 use App\Models\CreditTopupRequest;
@@ -299,29 +300,32 @@ class CreditService
 
     /**
      * Scheduled job: หา user ที่เครดิตหมดอายุแล้ว (credit_expires_at ผ่านไปแล้ว และยังมียอดเหลือ)
-     * แล้วเซ็ตยอดเป็น 0 จริง พร้อมบันทึกลง credit_transactions เป็นหลักฐาน — เรียกจาก routes/console.php
+     * แล้วเซ็ตยอดเป็น 0 จริง พร้อมบันทึกลง credit_transactions เป็นหลักฐาน แล้วแจ้งเตือนผู้ใช้ทันที
+     * (กระดิ่ง + อีเมล) กันตกใจเห็นยอดหายโดยไม่รู้สาเหตุ — เรียกจาก routes/console.php
      */
     public function expireDueCredits(): int
     {
         $expiredCount = 0;
 
         User::query()
-            ->select(['id', 'credit_balance', 'credit_expires_at'])
+            ->select(['id', 'credit_balance', 'credit_expires_at', 'email'])
             ->whereNotNull('credit_expires_at')
             ->where('credit_expires_at', '<=', now())
             ->where('credit_balance', '>', 0)
             ->chunkById(100, function ($users) use (&$expiredCount): void {
                 $users->each(function (User $user) use (&$expiredCount): void {
-                    DB::transaction(function () use ($user): void {
+                    // ตัดยอดจริงอยู่ใน transaction เพื่อความถูกต้องของเงิน ส่วนแจ้งเตือน (เว็บ/เมล)
+                    // เป็น side effect ภายนอกจึงทำ "หลัง" transaction ปิดสำเร็จแล้วเท่านั้น
+                    $tx = DB::transaction(function () use ($user): ?CreditTransaction {
                         $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
 
                         if (! $lockedUser->credit_expires_at || $lockedUser->credit_expires_at->isFuture() || $lockedUser->credit_balance <= 0) {
-                            return;
+                            return null;
                         }
 
                         $amount = $lockedUser->credit_balance;
 
-                        CreditTransaction::create([
+                        $tx = CreditTransaction::create([
                             'user_id' => $lockedUser->id,
                             'type' => 'expire',
                             'amount' => $amount,
@@ -334,9 +338,35 @@ class CreditService
                             'credit_expires_at' => null,
                             'credit_expiry_notified_for' => null,
                         ])->save();
+
+                        return $tx;
                     });
 
+                    if ($tx === null) {
+                        return;
+                    }
+
                     $expiredCount++;
+
+                    try {
+                        // type = credit_expired ให้ frontend (navbar) เช็คแล้วเด้ง SweetAlert บังคับกดรับทราบ
+                        Notification::create([
+                            'user_id' => $user->id,
+                            'type' => 'credit_expired',
+                            'title' => 'เครดิตของคุณหมดอายุแล้ว',
+                            'message' => 'เครดิตจำนวน ' . number_format($tx->amount / 100, 2)
+                                . ' บาท ถูกตัดออกจากบัญชีเนื่องจากครบกำหนดวันหมดอายุ|ยอดคงเหลือปัจจุบัน 0.00 บาท',
+                            'action_url' => route('credits.topup.index'),
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error("สร้างแจ้งเตือนในเว็บ (เครดิตหมดอายุ) ไม่สำเร็จ สำหรับ user_id={$user->id}: " . $e->getMessage());
+                    }
+
+                    try {
+                        Mail::to($user->email)->send(new CreditExpiredMail($tx));
+                    } catch (\Throwable $e) {
+                        Log::error("ส่งอีเมลแจ้งเตือนเครดิตหมดอายุ (user #{$user->id}) ไม่สำเร็จ: " . $e->getMessage());
+                    }
                 });
             });
 
@@ -345,26 +375,29 @@ class CreditService
 
     /**
      * Scheduled job: แจ้งเตือนผู้ใช้ที่เครดิตใกล้หมดอายุ (ภายใน 7 วัน) ทั้งขึ้นกระดิ่งแจ้งเตือนในเว็บ
-     * และส่งอีเมล — แจ้งครั้งเดียวต่อวันหมดอายุแต่ละรอบ (กันแจ้งซ้ำทุกวันจนกว่าจะหมดอายุจริง)
+     * และส่งอีเมล — แจ้ง "ทุกวัน" ตั้งแต่เหลือ 7 วันจนถึงวันสุดท้ายก่อนหมดอายุ (ไม่ใช่แค่ครั้งเดียว)
+     * credit_expiry_notified_for ใช้เก็บ "วันที่ล่าสุดที่แจ้งไปแล้ว" กันแจ้งซ้ำมากกว่า 1 ครั้งต่อวัน
      */
     public function notifyExpiringSoonCredits(): int
     {
         $notifiedCount = 0;
+        $today = now()->toDateString();
 
         User::query()
             ->whereNotNull('credit_expires_at')
             ->where('credit_expires_at', '>', now())
             ->where('credit_expires_at', '<=', now()->addDays(7))
             ->where('credit_balance', '>', 0)
-            ->where(function ($query) {
+            ->where(function ($query) use ($today) {
                 $query->whereNull('credit_expiry_notified_for')
-                    ->orWhereColumn('credit_expiry_notified_for', '<>', 'credit_expires_at');
+                    ->orWhereDate('credit_expiry_notified_for', '<>', $today);
             })
             ->chunkById(100, function ($users) use (&$notifiedCount): void {
                 $users->each(function (User $user) use (&$notifiedCount): void {
                     try {
                         Notification::create([
                             'user_id' => $user->id,
+                            'type' => 'credit_expiring_soon',
                             'title' => 'เครดิตของคุณใกล้หมดอายุ',
                             'message' => 'เครดิตคงเหลือ ' . number_format($user->credit_balance / 100, 2)
                                 . ' บาท จะหมดอายุวันที่ ' . $user->credit_expires_at->format('d/m/Y')
@@ -381,7 +414,7 @@ class CreditService
                         Log::error("ส่งอีเมลแจ้งเตือนเครดิตใกล้หมดอายุ (user #{$user->id}) ไม่สำเร็จ: " . $e->getMessage());
                     }
 
-                    $user->forceFill(['credit_expiry_notified_for' => $user->credit_expires_at])->save();
+                    $user->forceFill(['credit_expiry_notified_for' => now()])->save();
                     $notifiedCount++;
                 });
             });
