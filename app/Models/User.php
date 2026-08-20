@@ -44,6 +44,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_verified' => 'boolean',
             'credit_balance' => 'integer', // หน่วยสตางค์
+            'credit_expires_at' => 'datetime',
+            'credit_expiry_notified_for' => 'datetime',
         ];
     }
 

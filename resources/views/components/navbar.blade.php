@@ -91,7 +91,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-56 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
-                            <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการ Private Training</a>
+                            <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการเทรนเนอร์ส่วนตัว</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">Schedule บุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
                              <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
@@ -169,8 +169,8 @@
                 {{-- ปุ่มแจ้งเตือน --}}
                 <div class="relative flex-shrink-0">
                     {{-- ไอคอนกระดิ่ง --}}
-                    <button id="notifBtn" class="relative focus:outline-none hover:text-gray-300 transition cursor-pointer">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button id="notifBtn" class="relative flex h-6 w-6 items-center justify-center leading-none focus:outline-none hover:text-gray-300 transition cursor-pointer">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
@@ -202,12 +202,12 @@
                                 @php
                                   $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
                                     || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
-                                $notifTarget = $isCourtBookingNotification 
+                                $notifTarget = $isCourtBookingNotification
                                     ? route('admin.bookings', [
                                         'status'   => 'approved',
                                         'date'     => now()->format('Y-m-d'),
                                         'court_id' => '',
-                                    ]) 
+                                    ])
                                     : route('notifications.open', $n);
 
                                     // สีและไอคอนตามความหมาย: สำเร็จ / ปฏิเสธ / รอดำเนินการ / ข้อมูลทั่วไป
@@ -252,7 +252,7 @@
                                     };
                                 @endphp
                                 <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3 cursor-pointer transition-colors"
-                                    data-notif-id="{{ $n->id }}"     
+                                    data-notif-id="{{ $n->id }}"
                                     onclick="window.location.href='{{ $notifTarget }}'">
                                     <span class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1 {{ $visual['iconBg'] }} {{ $visual['iconColor'] }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
@@ -404,7 +404,7 @@
                             <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? '' : 'hidden' }}">
-                            <a href="{{ route('admin.private-training.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการ Private Training</a>
+                            <a href="{{ route('admin.private-training.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการเทรนเนอร์ส่วนตัว</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Schedule บุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการคอร์สเรียน</a>
                             <a href="{{ route('admin.packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจ</a>

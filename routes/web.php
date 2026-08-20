@@ -186,6 +186,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::put('/users/{user}/profile', [UserController::class, 'updateProfile'])->name('users.profile.update');
     Route::patch('/users/{user}/membership-type', [UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
     Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
@@ -221,6 +222,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
     Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
+    Route::post('/users/{user}/credit/deduct', [CreditController::class, 'deduct'])->name('credits.deduct');
 
     // คำขอเติมเครดิตที่ผู้ใช้ยื่นเอง (แนบสลิป/แจ้งช่องทางชำระเงิน) — แอดมินตรวจสอบและอนุมัติ/ปฏิเสธ
     Route::get('/credit-topups', [AdminCreditTopupController::class, 'index'])->name('credit-topups.index');
@@ -252,6 +254,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
     Route::delete('packages/{package}', [PackageController::class, 'delete'])->name('packages.delete');
     Route::patch('packages/{package}/toggle-status', [PackageController::class, 'toggleStatus'])->name('packages.toggleStatus');
+
+    // จัดการให้จอง Private Training ได้สูงสุดกี่วัน
+    Route::put('private-training/advance-booking-days', [PrivateTrainingController::class, 'updateAdvanceBookingDays'])
+    ->name('private-training.advance-booking-days.update');
 });
 
 // 6. Password Reset via OTP

@@ -357,7 +357,25 @@ class PrivateTrainingWorkflowTest extends TestCase
             $table->string('membership_type')->default('customer');
             $table->boolean('is_verified')->default(true);
             $table->unsignedBigInteger('credit_balance')->default(0);
+            $table->timestamp('credit_expires_at')->nullable();
+            $table->timestamp('credit_expiry_notified_for')->nullable();
             $table->rememberToken();
+            $table->timestamps();
+        });
+        Schema::create('credit_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('type')->default('topup');
+            $table->unsignedBigInteger('amount');
+            $table->unsignedBigInteger('balance_after');
+            $table->unsignedBigInteger('booking_id')->nullable();
+            $table->unsignedBigInteger('admin_id')->nullable();
+            $table->string('note')->nullable();
+            $table->unsignedBigInteger('private_training_booking_id')->nullable();
+            $table->unsignedBigInteger('package_purchase_id')->nullable();
+            $table->unsignedBigInteger('credit_topup_request_id')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('processed_by_name')->nullable();
             $table->timestamps();
         });
         Schema::create('notifications', function (Blueprint $table) {
