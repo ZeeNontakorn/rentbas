@@ -25,35 +25,39 @@
             <span class="text-sm text-gray-500">{{ $round->confirmedSignups->count() }}/{{ $round->max_players }} คน</span>
         </div>
         <table class="w-full text-sm">
-            <thead>
-                <tr class="text-left text-gray-500 border-b border-gray-100">
-                    <th class="px-5 py-2 font-medium">ลำดับ</th>
-                    <th class="px-5 py-2 font-medium">ชื่อ</th>
-                    <th class="px-5 py-2 font-medium">ประเภท</th>
-                    <th class="px-5 py-2 font-medium">เครดิตที่ใช้</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                @forelse($round->confirmedSignups as $signup)
-                <tr>
-                    <td class="px-5 py-3 text-gray-600">{{ $signup->order_number }}</td>
-                    <td class="px-5 py-3 text-gray-900">{{ $signup->displayName() }}</td>
-                    <td class="px-5 py-3">
-                        <span @class([
-                            'px-2 py-0.5 rounded-full text-xs',
-                            'bg-green-100 text-green-700' => ! $signup->is_reserve,
-                            'bg-amber-100 text-amber-700' => $signup->is_reserve,
-                        ])>
-                            {{ $signup->is_reserve ? 'สำรอง' : 'ตัวจริง' }}
-                        </span>
-                    </td>
-                    <td class="px-5 py-3 text-gray-600">฿{{ number_format($signup->credit_used ?? 0, 2) }}</td>
-                </tr>
-                @empty
-                <tr><td colspan="4" class="px-5 py-6 text-center text-gray-400">ไม่มีคนลงชื่อในรอบนี้</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+    <thead>
+        <tr class="text-left text-gray-500 border-b border-gray-100">
+            <th class="px-5 py-2 font-medium">ลำดับ</th>
+            <th class="px-5 py-2 font-medium">ชื่อ</th>
+            <th class="px-5 py-2 font-medium">ประเภท</th>
+            <th class="px-5 py-2 font-medium">เพิ่มโดย</th>
+            <th class="px-5 py-2 font-medium">เครดิตที่ใช้</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+        @forelse($round->confirmedSignups as $signup)
+        <tr>
+            <td class="px-5 py-3 text-gray-600">{{ $signup->order_number }}</td>
+            <td class="px-5 py-3 text-gray-900">{{ $signup->displayName() }}</td>
+            <td class="px-5 py-3">
+                <span @class([
+                    'px-2 py-0.5 rounded-full text-xs',
+                    'bg-green-100 text-green-700' => ! $signup->is_reserve,
+                    'bg-amber-100 text-amber-700' => $signup->is_reserve,
+                ])>
+                    {{ $signup->is_reserve ? 'สำรอง' : 'ตัวจริง' }}
+                </span>
+            </td>
+            <td class="px-5 py-3 text-gray-600">
+                {{ $signup->addedBy->name ?? $signup->displayName() }}
+            </td>
+            <td class="px-5 py-3 text-gray-600">฿{{ number_format($signup->credit_used ?? 0, 2) }}</td>
+        </tr>
+        @empty
+        <tr><td colspan="5" class="px-5 py-6 text-center text-gray-400">ไม่มีคนลงชื่อในรอบนี้</td></tr>
+        @endforelse
+    </tbody>
+</table>
     </div>
 
 </div>

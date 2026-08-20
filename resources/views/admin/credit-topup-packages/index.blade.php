@@ -74,7 +74,7 @@
         {{-- Add package --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <h2 class="font-medium text-gray-700 text-sm mb-4">เพิ่มแพ็กเกจใหม่</h2>
-            <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-4 gap-3 items-end">
+            <form method="POST" action="{{ route('admin.credit-topup-packages.store') }}" class="grid sm:grid-cols-5 gap-3 items-end">
                 @csrf
                 <input type="hidden" name="sort_order" value="{{ $packages->count() + 1 }}">
 
@@ -117,6 +117,18 @@
                     @enderror
                 </div>
 
+                <div class="relative">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">หมดอายุใน (วัน)</label>
+                    <input type="number" step="1" min="1" max="365" name="expiry_days" value="{{ old('expiry_days') }}" placeholder="เว้นว่าง = ไม่หมดอายุ"
+                           class="no-spinner w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
+                                  {{ $errors->createPackage->has('expiry_days')
+                                      ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
+                                      : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
+                    @error('expiry_days', 'createPackage')
+                        <p class="absolute top-full left-0 text-[11px] text-red-600 mt-1 whitespace-nowrap">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <button type="submit" class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition cursor-pointer">+ เพิ่ม</button>
             </form>
         </div>
@@ -131,6 +143,7 @@
                             <th class="px-6 py-3 font-medium text-center">ป้ายชื่อ</th>
                             <th class="px-6 py-3 font-medium text-center">ราคา</th>
                             <th class="px-6 py-3 font-medium text-center">เครดิตที่ได้</th>
+                            <th class="px-6 py-3 font-medium text-center">หมดอายุ (วัน)</th>
                             <th class="px-6 py-3 font-medium text-center">โบนัส</th>
                             <th class="px-6 py-3 font-medium text-center">แสดงผล</th>
                             <th class="px-6 py-3 font-medium text-right w-32">
@@ -176,6 +189,14 @@
                                         <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </td>
+                                <td class="px-6 py-3 text-center">
+                                    @php $rowExpiryDays = $rowErrors->any() ? old('expiry_days', $pkg->expiry_days) : $pkg->expiry_days; @endphp
+                                    <input form="editPkg{{ $pkg->id }}" type="number" step="1" min="1" max="365" name="expiry_days" value="{{ $rowExpiryDays }}" placeholder="ไม่หมดอายุ"
+                                           class="no-spinner w-24 rounded border px-2 py-1 text-sm text-center {{ $rowErrors->has('expiry_days') ? 'border-red-400 bg-red-50/40' : 'border-gray-200' }}">
+                                    @error('expiry_days', "editPkg{$pkg->id}")
+                                        <p class="text-[11px] text-red-600 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </td>
                                 <td class="px-6 py-3 text-center text-amber-600 font-medium bonus-cell">
                                     @if($pkg->bonus_satang > 0) +฿{{ number_format($pkg->bonus_satang / 100, 0) }} @else — @endif
                                 </td>
@@ -196,7 +217,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
+                            <tr><td colspan="8" class="px-6 py-10 text-center text-gray-400">ยังไม่มีแพ็กเกจ</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -300,6 +321,7 @@
             label: row.querySelector('input[name="label"]'),
             price: row.querySelector('input[name="price"]'),
             credit: row.querySelector('input[name="credit"]'),
+            expiry_days: row.querySelector('input[name="expiry_days"]'),
             is_active: row.querySelector('input[type="checkbox"][name="is_active"]'),
         };
     }
@@ -310,6 +332,7 @@
             label: f.label ? f.label.value : '',
             price: f.price ? f.price.value : '',
             credit: f.credit ? f.credit.value : '',
+            expiry_days: f.expiry_days ? f.expiry_days.value : '',
             is_active: f.is_active ? f.is_active.checked : false,
         };
     }
@@ -348,6 +371,7 @@
         setFieldDirty(f.label, cur.label !== init.label);
         setFieldDirty(f.price, cur.price !== init.price);
         setFieldDirty(f.credit, cur.credit !== init.credit);
+        setFieldDirty(f.expiry_days, cur.expiry_days !== init.expiry_days);
         setFieldDirty(f.is_active, cur.is_active !== init.is_active);
     }
 
@@ -365,6 +389,7 @@
         return cur.label !== init.label
             || cur.price !== init.price
             || cur.credit !== init.credit
+            || cur.expiry_days !== init.expiry_days
             || cur.is_active !== init.is_active;
     }
 

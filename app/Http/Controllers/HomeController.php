@@ -74,20 +74,14 @@ class HomeController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        $upcomingGroupRoundsQuery = GroupRound::with('court')
+        $upcomingGroupRounds = GroupRound::with('court')
             ->withCount(['confirmedSignups as players_count'])
             ->where('status', 'open')
             ->where('play_date', '>=', Carbon::today())
             ->orderBy('play_date')
-            ->orderBy('start_time');
-
-        // E2E fixtures must not be displaced by unrelated local records.
-        // The real landing page still shows at most six upcoming rounds.
-        if (! (app()->environment('e2e') || env('E2E_TESTING', false))) {
-            $upcomingGroupRoundsQuery->take(6);
-        }
-
-        $upcomingGroupRounds = $upcomingGroupRoundsQuery->get();
+            ->orderBy('start_time')
+            ->take(6)
+            ->get();
             return view('home', compact(
                 'courts',
                 'trainingCourses',

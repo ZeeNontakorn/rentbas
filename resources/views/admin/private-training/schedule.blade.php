@@ -106,7 +106,7 @@
                         <option value="work">งาน</option>
                         <option value="leave">ลางาน</option>
                         <option value="school_class">คลาสโรงเรียนบาส</option>
-                        <option value="private_training_manual" data-coach-only>Private Training (กำหนดเอง)</option>
+                        <option value="private_training_manual" data-coach-only>เทรนเนอร์ส่วนตัว (กำหนดเอง)</option>
                     </select>
                 </div>
             </div>

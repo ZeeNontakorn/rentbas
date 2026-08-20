@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>การจอง Private Training ถูกปฏิเสธ</title>
+    <title>การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ</title>
     <style>
         body { font-family: 'Sarabun', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 0; }
         .container { max-width: 560px; margin: 32px auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
@@ -47,7 +47,7 @@
         </div>
 
         <div class="status-bar">
-            <span class="dot"></span><span class="label">การจอง Private Training ถูกปฏิเสธ</span>
+            <span class="dot"></span><span class="label">การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ</span>
         </div>
 
         <div class="body">

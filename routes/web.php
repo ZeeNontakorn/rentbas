@@ -550,9 +550,6 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
     });
 }
 
-// Logout
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
@@ -593,6 +590,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ระบบจัดการผู้ใช้ (User Management)
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::put('/users/{user}/profile', [UserController::class, 'updateProfile'])->name('users.profile.update');
     Route::patch('/users/{user}/membership-type', [UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
     Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
@@ -628,6 +626,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/users/{user}/credit', [CreditController::class, 'show'])->name('credits.show');
     Route::post('/users/{user}/credit/topup', [CreditController::class, 'topup'])->name('credits.topup');
+    Route::post('/users/{user}/credit/deduct', [CreditController::class, 'deduct'])->name('credits.deduct');
 
     // คำขอเติมเครดิตที่ผู้ใช้ยื่นเอง (แนบสลิป/แจ้งช่องทางชำระเงิน) — แอดมินตรวจสอบและอนุมัติ/ปฏิเสธ
     Route::get('/credit-topups', [AdminCreditTopupController::class, 'index'])->name('credit-topups.index');

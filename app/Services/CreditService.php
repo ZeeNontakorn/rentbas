@@ -2,30 +2,42 @@
 
 namespace App\Services;
 
+use App\Mail\CreditExpiringSoonMail;
 use App\Models\Booking;
 use App\Models\CreditTopupRequest;
 use App\Models\CreditTransaction;
+use App\Models\Notification;
 use App\Models\PrivateTrainingBooking;
-use App\Models\PackagePurchase;  
+use App\Models\PackagePurchase;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 
 class CreditService
 {
     /**
+     * เพดานจำนวนวันหมดอายุสูงสุดของเครดิต — ไม่ว่าจะเติมกี่ครั้ง วันหมดอายุจะไม่ถูกขยับออกไปเกินจากวันนี้
+     */
+    const MAX_EXPIRY_DAYS = 365;
+
+    /**
      * แอดมินอนุมัติคำขอเติมเครดิตที่ผู้ใช้ยื่นมาเอง (จากหน้า Top-up + แนบสลิป/แจ้งช่องทางชำระเงิน)
      * เติมเครดิตให้ผู้ใช้จริง พร้อมผูก transaction เข้ากับคำขอนี้ไว้เป็นหลักฐาน และบันทึกว่าใครเป็นผู้อนุมัติ
+     * $expiryDays ต้องระบุเสมอ — ถ้าคำขอมี expiry_days snapshot ไว้จากแพ็กเกจแล้วให้ใช้ค่านั้น
+     * ไม่งั้นแอดมินต้องกรอกตอนอนุมัติ (ดู CreditTopupController::approve)
      */
-    public function approveTopupRequest(CreditTopupRequest $topupRequest, User $admin, ?string $note = null): CreditTransaction
+    public function approveTopupRequest(CreditTopupRequest $topupRequest, User $admin, ?string $note, int $expiryDays): CreditTransaction
     {
         if ($topupRequest->status !== 'pending') {
             throw new RuntimeException('คำขอนี้ถูกดำเนินการไปแล้ว');
         }
 
-        return DB::transaction(function () use ($topupRequest, $admin, $note) {
+        return DB::transaction(function () use ($topupRequest, $admin, $note, $expiryDays) {
             $lockedUser = User::whereKey($topupRequest->user_id)->lockForUpdate()->first();
             $lockedUser->increment('credit_balance', $topupRequest->credit_satang);
+            $this->extendExpiry($lockedUser, $expiryDays);
 
             $tx = CreditTransaction::create([
                 'user_id' => $lockedUser->id,
@@ -35,6 +47,7 @@ class CreditService
                 'admin_id' => $admin->id,
                 'credit_topup_request_id' => $topupRequest->id,
                 'payment_method' => $topupRequest->payment_method,
+                'processed_by_name' => $admin->name,
                 'note' => $note ?? "อนุมัติคำขอเติมเครดิต #{$topupRequest->id} ({$topupRequest->payment_method_label})",
             ]);
 
@@ -68,24 +81,27 @@ class CreditService
     }
 
     /**
-     * แอดมินเติมเครดิตให้ผู้ใช้ (Admin Top-up)
+     * แอดมินเติมเครดิตให้ผู้ใช้ (Admin Top-up) — ไม่ผ่านแพ็กเกจ จึงต้องระบุจำนวนวันหมดอายุเองเสมอ
+     * (ระบบนี้ไม่มีแนวคิด "เครดิตไม่มีวันหมดอายุ" อีกต่อไป)
      */
     public function topup(
         User $user,
         int $amountSatang,
         User $admin,
-        ?string $note = null ,
-        ?string $paymentMethod = null,
-        ?string $processedByName = null,
-    ): CreditTransaction{
+        ?string $note,
+        ?string $paymentMethod,
+        ?string $processedByName,
+        int $expiryDays,
+    ): CreditTransaction {
         if ($amountSatang <= 0) {
             throw new RuntimeException('จำนวนเงินต้องมากกว่า 0');
         }
 
-        return DB::transaction(function () use ($user, $amountSatang, $admin, $note, $paymentMethod, $processedByName) {
+        return DB::transaction(function () use ($user, $amountSatang, $admin, $note, $paymentMethod, $processedByName, $expiryDays) {
             // lockForUpdate กันแอดมิน 2 คนเติมพร้อมกันแล้วยอดเพี้ยน (race condition)
             $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
             $lockedUser->increment('credit_balance', $amountSatang);
+            $this->extendExpiry($lockedUser, $expiryDays);
 
             return CreditTransaction::create([
                 'user_id' => $lockedUser->id,
@@ -107,8 +123,6 @@ class CreditService
      */
     public function deductForBooking(User $user, Booking $booking): CreditTransaction
     {
-        // lockForUpdate: ล็อกแถวผู้ใช้ไว้จนกว่า transaction จะจบ กันกรณีผู้ใช้เปิดหลายแท็บ
-        // แล้วพยายามจ่ายด้วยเครดิตก้อนเดียวกันพร้อมกัน (double-spend)
         $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
 
         if ($lockedUser->credit_balance < $booking->price) {
@@ -129,6 +143,7 @@ class CreditService
 
     /**
      * คืนเครดิต กรณีต้องยกเลิก booking ที่หักเงินไปแล้ว (เช่น แอดมินยกเลิกย้อนหลัง)
+     * ไม่กระทบวันหมดอายุ (credit_expires_at) — แค่คืนยอดเงินที่เคยมีอยู่แล้วกลับเข้ากระเป๋าเดิม
      */
     public function refund(Booking $booking, ?string $note = null): CreditTransaction
     {
@@ -233,5 +248,144 @@ class CreditService
                 'note' => $note ?? "คืนเครดิตค่าแพ็กเกจ #{$purchase->id}",
             ]);
         });
+    }
+
+    /**
+     * แอดมินหักเครดิตของผู้ใช้ด้วยตนเอง (เช่น แก้ไขเติมผิด/เติมเกิน) — หักยอดตรงๆ ไม่กระทบวันหมดอายุ
+     */
+    public function manualDeduct(User $user, int $amountSatang, User $admin, ?string $note = null): CreditTransaction
+    {
+        if ($amountSatang <= 0) {
+            throw new RuntimeException('จำนวนเงินต้องมากกว่า 0');
+        }
+
+        return DB::transaction(function () use ($user, $amountSatang, $admin, $note) {
+            $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
+
+            if ($lockedUser->credit_balance < $amountSatang) {
+                throw new RuntimeException('ยอดเครดิตของผู้ใช้ไม่เพียงพอสำหรับหักตามจำนวนนี้');
+            }
+
+            $lockedUser->decrement('credit_balance', $amountSatang);
+
+            return CreditTransaction::create([
+                'user_id' => $lockedUser->id,
+                'type' => 'deduct',
+                'amount' => $amountSatang,
+                'balance_after' => $lockedUser->fresh()->credit_balance,
+                'admin_id' => $admin->id,
+                'processed_by_name' => $admin->name,
+                'note' => $note ?? 'แอดมินหักเครดิต (แก้ไข/ปรับยอด)',
+            ]);
+        });
+    }
+
+    /**
+     * ขยายวันหมดอายุเครดิตของผู้ใช้ (credit_expires_at) — เติมเครดิตแต่ละครั้งจะขยับวันหมดอายุออกไป
+     * เฉพาะกรณีที่ทำให้ "ช้าลง" กว่าเดิมเท่านั้น (max ของวันเดิมกับวันใหม่ที่คำนวณได้) และห้ามเกิน
+     * MAX_EXPIRY_DAYS วันนับจากวันนี้ไม่ว่ากรณีใด ต้องเรียกด้วย $lockedUser ที่ lockForUpdate ไว้แล้ว
+     * ภายใน transaction เดียวกับการ increment ยอดเครดิต
+     */
+    private function extendExpiry(User $lockedUser, int $days): void
+    {
+        $candidate = now()->addDays(min($days, self::MAX_EXPIRY_DAYS));
+
+        $newExpiry = $lockedUser->credit_expires_at && $lockedUser->credit_expires_at->greaterThan($candidate)
+            ? $lockedUser->credit_expires_at
+            : $candidate;
+
+        $lockedUser->forceFill(['credit_expires_at' => $newExpiry])->save();
+    }
+
+    /**
+     * Scheduled job: หา user ที่เครดิตหมดอายุแล้ว (credit_expires_at ผ่านไปแล้ว และยังมียอดเหลือ)
+     * แล้วเซ็ตยอดเป็น 0 จริง พร้อมบันทึกลง credit_transactions เป็นหลักฐาน — เรียกจาก routes/console.php
+     */
+    public function expireDueCredits(): int
+    {
+        $expiredCount = 0;
+
+        User::query()
+            ->select(['id', 'credit_balance', 'credit_expires_at'])
+            ->whereNotNull('credit_expires_at')
+            ->where('credit_expires_at', '<=', now())
+            ->where('credit_balance', '>', 0)
+            ->chunkById(100, function ($users) use (&$expiredCount): void {
+                $users->each(function (User $user) use (&$expiredCount): void {
+                    DB::transaction(function () use ($user): void {
+                        $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
+
+                        if (! $lockedUser->credit_expires_at || $lockedUser->credit_expires_at->isFuture() || $lockedUser->credit_balance <= 0) {
+                            return;
+                        }
+
+                        $amount = $lockedUser->credit_balance;
+
+                        CreditTransaction::create([
+                            'user_id' => $lockedUser->id,
+                            'type' => 'expire',
+                            'amount' => $amount,
+                            'balance_after' => 0,
+                            'note' => 'เครดิตหมดอายุอัตโนมัติ',
+                        ]);
+
+                        $lockedUser->forceFill([
+                            'credit_balance' => 0,
+                            'credit_expires_at' => null,
+                            'credit_expiry_notified_for' => null,
+                        ])->save();
+                    });
+
+                    $expiredCount++;
+                });
+            });
+
+        return $expiredCount;
+    }
+
+    /**
+     * Scheduled job: แจ้งเตือนผู้ใช้ที่เครดิตใกล้หมดอายุ (ภายใน 7 วัน) ทั้งขึ้นกระดิ่งแจ้งเตือนในเว็บ
+     * และส่งอีเมล — แจ้งครั้งเดียวต่อวันหมดอายุแต่ละรอบ (กันแจ้งซ้ำทุกวันจนกว่าจะหมดอายุจริง)
+     */
+    public function notifyExpiringSoonCredits(): int
+    {
+        $notifiedCount = 0;
+
+        User::query()
+            ->whereNotNull('credit_expires_at')
+            ->where('credit_expires_at', '>', now())
+            ->where('credit_expires_at', '<=', now()->addDays(7))
+            ->where('credit_balance', '>', 0)
+            ->where(function ($query) {
+                $query->whereNull('credit_expiry_notified_for')
+                    ->orWhereColumn('credit_expiry_notified_for', '<>', 'credit_expires_at');
+            })
+            ->chunkById(100, function ($users) use (&$notifiedCount): void {
+                $users->each(function (User $user) use (&$notifiedCount): void {
+                    try {
+                        Notification::create([
+                            'user_id' => $user->id,
+                            'title' => 'เครดิตของคุณใกล้หมดอายุ',
+                            'message' => 'เครดิตคงเหลือ ' . number_format($user->credit_balance / 100, 2)
+                                . ' บาท จะหมดอายุวันที่ ' . $user->credit_expires_at->format('d/m/Y')
+                                . ' กรุณาใช้เครดิตก่อนหมดอายุ',
+                            'action_url' => route('credits.topup.index'),
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error("สร้างแจ้งเตือนในเว็บ (เครดิตใกล้หมดอายุ) ไม่สำเร็จ สำหรับ user_id={$user->id}: " . $e->getMessage());
+                    }
+
+                    try {
+                        Mail::to($user->email)->send(new CreditExpiringSoonMail($user));
+                    } catch (\Throwable $e) {
+                        Log::error("ส่งอีเมลแจ้งเตือนเครดิตใกล้หมดอายุ (user #{$user->id}) ไม่สำเร็จ: " . $e->getMessage());
+                    }
+
+                    $user->forceFill(['credit_expiry_notified_for' => $user->credit_expires_at])->save();
+                    $notifiedCount++;
+                });
+            });
+
+        return $notifiedCount;
     }
 }
