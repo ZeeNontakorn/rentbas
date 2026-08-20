@@ -86,7 +86,9 @@
         }"
         class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200">แก้ไข</button>
         <form action="{{ route('admin.group-sessions.destroy', $s) }}" method="POST" class="inline"
-    onsubmit="return confirm('ลบเทมเพลต &quot;{{ addslashes($s->name) }}&quot; ทิ้งถาวร?\n\nรอบที่เคยเปิดจากเทมเพลตนี้จะไม่หายไป แค่จะไม่ผูกกับเทมเพลตนี้อีกต่อไป');">
+    data-confirm="ลบเทมเพลต &quot;{{ $s->name }}&quot; ทิ้งถาวร? รอบที่เคยเปิดจากเทมเพลตนี้จะไม่หายไป "
+    data-confirm-button-text="ลบเทมเพลต"
+    data-confirm-danger="1">
     @csrf
     @method('DELETE')
     <button class="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg hover:bg-red-100">ลบ</button>

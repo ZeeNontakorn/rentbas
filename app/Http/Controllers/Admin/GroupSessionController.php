@@ -141,23 +141,24 @@ class GroupSessionController extends Controller
     }
 
     /**
-     * แสดงรายละเอียดรอบ + รายชื่อคนลงเล่น เรียงลำดับ 1-25 ตามเวลาจริง
+     * แสดงรายละเอียดรอบ + รายชื่อคนลงเล่น เรียงลำดับ  ตามเวลาจริง
      */
     public function showRound(GroupRound $round)
-    {
-        // เช็คว่ารอบนี้หมดเวลาสละสิทธิ์แล้วหรือยัง ถ้าใช่ให้คืนเครดิตสำรองที่เหลือก่อนแสดงผล
-        $round->processExpiredReserves();
+{
+    $round->processExpiredReserves();
 
-        $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
+    $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
 
-        // รายชื่อสมาชิกที่ยังไม่มีรายการในรอบนี้ สำหรับแอดมินเพิ่มผู้ที่จองผ่าน LINE
-        $members = User::query()
-            ->whereNotIn('id', $round->signups->pluck('user_id')->filter())
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+    $members = User::query()
+        ->whereNotIn(
+            'id',
+            $round->signups()->where('status', 'confirmed')->pluck('user_id')->filter()
+        )
+        ->orderBy('us_name')
+        ->get(['id', 'us_name', 'email', 'phone']);
 
-        return view('admin.group-sessions.round', compact('round', 'members'));
-    }
+    return view('admin.group-sessions.round', compact('round', 'members'));
+}
 
     /**
      * แอดมินเพิ่มคนเข้ารอบด้วยตัวเอง (กรณีลูกค้ายังโอนเงิน/แจ้งผ่านไลน์อยู่)
