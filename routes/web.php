@@ -89,6 +89,9 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('reviews.store');
+    
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
