@@ -107,7 +107,9 @@ export class PrivateTrainingPage {
         const x = columnBox.x + columnBox.width / 2;
         await this.page.mouse.move(x, startBox.y + 3);
         await this.page.mouse.down();
-        await this.page.mouse.move(x, endBox.y + 2, { steps: 12 });
+        // ปล่อยเมาส์ก่อนขอบบนของ slot ปลายเล็กน้อย เพราะ FullCalendar นับ
+        // slot ที่ pointer อยู่เป็นช่วงที่เลือกด้วย (ปล่อยบน 19:00 จะกลายเป็น 19:30)
+        await this.page.mouse.move(x, endBox.y - 2, { steps: 12 });
         await this.page.mouse.up();
 
         const confirmButton = this.page.locator('#private-calendar-confirm-btn');
@@ -130,6 +132,7 @@ export class PrivateTrainingPage {
         await this.showDate(date);
         const column = this.calendar.locator(`.fc-timegrid-col[data-date="${date}"]`).first();
         const lane = this.calendar.locator('.fc-timegrid-slot-lane[data-time="18:00:00"]').first();
+        await lane.scrollIntoViewIfNeeded();
         const [columnBox, laneBox] = await Promise.all([column.boundingBox(), lane.boundingBox()]);
         if (!columnBox || !laneBox) throw new Error('อ่านตำแหน่งวันนี้ในปฏิทินไม่ได้');
         await this.page.mouse.click(columnBox.x + columnBox.width / 2, laneBox.y + 4);

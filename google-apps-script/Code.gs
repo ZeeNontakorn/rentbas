@@ -35,10 +35,22 @@ function doPost(e) {
         payload.screenshotName,
       );
       const folder = getScreenshotFolder_();
-      const file = folder.createFile(blob);
       const screenshotCell = sheet.getRange(testCell.row, screenshotColumn);
-      screenshotCell.setValue(file.getUrl());
 
+      // ลบไฟล์รูปเดิมของ Test Case นี้ก่อน เพื่อไม่ให้ Drive สะสมรูปทุกครั้งที่เทสต์ซ้ำ
+      // เก็บ file id ไว้ใน note ของเซลล์ จึงไม่รบกวนค่ารูปภาพที่แสดงในเซลล์
+      const previousFileId = String(screenshotCell.getNote() || '')
+        .replace(/^PLAYWRIGHT_SCREENSHOT_FILE_ID:/, '')
+        .trim();
+      if (previousFileId) {
+        try {
+          DriveApp.getFileById(previousFileId).setTrashed(true);
+        } catch (ignored) {
+          // ไฟล์อาจถูกลบด้วยมือไปแล้ว ให้การอัปเดตผลเทสต์รอบใหม่ทำงานต่อได้
+        }
+      }
+
+      // ลบรูปแบบวางลอยจาก Script เวอร์ชันเก่าในตำแหน่งเดียวกัน
       sheet.getImages()
         .filter(image => {
           const anchor = image.getAnchorCell();
@@ -46,7 +58,19 @@ function doPost(e) {
         })
         .forEach(image => image.remove());
 
-      sheet.insertImage(blob, screenshotColumn, testCell.row).setWidth(240).setHeight(135);
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      const imageUrl = `https://drive.google.com/uc?export=view&id=${file.getId()}`;
+      const cellImage = SpreadsheetApp.newCellImage()
+        .setSourceUrl(imageUrl)
+        .setAltTextTitle(payload.testId)
+        .setAltTextDescription(`Playwright result: ${payload.status}`)
+        .build();
+
+      screenshotCell
+        .clearContent()
+        .setValue(cellImage)
+        .setNote(`PLAYWRIGHT_SCREENSHOT_FILE_ID:${file.getId()}`);
       sheet.setRowHeight(testCell.row, 145);
       sheet.setColumnWidth(screenshotColumn, 250);
     }
