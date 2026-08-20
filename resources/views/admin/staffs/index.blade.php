@@ -108,14 +108,14 @@
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs overflow-hidden {{ $themeClass }}">
                                             @if($staffProfile?->profile_image)
                                                 <img src="{{ $staffProfile->profile_image_url }}"
-                                                    alt="รูปโปรไฟล์ของ {{ $s->us_name }}"
+                                                    alt="รูปโปรไฟล์ของ {{ $s->name }}"
                                                     class="h-full w-full object-cover">
                                             @else
-                                                <span>{{ mb_strtoupper(mb_substr($s->us_name, 0, 1)) }}</span>
+                                                <span>{{ mb_strtoupper(mb_substr($s->name ?? $s->us_name, 0, 1)) }}</span>
                                             @endif
                                         </div>
                                         <div>
-                                            <p>{{ $s->us_name }}</p>
+                                            <p>{{ $s->name }}</p>
                                             <p class="text-xs text-gray-500 font-normal">{{ $s->email ?? 'ไม่มีอีเมล' }}</p>
                                         </div>
                                     </div>
