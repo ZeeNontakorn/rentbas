@@ -287,9 +287,10 @@
                                 ?? $signup->guest_name
                                 ?? 'ผู้จองภายนอก';
 
-                            $addedByName = $signup->addedBy?->name
-                            ?? $signup->bookedBy?->name
-                            ?? 'ลงชื่อเอง';
+                            $addedByAccount = $signup->addedBy ?? $signup->bookedBy;
+                            $addedByName = $addedByAccount
+                                ? $addedByAccount->name.' ('.$addedByAccount->email.')'
+                                : 'ลงชื่อเอง';
                         @endphp
 
 

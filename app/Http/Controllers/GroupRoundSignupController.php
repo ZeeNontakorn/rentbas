@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -173,6 +174,30 @@ class GroupRoundSignupController extends Controller
                 }
             }
 
+            // แจ้งเตือนผู้จอง (ตัวเอง) ว่าชำระเงินสำเร็จ
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'ชำระเงินจองกลุ่มเล่นบาสสำเร็จ',
+                'message' => 'รอบ "'.$round->title.'" จองได้ '.count($names).' ที่'
+                    .($reserveCount > 0
+                        ? ' (ตัวจริง '.(count($names) - $reserveCount).' ที่ · คิวสำรอง '.$reserveCount.' ที่)'
+                        : ' เป็นตัวจริงทั้งหมด')
+                    .' ยอดชำระ ฿'.number_format($totalCredit, 2),
+                'action_url' => route('group-rounds.my-bookings'),
+                'is_read' => false,
+            ]);
+
+            // แจ้งเตือนแอดมินทุกคนว่ามีคนจองใหม่เข้ามา
+            foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
+                Notification::create([
+                    'user_id' => $adminId,
+                    'title' => 'มีคนจองกลุ่มเล่นบาสใหม่',
+                    'message' => $user->name.' จองรอบ "'.$round->title.'" จำนวน '.count($names).' ที่ ยอดชำระ ฿'.number_format($totalCredit, 2),
+                    'action_url' => route('admin.group-sessions.rounds.show', $round->id),
+                    'is_read' => false,
+                ]);
+            }
+
             $message = $reserveCount > 0
                 ? 'ชำระเงินสำเร็จ! จองได้ '.count($names).' ที่ (เป็นคิวสำรอง '.$reserveCount.' ที่ ที่เหลือเป็นตัวจริง)'
                 : 'ชำระเงินสำเร็จ! จองได้ '.count($names).' ที่เรียบร้อยแล้ว';
@@ -228,6 +253,16 @@ class GroupRoundSignupController extends Controller
             }
 
             $signup->update(['status' => 'cancelled']);
+
+            if ($payerId) {
+                Notification::create([
+                    'user_id' => $payerId,
+                    'title' => 'ยกเลิกการจองกลุ่มเล่นบาสสำเร็จ',
+                    'message' => 'ยกเลิกที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" แล้ว คืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว',
+                    'action_url' => route('group-rounds.my-bookings'),
+                    'is_read' => false,
+                ]);
+            }
 
             if ($wasMainSlot) {
                 $round->promoteNextReserve();

@@ -49,7 +49,10 @@
                 </span>
             </td>
             <td class="px-5 py-3 text-gray-600">
-                {{ $signup->addedBy->name ?? $signup->displayName() }}
+                @php
+                    $addedByAccount = $signup->addedBy ?? $signup->bookedBy;
+                @endphp
+                {{ $addedByAccount ? $addedByAccount->name.' ('.$addedByAccount->email.')' : 'ลงชื่อเอง' }}
             </td>
             <td class="px-5 py-3 text-gray-600">฿{{ number_format($signup->credit_used ?? 0, 2) }}</td>
         </tr>
