@@ -11,7 +11,7 @@ class CreditTopupRequest extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'credit_topup_package_id', 'price_satang', 'credit_satang',
+        'user_id', 'credit_topup_package_id', 'price_satang', 'credit_satang', 'expiry_days',
         'payment_method', 'topper_name', 'slip_path', 'status',
         'approved_by', 'approved_at', 'rejected_reason',
     ];

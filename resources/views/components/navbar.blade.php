@@ -73,24 +73,25 @@
                     </a>
                     <!-- จัดการสนาม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             จัดการสนาม
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
                             <a href="{{ route('admin.courts') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : '' }}">จัดการสนาม</a>
                             <a href="{{ route('admin.pricing.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : '' }}">ตั้งราคา</a>
+                            <a href="{{ route('admin.group-sessions.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.group-sessions.*') ? 'text-orange-500 font-bold' : '' }}">จัดการกลุ่มเล่นบาส</a>
                         </div>
                     </div>
 
                     <!-- การสอน -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             การสอน
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-56 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
-                            <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการ Private Training</a>
+                            <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการเทรนเนอร์ส่วนตัว</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">Schedule บุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
                              <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
@@ -99,7 +100,7 @@
 
                     <!-- รายงานและภาพรวม -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('history', 'admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('history', 'admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             รายงานและภาพรวม
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -110,7 +111,7 @@
                     </div>
                     <!-- เติมเครดิต -->
                      <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                         เติมเครดิต
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -128,9 +129,13 @@
                         จองสนาม
                     </a>
 
+                    <a href="{{ route('group-rounds.my-bookings') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('group-rounds.my-bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        กลุ่มเล่นบาส
+                    </a>
+
                     <!-- เทรนเนอร์ส่วนตัว สำหรับ User -->
                     @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
-                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        <a href="{{ route('private-training.my-schedule') }}" class="flex items-center text-sm whitespace-nowrap hover:text-orange-500 transition flex-shrink-0 {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                             ตารางงาน
                         </a>
                     @elseif($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true))
@@ -164,8 +169,8 @@
                 {{-- ปุ่มแจ้งเตือน --}}
                 <div class="relative flex-shrink-0">
                     {{-- ไอคอนกระดิ่ง --}}
-                    <button id="notifBtn" class="relative focus:outline-none hover:text-gray-300 transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button id="notifBtn" class="relative flex h-6 w-6 items-center justify-center leading-none focus:outline-none hover:text-gray-300 transition cursor-pointer">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
@@ -185,7 +190,7 @@
                             </span>
                             <form class="mark-all-read-form" method="POST" action="{{ route('notifications.readAll') }}">
                                 @csrf
-                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium">อ่านแล้วทั้งหมด</button>
+                                <button type="submit" class="text-[11px] text-orange-400 hover:text-orange-300 font-medium cursor-pointer">อ่านแล้วทั้งหมด</button>
                             </form>
                         </div>
 
@@ -195,9 +200,15 @@
                             @foreach($notifications as $n)
                             {{-- แต่ละรายการแจ้งเตือน: กดที่การ์ดเพื่อไปดูรายละเอียด --}}
                                 @php
-                                    $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
-                                        || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
-                                    $notifTarget = $isCourtBookingNotification ? null : route('notifications.open', $n);
+                                  $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
+                                    || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
+                                $notifTarget = $isCourtBookingNotification
+                                    ? route('admin.bookings', [
+                                        'status'   => 'approved',
+                                        'date'     => now()->format('Y-m-d'),
+                                        'court_id' => '',
+                                    ])
+                                    : route('notifications.open', $n);
 
                                     // สีและไอคอนตามความหมาย: สำเร็จ / ปฏิเสธ / รอดำเนินการ / ข้อมูลทั่วไป
                                     $visualType = $n->visualType();
@@ -241,7 +252,7 @@
                                     };
                                 @endphp
                                 <div class="notif-item w-full p-4 border-b border-gray-700/80 {{ $visual['border'] }} {{ $visual['surface'] }} flex items-start gap-3 cursor-pointer transition-colors"
-                                    data-notif-id="{{ $n->id }}"     
+                                    data-notif-id="{{ $n->id }}"
                                     onclick="window.location.href='{{ $notifTarget }}'">
                                     <span class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1 {{ $visual['iconBg'] }} {{ $visual['iconColor'] }}">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $visual['path'] }}"></path></svg>
@@ -281,9 +292,9 @@
                 <!-- Divider (ใช้ร่วมกันทุก role: name dropdown pattern) -->
                 <div class="h-6 w-px bg-gray-600 mx-1 2xl:mx-2 flex-shrink-0"></div>
                 <div class="relative flex-shrink-0">
-                    <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap">
-                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->name }}">
-                        {{ auth()->user()->name }}
+                    <button id="adminMenuBtn" class="flex items-center hover:text-orange-500 transition text-gray-300 focus:outline-none whitespace-nowrap cursor-pointer">
+                    <span class="block max-w-[10rem] truncate" title="{{ auth()->user()->us_name }}">
+                        {{ auth()->user()->us_name }}
                     </span>
                     <svg class="w-4 h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -292,7 +303,7 @@
                     <div id="adminMenuDropdown" class="hidden absolute right-0 mt-4 w-56 bg-gray-800 text-gray-100 rounded-xl shadow-lg z-50 border border-gray-700 overflow-hidden">
                         <div class="px-4 py-3 border-b border-gray-700 bg-gray-900/50">
                             <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
-                            <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                            <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                         </div>
                         @if($isAdminLike)
                             <a href="{{ route('admin.users.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
@@ -326,12 +337,12 @@
 
                 {{-- credit --}}
                 @if($isAdminLike)
-                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
                         {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                     </button>
                 @else
-                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap"
+                    <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('credits.topup.index') }}'">
                         {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
                     </button>
@@ -376,31 +387,49 @@
                     <a href="{{ route('home') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('home') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         หน้าแรก
                     </a>
-                    <a href="{{ route('admin.courts') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการสนาม
-                    </a>
-                    <a href="{{ route('admin.bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการการจอง
-                    </a>
-                    <a href="{{ route('admin.private-training.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการ Private Training
-                    </a>
-                    <a href="{{ route('admin.private-schedule.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        Schedule บุคลากร
-                    </a>
-                    <a href="{{ route('admin.pricing.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ตั้งราคา
-                    </a>
-                    <a href="{{ route('history') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        ดูประวัติการจอง
-                    </a>
-                    <a href="{{ route('admin.courses') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        จัดการคอร์สเรียน
-                    </a>
-
-                    <a href="{{ route('admin.dashboard') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
-                        Dashboard
-                    </a>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? 'true' : 'false' }}">
+                            จัดการสนาม
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.courts', 'admin.pricing.*', 'admin.group-sessions.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.courts') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courts') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการสนาม</a>
+                            <a href="{{ route('admin.pricing.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.pricing.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ตั้งราคา</a>
+                            <a href="{{ route('admin.group-sessions.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.group-sessions.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการกลุ่มเล่นบาส</a>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? 'true' : 'false' }}">
+                            การสอน
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.private-training.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการเทรนเนอร์ส่วนตัว</a>
+                            <a href="{{ route('admin.private-schedule.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Schedule บุคลากร</a>
+                            <a href="{{ route('admin.courses') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการคอร์สเรียน</a>
+                            <a href="{{ route('admin.packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจ</a>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('history', 'admin.dashboard') ? 'true' : 'false' }}">
+                            รายงานและภาพรวม
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('history', 'admin.dashboard') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('history', 'admin.dashboard') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.dashboard') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Dashboard</a>
+                            <a href="{{ route('history') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ดูประวัติการจอง</a>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800" data-mobile-nav-dropdown>
+                        <button type="button" class="mobile-nav-dropdown-btn flex w-full items-center justify-between py-2 text-left text-sm text-gray-300 hover:text-orange-500 transition" aria-expanded="{{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'true' : 'false' }}">
+                            เติมเครดิต
+                            <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
+                        </button>
+                        <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? '' : 'hidden' }}">
+                            <a href="{{ route('admin.credit-topup-packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topup-packages.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">แพ็กเกจเครดิต</a>
+                            <a href="{{ route('admin.credit-topups.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">คำขอเติมเครดิต</a>
+                        </div>
+                    </div>
 
                 </div>
             @else
@@ -410,6 +439,9 @@
                     </a>
                     <a href="{{ route('booking.index') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('booking.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
                         จองสนาม
+                    </a>
+                    <a href="{{ route('group-rounds.my-bookings') }}" class="py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('group-rounds.my-bookings') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
+                        กลุ่มเล่นบาส
                     </a>
                     @if($user->role === 'staff' && in_array($user->membership_type, ['coach', 'court_assistant'], true))
                         <a href="{{ route('private-training.my-schedule') }}" class="flex items-center hover:text-orange-500 transition {{ request()->routeIs('private-training.my-schedule') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">
@@ -458,7 +490,7 @@
             @if($isAdminLike)
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
-                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                     <div class="flex flex-col">
                         <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
@@ -470,7 +502,7 @@
             @else
                 <div class="border-t border-gray-800 pt-2 mt-1">
                     <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
-                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                     <div class="flex flex-col">
                         <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
                     </div>
@@ -486,22 +518,20 @@
         @endauth
 
         @guest
-            <div class="flex flex-col py-2">
-                <a href="{{ route('login') }}" class="py-2 flex items-center text-gray-300 hover:text-orange-500 transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5.121 17.804A12.055 12.055 0 0112 15c2.21 0 4.21.635 5.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Login
-                </a>
-                <a href="{{ route('register') }}" class="py-2 flex items-center text-gray-300 hover:text-orange-500 transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 21v-2c0-2.21 3.58-4 6-4s6 1.79 6 4v2H6z"></path>
-                    </svg>
-                    Register
-                </a>
-            </div>
+            <a href="{{ route('login') }}" class="flex items-center hover:text-gray-300 transition mt-3">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                </svg>
+                เข้าสู่ระบบ
+            </a>
+            <a href="{{ route('register') }}" class="flex items-center hover:text-gray-300 transition mt-3">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                สมัครสมาชิก
+            </a>
         @endguest
     </div>
 
@@ -520,6 +550,30 @@
         const mobileMenu = document.getElementById('mobileMenu');
         const mobileMenuIconOpen = document.getElementById('mobileMenuIconOpen');
         const mobileMenuIconClose = document.getElementById('mobileMenuIconClose');
+
+        // Accordion สำหรับเมนูกลุ่มบนมือถือ
+        const mobileNavDropdowns = document.querySelectorAll('[data-mobile-nav-dropdown]');
+        mobileNavDropdowns.forEach((menu) => {
+            const button = menu.querySelector('.mobile-nav-dropdown-btn');
+            const dropdown = menu.querySelector('.mobile-nav-dropdown');
+            const icon = button?.querySelector('svg');
+
+            button?.addEventListener('click', () => {
+                const isOpen = !dropdown?.classList.contains('hidden');
+
+                mobileNavDropdowns.forEach((otherMenu) => {
+                    if (otherMenu === menu) return;
+
+                    otherMenu.querySelector('.mobile-nav-dropdown')?.classList.add('hidden');
+                    otherMenu.querySelector('.mobile-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                    otherMenu.querySelector('svg')?.classList.remove('rotate-180');
+                });
+
+                dropdown?.classList.toggle('hidden', isOpen);
+                button.setAttribute('aria-expanded', String(!isOpen));
+                icon?.classList.toggle('rotate-180', !isOpen);
+            });
+        });
 
         // Dropdown ของเมนูผู้ดูแลในแถบหลัก
         const adminNavDropdowns = document.querySelectorAll('[data-admin-nav-dropdown]');
@@ -571,6 +625,13 @@
                 if (!menu.contains(e.target)) {
                     menu.querySelector('.admin-nav-dropdown')?.classList.add('hidden');
                     menu.querySelector('.admin-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                }
+            });
+            mobileNavDropdowns.forEach((menu) => {
+                if (!menu.contains(e.target) && !mobileMenu?.contains(e.target)) {
+                    menu.querySelector('.mobile-nav-dropdown')?.classList.add('hidden');
+                    menu.querySelector('.mobile-nav-dropdown-btn')?.setAttribute('aria-expanded', 'false');
+                    menu.querySelector('svg')?.classList.remove('rotate-180');
                 }
             });
         });

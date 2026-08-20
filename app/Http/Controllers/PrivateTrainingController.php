@@ -15,12 +15,14 @@ use App\Models\PromotionPackage;
 use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
 use App\Services\CourtAvailabilityService;
+use App\Services\PrivateTrainingBookingLifecycleService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class PrivateTrainingController extends Controller
 {
@@ -32,10 +34,13 @@ class PrivateTrainingController extends Controller
     public function __construct(
         protected CalendarEventOccurrenceService $calendarOccurrences,
         protected CourtAvailabilityService $courtAvailability,
+        protected PrivateTrainingBookingLifecycleService $bookingLifecycle,
     ) {}
 
     public function index(Request $request)
     {
+        $this->bookingLifecycle->expireUnprocessedBookings();
+
         $search = $request->query('search');
 
         $hasValidPackage = PackagePurchase::where('user_id', $request->user()->id)
@@ -44,6 +49,12 @@ class PrivateTrainingController extends Controller
             ->where(function ($q) {
                 $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
             })
+            ->exists();
+
+        // มีแพ็กเกจ Private Training ที่เปิดขายอยู่ในระบบเลยไหม (ไม่ผูกกับ user คนใดคนหนึ่ง)
+        // ใช้เช็คว่าควรให้ปุ่ม "ซื้อแพ็กเกจ" กดไปที่ไหนได้จริงหรือไม่
+        $hasAnyPackagesInSystem = PromotionPackage::where('is_active', true)
+            ->where('category', 'private')
             ->exists();
 
         $myRequests = PrivateTrainingBooking::with('coach')
@@ -63,10 +74,10 @@ class PrivateTrainingController extends Controller
                 ->where('membership_type', 'coach')
                 ->with('staffProfile')
                 ->when($search, fn ($q) => $q->where(
-                    fn ($qq) => $qq->where('name', 'like', "%{$search}%")
+                    fn ($qq) => $qq->where('us_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                 ))
-                ->orderBy('name')
+                ->orderBy('us_name')
                 ->get()
             : collect();
 
@@ -76,15 +87,18 @@ class PrivateTrainingController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches'));
+        return view('private-training.index', compact('coaches', 'search', 'myRequests', 'hasValidPackage', 'canViewCoaches', 'hasAnyPackagesInSystem'));
     }
 
     public function show(User $coach)
     {
+        $this->bookingLifecycle->expireUnprocessedBookings();
         $this->assertIsCoach($coach);
 
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
         $today = now()->toDateString();
-        $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString();
+        $maxDate = now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString();
 
         $myUpcoming = PrivateTrainingBooking::with('courtAssistant')
             ->where('coach_id', $coach->id)
@@ -113,7 +127,7 @@ class PrivateTrainingController extends Controller
             ->orderBy('label')
             ->get();
 
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }
@@ -191,7 +205,7 @@ class PrivateTrainingController extends Controller
             ->map(function (PrivateTrainingBooking $booking) use ($request, $viewerIsCoach) {
                 $mine = $booking->user_id === $request->user()->id;
                 $title = $viewerIsCoach
-                    ? 'Private: '.$booking->user->name
+                    ? 'Private: '.$booking->user->us_name
                     : ($mine ? 'คำขอของคุณ' : 'ไม่ว่าง');
                 $color = $mine
                     ? match ($booking->status) {
@@ -216,14 +230,14 @@ class PrivateTrainingController extends Controller
                         'status' => $mine ? $booking->status : null,
                         'statusKey' => $mine ? $booking->status : null,
                         'statusLabel' => $mine ? $this->statusLabel($booking->status) : null,
-                        'customerName' => $mine ? $booking->user->name : null,
+                        'customerName' => $mine ? $booking->user->us_name : null,
                         'customerEmail' => $mine ? $booking->user->email : null,
                         'customerPhone' => $mine ? $booking->user->phone : null,
-                        'coachName' => $mine ? $booking->coach->name : null,
+                        'coachName' => $mine ? $booking->coach->us_name : null,
                         'court' => $mine && $booking->court
                             ? $booking->court->name.($booking->courtSection ? ' — '.$booking->courtSection->name : '')
                             : null,
-                        'assistantName' => $mine ? $booking->courtAssistant?->name : null,
+                        'assistantName' => $mine ? $booking->courtAssistant?->us_name : null,
                         'packageName' => $mine ? $booking->packagePurchase?->package?->name : null,
                         'note' => $mine ? $booking->note : null,
                         'unavailableReason' => $mine ? null : 'ช่วงเวลานี้มีรายการ Private Training แล้ว',
@@ -248,14 +262,17 @@ class PrivateTrainingController extends Controller
 
     public function store(Request $request)
     {
+        $this->bookingLifecycle->expireUnprocessedBookings();
+
         $data = $request->validate([
             'coach_id' => ['required', 'integer', 'exists:users,id'],
             'date' => [
                 'required', 'date', 'after_or_equal:today',
-                'before_or_equal:'.now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString(),
+                'before_or_equal:'.now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString(),
             ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'participant_count' => ['required', 'integer', 'min:1', 'max:6'],
             'note' => ['nullable', 'string', 'max:500'],
             'package_purchase_id' => ['required', 'integer', 'exists:package_purchases,id'],
             'assistant_requested' => ['required', 'boolean'],
@@ -296,22 +313,37 @@ class PrivateTrainingController extends Controller
         $endDb = $data['end_time'].':00';
 
         $result = DB::transaction(function () use ($coach, $date, $startDb, $endDb, $request, $data) {
-            User::whereKey($coach->id)->lockForUpdate()->firstOrFail();
+        User::whereKey($coach->id)->lockForUpdate()->firstOrFail();
 
-            // ล็อกแพ็กเกจที่ลูกค้าเลือกเอง ต้องเป็นของ user นี้จริง และยังใช้ได้อยู่ ณ ขณะนี้
-            $packagePurchase = PackagePurchase::where('id', $data['package_purchase_id'])
-                ->where('user_id', $request->user()->id)
-                ->where('status', 'approved')
-                ->where('remaining_use', '>', 0)
-                ->where(function ($q) {
-                    $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
-                })
-                ->lockForUpdate()
-                ->first();
+        // ล็อกแพ็กเกจที่ลูกค้าเลือกเอง ต้องเป็นของ user นี้จริง และยังใช้ได้อยู่ ณ ขณะนี้
+        $packagePurchase = PackagePurchase::with('package')
+            ->where('id', $data['package_purchase_id'])
+            ->where('user_id', $request->user()->id)
+            ->where('status', 'approved')
+            ->where('remaining_use', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('expired_at')->orWhere('expired_at', '>', now());
+            })
+            ->lockForUpdate()
+            ->first();
 
-            if (! $packagePurchase) {
-                return 'แพ็กเกจที่เลือกไม่สามารถใช้ได้แล้ว (อาจถูกใช้หมดหรือหมดอายุไปแล้ว) กรุณาเลือกแพ็กเกจอื่น';
-            }
+        if (! $packagePurchase) {
+            return 'แพ็กเกจที่เลือกไม่สามารถใช้ได้แล้ว (อาจถูกใช้หมดหรือหมดอายุไปแล้ว) กรุณาเลือกแพ็กเกจอื่น';
+        }
+        $usableDays = $packagePurchase->package->usable_days ?? [];
+        $bookingDayKey = strtolower(Carbon::parse($date)->format('D')); // mon, tue, wed, thu, fri, sat, sun
+
+        if (! empty($usableDays) && ! in_array($bookingDayKey, $usableDays, true)) {
+            return 'แพ็กเกจที่เลือกไม่สามารถใช้จองในวันนี้ได้ กรุณาเลือกแพ็กเกจอื่นหรือเปลี่ยนวันที่';
+        }
+
+        // เช็ควันที่ใช้แพ็กเกจได้ — ว่าง = ใช้ได้ทุกวัน, ถ้าระบุไว้ต้องมีวันที่จองอยู่ในรายการ
+        $usableDays = $packagePurchase->package->usable_days ?? [];
+        $bookingDayKey = strtolower(Carbon::parse($date)->format('D'));
+
+        if (! empty($usableDays) && ! in_array($bookingDayKey, $usableDays, true)) {
+            return 'แพ็กเกจที่เลือกไม่สามารถใช้จองในวันนี้ได้ กรุณาเลือกแพ็กเกจอื่นหรือเปลี่ยนวันที่';
+        }
 
             $isBusy = Availability::where('user_id', $coach->id)
                 ->whereDate('date', $date)
@@ -331,14 +363,6 @@ class PrivateTrainingController extends Controller
                 return 'ช่วงเวลานี้โค้ชมีกำหนดการใน Calendar แล้ว กรุณาเลือกช่วงเวลาอื่น';
             }
 
-            $overlap = PrivateTrainingBooking::overlapping($coach->id, $date, $startDb, $endDb)
-                ->lockForUpdate()
-                ->exists();
-
-            if ($overlap) {
-                return 'ช่วงเวลานี้มีการจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น';
-            }
-
             $assistant = null;
             if ((bool) $data['assistant_requested']) {
                 $assistant = User::query()
@@ -353,10 +377,19 @@ class PrivateTrainingController extends Controller
                 }
             }
 
+            $overlap = PrivateTrainingBooking::overlapping($coach->id, $date, $startDb, $endDb)
+                ->lockForUpdate()
+                ->exists();
+
+            if ($overlap) {
+                return 'ช่วงเวลานี้มีการจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น';
+            }
+
             $packagePurchase->decrement('remaining_use');
 
             return PrivateTrainingBooking::create([
                 'user_id' => $request->user()->id,
+                'participant_count' => $data['participant_count'],
                 'coach_id' => $coach->id,
                 'assistant_requested' => (bool) $data['assistant_requested'],
                 'court_assistant_id' => $assistant?->id,
@@ -376,11 +409,11 @@ class PrivateTrainingController extends Controller
 
         $timeLabel = $this->formatTimeRange($data['start_time'], $data['end_time']);
         $assistantLine = $result->court_assistant_id
-            ? "\nผู้ช่วยสนาม: {$result->courtAssistant->name}"
+            ? "\nผู้ช่วยสนาม: {$result->courtAssistant->us_name}"
             : '';
         $this->notifyAdmins(
             'คำขอจองเทรนเนอร์ส่วนตัวใหม่',
-            "คุณ {$request->user()->name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->name} |วันที่ {$date}\nเวลา {$timeLabel}{$assistantLine}",
+            "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}\nผู้เข้าร่วม {$data['participant_count']} คน{$assistantLine}",
             route('admin.private-training.index', ['status' => 'pending']),
         );
 
@@ -391,23 +424,43 @@ class PrivateTrainingController extends Controller
     {
         abort_unless($privateTrainingBooking->user_id === $request->user()->id, 403);
 
-        if (! in_array($privateTrainingBooking->status, ['pending', 'awaiting_court'], true)) {
-            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถยกเลิกได้']);
-        }
-
-        if ($privateTrainingBooking->isStarted()) {
-            return back()->withErrors(['status' => 'ไม่สามารถยกเลิกรายการที่ถึงเวลาแล้วได้']);
-        }
-
-        DB::transaction(function () use ($privateTrainingBooking) {
+        $result = DB::transaction(function () use ($request, $privateTrainingBooking): string {
             if ($privateTrainingBooking->package_purchase_id) {
                 PackagePurchase::whereKey($privateTrainingBooking->package_purchase_id)
                     ->lockForUpdate()
-                    ->increment('remaining_use');
+                    ->first();
             }
 
-            $privateTrainingBooking->update(['status' => 'cancelled']);
-        });
+            $booking = PrivateTrainingBooking::whereKey($privateTrainingBooking->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless($booking->user_id === $request->user()->id, 403);
+
+            if (! in_array($booking->status, ['pending', 'awaiting_court'], true)) {
+                return 'invalid_status';
+            }
+
+            if ($booking->isStarted()) {
+                $this->bookingLifecycle->restorePackageUse($booking);
+                $booking->update(['status' => 'expired']);
+
+                return 'started';
+            }
+
+            $this->bookingLifecycle->restorePackageUse($booking);
+            $booking->update(['status' => 'cancelled']);
+
+            return 'cancelled';
+        }, 3);
+
+        if ($result === 'invalid_status') {
+            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถยกเลิกได้']);
+        }
+
+        if ($result === 'started') {
+            return back()->withErrors(['status' => 'รายการนี้เลยเวลาเริ่มแล้ว ระบบคืนสิทธิ์แพ็กเกจให้เรียบร้อย']);
+        }
 
         return back()->with('success', 'ยกเลิกคำขอจองเรียบร้อย');
     }
@@ -417,6 +470,8 @@ class PrivateTrainingController extends Controller
      ===================================================================== */
     public function adminIndex(Request $request)
     {
+        $this->bookingLifecycle->expireUnprocessedBookings();
+
         $status = $request->query('status', 'pending');
 
         $bookings = PrivateTrainingBooking::with(['user', 'coach', 'court', 'courtSection', 'courtAssistant'])
@@ -435,7 +490,9 @@ class PrivateTrainingController extends Controller
             // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
-        return view('admin.private-training.index', compact('bookings', 'status'));
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
+        return view('admin.private-training.index', compact('bookings', 'status', 'advanceBookingDays'));
     }
 
     public function availableAssistants(Request $request): JsonResponse
@@ -452,8 +509,8 @@ class PrivateTrainingController extends Controller
         $assistants = User::query()
             ->where('role', 'staff')
             ->where('membership_type', 'court_assistant')
-            ->orderBy('name')
-            ->get(['id', 'name'])
+            ->orderBy('us_name')
+            ->get(['id', 'us_name'])
             ->filter(fn (User $assistant) => $this->assistantIsAvailable(
                 $assistant,
                 $data['date'],
@@ -462,7 +519,7 @@ class PrivateTrainingController extends Controller
                 isset($data['ignore_booking_id']) ? (int) $data['ignore_booking_id'] : null,
             ))
             ->values()
-            ->map(fn (User $assistant) => ['id' => $assistant->id, 'name' => $assistant->name]);
+            ->map(fn (User $assistant) => ['id' => $assistant->id, 'name' => $assistant->us_name]);
 
         return response()->json(['assistants' => $assistants]);
     }
@@ -486,32 +543,49 @@ class PrivateTrainingController extends Controller
 
     public function approve(PrivateTrainingBooking $privateTrainingBooking)
     {
-        if ($error = $this->checkIfNotPending($privateTrainingBooking)) {
-            return $error;
+        $error = DB::transaction(function () use ($privateTrainingBooking): ?string {
+            User::whereKey($privateTrainingBooking->coach_id)->lockForUpdate()->firstOrFail();
+            if ($privateTrainingBooking->package_purchase_id) {
+                PackagePurchase::whereKey($privateTrainingBooking->package_purchase_id)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            $booking = PrivateTrainingBooking::whereKey($privateTrainingBooking->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($booking->status !== 'pending') {
+                return 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถแก้ไขได้';
+            }
+
+            if ($booking->isStarted()) {
+                $this->bookingLifecycle->restorePackageUse($booking);
+                $booking->update(['status' => 'expired']);
+
+                return 'รายการนี้เลยเวลาเริ่มแล้ว ระบบคืนสิทธิ์แพ็กเกจให้เรียบร้อย';
+            }
+
+            if ($message = $this->coachConflictMessage($booking)) {
+                return $message;
+            }
+
+            $booking->update(['status' => 'awaiting_court']);
+
+            return null;
+        }, 3);
+
+        if ($error) {
+            return back()->withErrors(['status' => $error]);
         }
 
-        // overlapping() เป็น Local Scope ที่นิยามไว้ในโมเดล ช่วยลดความซ้ำซ้อนของการเขียน Query หาเวลาที่ทับซ้อน
-        $overlap = PrivateTrainingBooking::overlapping(
-            $privateTrainingBooking->coach_id,
-            $privateTrainingBooking->date->toDateString(),
-            $privateTrainingBooking->start_time,
-            $privateTrainingBooking->end_time
-        )
-            ->whereIn('status', ['awaiting_court', 'confirmed'])
-            ->where('id', '!=', $privateTrainingBooking->id)
-            ->exists();
-
-        if ($overlap) {
-            return back()->withErrors(['status' => 'ไม่สามารถอนุมัติได้ เนื่องจากมีรายการอื่นที่อนุมัติแล้วทับซ้อนช่วงเวลานี้']);
-        }
-
-        $privateTrainingBooking->update(['status' => 'awaiting_court']);
+        $privateTrainingBooking->refresh();
 
         $timeLabel = $this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time);
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'คำขอ Private Training ผ่านการพิจารณา',
-            "คำขอกับโค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')}\nเวลา {$timeLabel}\nกำลังรอแอดมินจัดสนาม",
+            "คำขอกับโค้ช {$privateTrainingBooking->coach->us_name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')}\nเวลา {$timeLabel}\nกำลังรอแอดมินจัดสนาม",
             route('private-training.index'),
         );
 
@@ -535,11 +609,32 @@ class PrivateTrainingController extends Controller
         ]);
 
         $error = DB::transaction(function () use ($request, $privateTrainingBooking, $data) {
+            User::whereKey($privateTrainingBooking->coach_id)->lockForUpdate()->firstOrFail();
+            if ($privateTrainingBooking->package_purchase_id) {
+                PackagePurchase::whereKey($privateTrainingBooking->package_purchase_id)
+                    ->lockForUpdate()
+                    ->first();
+            }
+            if (! empty($data['court_assistant_id'])) {
+                User::whereKey($data['court_assistant_id'])->lockForUpdate()->firstOrFail();
+            }
+
             $booking = PrivateTrainingBooking::whereKey($privateTrainingBooking->id)
                 ->lockForUpdate()
                 ->firstOrFail();
             if ($booking->status !== 'awaiting_court') {
                 return 'รายการนี้ถูกดำเนินการไปแล้ว';
+            }
+
+            if ($booking->isStarted()) {
+                $this->bookingLifecycle->restorePackageUse($booking);
+                $booking->update(['status' => 'expired']);
+
+                return 'รายการนี้เลยเวลาเริ่มแล้ว ระบบคืนสิทธิ์แพ็กเกจให้เรียบร้อย';
+            }
+
+            if ($message = $this->coachConflictMessage($booking)) {
+                return $message;
             }
 
             $section = CourtSection::with('court')->findOrFail($data['court_section_id']);
@@ -623,12 +718,12 @@ class PrivateTrainingController extends Controller
 
         $privateTrainingBooking->refresh()->load(['coach', 'court', 'courtSection', 'courtAssistant', 'user']);
         $assistantLine = $privateTrainingBooking->courtAssistant
-            ? "\nผู้ช่วยสนาม {$privateTrainingBooking->courtAssistant->name}"
+            ? "\nผู้ช่วยสนาม {$privateTrainingBooking->courtAssistant->us_name}"
             : '';
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'ยืนยันการจอง Private Training แล้ว',
-            "โค้ช {$privateTrainingBooking->coach->name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
+            "โค้ช {$privateTrainingBooking->coach->us_name} วันที่ {$privateTrainingBooking->date->format('d/m/Y')} เวลา {$this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time)}\nสนาม {$privateTrainingBooking->court->name} — {$privateTrainingBooking->courtSection->name}{$assistantLine}\nจัดสนามเรียบร้อยแล้ว ไม่มีการหักเครดิตเพิ่ม",
             route('private-training.index'),
         );
 
@@ -641,9 +736,8 @@ class PrivateTrainingController extends Controller
                     ->send(new PrivateTrainingConfirmedMail($privateTrainingBooking));
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('ส่งอีเมลยืนยันการจองให้ลูกค้าไม่สำเร็จ: ' . $e->getMessage());
+            Log::error('ส่งอีเมลยืนยันการจองให้ลูกค้าไม่สำเร็จ: '.$e->getMessage());
         }
-
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
@@ -656,30 +750,54 @@ class PrivateTrainingController extends Controller
 
     public function reject(Request $request, PrivateTrainingBooking $privateTrainingBooking)
     {
-        if (! in_array($privateTrainingBooking->status, ['pending', 'awaiting_court'], true)) {
-            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถปฏิเสธได้']);
-        }
-
         $data = $request->validate(['reject_reason' => ['required', 'string', 'max:500']]);
 
-        DB::transaction(function () use ($privateTrainingBooking, $data) {
+        $result = DB::transaction(function () use ($privateTrainingBooking, $data): string {
             if ($privateTrainingBooking->package_purchase_id) {
                 PackagePurchase::whereKey($privateTrainingBooking->package_purchase_id)
                     ->lockForUpdate()
-                    ->increment('remaining_use');
+                    ->first();
             }
 
-            $privateTrainingBooking->update([
+            $booking = PrivateTrainingBooking::whereKey($privateTrainingBooking->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! in_array($booking->status, ['pending', 'awaiting_court'], true)) {
+                return 'invalid_status';
+            }
+
+            if ($booking->isStarted()) {
+                $this->bookingLifecycle->restorePackageUse($booking);
+                $booking->update(['status' => 'expired']);
+
+                return 'started';
+            }
+
+            $this->bookingLifecycle->restorePackageUse($booking);
+            $booking->update([
                 'status' => 'rejected',
                 'reject_reason' => $data['reject_reason'],
             ]);
-        });
+
+            return 'rejected';
+        }, 3);
+
+        if ($result === 'invalid_status') {
+            return back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถปฏิเสธได้']);
+        }
+
+        if ($result === 'started') {
+            return back()->withErrors(['status' => 'รายการนี้เลยเวลาเริ่มแล้ว ระบบคืนสิทธิ์แพ็กเกจให้เรียบร้อย']);
+        }
+
+        $privateTrainingBooking->refresh();
 
         $timeLabel = $this->formatTimeRange($privateTrainingBooking->start_time, $privateTrainingBooking->end_time);
         $this->notifyUser(
             $privateTrainingBooking->user_id,
             'การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ',
-            "การจองกับโค้ช {$privateTrainingBooking->coach->name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
+            "การจองกับโค้ช {$privateTrainingBooking->coach->us_name} |วันที่ {$privateTrainingBooking->date}\nเวลา {$timeLabel}\nถูกปฏิเสธ — เหตุผล: {$data['reject_reason']}",
             route('private-training.index'),
         );
 
@@ -689,10 +807,21 @@ class PrivateTrainingController extends Controller
                     ->send(new PrivateTrainingRejectedMail($privateTrainingBooking, $data['reject_reason']));
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('ส่งอีเมลปฏิเสธ Private Training ไม่สำเร็จ: ' . $e->getMessage());
+            Log::error('ส่งอีเมลปฏิเสธ Private Training ไม่สำเร็จ: '.$e->getMessage());
         }
 
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
+    }
+
+    public function updateAdvanceBookingDays(Request $request)
+    {
+        $request->validate([
+            'advance_booking_days' => ['required', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        \App\Models\Setting::setVal('advance_booking_days', $request->advance_booking_days);
+
+        return back()->with('success', 'อัปเดตจำนวนวันจองล่วงหน้าเรียบร้อย');
     }
 
     /* =====================================================================
@@ -702,13 +831,6 @@ class PrivateTrainingController extends Controller
     private function assertIsCoach(User $coach): void
     {
         abort_unless($coach->role === 'staff' && $coach->membership_type === 'coach', 404, 'ไม่พบข้อมูลโค้ช');
-    }
-
-    private function checkIfNotPending(PrivateTrainingBooking $booking)
-    {
-        return $booking->status !== 'pending'
-            ? back()->withErrors(['status' => 'รายการนี้ถูกดำเนินการไปแล้ว หรือไม่สามารถแก้ไขได้'])
-            : null;
     }
 
     private function formatTimeRange(string $start, string $end): string
@@ -724,8 +846,42 @@ class PrivateTrainingController extends Controller
             'confirmed' => 'ยืนยันแล้ว',
             'rejected' => 'ปฏิเสธ',
             'cancelled' => 'ยกเลิก',
+            'expired' => 'เลยกำหนด',
             default => 'รออนุมัติ',
         };
+    }
+
+    private function coachConflictMessage(PrivateTrainingBooking $booking): ?string
+    {
+        $date = $booking->date->toDateString();
+        $start = $booking->start_time;
+        $end = $booking->end_time;
+
+        if (Availability::query()
+            ->where('user_id', $booking->coach_id)
+            ->whereDate('date', $date)
+            ->where('start_time', '<', $end)
+            ->where('end_time', '>', $start)
+            ->exists()) {
+            return 'ไม่สามารถดำเนินการได้ เนื่องจากโค้ชมี Schedule ทับซ้อนช่วงเวลานี้';
+        }
+
+        if ($this->calendarOccurrences->overlapsForCoach(
+            $booking->coach_id,
+            Carbon::parse($date.' '.$start),
+            Carbon::parse($date.' '.$end),
+        )) {
+            return 'ไม่สามารถดำเนินการได้ เนื่องจากโค้ชมีกำหนดการใน Calendar ทับซ้อนช่วงเวลานี้';
+        }
+
+        if (PrivateTrainingBooking::overlapping($booking->coach_id, $date, $start, $end)
+            ->whereKeyNot($booking->id)
+            ->whereIn('status', ['awaiting_court', 'confirmed'])
+            ->exists()) {
+            return 'ไม่สามารถดำเนินการได้ เนื่องจากมีรายการ Private Training ที่อนุมัติแล้วทับซ้อนช่วงเวลานี้';
+        }
+
+        return null;
     }
 
     private function assistantIsAvailable(

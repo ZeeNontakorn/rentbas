@@ -24,6 +24,27 @@
         @error('description')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
     </div>
 
+    <!-- วันที่สามารถใช้แพ็กเกจได้ -->
+    <div>
+        <label class="mb-2 block text-sm font-medium text-gray-700">
+            วันที่สามารถใช้แพ็กเกจได้
+        </label>
+        <p class="mb-2.5 text-xs text-gray-400">ไม่เลือกวันใดเลย = ใช้ได้ทุกวัน</p>
+        <div class="flex flex-wrap gap-2">
+            @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value => $label)
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="usable_days[]" value="{{ $value }}" class="peer sr-only"
+                           {{ in_array($value, old('usable_days', $package->usable_days ?? [])) ? 'checked' : '' }}>
+                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-gray-300 px-2 text-sm text-gray-600 transition peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:text-white">
+                        {{ $label }}
+                    </span>
+                </label>
+            @endforeach
+        </div>
+        @error('usable_days')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+        @error('usable_days.*')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
+    </div>
+
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <!-- ราคา -->
         <div>
@@ -54,7 +75,7 @@
         <div>
             <label for="type" class="mb-1.5 block text-sm font-medium text-gray-700">ประเภทแพ็กเกจ <span class="text-red-500">*</span></label>
             <select id="type" name="type" required
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                    class="cursor-pointer w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400">
                 <option value="private" {{ old('type', $package->type ?? 'private') == 'private' ? 'selected' : '' }}>เทรนเนอร์ส่วนตัว</option>
             </select>
             @error('type')<p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>@enderror
@@ -99,7 +120,7 @@
         <a href="{{ route('admin.packages.index') }}" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
             ยกเลิก
         </a>
-        <button type="submit" class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600">
+        <button type="submit" class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600 cursor-pointer">
             {{ isset($package) ? 'บันทึกการแก้ไข' : 'เพิ่มแพ็กเกจ' }}
         </button>
     </div>

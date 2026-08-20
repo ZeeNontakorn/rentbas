@@ -20,26 +20,13 @@
 
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl lg:translate-x-2">
 
         {{-- Header --}}
         <div class="mb-6">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">ตั้งค่าราคา</h1>
             <p class="text-sm text-gray-500 mt-1">ปรับราคาต่อชั่วโมงตามช่วงเวลา และราคาแพ็กเกจโปรโมชั่น — มีผลกับการคำนวณราคาจองทันทีที่บันทึก</p>
         </div>
-
-        @if (session('success'))
-            <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm">
-                {{ session('success') }}
-            </div>
-        @endif
-        @if ($errors->any())
-            <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                @foreach ($errors->all() as $err)
-                    <div>• {{ $err }}</div>
-                @endforeach
-            </div>
-        @endif
 
         {{-- ═══ PRICING RULES (รายชั่วโมง) ═══ --}}
         <div class="flex items-center gap-2 mb-3 mt-2">
@@ -48,9 +35,17 @@
         </div>
 
         @foreach ($rulesByDayType as $dayType => $rules)
+            @php
+                // ช่วงเวลาที่ตั้งราคาได้ ผูกกับ $dayType ของการ์ดนี้ (ไม่ hardcode ราย rule/id) — การ์ด
+                // "ช่วงค่ำ" (day_type = everyday) ตั้งได้ 16:00–23:00 ส่วนการ์ดกลางวันอื่นๆ ตั้งได้ 06:00–16:00
+                $isEveningCard = $dayType === 'everyday';
+                $cardMinTime = $isEveningCard ? '16:00' : '06:00';
+                $cardMaxTime = $isEveningCard ? '23:00' : '16:00';
+            @endphp
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-5">
                 <div class="px-6 py-3 border-b border-gray-100 bg-slate-50">
                     <h3 class="font-medium text-gray-700 text-sm">{{ $dayTypeLabel[$dayType] ?? $dayType }}</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5">ตั้งช่วงเวลาได้ระหว่าง {{ $cardMinTime }}–{{ $cardMaxTime }} น.</p>
                 </div>
 
                 {{-- One form per card: all rows submit together, single save button at the bottom --}}
@@ -80,10 +75,12 @@
                                             <div class="flex items-center gap-2">
                                                 <input type="text" name="rules[{{ $rule->id }}][start_time]"
                                                        value="{{ substr($rule->start_time, 0, 5) }}"
+                                                       data-min-time="{{ $cardMinTime }}" data-max-time="{{ $cardMaxTime }}"
                                                        class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                                 <span class="text-gray-400">–</span>
                                                 <input type="text" name="rules[{{ $rule->id }}][end_time]"
                                                        value="{{ substr($rule->end_time, 0, 5) }}"
+                                                       data-min-time="{{ $cardMinTime }}" data-max-time="{{ $cardMaxTime }}"
                                                        class="time-picker w-32 text-sm text-gray-800 rounded-lg border border-gray-300 px-2 py-1 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                                             </div>
                                         </td>
@@ -101,10 +98,11 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-3 text-center">
-                                            <label class="inline-flex items-center cursor-pointer">
+                                            <label class="relative inline-flex cursor-pointer items-center">
                                                 <input type="hidden" name="rules[{{ $rule->id }}][is_active]" value="0">
                                                 <input type="checkbox" name="rules[{{ $rule->id }}][is_active]" value="1" @checked($rule->is_active)
-                                                       class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                                       class="peer sr-only">
+                                                <span class="relative h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-5"></span>
                                             </label>
                                         </td>
                                     </tr>
@@ -114,11 +112,11 @@
                     </div>
 
                     <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-slate-50">
-                        <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 transition"
+                        <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 cursor-pointer transition"
                                 data-target="rules-form-{{ $dayType }}">
                             ยกเลิก
                         </button>
-                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 transition">
+                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 cursor-pointer transition">
                             บันทึก
                         </button>
                     </div>
@@ -133,7 +131,7 @@
                 <h2 class="font-medium text-gray-700 text-sm">แพ็กเกจโปรโมชั่น</h2>
             </div>
             <button type="button" onclick="toggleCreatePkgForm()"
-                    class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 transition">
+                    class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 cursor-pointer transition">
                 + เพิ่มแพ็กเกจใหม่
             </button>
         </div>
@@ -141,7 +139,7 @@
         {{-- Create form (ซ่อนไว้ก่อน กดปุ่มด้านบนเพื่อเปิด) --}}
         <div id="pkg-create-form" class="hidden bg-white rounded-xl shadow-sm border border-emerald-200 p-5 mb-6">
             <h3 class="font-semibold text-gray-800 text-[15px] mb-4">เพิ่มแพ็กเกจโปรโมชั่นใหม่</h3>
-            @include('admin.pricing._package-form', ['package' => null, 'formId' => 'pkg-create-form'])
+            @include('admin.pricing._package-form', ['package' => null, 'formId' => 'pkg-create-form', 'existingCategories' => $existingPackageCategories])
         </div>
 
         @foreach ($packagesByCategory as $category => $packages)
@@ -152,7 +150,14 @@
 
                 {{-- CSS multi-column layout instead of grid: cards flow independently
                      per column, so expanding one card's edit panel only pushes
-                     cards below it in the SAME column, not the card beside it. --}}
+                     cards below it in the SAME column, not the card beside it.
+                     NOTE: the edit drawer (.pkg-drawer, position:fixed) must NEVER be
+                     rendered inside this columns-* container — position:fixed elements
+                     nested inside a CSS multi-column formatting context render
+                     incorrectly in several browsers (can flash/hang blank-white on
+                     reflow, e.g. when a peer-checked switch inside the drawer
+                     transitions). Drawers are rendered in a separate loop further
+                     below, as siblings of this container instead. --}}
                 <div class="columns-1 md:columns-2 gap-4">
                     @foreach ($packages as $package)
                         @php
@@ -209,38 +214,39 @@
 
                             <div class="flex justify-end gap-2 pt-1 border-t border-gray-100">
                                 <button type="button" onclick="openPkgDrawer('{{ $editId }}')"
-                                        class="text-xs font-medium text-blue-600 hover:text-blue-800 rounded-lg px-3 py-1.5 transition">
+                                        class="text-xs font-medium text-blue-600 hover:text-blue-800 rounded-lg px-3 py-1.5 cursor-pointer transition">
                                     แก้ไข
                                 </button>
-                                <form method="POST" action="{{ route('admin.pricing.packages.destroy', $package) }}"
-                                      onsubmit="return confirm('ลบแพ็กเกจ \'{{ $package->label }}\'? (การจองเก่าที่เคยใช้แพ็กเกจนี้จะไม่ถูกลบ แค่ตัดการเชื่อมโยงกับแพ็กเกจนี้)');">
+                                <button type="button" onclick="confirmDeletePromoPackage('{{ $package->id }}', '{{ addslashes($package->label) }}')"
+                                        class="text-xs font-medium text-red-500 hover:text-red-700 rounded-lg px-3 py-1.5 cursor-pointer transition">
+                                    ลบ
+                                </button>
+                                <form id="deletePromoPkg{{ $package->id }}" method="POST" action="{{ route('admin.pricing.packages.destroy', $package) }}" class="hidden">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-xs font-medium text-red-500 hover:text-red-700 rounded-lg px-3 py-1.5 transition">
-                                        ลบ
-                                    </button>
                                 </form>
-                            </div>
-                        </div>
-
-                        {{-- Edit drawer: fixed to the viewport (position: fixed), so it
-                             sits OUTSIDE normal document flow entirely. Growing/shrinking
-                             this panel can never push any card, above or below, in either
-                             column. --}}
-                        <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[50%] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
-                            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-                                <h3 class="font-semibold text-gray-800 text-[15px]">แก้ไข: {{ $package->label }}</h3>
-                                <button type="button" onclick="closePkgDrawer('{{ $editId }}')"
-                                        class="text-gray-400 hover:text-gray-600 rounded-lg p-1 transition">
-                                    ✕
-                                </button>
-                            </div>
-                            <div class="p-5">
-                                @include('admin.pricing._package-form', ['package' => $package, 'formId' => $editId])
                             </div>
                         </div>
                     @endforeach
                 </div>
+
+                {{-- Edit drawers for this category, rendered OUTSIDE the columns-* container
+                     on purpose — see note above the container's opening tag. --}}
+                @foreach ($packages as $package)
+                    @php $editId = 'pkg-edit-' . $package->id; @endphp
+                    <div id="{{ $editId }}" class="pkg-drawer hidden fixed inset-y-0 right-0 z-50 w-full sm:w-[50%] bg-white shadow-2xl border-l border-gray-200 overflow-y-auto">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+                            <h3 class="font-semibold text-gray-800 text-[15px]">แก้ไข: {{ $package->label }}</h3>
+                            <button type="button" onclick="closePkgDrawer('{{ $editId }}')"
+                                    class="text-gray-400 hover:text-gray-600 rounded-lg p-1 transition">
+                                ✕
+                            </button>
+                        </div>
+                        <div class="p-5">
+                            @include('admin.pricing._package-form', ['package' => $package, 'formId' => $editId, 'existingCategories' => $existingPackageCategories])
+                        </div>
+                    </div>
+                @endforeach
             </div>
         @endforeach
 
@@ -251,6 +257,17 @@
 @endsection
 
 <script>
+    // ─── Toast แจ้งผลลัพธ์แบบไม่บล็อกหน้าจอ (รูปแบบเดียวกับหน้าแพ็กเกจเครดิต) ───
+    function showToast(text, isError) {
+        const toast = document.getElementById('pageToast');
+        if (!toast) return;
+        toast.textContent = text;
+        toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
+        toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // ดึงช่อง input ทั้งหมดที่มี class .time-picker
         const timePickers = document.querySelectorAll('.time-picker');
@@ -261,9 +278,28 @@
                 noCalendar: true,
                 dateFormat: "H:i",
                 time_24hr: true,
-                defaultDate: input.value
+                defaultDate: input.value,
+                // ช่วงเวลาที่เลือกได้ (ถ้ามี data-min-time/data-max-time) มาจาก server ตาม day_type
+                // ของการ์ดนั้นๆ ไม่ได้ hardcode ไว้ใน JS — ดู index.blade.php ส่วน $cardMinTime/$cardMaxTime
+                minTime: input.dataset.minTime || undefined,
+                maxTime: input.dataset.maxTime || undefined,
             });
         });
+
+        // ─── แจ้งผลลัพธ์จาก server ตอนโหลดหน้า: สำเร็จ → toast เล็กๆ มุมล่างขวา, ผิดพลาด → SweetAlert
+        // (มีหลายบรรทัด/สำคัญกว่า จึงใช้ modal แทน toast ที่หายไปเร็วเกินจะอ่านทัน) ───
+        @if (session('success'))
+            showToast(@js(session('success')));
+        @endif
+        @if ($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'ทำรายการไม่สำเร็จ',
+                html: @js('• ' . implode('<br>• ', $errors->all())),
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'เข้าใจแล้ว',
+            });
+        @endif
 
         // ─── Pricing rules card: cancel button reverts all fields in that card ───
         document.querySelectorAll('.rules-cancel-btn').forEach(function (btn) {
@@ -283,6 +319,25 @@
             });
         });
     });
+
+    // ─── ยืนยันลบแพ็กเกจโปรโมชั่นด้วย SweetAlert (รูปแบบเดียวกับหน้าแพ็กเกจเครดิต) ───
+    function confirmDeletePromoPackage(packageId, packageLabel) {
+        Swal.fire({
+            title: 'ยืนยันลบแพ็กเกจนี้ใช่ไหม?',
+            html: `เมื่อลบแพ็กเกจ "${packageLabel}" แล้วจะไม่สามารถกู้คืนข้อมูลได้<br>`
+                + `<span class="text-gray-400 text-sm">(การจองเก่าที่เคยใช้แพ็กเกจนี้จะไม่ถูกลบ แค่ตัดการเชื่อมโยงกับแพ็กเกจนี้)</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'ยืนยันการลบ',
+            cancelButtonText: 'ยกเลิก',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deletePromoPkg' + packageId).submit();
+            }
+        });
+    }
 
     // ─── Package create panel (inline, not a drawer) ───
     function toggleCreatePkgForm() {

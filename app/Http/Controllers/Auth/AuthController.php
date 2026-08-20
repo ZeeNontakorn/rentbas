@@ -22,14 +22,14 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:users,name'],
+            'us_name' => ['required', 'string', 'max:255', 'unique:users,us_name'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ], [
-            'name.required' => 'กรุณากรอกชื่อผู้ใช้',
-            'name.max' => 'ชื่อผู้ใช้ต้องมีความยาวไม่เกิน :max ตัวอักษร',
-            'name.unique' => 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น',
+            'us_name.required' => 'กรุณากรอกชื่อผู้ใช้',
+            'us_name.max' => 'ชื่อผู้ใช้ต้องมีความยาวไม่เกิน :max ตัวอักษร',
+            'us_name.unique' => 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น',
             'email.required' => 'กรุณากรอกอีเมล',
             'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
             'email.max' => 'อีเมลต้องมีความยาวไม่เกิน :max ตัวอักษร',
@@ -42,7 +42,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'name' => $data['name'],
+            'us_name' => $data['us_name'],
             'email' => $data['email'],
             'phone' => $data['phone'],
             'password' => Hash::make($data['password']),

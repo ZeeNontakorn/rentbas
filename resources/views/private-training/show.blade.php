@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'จองเทรนเนอร์ส่วนตัว: ' . $coach->name)
+@section('title', 'จองเทรนเนอร์ส่วนตัว: ' . $coach->us_name)
 
 @section('content')
 @include('private-training._calendar-theme')
@@ -15,15 +15,15 @@
             <div class="flex flex-col gap-6 sm:flex-row sm:items-start">
                 <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-orange-100 shadow-sm">
                     @if($staffProfile?->profile_image_url)
-                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->name }}"
+                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->us_name }}"
                             class="h-full w-full object-cover">
                     @else
-                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->name, 0, 1)) }}</span>
+                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->us_name, 0, 1)) }}</span>
                     @endif
                 </div>
                 <div class="flex-1">
                     <div class="flex flex-wrap items-center gap-3">
-                        <h1 class="text-2xl font-bold text-gray-800">{{ $coach->name }}</h1>
+                        <h1 class="text-2xl font-bold text-gray-800">{{ $coach->us_name }}</h1>
                         <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">ผู้ฝึกสอน (Coach)</span>
                     </div>
                     <div class="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
@@ -57,7 +57,7 @@
                                     } }}
                             </span>
                             @if($booking->courtAssistant)
-                                <span class="ml-1 text-xs text-blue-600">· ผู้ช่วย {{ $booking->courtAssistant->name }}</span>
+                                <span class="ml-1 text-xs text-blue-600">· ผู้ช่วย {{ $booking->courtAssistant->us_name }}</span>
                             @endif
                         </div>
                     @endforeach
@@ -71,8 +71,34 @@
                     <h2 class="text-lg font-bold text-gray-800">เลือกวันและเวลาฝึก</h2>
                     <p class="mt-1 text-xs text-gray-500">ลากเลือกพื้นที่ว่างในปฏิทิน เวลา 08:00–22:00 น. ช่วงที่มี Schedule หรือมีรายการจองแล้วจะเลือกไม่ได้</p>
                     <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ \App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS }} วัน
+                        <span aria-hidden="true">ⓘ</span> ดูตารางสัปดาห์หรือเดือนถัดไปได้ แต่จองล่วงหน้าได้สูงสุด {{ $advanceBookingDays }} วัน
                     </p>
+                    @if($myPackagePurchases->isNotEmpty())
+                        @php
+                            $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                            $hasRestrictedPackage = $myPackagePurchases->contains(fn ($pp) => !empty($pp->package->usable_days));
+                        @endphp
+                        @if($hasRestrictedPackage)
+                            <div class="mt-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-700 ring-1 ring-orange-200">
+                                <p class="mb-1.5 flex items-center gap-1.5 font-semibold">
+                                    <span aria-hidden="true">ⓘ</span> แพ็กเกจของคุณใช้ได้เฉพาะบางวัน กรุณาเลือกวันให้ตรงกับแพ็กเกจ
+                                </p>
+                                <ul class="space-y-0.5 pl-5">
+                                    @foreach($myPackagePurchases as $pp)
+                                        <li class="list-disc">
+                                            <span class="font-medium">{{ $pp->package->name }}</span> —
+                                            @if(empty($pp->package->usable_days))
+                                                <span class="text-green-700">ใช้ได้ทุกวัน</span>
+                                            @else
+                                                ใช้ได้เฉพาะวัน
+                                                <span class="font-semibold">{{ collect($pp->package->usable_days)->map(fn($d) => $dayLabels[$d] ?? $d)->implode(', ') }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    @endif
                 </div>
                 <div class="flex flex-wrap gap-3 text-xs text-gray-600">
                     <span><i class="mr-1 inline-block h-3 w-3 rounded bg-blue-500"></i>รออนุมัติ</span>
@@ -87,18 +113,36 @@
 </div>
 
 <style>
-    /* เปิดให้กล่องไฮไลต์ (ช่วงเวลาที่ค้างรอยืนยัน) รับคลิกได้ ปกติ FullCalendar ปิดไว้ (pointer-events: none) */
-    #private-calendar .fc-highlight {
-        pointer-events: auto;
+    #private-calendar-confirm-btn {
+        position: absolute;
+        z-index: 20;
+        background: transparent;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 8px;
         cursor: pointer;
-        z-index: 5;
+        white-space: nowrap;
+        display: none;
+        border: none;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือแถบวันนี้ แต่ต่ำกว่า event การจอง */
+    #private-calendar .fc-bg-event {
+        z-index: 1 !important;
+    }
+
+    /* event การจองจริง (สถานะต่าง ๆ) ต้องอยู่หน้าสุดเสมอ ไม่ให้อะไรมาทับ */
+    #private-calendar .fc-timegrid-event-harness {
+        z-index: 3 !important;
     }
 </style>
 
 <div id="bookTrainingModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
     <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
         <div class="border-b border-gray-100 bg-gray-50 px-6 py-4">
-            <h3 class="font-bold text-gray-800">ยืนยันคำขอ Private Training</h3>
+            <h3 class="font-bold text-gray-800">ยืนยันคำขอจองเทรนเนอร์ส่วนตัว</h3>
         </div>
         <form action="{{ route('private-training.store') }}" method="POST" class="space-y-4 p-6">
             @csrf
@@ -107,27 +151,40 @@
             <input type="hidden" name="start_time" id="booking-start">
             <input type="hidden" name="end_time" id="booking-end">
             <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-center">
-                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->name }}</p>
+                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->us_name }}</p>
                 <p id="booking-date-label" class="mt-1 font-bold text-blue-800"></p>
                 <p id="booking-time-label" class="text-lg font-extrabold text-blue-700"></p>
             </div>
             <div>
                 <label class="mb-1.5 block text-xs font-semibold text-gray-700">เลือกแพ็กเกจที่ต้องการใช้ <span class="text-red-500">*</span></label>
                 <select name="package_purchase_id" id="package-purchase-select" required
-                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
                     <option value="">-- กรุณาเลือกแพ็กเกจ --</option>
                     @foreach ($myPackagePurchases as $pp)
-                        <option value="{{ $pp->id }}">
+                        <option value="{{ $pp->id }}" data-days="{{ json_encode($pp->package->usable_days ?? []) }}">
                             {{ $pp->package->name }} (เหลือ {{ $pp->remaining_use }} ครั้ง{{ $pp->expired_at ? ' · หมดอายุ ' . $pp->expired_at->format('d/m/Y') : '' }})
                         </option>
                     @endforeach
                 </select>
+                <p id="package-day-warning" class="mt-1.5 hidden text-[11px] font-medium text-red-600">
+                    ไม่มีแพ็กเกจของคุณที่ใช้ได้ในวันนี้ กรุณาเลือกวันอื่น หรือซื้อแพ็กเกจที่รองรับวันนี้
+                </p>
                 <p class="mt-1 text-[11px] text-gray-400">ระบบจะหักสิทธิ์จากแพ็กเกจที่คุณเลือกทันทีที่ส่งคำขอ</p>
+            </div>
+            <div>
+                <label for="participant-count" class="mb-1.5 block text-xs font-semibold text-gray-700">จำนวนผู้เข้าร่วม <span class="text-red-500">*</span></label>
+                <select name="participant_count" id="participant-count" required
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
+                    @for ($count = 1; $count <= 6; $count++)
+                        <option value="{{ $count }}" @selected((int) old('participant_count', 1) === $count)>{{ $count }} คน</option>
+                    @endfor
+                </select>
+                <p class="mt-1 text-[11px] text-gray-400">รวมผู้จองแล้ว รับได้สูงสุด 6 คน</p>
             </div>
             <div>
                 <label for="assistant-requested" class="mb-1.5 block text-xs font-semibold text-gray-700">บริการผู้ช่วยสนามเก็บบาส</label>
                 <select name="assistant_requested" id="assistant-requested" required
-                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 cursor-pointer">
                     <option value="0">ไม่ต้องการ</option>
                     <option value="1">ต้องการผู้ช่วยสนาม</option>
                 </select>
@@ -148,9 +205,9 @@
             <p class="text-xs text-gray-500">ระบบใช้สิทธิ์แพ็กเกจ 1 ครั้งตอนส่งคำขอ และจะไม่หักเครดิตเพิ่มตอนแอดมินจัดสนาม หากคำขอถูกยกเลิกหรือปฏิเสธ ระบบจะคืนสิทธิ์ให้</p>
             <div class="flex gap-2 pt-2">
                 <button type="button" id="cancel-booking-modal"
-                    class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200">ยกเลิก</button>
+                    class="w-1/2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 cursor-pointer">ยกเลิก</button>
                 <button type="submit"
-                    class="w-1/2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">ส่งคำขอ</button>
+                    class="w-1/2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 cursor-pointer">ส่งคำขอ</button>
             </div>
         </form>
     </div>
@@ -169,8 +226,33 @@ document.addEventListener('DOMContentLoaded', function () {
     const maxDurationMs = 5 * 60 * 60 * 1000;
 
     let pendingSelection = null;
-    let needsConfirmClick = false;
+    let isClampingSelection = false;
 
+    // วันนี้จองไม่ได้ ต้องจองล่วงหน้าอย่างน้อย 1 วัน
+    function isToday(date) {
+        return localDate(date) === localDate(new Date());
+    }
+
+    const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    function filterPackageOptionsForDate(date) {
+        const select = document.getElementById('package-purchase-select');
+        const warning = document.getElementById('package-day-warning');
+        const dayKey = DAY_KEYS[date.getDay()];
+        let hasSelectable = false;
+
+        Array.from(select.options).forEach(option => {
+            if (!option.value) return; // ข้าม placeholder "-- กรุณาเลือกแพ็กเกจ --"
+            let days = [];
+            try { days = JSON.parse(option.dataset.days || '[]'); } catch (e) { days = []; }
+            const usable = days.length === 0 || days.includes(dayKey); // ว่าง = ใช้ได้ทุกวัน
+            option.hidden = !usable;
+            option.disabled = !usable;
+            if (usable) hasSelectable = true;
+        });
+
+        select.value = ''; // reset ทุกครั้งที่เปลี่ยนวัน กันเลือกค้างจากวันก่อนหน้า
+        warning.classList.toggle('hidden', hasSelectable);
+    }
     const openBookingModal = (start, end) => {
         document.getElementById('booking-date').value = localDate(start);
         document.getElementById('booking-start').value = localTime(start);
@@ -179,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
             start.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         document.getElementById('booking-time-label').textContent =
             `${localTime(start)}–${localTime(end)} น.`;
+        filterPackageOptionsForDate(start); // <-- เพิ่มบรรทัดนี้
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     };
@@ -192,8 +275,8 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         pendingSelection = null;
-        needsConfirmClick = false;
         calendar.unselect();
+        hideConfirmButton();
     };
 
     async function loadAvailableAssistants() {
@@ -251,13 +334,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // (การบังคับจริงอยู่ที่ server ใน PrivateTrainingController::store() อันนี้แค่กันผู้ใช้
     // เลือกช่วงเวลาที่เกินมาแล้วเจอ error ตอน submit ให้เห็นตั้งแต่ตอนลากเลือกเลย)
     const maxSelectableDate = new Date(@js($maxDate) + 'T23:59:59');
-    const advanceLimitMessage = @js('สามารถจอง Private Training ล่วงหน้าได้สูงสุด '.\App\Http\Controllers\CheckoutController::ADVANCE_BOOKING_DAYS.' วัน');
+    const advanceLimitMessage = @js('สามารถจองเทรนเนอร์ส่วนตัวล่วงหน้าได้สูงสุด '.$advanceBookingDays.' วัน');
 
     function showAdvanceLimitMessage() {
         Swal.fire({
             icon: 'info',
             title: 'วันที่นี้ยังจองไม่ได้',
             text: advanceLimitMessage,
+            confirmButtonText: 'เข้าใจแล้ว',
+            confirmButtonColor: '#f97316'
+        });
+    }
+
+    function showTodayBlockedMessage() {
+        Swal.fire({
+            icon: 'info',
+            title: 'จองวันนี้ไม่ได้',
+            text: 'กรุณาเลือกจองล่วงหน้าอย่างน้อย 1 วัน',
             confirmButtonText: 'เข้าใจแล้ว',
             confirmButtonColor: '#f97316'
         });
@@ -290,6 +383,105 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const openHour = 8, closeHour = 22;
+    const scheduleUrl = @js(route('private-training.schedule', $coach));
+    function buildPastOverlay(rangeStart, rangeEnd) {
+        const overlay = [];
+        const now = new Date();
+        const todayStr = localDate(now);
+        const cursor = new Date(rangeStart);
+        cursor.setHours(0, 0, 0, 0);
+        while (cursor < rangeEnd) {
+            const dayOpen = new Date(cursor);
+            dayOpen.setHours(openHour, 0, 0, 0);
+            const dayClose = new Date(cursor);
+            dayClose.setHours(closeHour, 0, 0, 0);
+            const isCursorToday = localDate(cursor) === todayStr;
+
+            if (isCursorToday) {
+                // วันนี้จองไม่ได้ทั้งวัน (ทั้งช่วงที่ผ่านมาแล้วและช่วงที่เหลือของวันนี้)
+                if (dayClose > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: dayClose.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'today-blocked', selectable: false }
+                    });
+                }
+            } else {
+                // ครอบเฉพาะช่วงที่ผ่านมาแล้วจริง ๆ ของวันนั้น (ไม่เกิน "ตอนนี้" และไม่เกินเวลาปิด)
+                const overlayEnd = now < dayClose ? now : dayClose;
+                if (overlayEnd > dayOpen) {
+                    overlay.push({
+                        start: dayOpen.toISOString(),
+                        end: overlayEnd.toISOString(),
+                        display: 'background',
+                        backgroundColor: '#e5e7eb',
+                        extendedProps: { kind: 'past', selectable: false }
+                    });
+                }
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return overlay;
+    }
+
+    const calendarWrap = calendarEl.parentElement;
+        calendarWrap.style.position = calendarWrap.style.position || 'relative';
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.id = 'private-calendar-confirm-btn';
+        calendarWrap.appendChild(confirmBtn);
+        function hideConfirmButton() {
+            confirmBtn.style.display = 'none';
+        }
+
+        // ซ่อนปุ่มทันทีเมื่อเริ่มลากใหม่ (mousedown/touchstart ในพื้นที่ปฏิทิน)
+        // กันปุ่มจากการเลือกครั้งก่อนค้างอยู่ตำแหน่งเดิมระหว่างลากคอลัมน์ใหม่
+        // ไม่กระทบปุ่มเอง เพราะ confirmBtn อยู่นอก calendarEl (เป็น sibling ใน calendarWrap)
+        calendarEl.addEventListener('mousedown', hideConfirmButton);
+        calendarEl.addEventListener('touchstart', hideConfirmButton, { passive: true });
+
+        function positionConfirmButton(text) {
+            requestAnimationFrame(() => {
+                const highlight = document.querySelector('#private-calendar .fc-highlight');
+                if (!highlight) {
+                    confirmBtn.style.display = 'none';
+                    return;
+                }
+                const rect = highlight.getBoundingClientRect();
+                const wrapRect = calendarWrap.getBoundingClientRect();
+                confirmBtn.textContent = text;
+
+                const durationMs = pendingSelection ? (pendingSelection.end - pendingSelection.start) : 0;
+                const isLong = durationMs > 60 * 60 * 1000; // เกิน 1 ชม.
+
+                if (isLong) {
+                    // กึ่งกลาง highlight
+                    confirmBtn.style.left = `${rect.left - wrapRect.left + rect.width / 2}px`;
+                    confirmBtn.style.top = `${rect.top - wrapRect.top + rect.height / 2}px`;
+                    confirmBtn.style.transform = 'translate(-50%, -50%)';
+                } else {
+                    // ชิดขวาล่างของ highlight
+                    confirmBtn.style.left = `${rect.right - wrapRect.left}px`;
+                    confirmBtn.style.top = `${rect.bottom - wrapRect.top}px`;
+                    confirmBtn.style.transform = 'translate(-100%, -100%)';
+                }
+
+                confirmBtn.style.display = 'block';
+            });
+        }
+
+    function hideConfirmButton() {
+        confirmBtn.style.display = 'none';
+    }
+
+    confirmBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (!pendingSelection) return;
+        openBookingModal(pendingSelection.start, pendingSelection.end);
+    });
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         locale: 'th',
@@ -302,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         eventClassNames(arg) {
             // ทำให้ช่วงเวลาที่ว่างแต่ผ่านไปแล้วดูจางลง ไม่ให้เข้าใจผิดว่ายังจองได้
-            if (arg.event.extendedProps.kind === 'available' && arg.event.end <= new Date()) {
+            if (arg.event.extendedProps.kind === 'past' && arg.event.end <= new Date()) {
                 return ['opacity-40'];
             }
             return [];
@@ -310,13 +502,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         eventDidMount(arg) {
             const props = arg.event.extendedProps;
-            const isPastAvailable = props.kind === 'available' && arg.event.end <= new Date();
-            if (!isPastAvailable) return;
+            if (props.kind !== 'past' && props.kind !== 'today-blocked') return;
 
-            arg.el.style.backgroundColor = '#e5e7eb';
+            arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+            arg.el.style.opacity = '0.4';
 
             const label = document.createElement('div');
-            label.textContent = 'เลยกำหนด';
+            label.textContent = props.kind === 'today-blocked' ? 'จองวันนี้ไม่ได้' : 'เลยกำหนด';
             label.style.cssText = `
                 position: absolute;
                 inset: 0;
@@ -324,8 +516,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 align-items: center;
                 justify-content: center;
                 font-size: 11px;
-                font-weight: 600;
-                color: #6b7280;
+                font-weight: 700;
+                color: #1e293b;
                 pointer-events: none;
             `;
             arg.el.appendChild(label);
@@ -346,16 +538,25 @@ document.addEventListener('DOMContentLoaded', function () {
         dayMaxEvents: true,
         eventMaxStack: 3,
         slotEventOverlap: false,
-        events: @js(route('private-training.schedule', $coach)),
+
+        events: function (fetchInfo, successCallback, failureCallback) {
+            const params = new URLSearchParams({ start: fetchInfo.startStr, end: fetchInfo.endStr });
+            fetch(`${scheduleUrl}?${params}`, { headers: { Accept: 'application/json' } })
+                .then(res => res.json())
+                .then(realEvents => {
+                    successCallback([...realEvents, ...buildPastOverlay(fetchInfo.start, fetchInfo.end)]);
+                })
+                .catch(failureCallback);
+        },
         selectAllow(info) {
             // FullCalendar ให้ลากข้ามคอลัมน์วันได้ จึงตรวจปลายช่วงแบบ exclusive
             // (ลบ 1 ms) เพื่อยืนยันว่าช่วงที่เลือกทั้งหมดอยู่ภายในวันเดียวกัน
             const inclusiveEnd = new Date(info.end.getTime() - 1);
             return calendar.view.type !== 'dayGridMonth'
+                && !isToday(info.start)
                 && info.start >= new Date()
                 && info.start <= maxSelectableDate
                 && localDate(info.start) === localDate(inclusiveEnd)
-                && (info.end - info.start) <= maxDurationMs;
         },
         dateClick(info) {
             if (info.date > maxSelectableDate) {
@@ -365,31 +566,46 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (info.view.type === 'dayGridMonth') {
                 calendar.changeView('timeGridDay', info.date);
-            }
-        },
-        select(info) {
-            const start = info.start;
-            const end = info.end;
-            pendingSelection = { start, end };
-            needsConfirmClick = false;
-            openBookingModal(start, end);
-        },
-        dateClick(info) {
-            if (!pendingSelection) {
                 return;
             }
 
-            const clickedTime = info.date;
-            const selectionStart = pendingSelection.start;
-            const selectionEnd = pendingSelection.end;
+            if (isToday(info.date)) {
+                showTodayBlockedMessage();
+                return;
+            }
+        },
+        select(info) {
+            if (isClampingSelection) return;
 
-            if (clickedTime >= selectionStart && clickedTime < selectionEnd) {
-                if (needsConfirmClick) {
-                    needsConfirmClick = false;
-                    openBookingModal(selectionStart, selectionEnd);
-                } else {
-                    needsConfirmClick = true;
-                }
+            let start = info.start;
+            let end = info.end;
+            let wasClamped = false;
+
+            if (end - start > maxDurationMs) {
+                end = new Date(start.getTime() + maxDurationMs);
+                wasClamped = true;
+
+                isClampingSelection = true;
+                calendar.unselect();
+                calendar.select(start, end);
+                isClampingSelection = false;
+            }
+
+            pendingSelection = { start, end };
+
+            positionConfirmButton(wasClamped ? 'คลิกเพื่อจอง' : 'คลิกเพื่อจอง');
+
+            if (wasClamped) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'จองได้สูงสุด 5 ชั่วโมงต่อครั้ง',
+                    text: 'ระบบปรับช่วงเวลาให้ไม่เกิน 5 ชม. อัตโนมัติแล้ว',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
             }
         },
         eventClick(info) {
@@ -400,7 +616,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            if (props.kind === 'available') {
+            if (props.kind === 'today-blocked') {
+                showTodayBlockedMessage();
+                return;
+            }
+
+            if (props.kind === 'past') {
                 const isPast = info.event.end <= new Date();
                 Swal.fire({
                     title: isPast ? 'เลยกำหนด' : 'เปิดรับจอง',
@@ -418,22 +639,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar.render();
 
-    calendarEl.addEventListener('click', (event) => {
-        if (!pendingSelection) return;
 
-        const target = event.target;
-        const interactiveTarget = target.closest('.fc-timegrid-slot, .fc-highlight, .fc-timegrid-bg, .fc-timegrid-col');
-        if (!interactiveTarget) return;
-
-        if (needsConfirmClick) {
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            needsConfirmClick = false;
-            openBookingModal(pendingSelection.start, pendingSelection.end);
-        } else {
-            needsConfirmClick = true;
-        }
-    }, true);
 
     document.getElementById('cancel-booking-modal').addEventListener('click', closeModal);
     assistantRequested.addEventListener('change', loadAvailableAssistants);

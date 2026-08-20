@@ -18,22 +18,22 @@ class NotificationController extends Controller
         return view('notifications.index', compact('notifications'));
     }
 
-    public function markAsRead(Request $request, Notification $notification)
-    {
-        // ตรวจสอบสิทธิ์ผู้ใช้
-        if ($notification->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $notification->update(['is_read' => true]);
-
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->noContent(); // 204 ไม่ redirect
-        }
-
-        return back();
+   public function markAsRead(Request $request, Notification $notification)
+{
+    if ($notification->user_id !== auth()->id()) {
+        abort(403);
     }
 
+    $notification->update(['is_read' => true]);
+
+    if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+            'redirect' => $this->destination($notification), 
+        ]);
+    }
+
+    return redirect()->to($this->destination($notification));
+}
     public function open(Notification $notification)
     {
         abort_unless($notification->user_id === auth()->id(), 403);
@@ -74,7 +74,7 @@ class NotificationController extends Controller
         'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
         'เติมเครดิตสำเร็จ' => route('credits.topup.index'),
         'เครดิตของคุณถูกเติมแล้ว' => route('admin.credits.show', $notification->user_id),
-        'ยืนยันการซื้อแพ็กเกจ' => route('admin.private-training.index'),
+        'ยืนยันการซื้อแพ็กเกจ' => route('private-training.index'),
         'คำขอเติมเครดิตถูกปฏิเสธ' => route('credits.topup.index'),
         'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),
         'การจองถูกปฏิเสธอัตโนมัติ', 'การจองถูกยกเลิกโดยระบบ' => route('admin.bookings'),

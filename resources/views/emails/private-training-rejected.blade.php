@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>การจอง Private Training ถูกปฏิเสธ</title>
+    <title>การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ</title>
     <style>
         body { font-family: 'Sarabun', Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 0; }
         .container { max-width: 560px; margin: 32px auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
@@ -47,17 +47,21 @@
         </div>
 
         <div class="status-bar">
-            <span class="dot"></span><span class="label">การจอง Private Training ถูกปฏิเสธ</span>
+            <span class="dot"></span><span class="label">การจองเทรนเนอร์ส่วนตัวถูกปฏิเสธ</span>
         </div>
 
         <div class="body">
-            <p class="greet">เรียนคุณ {{ $booking->user->name }},</p>
+            <p class="greet">เรียนคุณ {{ $booking->user->us_name }},</p>
             <p class="lead">ขออภัยในความไม่สะดวก คำขอจองเทรนเนอร์ส่วนตัวของคุณด้านล่างนี้ถูกปฏิเสธ</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">โค้ช</td>
-                    <td class="v">{{ $booking->coach->name }}</td>
+                    <td class="v">{{ $booking->coach->us_name }}</td>
+                </tr>
+                <tr>
+                    <td class="k">ผู้ช่วยสนาม</td>
+                    <td class="v">{{ $booking->courtAssistant->us_name ?? 'ไม่มี' }}</td>
                 </tr>
                 <tr>
                     <td class="k">สนาม</td>
@@ -71,6 +75,10 @@
                             ยังไม่ได้จัดสนาม
                         @endif
                     </td>
+                </tr>
+                <tr>
+                    <td class="k">จำนวนผู้เข้าร่วม</td>
+                    <td class="v">{{ $booking->participant_count ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="k">วันที่</td>

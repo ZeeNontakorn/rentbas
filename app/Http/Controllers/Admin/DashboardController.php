@@ -291,7 +291,7 @@ class DashboardController extends Controller
                 $state = $end->lte($now) ? 'completed' : ($start->lte($now) ? 'ongoing' : 'upcoming');
 
                 return [
-                    'name' => $b->user->name ?? 'ไม่ระบุ',
+                    'name' => $b->user->us_name ?? 'ไม่ระบุ',
                     'court' => $b->court->name ?? '-',
                     'time' => $start->format('H:i'),
                     'hours' => $this->durationHours($b->start_time, $b->end_time),
@@ -319,7 +319,7 @@ class DashboardController extends Controller
                 $start = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->start_time);
 
                 return [
-                    'name' => $b->user->name ?? 'ไม่ระบุ',
+                    'name' => $b->user->us_name ?? 'ไม่ระบุ',
                     'court' => $b->court->name ?? '-',
                     'time' => $start->format('H:i'),
                     'in' => $now->diffForHumans($start, ['syntax' => Carbon::DIFF_ABSOLUTE, 'parts' => 2, 'short' => true]),
@@ -337,7 +337,7 @@ class DashboardController extends Controller
             ];
         })->sortByDesc('hours')->take(5)->values();
 
-        $userNames = User::whereIn('id', $topCustomers->pluck('user_id'))->pluck('name', 'id');
+        $userNames = User::whereIn('id', $topCustomers->pluck('user_id'))->pluck('us_name', 'id');
         $topCustomers = $topCustomers->map(function ($c) use ($userNames) {
             $name = $userNames[$c['user_id']] ?? 'ไม่ระบุ';
             $c['name'] = $name;
@@ -354,7 +354,7 @@ class DashboardController extends Controller
             $recent->push([
                 'time' => $b->created_at,
                 'type' => 'new',
-                'text' => ($b->user->name ?? 'ลูกค้า') . ' สร้างการจองใหม่ ' . ($b->court->name ?? ''),
+                'text' => ($b->user->us_name ?? 'ลูกค้า') . ' สร้างการจองใหม่ ' . ($b->court->name ?? ''),
             ]);
         }
         foreach (Booking::with(['court'])->whereIn('status', ['cancelled', 'rejected'])->latest('updated_at')->limit(4)->get() as $b) {
@@ -368,14 +368,14 @@ class DashboardController extends Controller
             $recent->push([
                 'time' => $b->updated_at,
                 'type' => 'confirm',
-                'text' => 'ยืนยันการจองของ ' . ($b->user->name ?? 'ลูกค้า') . ' แล้ว',
+                'text' => 'ยืนยันการจองของ ' . ($b->user->us_name ?? 'ลูกค้า') . ' แล้ว',
             ]);
         }
         foreach (User::latest()->limit(4)->get() as $u) {
             $recent->push([
                 'time' => $u->created_at,
                 'type' => 'user',
-                'text' => $u->name . ' สมัครสมาชิกใหม่',
+                'text' => $u->us_name . ' สมัครสมาชิกใหม่',
             ]);
         }
         $recentActivities = $recent->filter(fn($a) => $a['time'] !== null)

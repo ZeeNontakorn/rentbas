@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'แก้ไขโปรไฟล์ · BCBS')
+@section('title', 'เปลี่ยนรหัสผ่าน · BCBS')
 
 @section('content')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -21,17 +21,6 @@
 .form-error { font-size:12px; color:#dc2626; margin-top:4px; }
 .form-group { margin-bottom:16px; }
 
-.otp-notice {
-    background:#fffbeb; border:1px solid #fde68a; border-radius:10px;
-    padding:12px 14px; margin-bottom:16px;
-    display:flex; gap:10px; align-items:flex-start;
-}
-.otp-notice-text { font-size:13px; color:#78350f; line-height:1.6; }
-.otp-notice-text strong { display:block; font-weight:700; margin-bottom:2px; }
-.otp-msg { margin-top:10px; padding:10px 14px; border-radius:8px; font-size:13px; display:none; }
-.otp-msg.ok  { display:flex; align-items:center; gap:8px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
-.otp-msg.err { display:flex; align-items:center; gap:8px; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
-
 .section-divider {
     display:flex; align-items:center; gap:10px;
     margin:20px 0 16px; color:#d1d5db; font-size:11px; font-weight:600;
@@ -41,7 +30,7 @@
 </style>
 
 <div class="pf-edit bg-white min-h-screen text-[#111827]">
-<div class="max-w-[860px] mx-auto px-4 py-8">
+<div class="max-w-[520px] mx-auto px-4 py-8">
 
     {{-- HEADER --}}
     <div class="mb-6 flex items-center gap-4">
@@ -54,26 +43,29 @@
         </a>
         <div class="h-4 w-px bg-gray-200"></div>
         <div>
-            <h1 class="text-[22px] font-semibold text-gray-800 tracking-tight">แก้ไขข้อมูลส่วนตัว</h1>
+            <h1 class="text-[22px] font-semibold text-gray-800 tracking-tight">เปลี่ยนรหัสผ่าน</h1>
         </div>
     </div>
 
-    {{-- 2-column grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+    @if ($errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const msgs = {!! json_encode($errors->all()) !!};
+            Swal.fire({ icon:'error', title:'กรุณาตรวจสอบข้อมูล',
+                html: msgs.join('<br>'), confirmButtonText:'ตกลง',
+                confirmButtonColor:'#e86c2a' });
+        });
+    </script>
+    @endif
 
-        {{-- LEFT: Profile Info Form --}}
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-[#e86c2a]/10 border border-[#e86c2a]/20 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="text-[14px] font-semibold text-gray-800" style="font-family:'Kanit',sans-serif;">ข้อมูลส่วนตัว</div>
-                    <div class="text-[12px] text-gray-400">ชื่อ อีเมล และเบอร์โทร</div>
-                </div>
+    {{-- Password --}}
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-[#e86c2a]/10 border border-[#e86c2a]/20 flex items-center justify-center">
+                <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
             </div>
             <div class="p-5">
 
@@ -93,9 +85,9 @@
 
                     <div class="form-group">
                         <label class="form-label">ชื่อผู้ใช้</label>
-                        <input type="text" name="name" value="{{ $user->name }}" required
+                        <input type="text" name="us_name" value="{{ $user->us_name }}" required
                                placeholder="กรอกชื่อของคุณ" class="form-input">
-                        @error('name') <div class="form-error">{{ $message }}</div> @enderror
+                        @error('us_name') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="form-group">
@@ -134,7 +126,7 @@
                         </div>
                         <button type="button"
                                 onclick="requestOtp()"
-                                class="w-full py-2.5 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition"
+                                class="w-full py-2.5 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 cursor-pointer transition"
                                 style="font-family:'Kanit',sans-serif;">
                             ส่ง OTP ไปยังอีเมลใหม่
                         </button>
@@ -144,7 +136,7 @@
                     <div class="section-divider" style="margin-top:20px;">บันทึก</div>
 
                     <button type="submit"
-                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px]"
+                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px] cursor-pointer"
                             style="font-family:'Kanit',sans-serif;">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -155,14 +147,30 @@
                 </form>
             </div>
         </div>
-
-        {{-- RIGHT: Password --}}
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-[#e86c2a]/10 border border-[#e86c2a]/20 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="p-5">
+            <form method="POST" action="{{ route('profile.update') }}">
+                @csrf
+                <div class="form-group">
+                    <label class="form-label">รหัสผ่านเดิม</label>
+                    <input type="password" name="current_password" placeholder="ใส่รหัสผ่านปัจจุบัน" class="form-input">
+                    @error('current_password') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label">รหัสผ่านใหม่</label>
+                    <input type="password" name="password" placeholder="อย่างน้อย 6 ตัวอักษร" class="form-input">
+                    @error('password') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">ยืนยันรหัสผ่าน</label>
+                    <input type="password" name="password_confirmation" placeholder="••••••••" class="form-input">
+                </div>
+                <div class="section-divider" style="margin-top:20px;">บันทึก</div>
+                <button type="submit"
+                        class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px]"
+                        style="font-family:'Kanit',sans-serif;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                     </svg>
                 </div>
                 <div>
@@ -189,7 +197,7 @@
                     </div>
                     <div class="section-divider" style="margin-top:20px;">บันทึก</div>
                     <button type="submit"
-                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px]"
+                            class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px] cursor-pointer"
                             style="font-family:'Kanit',sans-serif;">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -200,20 +208,12 @@
                 </form>
             </div>
         </div>
+    </div>
 
-    </div>{{-- /grid --}}
 </div>
 </div>
 
 <script>
-const originalEmail = '{{ $user->email }}';
-const emailInput    = document.getElementById('emailInput');
-const otpSection    = document.getElementById('otpSection');
-
-emailInput.addEventListener('input', function () {
-    otpSection.style.display = this.value !== originalEmail ? 'block' : 'none';
-});
-
 @if (session('success'))
     document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({ icon:'success', title:'สำเร็จ!',
@@ -221,31 +221,5 @@ emailInput.addEventListener('input', function () {
             confirmButtonText:'ตกลง', confirmButtonColor:'#e86c2a' });
     });
 @endif
-
-function requestOtp() {
-    const email = emailInput.value.trim();
-    const box   = document.getElementById('otpMessage');
-    if (email === originalEmail) {
-        box.textContent = 'อีเมลไม่มีการเปลี่ยนแปลง';
-        box.className   = 'otp-msg err'; return;
-    }
-    const fd = new FormData();
-    fd.append('email', email);
-    fd.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-    box.innerHTML = 'กำลังส่ง OTP...';
-    box.className = 'otp-msg ok';
-    fetch('{{ route('profile.request-otp-email') }}', { method:'POST', body:fd })
-        .then(r => r.json())
-        .then(d => {
-            if (d.success) {
-                box.innerHTML = 'ส่ง OTP ไปยัง <strong>' + email + '</strong> แล้ว';
-                box.className = 'otp-msg ok';
-            } else {
-                box.textContent = d.message || 'ไม่สามารถส่ง OTP ได้';
-                box.className   = 'otp-msg err';
-            }
-        })
-        .catch(() => { box.textContent = 'เกิดข้อผิดพลาด'; box.className = 'otp-msg err'; });
-}
 </script>
 @endsection

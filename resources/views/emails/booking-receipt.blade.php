@@ -65,13 +65,13 @@
         </div>
 
         <div class="body">
-            <p class="greet">เรียน {{ $booking->user->name }},</p>
+            <p class="greet">เรียน {{ $booking->user->us_name }},</p>
             <p class="greet" style="margin-top:-14px;">ขอบคุณที่ใช้บริการ นี่คือใบเสร็จรับเงินสำหรับการจองของคุณ</p>
 
             <table class="detail-table">
                 <tr>
                     <td class="k">ผู้จอง</td>
-                    <td class="v">{{ $booking->user->name }}</td>
+                    <td class="v">{{ $booking->user->us_name }}</td>
                 </tr>
                 <tr>
                     <td class="k">สนาม</td>

@@ -16,6 +16,7 @@ class PrivateTrainingBooking extends Model
 
     protected $fillable = [
         'user_id',
+        'participant_count',
         'coach_id',
         'assistant_requested',
         'court_assistant_id',
@@ -146,10 +147,15 @@ class PrivateTrainingBooking extends Model
         $today = now()->toDateString();
         $currentTime = now()->toTimeString();
 
-        return $query->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
-            ->where(function (Builder $q) use ($today, $currentTime): void {
-                self::applyExpiredDateConstraint($q, $today, $currentTime);
-            });
+        return $query->where(function (Builder $q) use ($today, $currentTime): void {
+            $q->where('status', 'expired')
+                ->orWhere(function (Builder $qq) use ($today, $currentTime): void {
+                    $qq->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
+                        ->where(function (Builder $dateQuery) use ($today, $currentTime): void {
+                            self::applyExpiredDateConstraint($dateQuery, $today, $currentTime);
+                        });
+                });
+        });
     }
 
     public function scopeNotExpired(Builder $query): Builder
@@ -158,7 +164,7 @@ class PrivateTrainingBooking extends Model
         $currentTime = now()->toTimeString();
 
         return $query->where(function (Builder $q) use ($today, $currentTime): void {
-            $q->whereNotIn('status', ['pending', 'awaiting_court', 'confirmed'])
+            $q->whereNotIn('status', ['pending', 'awaiting_court', 'confirmed', 'expired'])
                 ->orWhere(function (Builder $qq) use ($today, $currentTime): void {
                     $qq->whereIn('status', ['pending', 'awaiting_court', 'confirmed'])
                         ->where(function (Builder $q2) use ($today, $currentTime): void {

@@ -15,7 +15,7 @@
                 <form method="GET" action="{{ route('admin.packages.index') }}" class="flex w-full md:w-auto">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ระบุชื่อแพ็กเกจที่ต้องการค้นหา..."
                            class="w-full rounded-l-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400 md:w-72">
-                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600">
+                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 cursor-pointer">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
                         ค้นหาแพ็กเกจ
                     </button>
@@ -33,61 +33,77 @@
                     <svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     รายการแพ็กเกจทั้งหมด
                 </h2>
-                <span class="hidden text-xs text-gray-400 sm:inline">เลื่อนตารางเพื่อดูข้อมูลเพิ่มเติม</span>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-[1280px] w-full table-fixed text-left text-sm">
-                    <colgroup>
-                        <col class="w-[100px]"><col class="w-[200px]"><col class="w-[270px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[110px]"><col class="w-[140px]"><col class="w-[175px]">
-                    </colgroup>
+            <div class="overflow-x-hidden">
+                <table class="w-full table-auto text-left text-sm">
                     <thead class="border-b border-gray-200 bg-slate-50 text-xs uppercase tracking-wide text-gray-400">
                         <tr>
-                            <th class="px-6 py-4 font-medium">รูปภาพ</th>
-                            <th class="px-6 py-4 font-medium">ชื่อแพ็กเกจ</th>
-                            <th class="px-5 py-4 font-medium">รายละเอียด</th>
-                            <th class="px-5 py-4 font-medium">ราคา</th>
-                            <th class="px-5 py-4 font-medium">จำนวนครั้งที่ใช้ได้</th>
-                            <th class="px-5 py-4 font-medium">จำนวนวัน</th>
-                            <th class="px-5 py-4 font-medium">สถานะ</th>
-                            <th class="px-5 py-4 text-center font-medium">จัดการ</th>
+                            <th class="px-3 py-4 font-medium sm:px-6">รูปภาพ</th>
+                            <th class="px-3 py-4 font-medium sm:px-6">ชื่อแพ็กเกจ</th>
+                            <th class="hidden px-5 py-4 font-medium xl:table-cell">รายละเอียด</th>
+                            <th class="hidden px-5 py-4 font-medium lg:table-cell">วันที่ใช้ได้</th>
+                            <th class="px-3 py-4 font-medium sm:px-5">ราคา</th>
+                            <th class="hidden px-5 py-4 font-medium md:table-cell">จำนวนครั้ง</th>
+                            <th class="hidden px-5 py-4 font-medium lg:table-cell">จำนวนวัน</th>
+                            <th class="px-3 py-4 font-medium sm:px-5">สถานะ</th>
+                            <th class="px-3 py-4 text-center font-medium sm:px-5">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($packages as $package)
                             <tr class="align-middle transition hover:bg-slate-50/80">
-                                <td class="px-6 py-6">
+                                <td class="px-3 py-4 sm:px-6 sm:py-6">
                                     @if ($package->image)
                                         <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name }}"
-                                             class="h-14 w-14 rounded-xl border border-gray-200 object-cover shadow-sm">
+                                             class="h-10 w-10 rounded-xl border border-gray-200 object-cover shadow-sm sm:h-14 sm:w-14">
                                     @else
-                                        <div class="flex h-14 w-14 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300">
-                                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300 sm:h-14 sm:w-14">
+                                            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-6">
+                                <td class="px-3 py-4 sm:px-6 sm:py-6">
                                     <p class="font-semibold leading-6 text-gray-800 break-words">{{ $package->name }}</p>
+                                    <!-- ข้อมูลย่อสำหรับจอเล็ก ที่ซ่อนคอลัมน์ไป -->
+                                    <p class="mt-1 text-xs text-gray-400 md:hidden">{{ $package->num_of_use }} ครั้ง @if(!is_null($package->day)) · {{ $package->day }} วัน @endif</p>
                                 </td>
-                                <td class="px-5 py-6">
-                                    <p class="line-clamp-2 text-sm leading-6 text-gray-500 break-words">{{ $package->description ?: '—' }}</p>
+                                <td class="hidden max-w-[220px] px-5 py-6 xl:table-cell">
+                                    <p class="line-clamp-1 text-sm leading-6 text-gray-500 break-words">{{ $package->description ?: '—' }}</p>
                                 </td>
-                                <td class="px-5 py-6">
+                                <td class="hidden px-5 py-6 lg:table-cell">
+                                    @php
+                                        $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                                        $usableDays = $package->usable_days ?? [];
+                                    @endphp
+                                    @if(empty($usableDays))
+                                        <span class="inline-flex rounded-lg bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700">ทุกวัน</span>
+                                    @else
+                                        <div class="flex flex-wrap gap-1">
+                                            @foreach($usableDays as $day)
+                                                <span class="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1.5 text-xs font-medium text-slate-600">
+                                                    {{ $dayLabels[$day] ?? $day }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-3 py-4 sm:px-5 sm:py-6">
                                     <span class="font-medium text-slate-700">{{ number_format($package->price, 2) }}</span>
                                     <span class="text-xs text-gray-400">บาท</span>
                                 </td>
-                                <td class="px-5 py-6">
+                                <td class="hidden px-5 py-6 md:table-cell">
                                     <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $package->num_of_use }} ครั้ง</span>
                                 </td>
-                                <td class="px-5 py-6">
+                                <td class="hidden px-5 py-6 lg:table-cell">
                                     @if (! is_null($package->day))
                                         <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-600">{{ $package->day }} วัน</span>
                                     @else
                                         <span class="text-gray-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-6">
-                                    <form action="{{ route('admin.packages.toggleStatus', $package) }}" method="POST" class="inline-flex items-center gap-2.5">
+                                <td class="px-3 py-4 sm:px-5 sm:py-6">
+                                    <form action="{{ route('admin.packages.toggleStatus', $package) }}" method="POST" class="inline-flex items-center gap-2">
                                         @csrf @method('PATCH')
                                         <label class="switch" title="คลิกเพื่อ{{ $package->is_active ? 'ปิด' : 'เปิด' }}ใช้งานแพ็กเกจนี้">
                                             <input type="checkbox" {{ $package->is_active ? 'checked' : '' }} onchange="this.form.submit()">
@@ -102,23 +118,30 @@
                                                 </div>
                                             </div>
                                         </label>
-                                        <span class="text-xs font-medium {{ $package->is_active ? 'text-green-700' : 'text-gray-400' }}">
+                                        <span class="hidden text-xs font-medium sm:inline {{ $package->is_active ? 'text-green-700' : 'text-gray-400' }}">
                                             {{ $package->is_active ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
                                         </span>
                                     </form>
                                 </td>
-                                <td class="px-5 py-6 text-center">
-                                    <div class="inline-flex items-center gap-2">
-                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-4 py-2.5 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600">แก้ไข</a>
+                                <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
+                                    <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $package->id }}" action="{{ route('admin.packages.delete', $package) }}" method="POST">
                                             @csrf @method('DELETE')
-                                            <button type="button" onclick="confirmDeletePackage('{{ $package->id }}', '{{ addslashes($package->name) }}')" class="inline-flex rounded-lg bg-red-500 px-4 py-2.5 text-xs font-medium text-white shadow-sm transition hover:bg-red-600">ลบ</button>
+                                            <button type="button" onclick="confirmDeletePackage('{{ $package->id }}', '{{ addslashes($package->name) }}')" class="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 cursor-pointer">
+                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span>ลบ</span>
+                                            </button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="px-6 py-16 text-center text-gray-400">
+                            <tr><td colspan="9" class="px-6 py-16 text-center text-gray-400">
                                 <p class="font-medium text-sm">ยังไม่มีแพ็กเกจในระบบ</p>
                                 <a href="{{ route('admin.packages.create') }}" class="mt-3 inline-block text-sm font-medium text-blue-500 hover:text-blue-600">+ เพิ่มแพ็กเกจแรกของคุณ</a>
                             </td></tr>
@@ -221,6 +244,7 @@ function confirmDeletePackage(packageId, packageName) {
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#3085d6',
+        reverseButtons: true,
         confirmButtonText: 'ยืนยันการลบ',
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {

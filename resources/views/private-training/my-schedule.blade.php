@@ -67,7 +67,7 @@
                         <option value="leave">ลางาน</option>
                         <option value="school_class">คลาสโรงเรียนบาส</option>
                         @if($coach->membership_type === 'coach')
-                            <option value="private_training_manual">Private Training (กำหนดเอง)</option>
+                            <option value="private_training_manual">เทรนเนอร์ส่วนตัว (กำหนดเอง)</option>
                         @endif
                     </select>
                 </div>
@@ -165,6 +165,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const pad = value => String(value).padStart(2, '0');
     const localDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     const localTime = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    const isSameCalendarDate = (first, second) => Boolean(first && second) && localDate(first) === localDate(second);
+    const staysWithinOneDate = (start, end) => !end || isSameCalendarDate(start, new Date(end.getTime() - 1));
     const field = id => document.getElementById(id);
     const checkedDays = () => [...document.querySelectorAll('input[name="recurrence_days"]:checked')].map(input => input.value);
 
@@ -298,14 +300,27 @@ document.addEventListener('DOMContentLoaded', function () {
         dayMaxEvents: true,
         events: eventsApi,
         selectAllow(info) {
-            return info.start > new Date();
+            return staysWithinOneDate(info.start, info.end)
+                && info.start > new Date();
         },
         eventAllow(dropInfo, draggedEvent) {
             return ['blocked', 'calendar_event'].includes(draggedEvent.extendedProps.kind)
                 && (draggedEvent.extendedProps.kind === 'blocked' || draggedEvent.extendedProps.recurrence === 'none')
+                && isSameCalendarDate(draggedEvent.start, dropInfo.start)
+                && staysWithinOneDate(dropInfo.start, dropInfo.end)
                 && dropInfo.start > new Date();
         },
         select(info) {
+            if (!staysWithinOneDate(info.start, info.end)) {
+                calendar.unselect();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'เลือกข้ามวันไม่ได้',
+                    text: 'กรุณาเลือกช่วงเวลาภายในวันเดียวกัน'
+                });
+                return;
+            }
+
             openModal(null, info.start, info.end);
         },
         eventClick(info) {
@@ -322,6 +337,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function persistMove(info) {
         const props = info.event.extendedProps;
+
+        if (!isSameCalendarDate(info.oldEvent?.start, info.event.start)
+            || !staysWithinOneDate(info.event.start, info.event.end)) {
+            info.revert();
+            Swal.fire({
+                icon: 'warning',
+                title: 'ย้ายข้ามวันไม่ได้',
+                text: 'กำหนดการของโค้ชและผู้ช่วยสนามปรับเวลาได้เฉพาะภายในวันเดิมเท่านั้น'
+            });
+            return;
+        }
+
         try {
             if (props.kind === 'blocked') {
                 await request(`${eventsApi}/${props.recordId}`, 'PUT', {
