@@ -20,7 +20,7 @@
 
 @section('content')
 <div class="text-gray-900 min-h-screen py-8">
-    <div class="container mx-auto px-4 sm:px-6 max-w-7xl lg:translate-x-2">
+    <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         {{-- Header --}}
         <div class="mb-6">

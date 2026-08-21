@@ -144,6 +144,9 @@
         <button @click="tab = 'past'" :class="tab === 'past' ? 'active' : ''" class="tab-btn whitespace-nowrap">
             ประวัติ <span class="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">{{ $past->count() }}</span>
         </button>
+        <button @click="tab = 'transactions'" :class="tab === 'transactions' ? 'active' : ''" class="tab-btn whitespace-nowrap">
+            ประวัติการใช้จ่าย <span class="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">{{ $transactions->count() }}</span>
+        </button>
     </div>
 
     {{-- WRAPPER --}}
@@ -281,6 +284,58 @@
                             </div>
                         </div>
                     @endforeach
+                </div>
+            @endif
+        </div>
+
+        {{-- ─── CREDIT TRANSACTION HISTORY ─── --}}
+        <div x-show="tab === 'transactions'" x-transition.opacity.duration.400ms style="display: none;">
+            @php
+                $typeMeta = [
+                    'topup' => ['label' => 'เติมเครดิต', 'bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'sign' => '+'],
+                    'deduct' => ['label' => 'หักเครดิต', 'bg' => 'bg-red-100', 'text' => 'text-red-600', 'sign' => '-'],
+                    'refund' => ['label' => 'คืนเครดิต', 'bg' => 'bg-blue-100', 'text' => 'text-blue-700', 'sign' => '+'],
+                    'expire' => ['label' => 'หมดอายุอัตโนมัติ', 'bg' => 'bg-gray-200', 'text' => 'text-gray-600', 'sign' => '-'],
+                ];
+            @endphp
+            @if($transactions->isEmpty())
+                <div class="border-2 border-dashed border-gray-300 rounded-2xl py-20 text-center flex flex-col items-center">
+                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-600">ยังไม่มีประวัติการใช้จ่าย</h3>
+                </div>
+            @else
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-400 text-[11px] uppercase tracking-wide border-b border-gray-200">
+                                <tr>
+                                    <th class="px-4 py-3 font-medium">วันที่</th>
+                                    <th class="px-4 py-3 font-medium">ประเภท</th>
+                                    <th class="px-4 py-3 font-medium">รายละเอียด</th>
+                                    <th class="px-4 py-3 font-medium text-right">จำนวนเงิน</th>
+                                    <th class="px-4 py-3 font-medium text-right">คงเหลือ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach($transactions as $tx)
+                                    @php $meta = $typeMeta[$tx->type] ?? ['label' => $tx->type, 'bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'sign' => ''] @endphp
+                                    <tr>
+                                        <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ $tx->created_at->format('d/m/Y H:i') }}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $meta['bg'] }} {{ $meta['text'] }}">
+                                                {{ $meta['label'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-500 max-w-[240px] truncate" title="{{ $tx->note }}">{{ $tx->note ?? '—' }}</td>
+                                        <td class="px-4 py-3 text-right font-medium {{ $meta['text'] }} whitespace-nowrap">{{ $meta['sign'] }}฿{{ number_format($tx->amount / 100, 2) }}</td>
+                                        <td class="px-4 py-3 text-right text-gray-700 font-medium whitespace-nowrap">฿{{ number_format($tx->balance_after / 100, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             @endif
         </div>

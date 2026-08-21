@@ -688,7 +688,12 @@ class BookingController extends Controller
             ->orderByDesc('updated_at')
             ->get();
 
-        return view('booking.history', compact('current', 'past'));
+        $transactions = $request->user()->creditTransactions()
+            ->latest()
+            ->take(30)
+            ->get();
+
+        return view('booking.history', compact('current', 'past', 'transactions'));
     }
     /**
      * Approve multiple bookings at once (admin)

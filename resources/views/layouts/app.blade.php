@@ -114,7 +114,42 @@
         }
     });
 </script>
+{{-- แทนที่ confirm() ของเบราว์เซอร์ด้วย SweetAlert2 — ใส่ data-confirm="ข้อความ" ในฟอร์มไหนก็ได้
+     รองรับ dynamic message ผ่าน JS ก่อน submit ด้วย --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form[data-confirm]').forEach((form) => {
+            form.addEventListener('submit', function (event) {
+                if (form.dataset.confirmed === '1') {
+                    return; // ยืนยันแล้ว ปล่อยให้ submit ตามปกติ
+                }
 
+                event.preventDefault();
+
+                const message = form.dataset.confirm || 'ยืนยันการทำรายการนี้?';
+                const confirmText = form.dataset.confirmButtonText || 'ยืนยัน';
+                const danger = form.dataset.confirmDanger === '1';
+
+                Swal.fire({
+                    title: 'ยืนยันการทำรายการ',
+                    text: message,
+                    icon: danger ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: confirmText,
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: danger ? '#dc2626' : '#ea580c',
+                    cancelButtonColor: '#6b7280',
+                    reverseButtons: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.dataset.confirmed = '1';
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
     @stack('scripts')
 </body>
 

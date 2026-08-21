@@ -50,7 +50,7 @@ class GroupRoundSignup extends Model
 
     public function displayName(): string
     {
-        return $this->user->name ?? $this->guest_name ?? '-';
+        return $this->user->us_name ?? $this->guest_name ?? '-';
     }
 
     public function isGuest(): bool
