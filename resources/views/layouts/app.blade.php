@@ -115,7 +115,6 @@
             window.location.reload();
         }
     });
-</script>
     function syncNavbarSpacer() {
         const nav = document.querySelector('nav.fixed');
         const spacer = document.getElementById('navbar-spacer');
@@ -124,6 +123,7 @@
     window.addEventListener('load', syncNavbarSpacer);
     window.addEventListener('resize', syncNavbarSpacer);
     document.getElementById('mobileMenuBtn')?.addEventListener('click', () => setTimeout(syncNavbarSpacer, 50));
+</script>
     @stack('scripts')
 </body>
 
