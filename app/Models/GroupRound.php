@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Mail\ReservePromoted;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+
 
 class GroupRound extends Model
 {
@@ -116,33 +119,39 @@ class GroupRound extends Model
      * เรียกใช้ทุกครั้งที่มีคน "ตัวจริง" ยกเลิก/ถูกนำออกจากรอบ
      */
     public function promoteNextReserve(): ?GroupRoundSignup
-    {
-        $next = GroupRoundSignup::where('group_round_id', $this->id)
-            ->where('status', 'confirmed')
-            ->where('is_reserve', true)
-            ->orderBy('order_number')
-            ->first();
+{
+    $next = GroupRoundSignup::where('group_round_id', $this->id)
+        ->where('status', 'confirmed')
+        ->where('is_reserve', true)
+        ->orderBy('order_number')
+        ->first();
 
-        if (! $next) {
-            return null;
-        }
-
-        $next->update(['is_reserve' => false]);
-
-        $notifyUserId = $next->user_id ?? $next->booked_by;
-
-        if ($notifyUserId) {
-            Notification::create([
-                'user_id' => $notifyUserId,
-                'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
-                'message' => "ที่นั่งของ \"{$next->displayName()}\" เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
-                'action_url' => route('group-rounds.my-bookings'),
-                'is_read' => false,
-            ]);
-        }
-
-        return $next;
+    if (! $next) {
+        return null;
     }
+
+    $next->update(['is_reserve' => false]);
+
+    $notifyUserId = $next->user_id ?? $next->booked_by;
+
+    if ($notifyUserId) {
+        Notification::create([
+            'user_id' => $notifyUserId,
+            'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
+            'message' => "ที่นั่งของ \"{$next->displayName()}\" เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
+            'action_url' => route('group-rounds.my-bookings'),
+            'is_read' => false,
+        ]);
+
+        $notifyUser = User::find($notifyUserId);
+
+        if ($notifyUser && $notifyUser->email) {
+            Mail::to($notifyUser->email)->queue(new ReservePromoted($this, $next));
+        }
+    }
+
+    return $next;
+}
 
     /**
      * เมื่อหมดเวลาสละสิทธิ์แล้ว (cancel_deadline ผ่านไปแล้ว) ให้คืนเครดิตให้คิวสำรอง
