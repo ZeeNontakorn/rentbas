@@ -156,7 +156,6 @@ test.describe.serial('Admin ตั้งค่ากลุ่มบาส GROUP-
     });
 
     test('GROUP-BAS-SET-15 ปฏิเสธวันยกเลิกหลังเวลาเล่น', async ({ page, request }) => {
-        test.fail(true, 'Known defect: backend ยังไม่มี validation cancel_deadline ต้องก่อนเวลาเล่น');
         const { admin, fixture } = await openAdmin(page, request);
         const form = await admin.openCustomRoundForm();
         await admin.fillRound(form, fixture, { cancel_deadline: `${fixture.play_date}T23:00` });
@@ -189,7 +188,6 @@ test.describe.serial('Admin ตั้งค่ากลุ่มบาส GROUP-
     });
 
     test('GROUP-BAS-SET-19 ปฏิเสธวันยกเลิกรอบกำหนดเองที่ไม่ถูกต้อง', async ({ page, request }) => {
-        test.fail(true, 'Known defect: backend ยังไม่มี validation cancel_deadline ต้องก่อนเวลาเล่น');
         const { admin, fixture } = await openAdmin(page, request);
         const form = await admin.openCustomRoundForm();
         await admin.fillRound(form, fixture, { cancel_deadline: `${fixture.play_date}T23:30` });
