@@ -1507,7 +1507,7 @@ html { scroll-behavior: smooth; }
         @else
             <a href="{{ route('login') }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
         @endauth
-        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+        <a href="{{ \App\Models\Setting::getVal('line_official_url', 'https://line.me/R/ti/p/%40THATA-HC') }}" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
     </div>
 @else
     <div class="gs-btn-row">
@@ -1516,7 +1516,7 @@ html { scroll-behavior: smooth; }
         @else
             <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
         @endauth
-        <a href="https://line.me/R/ti/p/%40THATA-HC" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+        <a href="{{ \App\Models\Setting::getVal('line_official_url', 'https://line.me/R/ti/p/%40THATA-HC') }}" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
     </div>
 @endif
                     </div>
@@ -1742,21 +1742,26 @@ html { scroll-behavior: smooth; }
             <div style="margin-top:20px;">
                 <p class="footer-addr-title" style="margin-bottom:10px;">ติดตามข่าวสาร</p>
                 <div class="footer-social">
-                    <a href="https://www.facebook.com/thatahomecourts/" class="social-badge" target="_blank">
+                    @php
+                        $footerLinks = \App\Models\Setting::values([
+                            'facebook_url', 'youtube_url', 'instagram_url', 'line_footer_url', 'contact_phone', 'contact_email',
+                        ]);
+                    @endphp
+                    <a href="{{ $footerLinks['facebook_url'] ?? 'https://www.facebook.com/thatahomecourts/' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt="" {!! $imageFallback !!}> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
                     </a>
-                    <a href="https://www.youtube.com/THATASPORT" class="social-badge" target="_blank">
+                    <a href="{{ $footerLinks['youtube_url'] ?? 'https://www.youtube.com/THATASPORT' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
-                    <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
+                    <a href="{{ $footerLinks['instagram_url'] ?? 'https://www.instagram.com/thata_homecourt' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">THATA Homecourt
                     </a>
-                    <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
+                    <a href="{{ $footerLinks['line_footer_url'] ?? 'https://line.me/R/ti/p/%40THATA-HC' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
                     </a>
                     <a href="javascript:void(0)" onclick="copyPhone(this)" class="social-badge">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5585/5585856.png" alt="">
-                        <span class="phone-num">081-246-0000</span>
+                        <span class="phone-num">{{ $footerLinks['contact_phone'] ?? '081-246-0000' }}</span>
                     </a>
                 </div>
             </div>
@@ -1776,8 +1781,8 @@ html { scroll-behavior: smooth; }
     <div class="footer-bottom">
         <p class="footer-copy">© 2026 THATA HOMECOURT – THATA SPORT HQ & Basketball (Chonburi).</p>
         <div class="footer-links">
-            <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
-            <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
+            <a href="{{ $footerLinks['facebook_url'] ?? 'https://www.facebook.com/thatahomecourts/' }}" target="_blank">ติดตามเรา</a>
+            <a href="mailto:{{ $footerLinks['contact_email'] ?? 'thatahomecourt@gmail.com' }}" target="_blank">ติดต่อ</a>
         </div>
     </div>
 </footer>
@@ -2149,9 +2154,9 @@ initHeroSlideshow();
  * คัดลอกเบอร์โทรศัพท์พร้อมแสดงเอฟเฟกต์แจ้งเตือน
  */
 function copyPhone(btn) {
-    const phone = '081-246-0000';
+    const label = btn.querySelector('.phone-num');
+    const phone = label.textContent.trim();
     const doFeedback = () => {
-        const label = btn.querySelector('.phone-num');
         const original = label.textContent;
         label.textContent = 'คัดลอกแล้ว!';
         btn.style.background = 'var(--green)';
