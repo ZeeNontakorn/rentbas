@@ -41,10 +41,33 @@
 .status-rejected { background: #fee2e2; color: #991b1b; }
 </style>
 
-<div class="tu-main max-w-[640px] mx-auto px-4 py-10" data-aos="fade-up">
-    <div class="flex items-baseline justify-between flex-wrap gap-2 mb-1">
+<div class="tu-main max-w-2xl mx-auto px-4 py-10" data-aos="fade-up">
+    @php
+        $expiresAt = auth()->user()->credit_expires_at;
+
+        // เครดิตจะถูกตัดยอดจริงตอน scheduler รอบ 01:00 ที่ >= credit_expires_at
+        // (job credits:expire-due รันวันละครั้งตอนตี 1 — ดู routes/console.php)
+        // ไม่ใช่ตัดทันทีตอนถึงเวลา credit_expires_at เป๊ะๆ จึงต้องเลื่อนไปหารอบตัดจริงก่อนเอาไปนับถอยหลัง
+        $creditCutoff = null;
+        if ($expiresAt) {
+            $creditCutoff = $expiresAt->copy()->setTime(1, 0, 0);
+            if ($creditCutoff->lt($expiresAt)) {
+                $creditCutoff->addDay();
+            }
+        }
+    @endphp
+
+    <div class="flex items-start justify-between flex-wrap gap-2 mb-1">
         <h1 class="text-[28px] font-bold text-gray-900 tracking-tight">เติมเครดิต</h1>
-        <span class="text-[13px] text-gray-400">ยอดคงเหลือ <span class="font-bold text-gray-700">฿{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span></span>
+        <div class="flex flex-col items-end gap-0.5">
+            <span class="text-[13px] text-gray-400">ยอดคงเหลือ <span class="font-bold text-gray-700">฿{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span></span>
+            @if($creditCutoff)
+                <span class="text-[12px] text-gray-400">
+                    หมดอายุภายใน {{ $creditCutoff->format('d/m/Y H:i') }} น.
+                </span>
+                <span id="creditCountdown" data-expires-at="{{ $creditCutoff->toIso8601String() }}" class="font-bold text-amber-700" style="font-family:'Kanit',sans-serif;">—</span>
+            @endif
+        </div>
     </div>
     <p class="text-gray-500 text-[14px] mb-6">เลือกแพ็กเกจ หรือกรอกจำนวนเงินที่ต้องการเติมเอง</p>
 
@@ -94,6 +117,8 @@
         </button>
     </form>
 
+
+
     @if($myRequests->isNotEmpty())
         <div class="mt-10">
             <h2 class="font-bold text-[15px] text-gray-900 mb-3">คำขอเติมเครดิตล่าสุด</h2>
@@ -115,4 +140,33 @@
     @endif
 </div>
 </div>
+
+@if($creditCutoff)
+    @push('scripts')
+    <script>
+    (function () {
+        const el = document.getElementById('creditCountdown');
+        if (!el) return;
+        const expiresAt = new Date(el.dataset.expiresAt).getTime();
+
+        function tick() {
+            const diff = expiresAt - Date.now();
+            if (diff <= 0) {
+                el.textContent = 'ตัดยอดแล้ว';
+                clearInterval(timer);
+                return;
+            }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            el.textContent = `เหลือ ${d} วัน ${h} ชม. ${m} นาที ${s} วิ`;
+        }
+
+        tick();
+        const timer = setInterval(tick, 1000);
+    })();
+    </script>
+    @endpush
+@endif
 @endsection
