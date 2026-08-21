@@ -2,7 +2,15 @@
 @section('title', 'จัดการกลุ่มเล่นบาสค่ำ')
 
 @section('content')
-<div class="max-w-6xl mx-auto px-4 py-6" x-data="{ showSessionForm: false, showEditForm: false, showRoundForm: false, prefillSession: null, editSession: null }">
+<div class="max-w-6xl mx-auto px-4 py-6" x-data="{
+    showSessionForm: false,
+    showEditForm: false,
+    showRoundForm: false,
+    prefillSession: null,
+    editSession: null,
+    editStartH: '00', editStartM: '00', editEndH: '00', editEndM: '00',
+    roundStartH: '00', roundStartM: '00', roundEndH: '00', roundEndM: '00'
+}">
 
         <div class="flex items-center justify-between mb-6">
         <div>
@@ -62,28 +70,42 @@
                     <td class="px-5 py-3 text-gray-600">{{ $s->credit_cost }}</td>
                     <td class="px-5 py-3 text-right space-x-2">
     <button
-        @click="showRoundForm = true; prefillSession = {
-            id: {{ $s->id }},
-            title: '{{ addslashes($s->name) }}',
-            start_time: '{{ \Carbon\Carbon::parse($s->start_time)->format('H:i') }}',
-            end_time: '{{ \Carbon\Carbon::parse($s->end_time)->format('H:i') }}',
-            court_id: {{ $s->court_id ?? 'null' }},
-            max_players: {{ $s->max_players }},
-            credit_cost: {{ $s->credit_cost }},
-            play_date: '{{ $s->nextOccurrence()->format('Y-m-d') }}'
-        }"
+        @click="
+            showRoundForm = true;
+            prefillSession = {
+                id: {{ $s->id }},
+                title: '{{ addslashes($s->name) }}',
+                start_time: '{{ \Carbon\Carbon::parse($s->start_time)->format('H:i') }}',
+                end_time: '{{ \Carbon\Carbon::parse($s->end_time)->format('H:i') }}',
+                court_id: {{ $s->court_id ?? 'null' }},
+                max_players: {{ $s->max_players }},
+                credit_cost: {{ $s->credit_cost }},
+                play_date: '{{ $s->nextOccurrence()->format('Y-m-d') }}'
+            };
+            roundStartH = prefillSession.start_time.split(':')[0];
+            roundStartM = prefillSession.start_time.split(':')[1];
+            roundEndH = prefillSession.end_time.split(':')[0];
+            roundEndM = prefillSession.end_time.split(':')[1];
+        "
         class="text-orange-600 hover:text-orange-800 font-medium">เปิดรับสมัครรอบใหม่</button>
     <button
-        @click="showEditForm = true; editSession = {
-            id: {{ $s->id }},
-            name: '{{ addslashes($s->name) }}',
-            day_of_week: {{ $s->day_of_week }},
-            start_time: '{{ \Carbon\Carbon::parse($s->start_time)->format('H:i') }}',
-            end_time: '{{ \Carbon\Carbon::parse($s->end_time)->format('H:i') }}',
-            court_id: {{ $s->court_id ?? 'null' }},
-            max_players: {{ $s->max_players }},
-            credit_cost: {{ $s->credit_cost }}
-        }"
+        @click="
+            showEditForm = true;
+            editSession = {
+                id: {{ $s->id }},
+                name: '{{ addslashes($s->name) }}',
+                day_of_week: {{ $s->day_of_week }},
+                start_time: '{{ \Carbon\Carbon::parse($s->start_time)->format('H:i') }}',
+                end_time: '{{ \Carbon\Carbon::parse($s->end_time)->format('H:i') }}',
+                court_id: {{ $s->court_id ?? 'null' }},
+                max_players: {{ $s->max_players }},
+                credit_cost: {{ $s->credit_cost }}
+            };
+            editStartH = editSession.start_time.split(':')[0];
+            editStartM = editSession.start_time.split(':')[1];
+            editEndH = editSession.end_time.split(':')[0];
+            editEndM = editSession.end_time.split(':')[1];
+        "
         class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200">แก้ไข</button>
         <form action="{{ route('admin.group-sessions.destroy', $s) }}" method="POST" class="inline"
     data-confirm="ลบเทมเพลต &quot;{{ $s->name }}&quot; ทิ้งถาวร? รอบที่เคยเปิดจากเทมเพลตนี้จะไม่หายไป "
@@ -106,7 +128,13 @@
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-gray-700">รอบที่กำลังจะถึง</h2>
-            <button @click="showRoundForm = true; prefillSession = null" class="text-sm text-orange-600 hover:text-orange-800 font-medium">+ เปิดรอบแบบกำหนดเอง</button>
+            <button
+                @click="
+                    showRoundForm = true;
+                    prefillSession = null;
+                    roundStartH = '00'; roundStartM = '00'; roundEndH = '00'; roundEndM = '00';
+                "
+                class="text-sm text-orange-600 hover:text-orange-800 font-medium">+ เปิดรอบแบบกำหนดเอง</button>
         </div>
         <table class="w-full text-sm">
             <thead>
@@ -148,7 +176,8 @@
 
     {{-- Modal: สร้างเทมเพลตรอบประจำ (ไม่มีเดดไลน์ เพราะเป็นแค่เทมเพลต ยังไม่ใช่รอบจริง) --}}
     <div x-show="showSessionForm" x-cloak class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-        <div @click.outside="showSessionForm = false" class="bg-white rounded-xl w-full max-w-md p-6">
+        <div @click.outside="showSessionForm = false" class="bg-white rounded-xl w-full max-w-md p-6"
+            x-data="{ startH: '00', startM: '00', endH: '00', endM: '00' }">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">สร้างรอบประจำใหม่</h3>
             <form action="{{ route('admin.group-sessions.store') }}" method="POST" class="space-y-3">
                 @csrf
@@ -172,11 +201,33 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">เวลาเริ่ม</label>
-                        <input type="time" name="start_time" value="00:00" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                        <div class="flex gap-1">
+                            <select x-model="startH" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                @for($i = 0; $i < 24; $i++)
+                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                @endfor
+                            </select>
+                            <select x-model="startM" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                <option value="00">00</option>
+                                <option value="30">30</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="start_time" x-bind:value="startH + ':' + startM">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">เวลาสิ้นสุด</label>
-                        <input type="time" name="end_time" value="00:00" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                        <div class="flex gap-1">
+                            <select x-model="endH" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                @for($i = 0; $i < 24; $i++)
+                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                @endfor
+                            </select>
+                            <select x-model="endM" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                <option value="00">00</option>
+                                <option value="30">30</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="end_time" x-bind:value="endH + ':' + endM">
                     </div>
                 </div>
                 <div>
@@ -238,15 +289,33 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">เวลาเริ่ม</label>
-                        <input type="time" name="start_time" required
-                            x-bind:value="editSession ? editSession.start_time : '00:00'"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                        <div class="flex gap-1">
+                            <select x-model="editStartH" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                @for($i = 0; $i < 24; $i++)
+                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                @endfor
+                            </select>
+                            <select x-model="editStartM" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                <option value="00">00</option>
+                                <option value="30">30</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="start_time" x-bind:value="editStartH + ':' + editStartM">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">เวลาสิ้นสุด</label>
-                        <input type="time" name="end_time" required
-                            x-bind:value="editSession ? editSession.end_time : '00:00'"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                        <div class="flex gap-1">
+                            <select x-model="editEndH" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                @for($i = 0; $i < 24; $i++)
+                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                @endfor
+                            </select>
+                            <select x-model="editEndM" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                <option value="00">00</option>
+                                <option value="30">30</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="end_time" x-bind:value="editEndH + ':' + editEndM">
                     </div>
                 </div>
                 <div>
@@ -307,15 +376,33 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">เวลาเริ่ม</label>
-                        <input type="time" name="start_time" required
-                            x-bind:value="prefillSession ? prefillSession.start_time : '00:00'"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                        <div class="flex gap-1">
+                            <select x-model="roundStartH" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                @for($i = 0; $i < 24; $i++)
+                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                @endfor
+                            </select>
+                            <select x-model="roundStartM" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                <option value="00">00</option>
+                                <option value="30">30</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="start_time" x-bind:value="roundStartH + ':' + roundStartM">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">เวลาเลิก</label>
-                        <input type="time" name="end_time" required
-                            x-bind:value="prefillSession ? prefillSession.end_time : '00:00'"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                        <div class="flex gap-1">
+                            <select x-model="roundEndH" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                @for($i = 0; $i < 24; $i++)
+                                    <option value="{{ sprintf('%02d', $i) }}">{{ sprintf('%02d', $i) }}</option>
+                                @endfor
+                            </select>
+                            <select x-model="roundEndM" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-900">
+                                <option value="00">00</option>
+                                <option value="30">30</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="end_time" x-bind:value="roundEndH + ':' + roundEndM">
                     </div>
                 </div>
                 <div>
