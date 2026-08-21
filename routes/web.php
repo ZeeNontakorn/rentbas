@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CreditController;
 use App\Http\Controllers\Admin\CreditTopupController as AdminCreditTopupController;
 use App\Http\Controllers\Admin\CreditTopupPackageController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LineLinkController;
 use App\Http\Controllers\Admin\ManageCourseController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PricingController;
@@ -212,6 +213,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ตั้งค่าเว็บไซต์ (Site Settings)
     Route::get('/edit-text', [SettingController::class, 'edit'])->name('edit.text');
     Route::post('/edit-text', [SettingController::class, 'update'])->name('edit.text.update');
+
+    // จัดการลิงก์ทั้งหมดของเว็บ (LINE แยกตามจุดใช้งาน + โซเชียล + เบอร์โทร/อีเมลติดต่อ)
+    Route::get('/line-links', [LineLinkController::class, 'index'])->name('line-links.index');
+    Route::post('/line-links/footer', [LineLinkController::class, 'updateFooter'])->name('line-links.footer');
+    Route::post('/line-links/topup', [LineLinkController::class, 'updateTopup'])->name('line-links.topup');
+    Route::post('/line-links/course', [LineLinkController::class, 'updateCourse'])->name('line-links.course');
+    Route::post('/line-links/official', [LineLinkController::class, 'updateOfficial'])->name('line-links.official');
+    Route::post('/line-links/facebook', [LineLinkController::class, 'updateFacebook'])->name('line-links.facebook');
+    Route::post('/line-links/youtube', [LineLinkController::class, 'updateYoutube'])->name('line-links.youtube');
+    Route::post('/line-links/instagram', [LineLinkController::class, 'updateInstagram'])->name('line-links.instagram');
+    Route::post('/line-links/phone', [LineLinkController::class, 'updatePhone'])->name('line-links.phone');
+    Route::post('/line-links/email', [LineLinkController::class, 'updateEmail'])->name('line-links.email');
     Route::post('/website/facilities', [WebsiteReviewController::class, 'storeFacility'])->name('website.facilities.store');
     Route::put('/website/facilities/{facility}', [WebsiteReviewController::class, 'updateFacility'])->name('website.facilities.update');
     Route::delete('/website/facilities/{facility}', [WebsiteReviewController::class, 'destroyFacility'])->name('website.facilities.destroy');

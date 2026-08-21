@@ -82,10 +82,12 @@
 
             {{-- ยกเลิกรอบ --}}
             <form
-                action="{{ route('admin.group-sessions.rounds.cancel', $round) }}"
-                method="POST"
-                onsubmit="return confirm('ยกเลิกรอบนี้และคืนเครดิตให้ทุกคนที่ลงชื่อไว้?');"
-            >
+            action="{{ route('admin.group-sessions.rounds.cancel', $round) }}"
+            method="POST"
+            data-confirm="ยกเลิกรอบนี้และคืนเครดิตให้ทุกคนที่ลงชื่อไว้?"
+            data-confirm-button-text="ยืนยันยกเลิก"
+            data-confirm-danger="1"
+                >
                 @csrf
                 @method('DELETE')
 
@@ -169,30 +171,46 @@
                 @csrf
 
                 {{-- เลือกสมาชิก --}}
-                <select
-                    name="user_id"
-                    class="flex-1 min-w-0 border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                >
+                <div x-data="memberPicker({{ Js::from($members) }})" class="relative flex-1 min-w-0">
+    <input
+        type="text"
+        x-model="query"
+        @focus="open = true"
+        @input="open = true; selectedId = null"
+        placeholder="พิมพ์ชื่อ, อีเมล หรือเบอร์โทร เพื่อค้นหาสมาชิก"
+        autocomplete="off"
+        class="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+    >
+    <input type="hidden" name="user_id" :value="selectedId">
 
-                    <option value="">
-                        -- เลือกสมาชิกเพื่อเพิ่มเข้ารอบ --
-                    </option>
+    {{-- รายชื่อที่ค้นเจอ --}}
+    <div
+        x-show="open && filtered.length > 0"
+        x-cloak
+        @click.outside="open = false"
+        class="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"
+    >
+        <template x-for="m in filtered" :key="m.id">
+            <button
+                type="button"
+                @click="select(m)"
+                class="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 border-b border-gray-50 last:border-0"
+            >
+                <div class="text-gray-900 font-medium" x-text="m.us_name || '(ไม่มีชื่อ)'"></div>
+                <div class="text-gray-500 text-xs" x-text="m.email + (m.phone ? ' · ' + m.phone : '')"></div>
+            </button>
+        </template>
+    </div>
 
-                    @forelse($members as $member)
-
-                        <option value="{{ $member->id }}">
-                            {{ $member->name }} ({{ $member->email }})
-                        </option>
-
-                    @empty
-
-                        <option value="" disabled>
-                            ไม่มีสมาชิกที่เพิ่มได้
-                        </option>
-
-                    @endforelse
-
-                </select>
+    {{-- ไม่พบผลลัพธ์ --}}
+    <div
+        x-show="open && query.length > 0 && filtered.length === 0"
+        x-cloak
+        class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 text-sm text-gray-400"
+    >
+        ไม่พบสมาชิกที่ตรงกับ "<span x-text="query"></span>"
+    </div>
+</div>
 
 
                 {{-- หรือ --}}
@@ -283,13 +301,14 @@
     @endif
 
                         @php
-                            $playerName = $signup->user?->name
-                                ?? $signup->guest_name
-                                ?? 'ผู้จองภายนอก';
+                            $playerName = $signup->user
+                            ? ($signup->user->name ?: $signup->user->email)
+                            : ($signup->guest_name ?? 'ผู้จองภายนอก');
 
-                            $addedByName = $signup->addedBy?->name
-                            ?? $signup->bookedBy?->name
-                            ?? 'ลงชื่อเอง';
+                            $addedByAccount = $signup->addedBy ?? $signup->bookedBy;
+                            $addedByName = $addedByAccount
+                                ? $addedByAccount->name.' ('.$addedByAccount->email.')'
+                                : 'ลงชื่อเอง';
                         @endphp
 
 
@@ -353,7 +372,9 @@
                                 <form
                                     action="{{ route('admin.group-sessions.rounds.removePlayer', [$round, $signup]) }}"
                                     method="POST"
-                                    onsubmit="return confirm('นำ {{ addslashes($playerName) }} ออกจากรอบ{{ $signup->credit_used > 0 ? ' และคืนเครดิต '.$signup->credit_used.' หน่วย' : '' }}?');"
+                                    data-confirm="นำ {{ $playerName }} ออกจากรอบ{{ $signup->credit_used > 0 ? ' และคืนเครดิต '.$signup->credit_used.' หน่วย' : '' }}?"
+                                    data-confirm-button-text="นำออก"
+                                    data-confirm-danger="1"
                                 >
 
                                     @csrf
@@ -397,3 +418,29 @@
 
 </div>
 @endsection
+@push('scripts')
+<script>
+    function memberPicker(members) {
+        return {
+            members: members,
+            query: '',
+            open: false,
+            selectedId: null,
+            get filtered() {
+                const q = this.query.trim().toLowerCase();
+                if (!q) return this.members.slice(0, 20);
+                return this.members.filter(m => {
+                    return (m.us_name || '').toLowerCase().includes(q)
+                        || (m.email || '').toLowerCase().includes(q)
+                        || (m.phone || '').toLowerCase().includes(q);
+                }).slice(0, 20);
+            },
+            select(m) {
+                this.selectedId = m.id;
+                this.query = (m.us_name || '(ไม่มีชื่อ)') + ' (' + m.email + ')';
+                this.open = false;
+            }
+        }
+    }
+</script>
+@endpush
