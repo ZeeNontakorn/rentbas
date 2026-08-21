@@ -33,6 +33,7 @@ use App\Models\Court;
 use App\Models\CreditTransaction;
 use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
+use App\Models\GroupSession;
 use App\Models\Package;
 use App\Models\PackagePurchase;
 use App\Models\PrivateTrainingBooking;
@@ -355,6 +356,83 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
             'signups' => $round->signups()->get()->map(fn ($s) => [
                 'id' => $s->id, 'name' => $s->displayName(), 'order' => $s->order_number,
                 'status' => $s->status, 'reserve' => $s->is_reserve, 'booked_by' => $s->booked_by,
+            ]),
+        ]);
+    });
+
+    Route::post('/__e2e/group-session-admin/case', function (\Illuminate\Http\Request $request) {
+        return DB::transaction(function () use ($request) {
+            $prefix = '[E2E ADMIN GROUP]';
+
+            GroupRound::where('title', 'like', $prefix.'%')->delete();
+            GroupSession::where('name', 'like', $prefix.'%')->delete();
+
+            $court = Court::updateOrCreate(
+                ['name' => 'สนาม E2E Admin กลุ่มบาส'],
+                ['court_status' => 'open']
+            );
+            $admin = User::updateOrCreate(['email' => 'group-admin@e2e.local'], [
+                'us_name' => 'แอดมินกลุ่มบาส E2E', 'name' => 'แอดมินกลุ่มบาส E2E', 'phone' => '0890000010', 'password' => '123456',
+                'role' => 'admin', 'membership_type' => 'admin', 'is_verified' => true,
+                'email_verified_at' => now(),
+            ]);
+            $member = User::updateOrCreate(['email' => 'group-member@e2e.local'], [
+                'us_name' => 'สมาชิกกลุ่มบาส E2E', 'name' => 'สมาชิกกลุ่มบาส E2E', 'phone' => '0890000011', 'password' => '123456',
+                'role' => 'user', 'membership_type' => 'customer', 'is_verified' => true,
+                'email_verified_at' => now(), 'credit_balance' => 50000,
+            ]);
+            $member->forceFill(['credit_balance' => 50000])->save();
+
+            $session = GroupSession::create([
+                'name' => $prefix.' TEMPLATE', 'day_of_week' => 2,
+                'start_time' => '18:00', 'end_time' => '20:00', 'court_id' => $court->id,
+                'max_players' => 12, 'credit_cost' => 100, 'created_by' => $admin->id,
+            ]);
+            $round = GroupRound::create([
+                'group_session_id' => $session->id, 'title' => $prefix.' UPCOMING',
+                'play_date' => today()->addDays(7), 'start_time' => '18:00', 'end_time' => '20:00',
+                'court_id' => $court->id, 'max_players' => 12, 'credit_cost' => 100,
+                'cancel_deadline' => now()->addDays(6), 'status' => 'open', 'created_by' => $admin->id,
+            ]);
+            $past = GroupRound::create([
+                'title' => $prefix.' HISTORY SEARCH', 'play_date' => today()->subDay(),
+                'start_time' => '18:00', 'end_time' => '20:00', 'court_id' => $court->id,
+                'max_players' => 12, 'credit_cost' => 100, 'status' => 'closed', 'created_by' => $admin->id,
+            ]);
+
+            if ($request->boolean('with_signup')) {
+                GroupRoundSignup::create([
+                    'group_round_id' => $round->id, 'user_id' => $member->id, 'order_number' => 1,
+                    'credit_used' => 100, 'status' => 'confirmed', 'is_reserve' => false,
+                    'signed_up_at' => now(), 'added_by' => $admin->id,
+                ]);
+                $member->decrement('credit_balance', 10000);
+            }
+
+            return response()->json([
+                'admin' => ['email' => $admin->email, 'password' => '123456'],
+                'member' => ['id' => $member->id, 'name' => $member->name, 'email' => $member->email],
+                'court' => ['id' => $court->id, 'name' => $court->name],
+                'session' => ['id' => $session->id, 'name' => $session->name],
+                'round' => ['id' => $round->id, 'title' => $round->title],
+                'past' => ['id' => $past->id, 'title' => $past->title],
+                'play_date' => today()->addDays(7)->format('Y-m-d'),
+                'session_play_date' => $session->nextOccurrence()->format('Y-m-d'),
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/group-session-admin/{round}/state', function (GroupRound $round) {
+        $member = User::where('email', 'group-member@e2e.local')->firstOrFail();
+
+        return response()->json([
+            'round_exists' => $round->exists,
+            'round_status' => $round->fresh()->status,
+            'round' => $round->fresh()->only(['title', 'play_date', 'start_time', 'end_time', 'court_id', 'max_players', 'credit_cost', 'cancel_deadline']),
+            'member_credit' => $member->credit_balance,
+            'signups' => $round->signups()->get()->map(fn ($signup) => [
+                'id' => $signup->id, 'name' => $signup->displayName(), 'status' => $signup->status,
+                'credit_used' => $signup->credit_used,
             ]),
         ]);
     });
