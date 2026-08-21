@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CreditDeductedMail;
 use App\Mail\CreditTopupReceiptMail;
 use App\Models\Notification;
 use App\Models\User;
@@ -56,6 +57,7 @@ class CreditController extends Controller
 
         Notification::create([
             'user_id' => $user->id,
+            'type' => 'credit_topped_up',
             'title' => 'เครดิตของคุณถูกเติมแล้ว',
             'message' => "แอดมินเติมเครดิตให้คุณ {$data['amount']} บาท ยอดคงเหลือปัจจุบัน " . number_format($user->fresh()->credit_balance / 100, 2) . ' บาท',
         ]);
@@ -82,9 +84,24 @@ class CreditController extends Controller
         $amountSatang = (int) round($data['deduct_amount'] * 100);
 
         try {
-            $this->creditService->manualDeduct($user, $amountSatang, $request->user(), $data['deduct_note'] ?? null);
+            $tx = $this->creditService->manualDeduct($user, $amountSatang, $request->user(), $data['deduct_note'] ?? null);
         } catch (RuntimeException $e) {
             return back()->withErrors(['deduct_amount' => $e->getMessage()]);
+        }
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'credit_adjusted',
+            'title' => 'เครดิตของคุณถูกปรับยอด',
+            'message' => "แอดมินปรับยอดเครดิตของคุณ หักออก {$data['deduct_amount']} บาท ยอดคงเหลือปัจจุบัน " . number_format($user->fresh()->credit_balance / 100, 2) . ' บาท'
+                . (! empty($data['deduct_note']) ? "|เหตุผล: {$data['deduct_note']}" : ''),
+            'action_url' => route('credits.topup.index'),
+        ]);
+
+        try {
+            Mail::to($user->email)->send(new CreditDeductedMail($tx));
+        } catch (\Throwable $e) {
+            Log::error("ส่งอีเมลแจ้งปรับยอดเครดิต (user #{$user->id}) ไม่สำเร็จ: " . $e->getMessage());
         }
 
         return back()->with('success', "หักเครดิตของ {$user->us_name} จำนวน {$data['deduct_amount']} บาท สำเร็จ");

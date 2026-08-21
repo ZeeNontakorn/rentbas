@@ -9,332 +9,325 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
 .pf-main { font-family:'Sarabun','Kanit',sans-serif; }
-.pf-main h1,.pf-main h2,.pf-main h3 { font-family:'Kanit',sans-serif; }
-.info-row { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid #f3f4f6; }
-.info-row:last-child { border-bottom:none; }
-.info-icon { width:36px; height:36px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.info-label { font-size:11px; color:#9ca3af; font-weight:600; letter-spacing:.05em; text-transform:uppercase; margin-bottom:2px; }
-.info-value { font-size:14px; color:#111827; font-weight:500; }
+.pf-main h1,.pf-main h2,.pf-main h3, .font-kanit { font-family:'Kanit',sans-serif; }
 
-.form-label { display:block; font-size:12px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
+.form-label { display:block; font-size:12px; font-weight:600; color:#6b7280; text-transform:uppercase; margin-bottom:6px; }
 .form-input {
     width:100%; padding:10px 13px; font-size:14px; font-family:'Sarabun',sans-serif;
     color:#111827; background:#fafafa; border:1.5px solid #e5e7eb; border-radius:8px;
-    outline:none; transition:border-color .2s, box-shadow .2s, background .2s;
+    outline:none; transition:border-color .2s, box-shadow .2s;
 }
 .form-input::placeholder { color:#d1d5db; }
 .form-input:focus { border-color:#e86c2a; background:#fff; box-shadow:0 0 0 3px rgba(232,108,42,.08); }
-.form-error { font-size:12px; color:#dc2626; margin-top:4px; }
 .form-group { margin-bottom:16px; }
 
-.otp-notice {
-    background:#fffbeb; border:1px solid #fde68a; border-radius:10px;
-    padding:12px 14px; margin-bottom:16px;
-    display:flex; gap:10px; align-items:flex-start;
-}
-.otp-notice-text { font-size:13px; color:#78350f; line-height:1.6; }
-.otp-notice-text strong { display:block; font-weight:700; margin-bottom:2px; }
-.otp-msg { margin-top:10px; padding:10px 14px; border-radius:8px; font-size:13px; display:none; }
-.otp-msg.ok  { display:flex; align-items:center; gap:8px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
-.otp-msg.err { display:flex; align-items:center; gap:8px; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
-
-.section-divider {
-    display:flex; align-items:center; gap:10px;
-    margin:20px 0 16px; color:#d1d5db; font-size:11px; font-weight:600;
-    text-transform:uppercase; letter-spacing:.08em;
-}
+.section-divider { display:flex; align-items:center; gap:10px; color:#d1d5db; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; }
 .section-divider::before,.section-divider::after { content:''; flex:1; height:1px; background:#f1f3f5; }
-
-/* Avatar display (read-only) */
-.avatar-wrap {
-    width:140px; flex-shrink:0;
-    display:flex; flex-direction:column; align-items:center;
-    padding-top:4px;
-}
-.avatar-frame {
-    position:relative; width:140px; height:160px;
-}
-.avatar-preview {
-    width:16rem; height:20rem; border-radius:10px;
-    object-fit:cover; border:1.5px solid #e5e7eb;
-    background:#f9fafb;
-    display:flex; align-items:center; justify-content:center;
-}
-
-/* Placeholder box only fills 70% of the preview area, centered */
-.avatar-placeholder-box {
-    width:70%; height:70%;
-    display:flex; align-items:center; justify-content:center;
-    border:1px dashed #e5e7eb; border-radius:6px;
-    background:#fff;
-}
-.avatar-placeholder-text { font-size:11px; color:#9ca3af; font-weight:500; text-align:center; }
 </style>
 
-<div class="pf-main bg-white min-h-screen text-[#111827]">
-<div class="max-w-[860px] mx-auto px-4 py-8">
+<div class="pf-main bg-slate-50 min-h-screen text-[#111827] pb-12">
+<div class="max-w-[1200px] mx-auto px-4 py-8">
 
-    {{-- HEADER --}}
-    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4">
-        <div>
-            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">บัญชีของฉัน</h1>
-            <p class="text-gray-500 text-[14px] mt-0.5">ข้อมูลสมาชิก Thata Homecourt</p>
-        </div>
-        <a href="{{ route('profile.edit') }}"
-           class="inline-flex items-center gap-2 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-medium px-4 py-2 rounded-lg transition text-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            แก้ไขรหัสผ่าน
-        </a>
+    {{-- Title --}}
+    <div class="mb-6">
+        <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">บัญชีของฉัน</h1>
+        <p class="text-gray-500 text-[14px] mt-0.5">จัดการข้อมูลสมาชิก THATAHOMECOURT</p>
     </div>
 
-    {{-- BANNER --}}
-    <div class="w-full h-[180px] rounded-[14px] overflow-hidden mb-6 shadow-sm relative group">
-        <img src="https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1400&auto=format&fit=crop"
-             style="filter:grayscale(70%) sepia(10%);"
-             alt="Profile Banner"
-             class="w-full h-full object-cover transition duration-500 group-hover:scale-105 group-hover:grayscale-0">
-        <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent"></div>
-        <div class="absolute inset-y-0 left-0 flex flex-col justify-center px-8 text-white">
-            <p class="text-[11px] font-semibold tracking-[.18em] uppercase text-[#e86c2a] mb-1">Member Profile</p>
-            <h2 class="text-[22px] font-bold tracking-wide">{{ $user->us_name }}</h2>
-            <p class="text-gray-300 text-[13px] mt-1">{{ $user->email }}</p>
-        </div>
-    </div>
-
+    {{-- Alert --}}
     @if ($errors->any())
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const msgs = {!! json_encode($errors->all()) !!};
-            Swal.fire({ icon:'error', title:'กรุณาตรวจสอบข้อมูล',
-                html: msgs.join('<br>'), confirmButtonText:'ตกลง',
-                confirmButtonColor:'#e86c2a' });
+            Swal.fire({ icon:'error', title:'กรุณาตรวจสอบข้อมูล', html: msgs.join('<br>'), confirmButtonText:'ตกลง', confirmButtonColor:'#e86c2a' });
+        });
+    </script>
+    @endif
+    @if (session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({ icon:'success', title:'สำเร็จ!', text: '{{ session('success') }}', confirmButtonText:'ตกลง', confirmButtonColor:'#e86c2a' });
         });
     </script>
     @endif
 
-    @php
-        $isStaff = in_array($user->membership_type ?? null, ['coach', 'court_assistant']);
-    @endphp
-
-    {{-- EDITABLE INFO CARD --}}
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-[#e86c2a]/10 flex items-center justify-center border border-[#e86c2a]/20">
-                <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            </div>
-            <div>
-                <div class="text-[14px] font-semibold text-gray-800" style="font-family:'Kanit',sans-serif;">ข้อมูลบัญชี</div>
-                <div class="text-[12px] text-gray-400">แก้ไขข้อมูลที่บันทึกในระบบ</div>
-            </div>
+    {{-- BANNER ยาวเต็มความกว้าง --}}
+    <div class="w-full h-[200px] md:h-[240px] rounded-xl overflow-hidden shadow-sm relative mb-8 group bg-gray-900">
+        <img src="https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1400&auto=format&fit=crop"
+             style="filter:grayscale(60%) sepia(20%); opacity: 0.6;" alt="Profile Banner"
+             class="w-full h-full object-cover transition duration-500 group-hover:scale-105 group-hover:opacity-80">
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
+        <div class="absolute inset-y-0 left-0 flex flex-col justify-center px-8 md:px-12 text-white">
+            <p class="text-[12px] font-semibold tracking-[.18em] uppercase text-[#e86c2a] mb-2">Member Profile</p>
+            <h2 class="text-[28px] md:text-[36px] font-bold tracking-wide">{{ $user->name }}</h2>
+            <p class="text-gray-300 text-[15px] mt-1">{{ $user->email }}</p>
         </div>
+    </div>
 
-        <div class="p-5">
-            <form method="POST" action="{{ route('profile.update') }}" id="profileForm">
+    {{-- แบ่ง 2 ฝั่ง ซ้าย(ข้อมูล+รูป) - ขวา(รหัสผ่าน) --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        
+        {{-- ================= ฝั่งซ้าย: ข้อมูลบัญชีและรูปโปรไฟล์ ================= --}}
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
+            <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+                <div class="w-10 h-10 rounded-lg bg-[#e86c2a]/10 flex items-center justify-center border border-[#e86c2a]/20">
+                    <svg class="w-5 h-5 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </div>
+                <div>
+                    <div class="text-[16px] font-semibold text-gray-800">ข้อมูลบัญชี</div>
+                    <div class="text-[13px] text-gray-500">แก้ไขข้อมูลที่บันทึกในระบบ</div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="p-6 flex flex-col flex-grow">
                 @csrf
-
-                <div class="info-row">
-                    <div class="info-icon">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
+                
+                {{-- อัปโหลดรูปโปรไฟล์ --}}
+                <div class="flex items-center gap-5 mb-5 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
+                    <div class="relative w-[72px] h-[72px] rounded-full border-2 border-white shadow-sm bg-orange-50 flex items-center justify-center overflow-hidden group cursor-pointer flex-shrink-0" onclick="document.getElementById('profileImageInput').click()">
+                        <img id="imagePreview" src="{{ !empty($user->avatar) ? asset('storage/' . $user->avatar) : '' }}" class="{{ !empty($user->avatar) ? '' : 'hidden' }} w-full h-full object-cover">
+                        <span id="imageFallback" class="{{ !empty($user->avatar) ? 'hidden' : '' }} text-3xl font-kanit font-bold text-orange-400">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
+                        
+                        <div class="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center transition">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
                     </div>
-                    <div>
-                        <div class="info-label">ชื่อผู้ใช้</div>
-                        <div class="info-value">{{ $user->us_name }}</div>
+                    
+                    <div class="flex-1">
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="document.getElementById('profileImageInput').click()" class="text-[12px] font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">เปลี่ยนรูป</button>
+                            
+                            {{-- ปุ่มลบรูป --}}
+                            <button type="button" id="removeAvatarBtn" class="{{ !empty($user->avatar) ? '' : 'hidden' }} text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">ลบรูปโปรไฟล์</button>
+                        </div>
+                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
+                        
+                        <input type="file" name="avatar" id="profileImageInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
+                        {{-- ตัวแปรลับส่งไปบอก Controller ว่ากดลบรูป --}}
+                        <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
                     </div>
                 </div>
 
-                    {{-- LEFT: fields --}}
-                    <div class="w-full {{ $isStaff ? 'md:w-[65%]' : '' }}">
-                        <div class="form-group">
-                            <label class="form-label">ชื่อผู้ใช้</label>
-                            <input type="text" name="name" value="{{ $user->name }}" required
-                                placeholder="กรอกชื่อของคุณ" class="form-input">
-                            @error('name') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">อีเมล</label>
-                            <input type="email" name="email" value="{{ $user->email }}" required
-                                id="emailInput" placeholder="example@email.com" class="form-input">
-                            @error('email') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">เบอร์โทรศัพท์</label>
-                            <input type="tel" name="phone" value="{{ $user->phone ?? '' }}"
-                                placeholder="0812345678" pattern="[0-9]*" inputmode="numeric"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                maxlength="10" class="form-input">
-                            @error('phone') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-                        {{-- OTP Section --}}
-                        <div id="otpSection" style="display:none; margin-top:16px;">
-                            <div class="otp-notice">
-                                <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                                </svg>
-                                <div class="otp-notice-text">
-                                    <strong>ต้องยืนยัน OTP เพื่อเปลี่ยนอีเมล</strong>
-                                    กดปุ่ม "ส่ง OTP" แล้วกรอกรหัสที่ได้รับในอีเมลใหม่
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">รหัส OTP (6 หลัก)</label>
-                                <input type="text" name="otp" placeholder="000000" maxlength="6"
-                                       pattern="[0-9]{6}" class="form-input">
-                                @error('otp') <div class="form-error">{{ $message }}</div> @enderror
-                            </div>
-                            <button type="button"
-                                    onclick="requestOtp()"
-                                    class="w-full py-2.5 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition"
-                                    style="font-family:'Kanit',sans-serif;">
-                                ส่ง OTP ไปยังอีเมลใหม่
-                            </button>
-                            <div id="otpMessage" class="otp-msg"></div>
-                        </div>
-
-                        <div class="section-divider" style="margin-top:20px;">บันทึก</div>
-
-                        <button type="submit"
-                                class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex items-center justify-center gap-2 text-[14px]"
-                                style="font-family:'Kanit',sans-serif;">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M5 13l4 4L19 7"/>
-                            </svg>
-                            บันทึกการเปลี่ยนแปลง
-                        </button>
+                {{-- กรอกข้อมูล --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="form-group mb-0">
+                        <label class="form-label">ชื่อผู้ใช้ (Username)</label>
+                        <input type="text" name="us_name" value="{{ old('us_name', $user->us_name) }}" class="form-input" placeholder="ชื่อที่ใช้เข้าระบบ">
                     </div>
-
-                    {{-- RIGHT: avatar display (staff only: coach / court_assistant), read-only --}}
-                    @if ($isStaff)
-                    <div class="avatar-wrap">
-                        <div class="avatar-frame">
-                            @if (!empty($user->avatar))
-                                <img src="{{ asset('storage/' . $user->avatar) }}"
-                                     alt="Avatar" class="avatar-preview">
-                            @else
-                                <div class="avatar-preview">
-                                    <div class="avatar-placeholder-box">
-                                        <span class="avatar-placeholder-text">No Image</span>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label">ชื่อ-นามสกุล (Name)</label>
+                        <input type="text" name="name" value="{{ old('name', $user->name) }}" class="form-input" placeholder="ชื่อและนามสกุลจริง">
                     </div>
-                    @endif
+                </div>
 
+                <div class="section-divider" style="margin: 10px 0 0">ข้อมูลติดต่อ</div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 mb-2">
+                    <div class="form-group mb-0">
+                        <label class="form-label">อีเมล (Email)</label>
+                        <input type="email" name="email" id="emailInput" value="{{ old('email', $user->email) }}" class="form-input" placeholder="example@email.com">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label">เบอร์โทรศัพท์ (Phone)</label>
+                        <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="form-input" placeholder="08xxxxxxxx" maxlength="10">
+                    </div>
+                </div>
+
+                <div id="otpSection" style="display:none;" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-2 mb-4">
+                    <p class="text-[13px] text-yellow-800 mb-3 font-medium">คุณมีการเปลี่ยนแปลงอีเมล กรุณายืนยัน OTP</p>
+                    <div class="flex gap-2 mb-1">
+                        <input type="text" name="otp" placeholder="รหัส OTP 6 หลัก" maxlength="6" class="form-input flex-1 bg-white text-center tracking-widest font-semibold">
+                        <button type="button" onclick="requestOtp()" class="px-4 bg-white border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-100 text-[13px] font-semibold transition">ส่ง OTP</button>
+                    </div>
+                    <div id="otpMessage" class="text-[12px] mt-2 hidden px-2 py-1.5 rounded bg-white border"></div>
+                </div>
+
+                <div class="mt-auto pt-4"> 
+                        <div class="section-divider" style="margin: 10px 0 14px;"></div>
+                        <button type="submit" class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex justify-center items-center gap-2 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        บันทึกข้อมูลส่วนตัว
+                    </button>
                 </div>
             </form>
         </div>
-    </div>
 
-    {{-- ACCOUNT META (read-only: password + role) --}}
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-6">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-[#e86c2a]/10 flex items-center justify-center border border-[#e86c2a]/20">
-                <svg class="w-4 h-4 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-            </div>
-            <div>
-                <div class="text-[14px] font-semibold text-gray-800" style="font-family:'Kanit',sans-serif;">ความปลอดภัยและสิทธิ์</div>
-                <div class="text-[12px] text-gray-400">รหัสผ่านและประเภทสมาชิก</div>
-            </div>
-        </div>
-
-        <div class="px-5">
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                    </svg>
+        {{-- ================= ฝั่งขวา: เปลี่ยนรหัสผ่าน ================= --}}
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
+            <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
                 <div>
-                    <div class="info-label">รหัสผ่าน</div>
-                    <div class="info-value tracking-widest text-gray-400">••••••••</div>
+                    <div class="text-[16px] font-semibold text-gray-800">ตั้งรหัสผ่านใหม่</div>
+                    <div class="text-[13px] text-gray-500">กรอกรหัสผ่านปัจจุบันเพื่อเปลี่ยนรหัสผ่านใหม่</div>
                 </div>
             </div>
 
-            <div class="info-row">
-                <div class="info-icon">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                    </svg>
+            <form method="POST" action="{{ route('profile.update') }}" id="passwordForm" class="p-6 flex flex-col flex-grow">
+                @csrf
+                <div class="form-group mt-2">
+                    <label class="form-label">รหัสผ่านปัจจุบัน</label>
+                    <input type="password" name="current_password" id="current_password" class="form-input" placeholder="ใส่รหัสผ่านที่ใช้ในปัจจุบัน">
                 </div>
-                <div>
-                    @php
-                        $roleLabel = match(true) {
-                            $user->role === 'superadmin' => 'ผู้ดูแลระบบ', // Super Admin
-                            $user->role === 'admin' => 'ผู้ดูแลระบบ',            // Admin
-                            default => $user->membershipTypeLabel(),
-                        };
-                    @endphp
-                    <div class="info-label">ประเภทสมาชิก</div>
-                    <div class="info-value">
-                        {{ $roleLabel }}
-                    </div>
+                
+                <div class="form-group mt-4">
+                    <label class="form-label">รหัสผ่านใหม่</label>
+                    <input type="password" name="password" id="new_password" class="form-input" placeholder="อย่างน้อย 6 ตัวอักษร">
                 </div>
-            </div>
+                
+                <div class="form-group mb-0 mt-4">
+                    <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" name="password_confirmation" id="confirm_password" class="form-input" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
+                </div>
+
+                {{-- กล่องแจ้งเตือน Text Alert ของรหัสผ่าน --}}
+                <div id="passwordAlert" class="hidden text-[13px] px-3 py-2 rounded bg-red-50 border border-red-200 text-red-600 mt-4"></div>
+
+                <div class="mt-auto pt-4">
+                    <div class="section-divider" style="margin: 10px 0 14px;"></div>
+                    <button type="submit" class="w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg transition flex justify-center items-center gap-2 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        บันทึกรหัสผ่านใหม่
+                    </button>
+                </div>
+            </form>
         </div>
-    </div>
 
+    </div>
 </div>
 </div>
 
 <script>
-const originalEmail = '{{ $user->email }}';
-const emailInput    = document.getElementById('emailInput');
-const otpSection    = document.getElementById('otpSection');
+// ==========================================
+// 1. สคริปต์พรีวิวและลบรูปภาพ
+// ==========================================
+const fileInput = document.getElementById('profileImageInput');
+const imagePreview = document.getElementById('imagePreview');
+const imageFallback = document.getElementById('imageFallback');
+const removeAvatarBtn = document.getElementById('removeAvatarBtn');
+const removeAvatarInput = document.getElementById('removeAvatarInput');
 
-emailInput.addEventListener('input', function () {
-    otpSection.style.display = this.value !== originalEmail ? 'block' : 'none';
-});
-
-@if (session('success'))
-    document.addEventListener('DOMContentLoaded', () => {
-        Swal.fire({ icon:'success', title:'สำเร็จ!',
-            text: '{{ session('success') }}',
-            confirmButtonText:'ตกลง', confirmButtonColor:'#e86c2a' });
+if(fileInput) {
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'กรุณาอัปโหลดรูปขนาดไม่เกิน 2MB' });
+                this.value = ''; return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+                if(imageFallback) imageFallback.classList.add('hidden');
+                if(removeAvatarBtn) removeAvatarBtn.classList.remove('hidden');
+                if(removeAvatarInput) removeAvatarInput.value = '0'; // ยกเลิกสถานะการลบรูปถ้าเลือกใหม่
+            }
+            reader.readAsDataURL(file);
+        }
     });
-@endif
+}
+
+if(removeAvatarBtn) {
+    removeAvatarBtn.addEventListener('click', function() {
+        imagePreview.classList.add('hidden');
+        imagePreview.src = '';
+        if(imageFallback) imageFallback.classList.remove('hidden');
+        if(fileInput) fileInput.value = '';
+        this.classList.add('hidden');
+        if(removeAvatarInput) removeAvatarInput.value = '1'; // ส่งค่า 1 เพื่อบอก Controller ให้ลบรูป
+    });
+}
+
+// ==========================================
+// 2. สคริปต์ตรวจสอบฟอร์มเปลี่ยนรหัสผ่านก่อนส่ง (Client-side Validation)
+// ==========================================
+const passwordForm = document.getElementById('passwordForm');
+if (passwordForm) {
+    passwordForm.addEventListener('submit', function(e) {
+        const current = document.getElementById('current_password').value;
+        const newPass = document.getElementById('new_password').value;
+        const confirm = document.getElementById('confirm_password').value;
+        const alertBox = document.getElementById('passwordAlert');
+
+        // รีเซ็ตการแสดงผล Alert
+        alertBox.classList.add('hidden');
+        
+        // เช็คว่าปล่อยว่างหรือเปล่า
+        if (!current || !newPass || !confirm) {
+            e.preventDefault();
+            showAlert('กรุณากรอกข้อมูลรหัสผ่านให้ครบทุกช่อง');
+            return;
+        }
+        
+        // เช็คความยาวรหัสผ่านใหม่
+        if (newPass.length < 6) {
+            e.preventDefault();
+            showAlert('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+            return;
+        }
+        
+        // เช็คว่ารหัสผ่านใหม่กับการยืนยันตรงกันไหม
+        if (newPass !== confirm) {
+            e.preventDefault();
+            showAlert('การยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+            return;
+        }
+
+        // ฟังก์ชันสำหรับแสดง Alert
+        function showAlert(msg) {
+            alertBox.textContent = msg;
+            alertBox.classList.remove('hidden');
+        }
+    });
+}
+
+// ==========================================
+// 3. สคริปต์จัดการ OTP และอีเมล
+// ==========================================
+const originalEmail = '{{ $user->email }}';
+const emailInput = document.getElementById('emailInput');
+const otpSection = document.getElementById('otpSection');
+
+if(emailInput) {
+    emailInput.addEventListener('input', function () {
+        otpSection.style.display = this.value !== originalEmail ? 'block' : 'none';
+    });
+}
 
 function requestOtp() {
     const email = emailInput.value.trim();
-    const box   = document.getElementById('otpMessage');
+    const box = document.getElementById('otpMessage');
+    box.style.display = 'block';
+
     if (email === originalEmail) {
-        box.textContent = 'อีเมลไม่มีการเปลี่ยนแปลง';
-        box.className   = 'otp-msg err'; return;
+        box.textContent = 'อีเมลยังไม่มีการเปลี่ยนแปลง';
+        box.className = 'text-[12px] mt-2 px-3 py-2 rounded bg-red-50 border border-red-200 text-red-600 block';
+        return;
     }
+
     const fd = new FormData();
     fd.append('email', email);
     fd.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-    box.innerHTML = 'กำลังส่ง OTP...';
-    box.className = 'otp-msg ok';
-    fetch('{{ route('profile.request-otp-email') }}', { method:'POST', body:fd })
+    
+    box.textContent = 'กำลังส่ง OTP...';
+    box.className = 'text-[12px] mt-2 px-3 py-2 rounded bg-blue-50 border border-blue-200 text-blue-600 block';
+    
+    fetch('{{ route("profile.request-otp-email") }}', { method:'POST', body:fd })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                box.innerHTML = 'ส่ง OTP ไปยัง <strong>' + email + '</strong> แล้ว';
-                box.className = 'otp-msg ok';
+                box.textContent = 'ระบบได้ส่ง OTP ไปยัง ' + email + ' แล้ว';
+                box.className = 'text-[12px] mt-2 px-3 py-2 rounded bg-green-50 border border-green-200 text-green-700 block';
             } else {
-                box.textContent = d.message || 'ไม่สามารถส่ง OTP ได้';
-                box.className   = 'otp-msg err';
+                box.textContent = d.message || 'เกิดข้อผิดพลาด ไม่สามารถส่ง OTP ได้';
+                box.className = 'text-[12px] mt-2 px-3 py-2 rounded bg-red-50 border border-red-200 text-red-600 block';
             }
-        })
-        .catch(() => { box.textContent = 'เกิดข้อผิดพลาด'; box.className = 'otp-msg err'; });
+        }).catch(() => { 
+            box.textContent = 'เกิดข้อผิดพลาดของระบบในการเชื่อมต่อ'; 
+            box.className = 'text-[12px] mt-2 px-3 py-2 rounded bg-red-50 border border-red-200 text-red-600 block';
+        });
 }
 </script>
 @endsection

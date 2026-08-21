@@ -92,7 +92,7 @@
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-56 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
                             <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการเทรนเนอร์ส่วนตัว</a>
-                            <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">Schedule บุคลากร</a>
+                            <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">ตารางงานบุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
                              <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
                         </div>
@@ -318,6 +318,10 @@
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 แก้ไขเนื้อหาเว็บไซต์
                             </a>
+                            <a href="{{ route('admin.line-links.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5"></path></svg>
+                                จัดการลิงก์เว็บไซต์
+                            </a>
                         @endif
                         <a href="{{ route('profile') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center border-t border-gray-700">
                             <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -405,7 +409,7 @@
                         </button>
                         <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? '' : 'hidden' }}">
                             <a href="{{ route('admin.private-training.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการเทรนเนอร์ส่วนตัว</a>
-                            <a href="{{ route('admin.private-schedule.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Schedule บุคลากร</a>
+                            <a href="{{ route('admin.private-schedule.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ตารางงานบุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการคอร์สเรียน</a>
                             <a href="{{ route('admin.packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจ</a>
                         </div>
@@ -494,6 +498,7 @@
                     <div class="flex flex-col">
                         <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
+                        <a href="{{ route('admin.line-links.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการลิงก์เว็บไซต์</a>
                         <a href="{{ route('admin.credit-topups.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">คำขอเติมเครดิต</a>
                         <a href="{{ route('admin.credit-topup-packages.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แพ็กเกจเครดิต</a>
                         <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
@@ -534,6 +539,60 @@
             </a>
         @endguest
     </div>
+
+    {{-- แจ้งเตือนเครดิตหมดอายุแบบบังคับ (SweetAlert กลางจอ) — ค้างอยู่จนกว่าจะกดรับทราบ กันผู้ใช้ตกใจเห็นยอด
+         หายไปโดยไม่รู้สาเหตุ แยกจากกระดิ่งแจ้งเตือนปกติเพราะต้องการันตีว่าเห็นแน่นอน ไม่ใช่แค่ขึ้น badge เฉยๆ
+         ต้องครอบด้วย @auth เพราะ $notifications ถูกประกาศไว้ในบล็อก @auth ก่อนหน้านี้เท่านั้น — หน้า guest
+         (เช่น /login) จะไม่มีตัวแปรนี้เลย --}}
+    @auth
+    @php
+        $creditExpiredAlerts = $notifications->where('type', 'credit_expired')->values();
+        // สร้าง array ธรรมดาไว้ในบล็อก PHP นี้ก่อน แล้วค่อยส่งตัวแปรเดี่ยวๆ เข้า json() directive ด้านล่าง
+        // ถ้าใส่ expression ที่มี nested call (เช่น route()) ปนอยู่ในนี้ตรงๆ ตัว parser ของ json() directive
+        // จะพังเวลามี array key ตั้งแต่ 3 ตัวขึ้นไป (บั๊กใน regex จับคู่วงเล็บของ Blade เอง ไม่ใช่ syntax ผิด)
+        $creditExpiredAlertsData = $creditExpiredAlerts->map(function ($n) {
+            return [
+                'title' => $n->title,
+                'message' => $n->message,
+                'readUrl' => route('notifications.read', $n),
+            ];
+        })->values();
+    @endphp
+    @if($creditExpiredAlerts->isNotEmpty())
+        <script>
+        (function () {
+            const alerts = @json($creditExpiredAlertsData);
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            function showNext(i) {
+                if (i >= alerts.length) return;
+                const a = alerts[i];
+                Swal.fire({
+                    icon: 'warning',
+                    title: a.title,
+                    html: String(a.message).split('|').map(line => line.trim()).filter(Boolean).join('<br>'),
+                    confirmButtonText: 'รับทราบ',
+                    confirmButtonColor: '#ef4444',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                }).then(() => {
+                    fetch(a.readUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    }).finally(() => showNext(i + 1));
+                });
+            }
+
+            showNext(0);
+        })();
+        </script>
+    @endif
+    @endauth
 
     <!-- Scripts สำหรับ Notification & Admin Dropdown & Mobile Menu -->
     <script>
