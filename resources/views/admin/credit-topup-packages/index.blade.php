@@ -67,7 +67,7 @@
                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-                <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">บันทึกลิงก์</button>
+                <button type="submit" class="text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">บันทึกลิงก์</button>
             </form>
         </div>
 
@@ -312,7 +312,7 @@
     if (!saveBtn || rows.length === 0) return;
 
     const SAVED_CLASSES = ['bg-gray-200', 'text-gray-400', 'cursor-not-allowed'];
-    const DIRTY_CLASSES = ['bg-emerald-500', 'hover:bg-emerald-600', 'text-white', 'cursor-pointer'];
+    const DIRTY_CLASSES = ['bg-orange-500', 'hover:bg-orange-600', 'text-white', 'cursor-pointer'];
 
     const FIELD_DIRTY_CLASSES = ['border-yellow-400', 'ring-2', 'ring-yellow-200'];
 
@@ -475,7 +475,7 @@ function confirmDeletePackage(packageId, packageLabel) {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#6b7280',
         reverseButtons: true,
         confirmButtonText: 'ยืนยันการลบ',
         cancelButtonText: 'ยกเลิก'

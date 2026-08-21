@@ -19,7 +19,7 @@
 @endphp
 
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8">
+<div class="text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl lg:translate-x-2">
 
         {{-- Header --}}
@@ -42,7 +42,7 @@
                 $cardMinTime = $isEveningCard ? '16:00' : '06:00';
                 $cardMaxTime = $isEveningCard ? '23:00' : '16:00';
             @endphp
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-5">
+            <div class="rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-5">
                 <div class="px-6 py-3 border-b border-gray-100 bg-slate-50">
                     <h3 class="font-medium text-gray-700 text-sm">{{ $dayTypeLabel[$dayType] ?? $dayType }}</h3>
                     <p class="text-[11px] text-gray-400 mt-0.5">ตั้งช่วงเวลาได้ระหว่าง {{ $cardMinTime }}–{{ $cardMaxTime }} น.</p>
@@ -111,12 +111,12 @@
                         </table>
                     </div>
 
-                    <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-slate-50">
+                    <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100">
                         <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 cursor-pointer transition"
                                 data-target="rules-form-{{ $dayType }}">
                             ยกเลิก
                         </button>
-                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 cursor-pointer transition">
+                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 shadow-sm cursor-pointer transition">
                             บันทึก
                         </button>
                     </div>
@@ -328,8 +328,9 @@
                 + `<span class="text-gray-400 text-sm">(การจองเก่าที่เคยใช้แพ็กเกจนี้จะไม่ถูกลบ แค่ตัดการเชื่อมโยงกับแพ็กเกจนี้)</span>`,
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#3085d6',
+            cancelButtonColor: '#6b7280',
             confirmButtonText: 'ยืนยันการลบ',
             cancelButtonText: 'ยกเลิก',
         }).then((result) => {
