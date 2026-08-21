@@ -4,7 +4,7 @@
 
 @section('content')
 <style>
-    .my-group-page { min-height: 100vh; background: #f6f7f9; padding: 40px 24px 56px; color: #111827; }
+    .my-group-page { min-height: 100vh; padding: 40px 24px 56px; color: #111827; }
     .my-group-container { max-width: 1120px; margin: 0 auto; }
     .my-group-heading { margin-bottom: 28px; }
     .my-booking-card { overflow: hidden; border: 1px solid #e5e7eb; border-radius: 16px; background: #fff; box-shadow: 0 2px 8px rgba(15, 23, 42, .06); }

@@ -2,6 +2,7 @@
 @section('title', 'รายชื่อ - ' . $round->title)
 
 @section('content')
+
 <div class="max-w-3xl mx-auto px-4 py-6">
 
     <div class="flex items-center justify-between mb-6">
