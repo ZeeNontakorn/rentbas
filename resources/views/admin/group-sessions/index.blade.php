@@ -71,7 +71,7 @@
                         <td class="px-6 py-3 text-gray-500">{{ \Carbon\Carbon::parse($s->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($s->end_time)->format('H:i') }}</td>
                         <td class="px-6 py-3 text-gray-500">{{ $s->court->name ?? '-' }}</td>
                         <td class="px-6 py-3 text-gray-500">{{ $s->max_players }} คน</td>
-                        <td class="px-6 py-3 text-gray-500">{{ $s->credit_cost }}</td>
+                        <td class="px-6 py-3 text-gray-500">{{ $s->credit_cost == 0 ? 'ฟรี' : $s->credit_cost }}</td>
                         <td class="px-6 py-3 text-right space-x-2">
     <button
         @click="
@@ -245,7 +245,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">สนาม</label>
-                    <select name="court_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                    <select name="court_id"  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                         <option value="">- ไม่ระบุ -</option>
                         @isset($courts)
                             @foreach($courts as $court)
@@ -419,16 +419,18 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">สนาม</label>
-                    <select name="court_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
-                        <option value="">- ไม่ระบุ -</option>
-                        @isset($courts)
-                            @foreach($courts as $court)
-                                <option value="{{ $court->id }}">{{ $court->name }}</option>
-                            @endforeach
-                        @endisset
-                    </select>
-                </div>
+    <label class="block text-xs font-medium text-gray-600 mb-1">สนาม</label>
+    <select name="court_id"
+        x-bind:value="prefillSession ? (prefillSession.court_id ?? '') : ''"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+        <option value="">- ไม่ระบุ -</option>
+        @isset($courts)
+            @foreach($courts as $court)
+                <option value="{{ $court->id }}">{{ $court->name }}</option>
+            @endforeach
+        @endisset
+    </select>
+</div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">จำนวนคนสูงสุด</label>

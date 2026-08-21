@@ -1463,7 +1463,7 @@ html { scroll-behavior: smooth; }
     @endif
     <div class="gs-info-line">
         <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
-        เครดิต {{ $round->credit_cost }} / คน
+        {{ $round->credit_cost == 0 ? 'ฟรี' : 'เครดิต ' . $round->credit_cost . ' / คน' }}
     </div>
     <div class="gs-info-line" style="color:#e67700;">
     <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
