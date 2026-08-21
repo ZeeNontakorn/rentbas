@@ -112,24 +112,10 @@
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div class="flex items-center flex-wrap gap-3">
                             <h1 class="text-xl font-semibold text-gray-800">{{ $user->name ?? $user->us_name }}</h1>
-                            
-                            {{-- สถานะ OTP --}}
-                            @if($user->is_verified)
-                                <span class="inline-flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                    ยืนยัน OTP แล้ว
-                                </span>
-                            @else
-                                <span class="inline-flex items-center gap-1 text-sm font-medium text-red-500 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                    ยังไม่ยืนยัน OTP
-                                </span>
-                            @endif
-
                             {{-- บทบาท (Role) Pill --}}
                             @php
                                 $roleLabel = match($user->role) {
-                                    'superadmin' => 'Super Admin',
+                                    'superadmin' => 'ผู้ดูแลระบบสูงสุด',
                                     'admin'      => 'ผู้ดูแลระบบ',
                                     'staff'      => 'พนักงาน',
                                     default      => 'ผู้ใช้งาน',
@@ -143,6 +129,26 @@
                             @endphp
                             <span class="inline-flex items-center text-sm font-medium px-2.5 py-1 rounded-full border {{ $roleColor }}">
                                 {{ $roleLabel }}
+                            </span>
+
+                            {{-- สถานะ OTP --}}
+                            @if($user->is_verified)
+                                <span class="inline-flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                    ยืนยัน OTP แล้ว
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-sm font-medium text-red-500 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    ยังไม่ยืนยัน OTP
+                                </span>
+                            @endif
+
+                            <span class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                เป็นสมาชิกเมื่อ {{ \Carbon\Carbon::parse($user->created_at)->format('d/m/Y') }}
                             </span>
                         </div>
 
@@ -191,14 +197,15 @@
                             </div>
                         </div>
 
+                        {{-- เพิ่มส่วนแสดงเบอร์โทรศัพท์ตรงนี้ --}}
                         <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                            <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">สมัครเมื่อ</div>
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">เบอร์โทรศัพท์</div>
                             <div class="mt-1 flex items-center gap-2 font-medium text-gray-700">
                                 <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                 </svg>
-                                {{ \Carbon\Carbon::parse($user->created_at)->format('d/m/Y') }}
+                                {{ $user->phone ?: '-' }}
                             </div>
                         </div>
                     </div>
@@ -362,29 +369,35 @@
             {{-- ช่องอัปโหลดรูปโปรไฟล์ --}}
             <div class="md:col-span-2">
                 <label class="mb-1.5 block text-xs font-medium text-gray-600">รูปโปรไฟล์</label>
-                <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                    <div class="w-16 h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 border border-gray-200 overflow-hidden relative">
-                        <img id="avatarPreview" src="{{ $displayAvatarUrl ?? '' }}" class="{{ $displayAvatarUrl ? '' : 'hidden' }} w-full h-full object-cover">
-                        <span id="avatarFallback" class="{{ $displayAvatarUrl ? 'hidden' : '' }} text-2xl font-bold">{{ mb_strtoupper(mb_substr($user->us_name, 0, 1)) }}</span>
+                <div class="flex items-center gap-5 mb-2 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
+                    {{-- วงกลมรูปโปรไฟล์ --}}
+                    <div class="relative w-[72px] h-[72px] rounded-full border-2 border-white shadow-sm bg-orange-50 flex items-center justify-center overflow-hidden group cursor-pointer flex-shrink-0" onclick="document.getElementById('avatarInput').click()">
+                        <img id="avatarPreview" src="{{ $displayAvatarUrl ?? '' }}" class="{{ !empty($displayAvatarUrl) ? '' : 'hidden' }} w-full h-full object-cover">
+                        <span id="avatarFallback" class="{{ !empty($displayAvatarUrl) ? 'hidden' : '' }} text-3xl font-kanit font-bold text-orange-400">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
+                        
+                        {{-- Hover Effect รูปกล้อง --}}
+                        <div class="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center transition">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
                     </div>
+                    
                     <div class="flex-1">
-                        <div class="flex items-center gap-3">
-                            <input type="file" name="avatar" id="avatarInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer">
+                        <div class="flex flex-wrap gap-2">
+                             {{-- ปุ่มเปลี่ยนรูป --}}
+                            <button type="button" onclick="document.getElementById('avatarInput').click()" class="text-[12px] font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">เปลี่ยนรูป</button>
                             
-                            {{-- ปุ่มลบภาพ --}}
-                            <button type="button" id="removeAvatarBtn" class="{{ $user->avatar ? '' : 'hidden' }} shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition cursor-pointer">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                ลบรูป
-                            </button>
+                            {{-- ปุ่มลบรูป --}}
+                            <button type="button" id="removeAvatarBtn" class="{{ !empty($user->avatar) ? '' : 'hidden' }} text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">ลบรูปโปรไฟล์</button>
                         </div>
                         <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
                         
-                        {{-- Input สำหรับส่งค่าไปบอก Backend ว่าให้ลบรูป --}}
+                        {{-- Input ซ่อน --}}
+                        <input type="file" name="avatar" id="avatarInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
+                        {{-- ตัวแปรลับส่งไปบอก Controller ว่ากดลบรูป --}}
                         <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
                     </div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label class="mb-1.5 block text-xs font-medium text-gray-600">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>

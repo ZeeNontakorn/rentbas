@@ -535,6 +535,60 @@
         @endguest
     </div>
 
+    {{-- แจ้งเตือนเครดิตหมดอายุแบบบังคับ (SweetAlert กลางจอ) — ค้างอยู่จนกว่าจะกดรับทราบ กันผู้ใช้ตกใจเห็นยอด
+         หายไปโดยไม่รู้สาเหตุ แยกจากกระดิ่งแจ้งเตือนปกติเพราะต้องการันตีว่าเห็นแน่นอน ไม่ใช่แค่ขึ้น badge เฉยๆ
+         ต้องครอบด้วย @auth เพราะ $notifications ถูกประกาศไว้ในบล็อก @auth ก่อนหน้านี้เท่านั้น — หน้า guest
+         (เช่น /login) จะไม่มีตัวแปรนี้เลย --}}
+    @auth
+    @php
+        $creditExpiredAlerts = $notifications->where('type', 'credit_expired')->values();
+        // สร้าง array ธรรมดาไว้ในบล็อก PHP นี้ก่อน แล้วค่อยส่งตัวแปรเดี่ยวๆ เข้า json() directive ด้านล่าง
+        // ถ้าใส่ expression ที่มี nested call (เช่น route()) ปนอยู่ในนี้ตรงๆ ตัว parser ของ json() directive
+        // จะพังเวลามี array key ตั้งแต่ 3 ตัวขึ้นไป (บั๊กใน regex จับคู่วงเล็บของ Blade เอง ไม่ใช่ syntax ผิด)
+        $creditExpiredAlertsData = $creditExpiredAlerts->map(function ($n) {
+            return [
+                'title' => $n->title,
+                'message' => $n->message,
+                'readUrl' => route('notifications.read', $n),
+            ];
+        })->values();
+    @endphp
+    @if($creditExpiredAlerts->isNotEmpty())
+        <script>
+        (function () {
+            const alerts = @json($creditExpiredAlertsData);
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            function showNext(i) {
+                if (i >= alerts.length) return;
+                const a = alerts[i];
+                Swal.fire({
+                    icon: 'warning',
+                    title: a.title,
+                    html: String(a.message).split('|').map(line => line.trim()).filter(Boolean).join('<br>'),
+                    confirmButtonText: 'รับทราบ',
+                    confirmButtonColor: '#ef4444',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                }).then(() => {
+                    fetch(a.readUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    }).finally(() => showNext(i + 1));
+                });
+            }
+
+            showNext(0);
+        })();
+        </script>
+    @endif
+    @endauth
+
     <!-- Scripts สำหรับ Notification & Admin Dropdown & Mobile Menu -->
     <script>
         //JavaScript สำหรับจัดการการแสดง/ซ่อน Dropdown แจ้งเตือน
