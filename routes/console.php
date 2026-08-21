@@ -9,6 +9,8 @@ use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;
 use Symfony\Component\Mime\Address;
+use App\Models\GroupRound;
+
 
 // Command เดิม
 Artisan::command('inspire', function () {
@@ -51,4 +53,14 @@ Schedule::call(function (): void {
 // แจ้งเตือน user ที่เครดิตใกล้หมดอายุ (ภายใน 7 วัน) ทั้งขึ้นกระดิ่งในเว็บและอีเมล
 Schedule::call(function (): void {
     app(CreditService::class)->notifyExpiringSoonCredits();
-})->name('credits:notify-expiring-soon')->dailyAt('11:51')->withoutOverlapping();
+})->name('credits:notify-expiring-soon')->dailyAt('08:00')->withoutOverlapping();
+// คืนเครดิตให้คิวสำรองอัตโนมัติ เมื่อหมดเวลาสละสิทธิ์ หรือรอบเล่นจบไปแล้ว
+Schedule::call(function (): void {
+    GroupRound::whereNull('reserves_processed_at')
+        ->where(function ($q) {
+            $q->whereNotNull('cancel_deadline')->where('cancel_deadline', '<=', now())
+              ->orWhereRaw('play_date < ?', [now()->toDateString()]);
+        })
+        ->get()
+        ->each(fn ($round) => $round->processExpiredReserves());
+})->name('group-round:process-expired-reserves')->everyFifteenMinutes()->withoutOverlapping();

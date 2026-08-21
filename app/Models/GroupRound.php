@@ -136,7 +136,7 @@ class GroupRound extends Model
                 'user_id' => $notifyUserId,
                 'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
                 'message' => "ที่นั่งของ \"{$next->displayName()}\" เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
-                'action_url' => null,
+                'action_url' => route('group-rounds.my-bookings'),
                 'is_read' => false,
             ]);
         }
@@ -149,50 +149,73 @@ class GroupRound extends Model
      * ที่ยังไม่ได้เลื่อนเป็นตัวจริงทั้งหมด แล้วปิดจ็อบไม่ให้ประมวลผลซ้ำอีก
      */
     public function processExpiredReserves(): void
-    {
-        if (! $this->cancel_deadline || $this->reserves_processed_at) {
-            return;
-        }
-
-        if (now()->lessThan($this->cancel_deadline)) {
-            return;
-        }
-
-        DB::transaction(function () {
-            $round = self::where('id', $this->id)->lockForUpdate()->first();
-
-            if (! $round || $round->reserves_processed_at || ! $round->cancel_deadline || now()->lessThan($round->cancel_deadline)) {
-                return;
-            }
-
-            $reserves = GroupRoundSignup::where('group_round_id', $round->id)
-                ->where('status', 'confirmed')
-                ->where('is_reserve', true)
-                ->get();
-
-            foreach ($reserves as $signup) {
-                $payerId = $signup->booked_by ?? $signup->user_id;
-
-                if ($payerId && $signup->credit_used > 0) {
-                    User::where('id', $payerId)->increment('credit_balance', $signup->credit_used * 100);
-                }
-
-                $signup->update(['status' => 'cancelled']);
-
-                if ($payerId) {
-                    Notification::create([
-                        'user_id' => $payerId,
-                        'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',
-                        'message' => "ที่นั่งของ \"{$signup->displayName()}\" ในรอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
-                        'action_url' => null,
-                        'is_read' => false,
-                    ]);
-                }
-            }
-
-            $round->update(['reserves_processed_at' => now()]);
-        });
-
-        $this->refresh();
+{
+    if ($this->reserves_processed_at) {
+        return;
     }
+
+    $deadlinePassed = $this->cancel_deadline && now()->greaterThanOrEqualTo($this->cancel_deadline);
+    $roundEnded = $this->hasRoundEnded();
+
+    if (! $deadlinePassed && ! $roundEnded) {
+        return;
+    }
+
+    DB::transaction(function () {
+        $round = self::where('id', $this->id)->lockForUpdate()->first();
+
+        if (! $round || $round->reserves_processed_at) {
+            return;
+        }
+
+        $deadlinePassed = $round->cancel_deadline && now()->greaterThanOrEqualTo($round->cancel_deadline);
+        $roundEnded = $round->hasRoundEnded();
+
+        if (! $deadlinePassed && ! $roundEnded) {
+            return;
+        }
+
+        $reserves = GroupRoundSignup::where('group_round_id', $round->id)
+            ->where('status', 'confirmed')
+            ->where('is_reserve', true)
+            ->get();
+
+        foreach ($reserves as $signup) {
+            $payerId = $signup->booked_by ?? $signup->user_id;
+
+            if ($payerId && $signup->credit_used > 0) {
+                User::where('id', $payerId)->increment('credit_balance', $signup->credit_used * 100);
+            }
+
+            $signup->update(['status' => 'cancelled']);
+
+            if ($payerId) {
+                Notification::create([
+                    'user_id' => $payerId,
+                    'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',
+                    'message' => "ที่นั่งของ \"{$signup->displayName()}\" ในรอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
+                    'action_url' => route('group-rounds.my-bookings'),
+                    'is_read' => false,
+                ]);
+            }
+        }
+
+        $round->update(['reserves_processed_at' => now()]);
+    });
+
+    $this->refresh();
+}
+    /** รอบนี้ถึงเวลาเล่นจบแล้วหรือยัง (คำนวณจาก play_date + end_time) */
+        public function hasRoundEnded(): bool
+        {
+            if (! $this->play_date) {
+                return false;
+            }
+
+            $end = $this->end_time
+                ? \Carbon\Carbon::parse($this->play_date->format('Y-m-d').' '.$this->end_time)
+                : $this->play_date->copy()->endOfDay();
+
+            return now()->greaterThan($end);
+        }
 }

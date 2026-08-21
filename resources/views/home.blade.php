@@ -1417,7 +1417,6 @@ html { scroll-behavior: smooth; }
     </div>
 </section>
 {{-- ═══ GROUP SESSIONS (กลุ่มเล่นบาสค่ำ) ═══ --}}
-@if(($upcomingGroupRounds ?? collect())->isNotEmpty())
 <section id="group-sessions" class="groupsession-section" data-aos="fade-up">
     <div class="groupsession-header">
         <p class="groupsession-label">Group Play</p>
@@ -1425,20 +1424,25 @@ html { scroll-behavior: smooth; }
         <p class="groupsession-subtitle">ร่วมสนุกกับกลุ่มเล่นบาสประจำสัปดาห์ ลงชื่อจองที่ได้เลย</p>
     </div>
 
-    <div class="groupsession-grid">
-        @foreach($upcomingGroupRounds as $round)
-            @php
-    $round->processExpiredReserves();
+    @if(($upcomingGroupRounds ?? collect())->isEmpty())
+        <div class="groupsession-empty">
+            <div class="groupsession-empty-icon">🏀</div>
+            ยังไม่มีรอบเล่นบาสในขณะนี้
+        </div>
+    @else
+        <div class="groupsession-grid">
+            @foreach($upcomingGroupRounds as $round)
+                @php
+                    $round->processExpiredReserves();
 
-    $mainCount = $round->mainConfirmedCount();
-    $spotsLeft = max(0, $round->max_players - $mainCount);
-    $isFull = $spotsLeft <= 0;
-    $percentFull = $round->max_players > 0
-        ? min(100, round(($mainCount / $round->max_players) * 100))
-        : 0;
-    $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-
-@endphp
+                    $mainCount = $round->mainConfirmedCount();
+                    $spotsLeft = max(0, $round->max_players - $mainCount);
+                    $isFull = $spotsLeft <= 0;
+                    $percentFull = $round->max_players > 0
+                        ? min(100, round(($mainCount / $round->max_players) * 100))
+                        : 0;
+                    $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+                @endphp
             <div class="gs-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                 <div class="gs-card-header">
                     <div class="gs-card-day">{{ $dayNames[$round->play_date->dayOfWeek] }}</div>
@@ -1459,7 +1463,7 @@ html { scroll-behavior: smooth; }
     @endif
     <div class="gs-info-line">
         <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
-        เครดิต {{ $round->credit_cost }} / คน
+        {{ $round->credit_cost == 0 ? 'ฟรี' : 'เครดิต ' . $round->credit_cost . ' / คน' }}
     </div>
     <div class="gs-info-line" style="color:#e67700;">
     <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
@@ -1621,21 +1625,21 @@ html { scroll-behavior: smooth; }
 
 @if($packages->isNotEmpty())
     {{-- ═══ PACKAGES ═══ --}}
-    <section class="packages-section" id="packages" data-aos="fade-up">
-        <div class="packages-header">
-            <p class="packages-label">Package</p>
-            <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
-            <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
-        </div>
+   <section class="packages-section" id="packages" data-aos="fade-up">
+    <div class="packages-header">
+        <p class="packages-label">Package</p>
+        <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
+        <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
+    </div>
 
-        @if($packages->isEmpty())
-            <div class="packages-empty">
-                <div class="packages-empty-icon">📦</div>
-                ขณะนี้ยังไม่มีแพ็กเกจเปิดให้บริการ
-            </div>
-        @else
-            <div class="packages-grid">
-                @foreach($packages as $package)
+    @if($packages->isEmpty())
+        <div class="packages-empty">
+            <div class="packages-empty-icon">📦</div>
+            ยังไม่มีแพ็กเกจเปิดให้บริการในขณะนี้
+        </div>
+    @else
+        <div class="packages-grid">
+            @foreach($packages as $package)
                     <div class="package-card2 {{ $loop->first ? 'featured' : '' }}" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                         <div class="package-thumb2">
                             <img src="{{ $package->image ? asset('storage/' . $package->image) : 'https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=800&auto=format&fit=crop' }}"
