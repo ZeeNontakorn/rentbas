@@ -18,7 +18,6 @@
             font-family: 'Kanit', sans-serif;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
@@ -26,7 +25,7 @@
 
     {{-- Navbar อยู่ด้านบนสุด --}}
     @include('components.navbar')
-
+    <div id="navbar-spacer"></div>
 
 
 
@@ -52,6 +51,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // แก้บั๊ก sticky navbar กระตุกตอนเปิด SweetAlert2 (heightAuto default ไปเซ็ต height:auto ให้ <html>)
+        Swal = Swal.mixin({ heightAuto: false });
+
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -114,7 +116,14 @@
         }
     });
 </script>
-
+    function syncNavbarSpacer() {
+        const nav = document.querySelector('nav.fixed');
+        const spacer = document.getElementById('navbar-spacer');
+        if (nav && spacer) spacer.style.height = nav.offsetHeight + 'px';
+    }
+    window.addEventListener('load', syncNavbarSpacer);
+    window.addEventListener('resize', syncNavbarSpacer);
+    document.getElementById('mobileMenuBtn')?.addEventListener('click', () => setTimeout(syncNavbarSpacer, 50));
     @stack('scripts')
 </body>
 

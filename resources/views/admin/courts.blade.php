@@ -3,8 +3,7 @@
 @section('title', 'จัดการสถานะสนาม')
 
 @section('content')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
 

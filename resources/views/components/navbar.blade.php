@@ -18,7 +18,7 @@
         display: none;
     }
 </style>
-<nav class="sticky top-0 z-50 bg-gray-900 shadow-md text-white">
+<nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900 shadow-md text-white">
     <div class="container mx-auto flex justify-between items-center py-4 px-4 md:px-10">
         <!-- Logo / ชื่อระบบ -->
         <a href="{{ route('home') }}" class="flex items-center font-bold text-xl md:text-2xl hover:text-gray-300 transition flex-shrink-0">
