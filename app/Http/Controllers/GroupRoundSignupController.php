@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -173,6 +174,30 @@ class GroupRoundSignupController extends Controller
                 }
             }
 
+            // แจ้งเตือนผู้จอง (ตัวเอง) ว่าชำระเงินสำเร็จ
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'ชำระเงินจองกลุ่มเล่นบาสสำเร็จ',
+                'message' => 'รอบ "'.$round->title.'" จองได้ '.count($names).' ที่'
+                    .($reserveCount > 0
+                        ? ' (ตัวจริง '.(count($names) - $reserveCount).' ที่ · คิวสำรอง '.$reserveCount.' ที่)'
+                        : ' เป็นตัวจริงทั้งหมด')
+                    .' ยอดชำระ ฿'.number_format($totalCredit, 2),
+                'action_url' => route('group-rounds.my-bookings'),
+                'is_read' => false,
+            ]);
+
+            // แจ้งเตือนแอดมินทุกคนว่ามีคนจองใหม่เข้ามา
+            foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
+                Notification::create([
+                    'user_id' => $adminId,
+                    'title' => 'มีคนจองกลุ่มเล่นบาสใหม่',
+                    'message' => $user->name.' จองรอบ "'.$round->title.'" จำนวน '.count($names).' ที่ ยอดชำระ ฿'.number_format($totalCredit, 2),
+                    'action_url' => route('admin.group-sessions.rounds.show', $round->id),
+                    'is_read' => false,
+                ]);
+            }
+
             $message = $reserveCount > 0
                 ? 'ชำระเงินสำเร็จ! จองได้ '.count($names).' ที่ (เป็นคิวสำรอง '.$reserveCount.' ที่ ที่เหลือเป็นตัวจริง)'
                 : 'ชำระเงินสำเร็จ! จองได้ '.count($names).' ที่เรียบร้อยแล้ว';
@@ -187,56 +212,73 @@ class GroupRoundSignupController extends Controller
      * ระบบจะเลื่อนคิวสำรองคนแรกขึ้นมาแทนที่ให้อัตโนมัติ
      */
     public function cancel(GroupRound $round, GroupRoundSignup $signup): RedirectResponse
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        if (! $user) {
-            return redirect()->route('login')->with('error', 'กรุณาเข้าสู่ระบบก่อน');
-        }
-
-        if ($signup->group_round_id !== $round->id) {
-            abort(404);
-        }
-
-        // ยกเลิกได้เฉพาะที่นั่งที่ตัวเองเป็นคนจอง (บัญชีตัวเอง หรือที่นั่งที่ตัวเองจองแทนเพื่อน)
-        $owns = $signup->booked_by === $user->id || $signup->user_id === $user->id;
-
-        if (! $owns) {
-            abort(403);
-        }
-
-        return DB::transaction(function () use ($round, $signup) {
-            $round = GroupRound::query()->lockForUpdate()->findOrFail($round->id);
-
-            if (! $round->canSelfCancel()) {
-                return back()->withErrors(['round' => 'เลยเวลาที่สามารถยกเลิกจองเองได้แล้ว']);
-            }
-
-            $signup = GroupRoundSignup::query()->lockForUpdate()->findOrFail($signup->id);
-
-            if ($signup->status !== 'confirmed') {
-                return back()->withErrors(['round' => 'ที่นั่งนี้ถูกยกเลิกไปแล้ว']);
-            }
-
-            $wasMainSlot = ! $signup->is_reserve;
-            $seatName = $signup->displayName();
-
-            $payerId = $signup->booked_by ?? $signup->user_id;
-
-            if ($payerId && $signup->credit_used > 0) {
-                User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
-            }
-
-            $signup->update(['status' => 'cancelled']);
-
-            if ($wasMainSlot) {
-                $round->promoteNextReserve();
-            }
-
-            return redirect()->route('group-rounds.my-bookings')->with(
-                'success',
-                'ยกเลิกที่นั่งของ '.$seatName.' สำเร็จ คืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้แล้ว'
-            );
-        });
+    if (! $user) {
+        return redirect()->route('login')->with('error', 'กรุณาเข้าสู่ระบบก่อน');
     }
+
+    if ($signup->group_round_id !== $round->id) {
+        abort(404);
+    }
+
+    // ยกเลิกได้เฉพาะที่นั่งที่ตัวเองเป็นคนจอง (บัญชีตัวเอง หรือที่นั่งที่ตัวเองจองแทนเพื่อน)
+    $owns = $signup->booked_by === $user->id || $signup->user_id === $user->id;
+
+    if (! $owns) {
+        abort(403);
+    }
+
+    return DB::transaction(function () use ($round, $signup) {
+        $round = GroupRound::query()->lockForUpdate()->findOrFail($round->id);
+
+        if (! $round->canSelfCancel()) {
+            return back()->withErrors(['round' => 'เลยเวลาที่สามารถยกเลิกจองเองได้แล้ว']);
+        }
+
+        $signup = GroupRoundSignup::query()->lockForUpdate()->findOrFail($signup->id);
+
+        if ($signup->status !== 'confirmed') {
+            return back()->withErrors(['round' => 'ที่นั่งนี้ถูกยกเลิกไปแล้ว']);
+        }
+
+        $wasMainSlot = ! $signup->is_reserve;
+        $seatName = $signup->displayName();
+        $removedOrder = $signup->order_number;
+
+        $payerId = $signup->booked_by ?? $signup->user_id;
+
+        if ($payerId && $signup->credit_used > 0) {
+            User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+        }
+
+        $signup->update(['status' => 'cancelled']);
+
+        // เลื่อนลำดับคนที่อยู่หลังคนที่ยกเลิก ขึ้นมาแทนที่ทันที ไม่ให้เลขกระโดดข้าม
+        GroupRoundSignup::where('group_round_id', $round->id)
+            ->where('status', 'confirmed')
+            ->where('order_number', '>', $removedOrder)
+            ->decrement('order_number');
+
+        if ($payerId) {
+            Notification::create([
+                'user_id' => $payerId,
+                'title' => 'ยกเลิกการจองกลุ่มเล่นบาสสำเร็จ',
+                'message' => 'ยกเลิกที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" แล้ว คืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว',
+                'action_url' => route('group-rounds.my-bookings'),
+                'is_read' => false,
+            ]);
+        }
+
+        if ($wasMainSlot) {
+            $round->promoteNextReserve();
+        }
+
+        return redirect()->route('group-rounds.my-bookings')->with(
+            'success',
+            'ยกเลิกที่นั่งของ '.$seatName.' สำเร็จ คืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้แล้ว'
+        );
+    });
+}
 }
