@@ -261,6 +261,7 @@ class GroupSessionController extends Controller
         $payerId = $signup->booked_by ?? $signup->user_id;
         $seatName = $signup->displayName();
         $wasMainSlot = ! $signup->is_reserve;
+        $removedOrder = $signup->order_number;
         $didRefund = false;
 
         if ($payerId && $signup->credit_used > 0) {
@@ -269,6 +270,13 @@ class GroupSessionController extends Controller
         }
 
         $signup->update(['status' => 'cancelled']);
+
+        // เลื่อนลำดับคนที่อยู่หลังคนที่ถูกเอาออก ขึ้นมาแทนที่ทันที ไม่ให้เลขกระโดดข้าม
+        // เช่น คนที่ 15 ออก -> คนที่ 16,17,18,... จะกลายเป็น 15,16,17,...
+        GroupRoundSignup::where('group_round_id', $round->id)
+            ->where('status', 'confirmed')
+            ->where('order_number', '>', $removedOrder)
+            ->decrement('order_number');
 
         if ($payerId) {
             Notification::create([
@@ -281,7 +289,7 @@ class GroupSessionController extends Controller
             ]);
         }
 
-        // ถ้านำ "ตัวจริง" ออก ให้เลื่อนคิวสำรองคนแรกขึ้นแทนอัตโนมัติ (จุดที่ขาดไปตอนแก้รอบก่อน)
+        // ถ้านำ "ตัวจริง" ออก ให้เลื่อนคิวสำรองคนแรกขึ้นแทนอัตโนมัติ
         if ($wasMainSlot) {
             $round->promoteNextReserve();
         }

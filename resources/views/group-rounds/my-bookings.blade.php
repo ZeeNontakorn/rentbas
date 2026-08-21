@@ -115,10 +115,12 @@
                                             @endif
                                             @if($round->canSelfCancel())
                                                 <form action="{{ route('group-rounds.cancel', [$round, $seat]) }}" method="POST"
-                                                    onsubmit="return confirm('ยกเลิกที่นั่งของ {{ addslashes($seat->displayName()) }} และรับเครดิตคืน ฿{{ number_format($seat->credit_used, 2) }}?');">
-                                                    @csrf
-                                                    <button type="submit" class="shrink-0 text-xs font-semibold text-red-500 hover:text-red-700">ยกเลิก</button>
-                                                </form>
+                                                data-confirm="ยกเลิกที่นั่งของ &quot;{{ addslashes($seat->displayName()) }}&quot; และรับเครดิตคืน ฿{{ number_format($seat->credit_used, 2) }}?"
+                                                data-confirm-button-text="ยกเลิกที่นั่ง"
+                                                data-confirm-danger="1">
+                                                @csrf
+                                                <button type="submit" class="shrink-0 text-xs font-semibold text-red-500 hover:text-red-700">ยกเลิก</button>
+                                            </form>
                                             @endif
                                         </div>
                                     @endforeach
