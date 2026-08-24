@@ -3,8 +3,7 @@
 @section('title', 'จัดการสถานะสนาม')
 
 @section('content')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
 
@@ -332,11 +331,10 @@
                                 </form>
 
                                 {{-- ปุ่มยกเลิกการแบ่งครึ่งสนาม --}}
-                                <form method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}"
-                                    onsubmit="return confirm('ยกเลิกการแบ่งครึ่งสนาม {{ $selectedCourt->name }}? (ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)');">
+                                <form id="mergeSectionForm" method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}">
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
-                                    <button type="submit"
+                                    <button type="button" onclick="confirmMergeSection()"
                                         class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center cursor-pointer">
                                         ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
                                     </button>
@@ -1076,6 +1074,26 @@
                                     text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
                                 });
                             }
+                        }
+                    });
+                }
+
+                function confirmMergeSection() {
+                    const courtName = @js($selectedCourt->name ?? '');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ยกเลิกการแบ่งครึ่งสนาม?',
+                        html: `ยกเลิกการแบ่งครึ่งสนาม <b>${courtName}</b> ใช่หรือไม่?<br>
+                               <span class="text-sm text-gray-500">(ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)</span>`,
+                        showCancelButton: true,
+                        confirmButtonText: 'ใช่',
+                        cancelButtonText: 'ไม่ใช่',
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        reverseButtons: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('mergeSectionForm').submit();
                         }
                     });
                 }

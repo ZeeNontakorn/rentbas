@@ -7,7 +7,7 @@
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการ Package</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการแพ็กเกจ</h1>
                 <p class="mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการแพ็กเกจทั้งหมดในระบบ</p>
             </div>
             <!-- Search และ ปุ่มเพิ่มแพ็กเกจ -->
@@ -125,7 +125,7 @@
                                 </td>
                                 <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
                                     <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
+                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:w-17 justify-center sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $package->id }}" action="{{ route('admin.packages.delete', $package) }}" method="POST">
                                             @csrf @method('DELETE')
                                             <button type="button" onclick="confirmDeletePackage('{{ $package->id }}', '{{ addslashes($package->name) }}')" class="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 cursor-pointer">

@@ -170,7 +170,7 @@
                                 </td>
                                 <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
                                     <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                        <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
+                                        <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:w-17 justify-center sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $course->id }}" action="{{ route('admin.courses.destroy', $course) }}" method="POST">
                                             @csrf @method('DELETE')
                                             <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 gap-1.5 cursor-pointer">
