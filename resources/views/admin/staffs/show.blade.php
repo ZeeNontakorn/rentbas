@@ -216,7 +216,7 @@
                     <div class="mb-4 flex flex-wrap gap-4 text-[11px] text-gray-500 font-medium uppercase tracking-wide">
                         <span class="flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-full bg-gray-500"></i>ไม่ว่าง</span>
                         @if($isCoach)
-                            <span class="flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-full bg-orange-500"></i>คำขอ Private</span>
+                            <span class="flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-full bg-orange-500"></i>คำขอจองเทรนเนอร์</span>
                             <span class="flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-full bg-violet-600"></i>ยืนยันแล้ว</span>
                         @endif
                     </div>
@@ -314,7 +314,7 @@
 
             <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 mt-4">
                 <button type="button" onclick="toggleModal('staffProfileModal', false)" class="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200">ยกเลิก</button>
-                <button type="submit" class="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">บันทึกข้อมูล</button>
+                <button type="submit" class="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600">บันทึกข้อมูล</button>
             </div>
         </form>
     </div>

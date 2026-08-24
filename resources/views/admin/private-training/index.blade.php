@@ -25,7 +25,7 @@
 @endphp
 
 @section('content')
-    <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
+    <div class="text-gray-900 min-h-screen py-8">
         <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
             {{-- 1. ดึง Loading Overlay Component มาใส่ --}}
@@ -50,7 +50,7 @@
                             class="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-500">
                     </div>
                     <button type="submit"
-                        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 cursor-pointer">
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 shadow-sm  cursor-pointer">
                         บันทึก
                     </button>
                     @error('advance_booking_days')

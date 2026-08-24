@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Schedule บุคลากร')
+@section('title', 'ตารางงานบุคลากร')
 
 @section('content')
 @include('private-training._calendar-theme')
@@ -25,12 +25,12 @@
     }
 </style>
 
-<div class="min-h-screen bg-slate-50 py-8 text-slate-900">
+<div class="min-h-screen py-8 text-slate-900">
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Schedule โค้ชและผู้ช่วยสนาม</h1>
-                <p class="mt-1 text-sm text-slate-500">แอดมินเพิ่ม แก้ไข หรือลบกำหนดการให้บุคลากรได้โดยตรง</p>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">ตารางงานโค้ช และผู้ช่วยสนาม</h1>
+                <p class="mt-1 text-sm text-slate-500">จัดการกำหนดการให้บุคลากรได้โดยตรง</p>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
                 <div class="w-full sm:w-72">
@@ -44,8 +44,11 @@
                         @endforeach
                     </select>
                 </div>
-                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 cursor-pointer">
-                    <span class="text-base leading-none">+</span> เพิ่มกำหนดการ
+                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    <span class="text-base leading-none"></span>เพิ่มกำหนดการ
                 </button>
             </div>
         </div>
@@ -69,14 +72,13 @@
     </div>
 </div>
 
-<div id="admin-schedule-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+<div id="admin-schedule-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/55 p-4 bg-black/40">
     <form id="admin-schedule-form" class="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div>
-                <h2 id="admin-modal-title" class="text-lg font-bold text-slate-900">เพิ่มกำหนดการ</h2>
+                <h2 id="admin-modal-title" class="text-2xl font-bold text-slate-900">เพิ่มกำหนดการ</h2>
                 <p id="admin-modal-note" class="mt-0.5 text-xs text-slate-500">เลือกบุคลากร วัน เวลา และสีของ Event</p>
             </div>
-            <button type="button" data-close-admin-modal class="flex h-9 w-9 items-center justify-center rounded-lg text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700">&times;</button>
         </div>
 
         <div class="space-y-4 p-6">
@@ -114,16 +116,16 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2 sm:col-span-1">
                     <label for="admin-event-date" class="mb-1 block text-xs font-semibold text-slate-600">วันที่</label>
-                    <input id="admin-event-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                    <input id="admin-event-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="admin-event-start" class="mb-1 block text-xs font-semibold text-slate-600">เริ่ม</label>
-                        <input id="admin-event-start" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                        <input id="admin-event-start" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
                     </div>
                     <div>
                         <label for="admin-event-end" class="mb-1 block text-xs font-semibold text-slate-600">สิ้นสุด</label>
-                        <input id="admin-event-end" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                        <input id="admin-event-end" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
                     </div>
                 </div>
             </div>
