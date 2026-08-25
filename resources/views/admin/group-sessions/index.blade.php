@@ -25,7 +25,9 @@
             </a>
             <button @click="showSessionForm = true"
                 class="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
-                + สร้างรอบประจำใหม่
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>สร้างรอบประจำใหม่
             </button>
         </div>
     </div>
