@@ -56,7 +56,7 @@ class HomeController extends Controller
             ->get();
 
         $reviews = Review::published()
-            ->with(['user:id,name', 'ratings.facility:id,name', 'images'])
+            ->with(['user:id,us_name', 'ratings.facility:id,name', 'images'])
             ->latest('published_at')
             ->take(12)
             ->get();

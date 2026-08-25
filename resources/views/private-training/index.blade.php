@@ -106,7 +106,7 @@
                         @if(!$hasValidPackage)
                             <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
                                 คุณใช้สิทธิ์แพ็กเกจครบแล้ว หากต้องการจองเทรนเนอร์เพิ่ม กรุณาซื้อแพ็กเกจใหม่
-                                <button type="button" id="btn-need-package" class="ml-1 font-semibold underline hover:text-amber-900">ซื้อแพ็กเกจ</button>
+                                <button type="button" id="btn-need-package" class="btn-need-package ml-1 font-semibold underline hover:text-amber-900">ซื้อแพ็กเกจ</button>
                             </div>
                         @endif
                     @else
@@ -121,7 +121,7 @@
                             <p class="text-gray-700 font-medium">คุณยังไม่มีแพ็กเกจที่ใช้จองเทรนเนอร์ได้</p>
                             <p class="text-sm text-gray-400 mt-1">กรุณาซื้อแพ็กเกจก่อนเพื่อเริ่มจองเวลาเรียนกับโค้ช</p>
                             <button type="button" id="btn-need-package"
-                                    class="mt-5 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600">
+                                    class="btn-need-package mt-5 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600">
                                 ซื้อแพ็กเกจ
                             </button>
                         </div>
@@ -175,8 +175,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        document.getElementById('btn-need-package')?.addEventListener('click', function () {
-            window.location.href = "{{ route('home') }}#packages";
+        const hasAnyPackagesInSystem = @json($hasAnyPackagesInSystem);
+
+        document.querySelectorAll('.btn-need-package').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!hasAnyPackagesInSystem) {
+                    showToast('ไม่มีแพ็กเกจในขณะนี้',false)
+                    return; // Alert here
+                }
+
+                window.location.href = "{{ route('home') }}#packages";
+            });
         });
 
         document.querySelectorAll('.btn-cancel-request').forEach(function (btn) {
@@ -198,4 +207,16 @@
             });
         });
     </script>
+    <script>
+        function showToast(text, isError) {
+        const toast = document.getElementById('pageToast');
+        if (!toast) return;
+        toast.textContent = text;
+        toast.classList.remove('hidden', 'bg-gray-900', 'bg-red-600');
+        toast.classList.add(isError ? 'bg-red-600' : 'bg-gray-900');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+    </script>
+    <div id="pageToast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50"></div>
 @endsection

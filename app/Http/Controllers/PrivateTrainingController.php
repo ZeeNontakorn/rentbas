@@ -11,7 +11,7 @@ use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Models\PackagePurchase;
 use App\Models\PrivateTrainingBooking;
-use App\Models\PromotionPackage;
+use App\Models\Package;
 use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
 use App\Services\CourtAvailabilityService;
@@ -54,8 +54,8 @@ class PrivateTrainingController extends Controller
 
         // มีแพ็กเกจ Private Training ที่เปิดขายอยู่ในระบบเลยไหม (ไม่ผูกกับ user คนใดคนหนึ่ง)
         // ใช้เช็คว่าควรให้ปุ่ม "ซื้อแพ็กเกจ" กดไปที่ไหนได้จริงหรือไม่
-        $hasAnyPackagesInSystem = PromotionPackage::where('is_active', true)
-            ->where('category', 'private')
+        $hasAnyPackagesInSystem = Package::where('is_active', true)
+            ->where('type', 'private')
             ->exists();
 
         $myRequests = PrivateTrainingBooking::with('coach')
@@ -123,9 +123,9 @@ class PrivateTrainingController extends Controller
             ->orderByRaw('expired_at IS NULL, expired_at ASC')
             ->get();
 
-        $promotionPackages = PromotionPackage::where('is_active', true)
-            ->where('category', 'private')
-            ->orderBy('label')
+        $promotionPackages = Package::where('is_active', true)
+            ->where('type', 'private')
+            ->orderBy('name')
             ->get();
 
         return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
