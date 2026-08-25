@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto px-4 py-6">
 
     {{-- กลับหน้ารายการ --}}
-    <a
+    
         href="{{ route('admin.group-sessions.index') }}"
         class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition"
     >
@@ -162,10 +162,10 @@
 
 
             <form
+                id="add-player-form"
                 action="{{ route('admin.group-sessions.rounds.addPlayer', $round) }}"
                 method="POST"
                 class="flex flex-col lg:flex-row gap-2"
-                onsubmit="return this.user_id.value || this.guest_name.value.trim() !== '' ? true : (alert('เลือกสมาชิก หรือกรอกชื่อผู้จองภายนอกอย่างใดอย่างหนึ่ง'), false)"
             >
 
                 @csrf
@@ -442,5 +442,18 @@
             }
         }
     }
+
+    document.getElementById('add-player-form')?.addEventListener('submit', function (event) {
+        const userId = this.user_id.value;
+        const guestName = this.guest_name.value.trim();
+
+        if (!userId && guestName === '') {
+            event.preventDefault();
+            Toast.fire({
+                icon: 'warning',
+                title: 'เลือกสมาชิก หรือกรอกชื่อผู้จองภายนอกอย่างใดอย่างหนึ่ง',
+            });
+        }
+    });
 </script>
 @endpush
