@@ -9,8 +9,9 @@ use App\Models\CourtClosure;
 use App\Models\SiteVisit;
 use App\Models\User;
 use ArielMejiaDev\LarapexCharts\LarapexChart;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
@@ -20,6 +21,9 @@ class DashboardController extends Controller
 
     /** Statuses that count as a "real" booking sitting on the calendar. */
     private const COUNTABLE = ['approved', 'pending'];
+
+    /** How many rows the Recent Activities / Top Customers feeds keep. */
+    private const FEED_LIMIT = 30;
 
     private function getCommonStats()
     {
@@ -40,11 +44,193 @@ class DashboardController extends Controller
         return max((strtotime($end) - strtotime($start)) / 3600, 0);
     }
 
-    public function index()
+    /**
+     * Resolve the "view_date" query param into a safe Y-m-d string.
+     * Falls back to today on missing/invalid/future input.
+     */
+    private function resolveViewDate(Request $request, string $todayStr): string
+    {
+        $requested = $request->query('view_date');
+
+        if (! $requested) {
+            return $todayStr;
+        }
+
+        try {
+            $parsed = Carbon::createFromFormat('Y-m-d', $requested)->startOfDay();
+        } catch (\Exception $e) {
+            return $todayStr;
+        }
+
+        // Don't allow picking a date in the future.
+        if ($parsed->toDateString() > $todayStr) {
+            return $todayStr;
+        }
+
+        return $parsed->toDateString();
+    }
+
+    /**
+     * Distinct years that actually appear in bookings.booking_date, newest
+     * first, always including the current year so it's selectable even
+     * before any bookings exist for it.
+     *
+     * booking_date is stored as a 'Y-m-d ...' style string (e.g.
+     * "2026-01-01"), so the year is pulled with LEFT(booking_date, 4)
+     * rather than MySQL's YEAR(), which can return unexpected results if
+     * the column isn't a strict DATE/DATETIME type.
+     */
+    private function availableBookingYears(int $currentYear): array
+    {
+        $years = Booking::selectRaw('DISTINCT LEFT(booking_date, 4) as yr')
+            ->whereNotNull('booking_date')
+            ->pluck('yr')
+            ->map(fn ($y) => (int) $y)
+            ->all();
+
+        $years[] = $currentYear;
+
+        return collect($years)->unique()->sortDesc()->values()->all();
+    }
+
+    /**
+     * Resolve the "view_year" query param into a safe int year — must be
+     * one of the years that actually exist in booking_date (or current year).
+     */
+    private function resolveViewYear(Request $request, int $currentYear, array $allowedYears): int
+    {
+        $requested = $request->query('view_year');
+
+        if (! $requested || ! ctype_digit((string) $requested)) {
+            return $currentYear;
+        }
+
+        $year = (int) $requested;
+
+        return in_array($year, $allowedYears, true) ? $year : $currentYear;
+    }
+
+    /**
+     * Court x hour-slot grid for a given date: 'available' | 'occupied' | 'maintenance'.
+     */
+    private function buildOccupancy(string $date, Collection $courts): array
+    {
+        $approved = Booking::whereDate('booking_date', $date)
+            ->where('status', 'approved')
+            ->get(['start_time', 'end_time', 'court_id']);
+        $closures = CourtClosure::whereDate('date', $date)
+            ->get(['court_id', 'start_time', 'end_time']);
+
+        $occHours = range(self::OPEN_HOUR, self::CLOSE_HOUR - 1);
+        $occupancy = [];
+        foreach ($courts as $court) {
+            $cells = [];
+            $fullyClosed = $court->court_status === 'closed';
+            foreach ($occHours as $h) {
+                $slotStart = sprintf('%02d:00:00', $h);
+                $slotEnd = sprintf('%02d:00:00', $h + 1);
+
+                $isMaint = $fullyClosed || $closures->first(
+                    fn($c) => $c->court_id === $court->id && $c->start_time < $slotEnd && $c->end_time > $slotStart
+                ) !== null;
+                $isBusy = $approved->first(
+                    fn($b) => $b->court_id === $court->id && $b->start_time < $slotEnd && $b->end_time > $slotStart
+                ) !== null;
+
+                $cells[] = $isMaint ? 'maintenance' : ($isBusy ? 'occupied' : 'available');
+            }
+            $occupancy[] = ['name' => $court->name, 'cells' => $cells];
+        }
+
+        return $occupancy;
+    }
+
+    /** Top customers by hours booked, from an already-loaded set of approved bookings. */
+    private function buildTopCustomers(Collection $monthApproved): Collection
+    {
+        $top = $monthApproved->groupBy('user_id')->map(function ($rows) {
+            return [
+                'hours' => round($rows->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time))),
+                'count' => $rows->count(),
+                'user_id' => $rows->first()->user_id,
+            ];
+        })->sortByDesc('hours')->take(self::FEED_LIMIT)->values();
+
+        $userNames = User::whereIn('id', $top->pluck('user_id'))->pluck('us_name', 'id');
+
+        return $top->map(function ($c) use ($userNames) {
+            $name = $userNames[$c['user_id']] ?? 'ไม่ระบุ';
+            $c['name'] = $name;
+            $c['initials'] = mb_strtoupper(mb_substr($name, 0, 2));
+
+            return $c;
+        })->values();
+    }
+
+    /** Recent Activities — reconstructed feed (approx, no audit log). */
+    private function buildRecentActivities(): Collection
+    {
+        $recent = collect();
+        foreach (Booking::with(['user', 'court'])->latest('created_at')->limit(15)->get() as $b) {
+            $recent->push([
+                'time' => $b->created_at,
+                'type' => 'new',
+                'text' => ($b->user->us_name ?? 'ลูกค้า') . ' สร้างการจองใหม่ ' . ($b->court->name ?? ''),
+            ]);
+        }
+        foreach (Booking::with(['court'])->whereIn('status', ['cancelled', 'rejected'])->latest('updated_at')->limit(10)->get() as $b) {
+            $recent->push([
+                'time' => $b->updated_at,
+                'type' => 'cancel',
+                'text' => 'การจอง #' . $b->id . ' ถูกยกเลิก' . ($b->court ? ' (' . $b->court->name . ')' : ''),
+            ]);
+        }
+        foreach (Booking::with(['user'])->where('status', 'approved')->latest('updated_at')->limit(10)->get() as $b) {
+            $recent->push([
+                'time' => $b->updated_at,
+                'type' => 'confirm',
+                'text' => 'ยืนยันการจองของ ' . ($b->user->us_name ?? 'ลูกค้า') . ' แล้ว',
+            ]);
+        }
+        foreach (User::latest()->limit(10)->get() as $u) {
+            $recent->push([
+                'time' => $u->created_at,
+                'type' => 'user',
+                'text' => $u->us_name . ' สมัครสมาชิกใหม่',
+            ]);
+        }
+
+        return $recent->filter(fn($a) => $a['time'] !== null)
+            ->sortByDesc('time')->take(self::FEED_LIMIT)
+            ->map(fn($a) => [
+                'type' => $a['type'],
+                'text' => $a['text'],
+                'ago' => $a['time']->diffForHumans(),
+            ])->values();
+    }
+
+    public function index(Request $request)
     {
         $now = now();
         $todayStr = $now->toDateString();
         $hoursPerDay = self::CLOSE_HOUR - self::OPEN_HOUR; // 14
+
+        // The day that "Peak Booking Hours", "Cancellation Analysis" and
+        // "Occupancy Timeline" all reflect. Defaults to today; can be changed
+        // by clicking a point on the Booking Trend chart or a "← Today"
+        // button, which re-fetch via ?view_date=Y-m-d without a page reload.
+        $viewDate = $this->resolveViewDate($request, $todayStr);
+        $viewDateCarbon = Carbon::parse($viewDate);
+        $isToday = $viewDate === $todayStr;
+        $viewDateLabel = $isToday
+            ? 'วันนี้ (' . $viewDateCarbon->translatedFormat('d M') . ')'
+            : $viewDateCarbon->translatedFormat('d F Y');
+
+        // The calendar year that "Monthly Booking Volume" reflects. The
+        // dropdown only lists years that actually appear in booking_date
+        // (plus the current year). Defaults to the current year.
+        $availableYears = $this->availableBookingYears($now->year);
+        $viewYear = $this->resolveViewYear($request, $now->year, $availableYears);
 
         $courts = Court::orderBy('id')->get();
         $courtCount = max($courts->count(), 1);
@@ -68,6 +254,7 @@ class DashboardController extends Controller
 
         // ---------------------------------------------------------------
         // KPI 2 — Court Utilization Rate (today, approved hours / capacity)
+        // This KPI always reflects *today*, regardless of $viewDate.
         // ---------------------------------------------------------------
         $todayApproved = Booking::whereDate('booking_date', $todayStr)
             ->where('status', 'approved')
@@ -118,315 +305,174 @@ class DashboardController extends Controller
         $pendingBookings = Booking::where('booking_date', '>=', $todayStr)
             ->where('status', 'pending')->count();
 
-        // ---------------------------------------------------------------
-        // KPI 6 — Cancellation Rate (this month)
-        // ---------------------------------------------------------------
-        $monthTotal = Booking::whereBetween('booking_date', [$monthStart, $monthEnd])->count();
-        $monthCancelled = Booking::whereBetween('booking_date', [$monthStart, $monthEnd])
-            ->whereIn('status', ['cancelled', 'rejected'])->count();
-        $cancellationRate = $monthTotal > 0 ? round($monthCancelled / $monthTotal * 100, 1) : 0;
-
-        $prevMonthTotal = Booking::whereBetween('booking_date', [$prevMonthStart, $prevMonthEnd])->count();
-        $prevMonthCancelled = Booking::whereBetween('booking_date', [$prevMonthStart, $prevMonthEnd])
-            ->whereIn('status', ['cancelled', 'rejected'])->count();
-        $prevCancelRate = $prevMonthTotal > 0 ? $prevMonthCancelled / $prevMonthTotal * 100 : 0;
-        $cancellationTrend = $this->pctChange($cancellationRate, $prevCancelRate);
-
         $kpis = [
             'today_bookings' => ['value' => $todayBookings, 'trend' => $bookingsTrend, 'spark' => $spark],
             'utilization' => ['value' => $utilizationRate, 'trend' => $utilizationTrend],
             'booked_hours' => ['value' => $bookedHours, 'trend' => $bookedHoursTrend],
             'active_customers' => ['value' => $activeCustomers, 'trend' => $activeTrend],
             'pending' => ['value' => $pendingBookings],
-            'cancellation_rate' => ['value' => $cancellationRate, 'trend' => $cancellationTrend],
         ];
 
         // ---------------------------------------------------------------
-        // Booking Trend — daily bookings, last 30 days (area chart)
+        // Booking Trend — daily bookings + cancellations, last 30 days
+        // (area chart). Each point carries its ISO date so the chart can
+        // be clicked to change $viewDate (see the manual chart script in
+        // the view).
         // ---------------------------------------------------------------
         $last30 = Booking::where('booking_date', '>=', $now->copy()->subDays(29)->toDateString())
             ->whereIn('status', self::COUNTABLE)
             ->get(['booking_date']);
         $trendByDate = $last30->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
 
+        $last30Cancelled = Booking::where('booking_date', '>=', $now->copy()->subDays(29)->toDateString())
+            ->whereIn('status', ['cancelled', 'rejected'])
+            ->get(['booking_date']);
+        $trendCancelledByDate = $last30Cancelled->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
+
         $trend = [];
         for ($i = 29; $i >= 0; $i--) {
             $d = $now->copy()->subDays($i);
             $trend[] = [
                 'label' => $d->format('M j'),
+                'date' => $d->toDateString(),
                 'count' => (int) ($trendByDate[$d->toDateString()] ?? 0),
+                'cancelled' => (int) ($trendCancelledByDate[$d->toDateString()] ?? 0),
             ];
         }
         $trendTotal = array_sum(array_column($trend, 'count'));
+        $trendCancelledTotal = array_sum(array_column($trend, 'cancelled'));
 
         // ---------------------------------------------------------------
-        // Cancellation Analysis — categorised (real where possible)
+        // Cancellation Analysis — booked vs. cancelled, for $viewDate
         // ---------------------------------------------------------------
-        $cancelRows = Booking::whereBetween('booking_date', [
-            $now->copy()->subDays(30)->toDateString(),
-            $todayStr,
-        ])->whereIn('status', ['cancelled', 'rejected'])->get(['status', 'reject_reason']);
+        $viewDateBookedCount = Booking::whereDate('booking_date', $viewDate)
+            ->whereIn('status', self::COUNTABLE)->count();
+        $viewDateCancelledCount = Booking::whereDate('booking_date', $viewDate)
+            ->whereIn('status', ['cancelled', 'rejected'])->count();
 
-        $cancel = ['Customer Cancel' => 0, 'Admin Cancel' => 0];
-        foreach ($cancelRows as $r) {
-            $reason = mb_strtolower($r->reject_reason ?? '');
-            if (str_contains($reason, 'ซ่อม') || str_contains($reason, 'mainten') || str_contains($reason, 'ปิด')) {
-                $cancel['Admin Cancel']++;
-            } else {
-                // status 'cancelled' or an uncategorised admin rejection
-                $cancel['Customer Cancel']++;
-            }
-        }
-        $cancelIsMock = array_sum($cancel) === 0;
-        if ($cancelIsMock) {
-            // No cancellation data yet — show representative sample.
-            $cancel = ['Customer Cancel' => 70, 'Maintenance' => 30];
-        }
+        $cancel = ['Booked' => $viewDateBookedCount, 'Cancelled' => $viewDateCancelledCount];
         $cancelTotal = array_sum($cancel);
 
         // ---------------------------------------------------------------
-        // Monthly Booking Volume — last 12 months + YoY
+        // Monthly Booking Volume — calendar year (Jan–Dec) + YoY
+        // Reflects $viewYear, selectable via the dropdown under the YoY chip.
         // ---------------------------------------------------------------
-        $since = $now->copy()->subMonths(23)->startOfMonth();
-        $monthlyRows = Booking::where('booking_date', '>=', $since->toDateString())
+        $yearStart = Carbon::create($viewYear, 1, 1)->startOfDay();
+        $yearEnd = Carbon::create($viewYear, 12, 31)->endOfDay();
+        $yearRows = Booking::whereBetween('booking_date', [$yearStart->toDateString(), $yearEnd->toDateString()])
             ->whereIn('status', self::COUNTABLE)
             ->get(['booking_date']);
-        $byMonth = $monthlyRows->groupBy(fn($b) => $b->booking_date->format('Y-m'))->map->count();
+        $byMonth = $yearRows->groupBy(fn($b) => (int) $b->booking_date->format('n'))->map->count();
 
         $monthly = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $m = $now->copy()->subMonths($i);
+        for ($m = 1; $m <= 12; $m++) {
             $monthly[] = [
-                'label' => $m->format('M'),
-                'count' => (int) ($byMonth[$m->format('Y-m')] ?? 0),
+                'label' => Carbon::create($viewYear, $m, 1)->format('M'),
+                'count' => (int) ($byMonth[$m] ?? 0),
             ];
         }
         $last12Sum = array_sum(array_column($monthly, 'count'));
-        $prev12Sum = 0;
-        for ($i = 23; $i >= 12; $i--) {
-            $m = $now->copy()->subMonths($i);
-            $prev12Sum += (int) ($byMonth[$m->format('Y-m')] ?? 0);
-        }
+
+        $prevYearStart = Carbon::create($viewYear - 1, 1, 1)->startOfDay();
+        $prevYearEnd = Carbon::create($viewYear - 1, 12, 31)->endOfDay();
+        $prev12Sum = Booking::whereBetween('booking_date', [$prevYearStart->toDateString(), $prevYearEnd->toDateString()])
+            ->whereIn('status', self::COUNTABLE)->count();
         $yoy = $this->pctChange($last12Sum, $prev12Sum);
 
         // ---------------------------------------------------------------
-        // Peak Booking Hours — utilization per hour slot, today
+        // Peak Booking Hours — total bookings per hour slot, for $viewDate
+        // Shows raw booking counts (not utilization %) as a line chart.
         // ---------------------------------------------------------------
+        $viewDateApproved = Booking::whereDate('booking_date', $viewDate)
+            ->where('status', 'approved')
+            ->get(['start_time', 'end_time', 'court_id']);
+
         $peakHours = [];
         for ($h = self::OPEN_HOUR; $h < self::CLOSE_HOUR; $h++) {
             $slotStart = sprintf('%02d:00:00', $h);
             $slotEnd = sprintf('%02d:00:00', $h + 1);
-            $busy = $todayApproved->filter(
+            $busy = $viewDateApproved->filter(
                 fn($b) => $b->start_time < $slotEnd && $b->end_time > $slotStart
             )->count();
             $peakHours[] = [
                 'label' => sprintf('%02d:00', $h),
-                'pct' => (int) round(min($busy / $courtCount * 100, 100)),
+                'count' => $busy,
             ];
         }
 
         // ---------------------------------------------------------------
-        // Court Utilization — per court, this week (rings)
+        // Court Utilization — per court, this week: grouped bar comparing
+        // Approved / Pending / Cancelled(+Rejected) booking counts.
         // ---------------------------------------------------------------
         $weekStart = $now->copy()->startOfWeek()->toDateString();
         $weekEnd = $now->copy()->endOfWeek()->toDateString();
-        $weekApproved = Booking::whereBetween('booking_date', [$weekStart, $weekEnd])
-            ->where('status', 'approved')
-            ->get(['start_time', 'end_time', 'court_id']);
-        $weekCapacity = $hoursPerDay * 7;
+        $weekBookings = Booking::whereBetween('booking_date', [$weekStart, $weekEnd])
+            ->whereIn('status', ['approved', 'pending', 'cancelled', 'rejected'])
+            ->get(['court_id', 'status']);
 
-        $courtUtil = [];
+        $courtStatusStats = [];
         foreach ($courts as $court) {
-            $hrs = $weekApproved->where('court_id', $court->id)
-                ->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time));
-            $courtUtil[] = [
+            $rows = $weekBookings->where('court_id', $court->id);
+            $courtStatusStats[] = [
                 'name' => $court->name,
-                'hours' => round($hrs),
-                'pct' => $weekCapacity > 0 ? (int) round(min($hrs / $weekCapacity * 100, 100)) : 0,
+                'approved' => $rows->where('status', 'approved')->count(),
+                'pending' => $rows->where('status', 'pending')->count(),
+                'cancelled' => $rows->whereIn('status', ['cancelled', 'rejected'])->count(),
             ];
         }
 
         // ---------------------------------------------------------------
-        // Occupancy Timeline — court x hour grid, today
+        // Occupancy Timeline — court x hour grid, for $viewDate
         // ---------------------------------------------------------------
-        $todayOccupancy = Booking::whereDate('booking_date', $todayStr)
-            ->where('status', 'approved')
-            ->get(['start_time', 'end_time', 'court_id']);
-        $todayClosures = CourtClosure::whereDate('date', $todayStr)
-            ->get(['court_id', 'start_time', 'end_time']);
-
-        $occHours = range(self::OPEN_HOUR, self::CLOSE_HOUR - 1);
-        $occupancy = [];
-        foreach ($courts as $court) {
-            $cells = [];
-            $fullyClosed = $court->court_status === 'closed';
-            foreach ($occHours as $h) {
-                $slotStart = sprintf('%02d:00:00', $h);
-                $slotEnd = sprintf('%02d:00:00', $h + 1);
-
-                $isMaint = $fullyClosed || $todayClosures->first(
-                    fn($c) => $c->court_id === $court->id && $c->start_time < $slotEnd && $c->end_time > $slotStart
-                ) !== null;
-                $isBusy = $todayOccupancy->first(
-                    fn($b) => $b->court_id === $court->id && $b->start_time < $slotEnd && $b->end_time > $slotStart
-                ) !== null;
-
-                $cells[] = $isMaint ? 'maintenance' : ($isBusy ? 'occupied' : 'available');
-            }
-            $occupancy[] = ['name' => $court->name, 'cells' => $cells];
-        }
-        $occupancyHours = $occHours;
-
-        // ---------------------------------------------------------------
-        // Today's Schedule — every confirmed session today, with status
-        // ---------------------------------------------------------------
-        $todaysSchedule = Booking::with(['user', 'court'])
-            ->whereDate('booking_date', $todayStr)
-            ->where('status', 'approved')
-            ->orderBy('start_time')
-            ->get()
-            ->map(function ($b) use ($now) {
-                $start = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->start_time);
-                $end = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->end_time);
-                $state = $end->lte($now) ? 'completed' : ($start->lte($now) ? 'ongoing' : 'upcoming');
-
-                return [
-                    'name' => $b->user->us_name ?? 'ไม่ระบุ',
-                    'court' => $b->court->name ?? '-',
-                    'time' => $start->format('H:i'),
-                    'hours' => $this->durationHours($b->start_time, $b->end_time),
-                    'state' => $state,
-                ];
-            });
-
-        // ---------------------------------------------------------------
-        // Upcoming Bookings — next sessions, with "in X" countdown
-        // ---------------------------------------------------------------
-        $upcoming = Booking::with(['user', 'court'])
-            ->where('status', 'approved')
-            ->where(function ($q) use ($todayStr, $now) {
-                $q->where('booking_date', '>', $todayStr)
-                    ->orWhere(function ($q2) use ($todayStr, $now) {
-                        $q2->whereDate('booking_date', $todayStr)
-                            ->where('start_time', '>', $now->format('H:i:s'));
-                    });
-            })
-            ->orderBy('booking_date')
-            ->orderBy('start_time')
-            ->limit(5)
-            ->get()
-            ->map(function ($b) use ($now) {
-                $start = Carbon::parse($b->booking_date->toDateString() . ' ' . $b->start_time);
-
-                return [
-                    'name' => $b->user->us_name ?? 'ไม่ระบุ',
-                    'court' => $b->court->name ?? '-',
-                    'time' => $start->format('H:i'),
-                    'in' => $now->diffForHumans($start, ['syntax' => Carbon::DIFF_ABSOLUTE, 'parts' => 2, 'short' => true]),
-                ];
-            });
+        $occupancy = $this->buildOccupancy($viewDate, $courts);
+        $occupancyHours = range(self::OPEN_HOUR, self::CLOSE_HOUR - 1);
 
         // ---------------------------------------------------------------
         // Top Customers — by hours booked this month
         // ---------------------------------------------------------------
-        $topCustomers = $monthApproved->groupBy('user_id')->map(function ($rows) {
-            return [
-                'hours' => round($rows->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time))),
-                'count' => $rows->count(),
-                'user_id' => $rows->first()->user_id,
-            ];
-        })->sortByDesc('hours')->take(5)->values();
-
-        $userNames = User::whereIn('id', $topCustomers->pluck('user_id'))->pluck('us_name', 'id');
-        $topCustomers = $topCustomers->map(function ($c) use ($userNames) {
-            $name = $userNames[$c['user_id']] ?? 'ไม่ระบุ';
-            $c['name'] = $name;
-            $c['initials'] = mb_strtoupper(mb_substr($name, 0, 2));
-
-            return $c;
-        });
+        $topCustomers = $this->buildTopCustomers($monthApproved);
 
         // ---------------------------------------------------------------
         // Recent Activities — reconstructed feed (approx, no audit log)
         // ---------------------------------------------------------------
-        $recent = collect();
-        foreach (Booking::with(['user', 'court'])->latest('created_at')->limit(6)->get() as $b) {
-            $recent->push([
-                'time' => $b->created_at,
-                'type' => 'new',
-                'text' => ($b->user->us_name ?? 'ลูกค้า') . ' สร้างการจองใหม่ ' . ($b->court->name ?? ''),
-            ]);
-        }
-        foreach (Booking::with(['court'])->whereIn('status', ['cancelled', 'rejected'])->latest('updated_at')->limit(4)->get() as $b) {
-            $recent->push([
-                'time' => $b->updated_at,
-                'type' => 'cancel',
-                'text' => 'การจอง #' . $b->id . ' ถูกยกเลิก' . ($b->court ? ' (' . $b->court->name . ')' : ''),
-            ]);
-        }
-        foreach (Booking::with(['user'])->where('status', 'approved')->latest('updated_at')->limit(4)->get() as $b) {
-            $recent->push([
-                'time' => $b->updated_at,
-                'type' => 'confirm',
-                'text' => 'ยืนยันการจองของ ' . ($b->user->us_name ?? 'ลูกค้า') . ' แล้ว',
-            ]);
-        }
-        foreach (User::latest()->limit(4)->get() as $u) {
-            $recent->push([
-                'time' => $u->created_at,
-                'type' => 'user',
-                'text' => $u->us_name . ' สมัครสมาชิกใหม่',
-            ]);
-        }
-        $recentActivities = $recent->filter(fn($a) => $a['time'] !== null)
-            ->sortByDesc('time')->take(6)
-            ->map(fn($a) => [
-                'type' => $a['type'],
-                'text' => $a['text'],
-                'ago' => $a['time']->diffForHumans(),
-            ])->values();
+        $recentActivities = $this->buildRecentActivities();
 
         // ---------------------------------------------------------------
-        // Membership & Visit stats — this week vs this month (team lead ask)
+        // Membership & Visit stats — daily trend, last 30 days
+        // (was a week-vs-month bar comparison; now a line trend to match
+        // the Booking Trend chart, per team lead request)
         // ---------------------------------------------------------------
-        $weekStartDt = $now->copy()->startOfWeek();
-        $monthStartDt = $now->copy()->startOfMonth();
+        $memberRows = User::where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->get(['created_at']);
+        $memberByDate = $memberRows->groupBy(fn($u) => $u->created_at->toDateString())->map->count();
 
-        $memberStats = [
-            'week' => User::where('created_at', '>=', $weekStartDt)->count(),
-            'month' => User::where('created_at', '>=', $monthStartDt)->count(),
-        ];
-        $visitStats = [
-            'week' => SiteVisit::where('created_at', '>=', $weekStartDt)->count(),
-            'month' => SiteVisit::where('created_at', '>=', $monthStartDt)->count(),
-        ];
+        $visitRows = SiteVisit::where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->get(['created_at']);
+        $visitByDate = $visitRows->groupBy(fn($v) => $v->created_at->toDateString())->map->count();
+
+        $memberTrend = [];
+        $visitTrend = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $d = $now->copy()->subDays($i);
+            $label = $d->format('M j');
+            $memberTrend[] = ['label' => $label, 'count' => (int) ($memberByDate[$d->toDateString()] ?? 0)];
+            $visitTrend[] = ['label' => $label, 'count' => (int) ($visitByDate[$d->toDateString()] ?? 0)];
+        }
 
         // ---------------------------------------------------------------
         // Charts — built with Larapex Charts (data prepared as plain arrays)
         // ---------------------------------------------------------------
         $font = 'Kanit, sans-serif';
 
-        $trendChart = (new LarapexChart)->areaChart()
-            ->setFontFamily($font)
-            ->setColors(['#f97316'])
-            ->setStroke(3, ['#f97316'], 'smooth')
-            ->setHeight(240)
-            ->setGrid()
-            ->setDataset([
-                ['name' => 'การจอง', 'data' => array_column($trend, 'count')],
-            ])
-            ->setXAxis(array_column($trend, 'label'));
-
-        $cancelColorMap = [
-            'Customer Cancel' => '#f97316',
-            'Maintenance' => '#94a3b8',
-        ];
-        $cancelChart = (new LarapexChart)->donutChart()
-            ->setFontFamily($font)
-            ->setColors(array_map(fn($l) => $cancelColorMap[$l] ?? '#94a3b8', array_keys($cancel)))
-            ->setHeight(320)
-            ->setLabels(array_keys($cancel))
-            ->setDataset(array_values($cancel));
+        // NOTE: Booking Trend, Cancellation Analysis (donut), Peak Booking
+        // Hours (line), and Occupancy Timeline (heatmap) are all hand-rolled
+        // directly in the Blade view with raw ApexCharts, instead of via
+        // Larapex's ->script(), because that helper can't expose JS click
+        // events or be updated in place with updateSeries()/updateOptions()
+        // — which all four need for the AJAX view-date switching and,
+        // for Occupancy, JSON-encoded court/cell data is passed straight
+        // to the view ($occupancy / $occupancyHours) instead of being
+        // wrapped in a LarapexChart object.
 
         $monthlyChart = (new LarapexChart)->barChart()
             ->setFontFamily($font)
@@ -438,112 +484,142 @@ class DashboardController extends Controller
             ])
             ->setXAxis(array_column($monthly, 'label'));
 
-        // Peak Hours — colour each bar by its value: busiest = red,
-        // >= half of the busiest = yellow, below that = green.
-        $peakVals = array_column($peakHours, 'pct');
-        $peakMax = max($peakVals) ?: 1;
-        $peakColors = array_map(function ($v) use ($peakMax) {
-            if ($v >= $peakMax) {
-                return '#ef4444'; // red — busiest hour
-            }
+        // Court Utilization — Approved (green) / Pending (grey) / Cancelled
+        // (red) booking counts per court, this week. Rendered as a
+        // horizontal bar chart directly in the Blade view with raw
+        // ApexCharts (like Peak Hours / Cancellation / Occupancy above) —
+        // Larapex's ->horizontal() isn't chainable in this package version
+        // (returns a string instead of $this), so it can't be used here.
+        // $courtStatusStats is passed straight to the view as JSON.
 
-            return $v >= $peakMax / 2 ? '#facc15' : '#22c55e'; // yellow / green
-        }, $peakVals);
-
-        $peakChart = (new LarapexChart)->horizontalBarChart()
+        // Members & Visits — line charts, daily trend over the last 30 days
+        // (same shape as the Booking Trend chart above).
+        $memberChart = (new LarapexChart)->lineChart()
             ->setFontFamily($font)
-            ->setColors($peakColors)
-            ->setHeight(360)
-            ->setGrid()
-            ->setDataset([
-                ['name' => 'Utilization %', 'data' => $peakVals],
-            ])
-            ->setXAxis(array_column($peakHours, 'label'));
-
-        // One radial gauge per court (colour by utilization level)
-        $courtCharts = [];
-        foreach ($courtUtil as $c) {
-            $ring = $c['pct'] >= 70 ? '#10b981' : ($c['pct'] >= 40 ? '#f59e0b' : '#f43f5e');
-            $courtCharts[] = [
-                'name' => $c['name'],
-                'hours' => $c['hours'],
-                'chart' => (new LarapexChart)->radialChart()
-                    ->setFontFamily($font)
-                    ->setColors([$ring])
-                    ->setHeight(200)
-                    ->setShowLegend(false)
-                    ->setLabels([$c['name']])
-                    ->addData([$c['pct']]),
-            ];
-        }
-
-        // Occupancy Timeline — heatmap (0=available, 1=occupied, 2=maintenance).
-        // The 3-colour scale is injected via the published Larapex script view.
-        $occStateVal = ['available' => 0, 'occupied' => 1, 'maintenance' => 2];
-        $occChart = (new LarapexChart)->heatMapChart()
-            ->setFontFamily($font)
-            ->setHeight(max(160, count($occupancy) * 60))
-            ->setXAxis(array_map(fn ($h) => sprintf('%02d:00', $h), $occupancyHours));
-        foreach ($occupancy as $row) {
-            $occChart->addData(
-                array_map(fn ($cell) => $occStateVal[$cell] ?? 0, $row['cells']),
-                $row['name']
-            );
-        }
-
-        // Members & Visits — column chart, this week (blue) vs this month (green).
-        // Distributed per-bar colours are applied in the blade (same technique
-        // as monthlyChart) because Larapex's template drops plotOptions.bar.
-        $statLabels = ['สัปดาห์นี้', 'เดือนนี้'];
-        $statColors = ['#60a5fa', '#4ade80'];
-        $memberChart = (new LarapexChart)->barChart()
-            ->setFontFamily($font)
-            ->setColors($statColors)
+            ->setColors(['#60a5fa'])
+            ->setStroke(3, ['#60a5fa'], 'smooth')
             ->setHeight(240)
             ->setGrid()
             ->setDataset([
-                ['name' => 'ผู้สมัครสมาชิก', 'data' => [$memberStats['week'], $memberStats['month']]],
+                ['name' => 'ผู้สมัครสมาชิก', 'data' => array_column($memberTrend, 'count')],
             ])
-            ->setXAxis($statLabels);
-        $visitChart = (new LarapexChart)->barChart()
+            ->setXAxis(array_column($memberTrend, 'label'));
+
+        $visitChart = (new LarapexChart)->lineChart()
             ->setFontFamily($font)
-            ->setColors($statColors)
+            ->setColors(['#4ade80'])
+            ->setStroke(3, ['#4ade80'], 'smooth')
             ->setHeight(240)
             ->setGrid()
             ->setDataset([
-                ['name' => 'ผู้เข้าชม', 'data' => [$visitStats['week'], $visitStats['month']]],
+                ['name' => 'ผู้เข้าชม', 'data' => array_column($visitTrend, 'count')],
             ])
-            ->setXAxis($statLabels);
+            ->setXAxis(array_column($visitTrend, 'label'));
 
         return view('admin.dashboard', compact(
             'kpis',
             'trend',
             'trendTotal',
+            'trendCancelledTotal',
             'cancel',
             'cancelTotal',
-            'cancelIsMock',
             'monthly',
             'yoy',
             'last12Sum',
             'peakHours',
-            'courtUtil',
             'occupancy',
             'occupancyHours',
-            'todaysSchedule',
-            'upcoming',
             'topCustomers',
             'recentActivities',
-            'memberStats',
-            'visitStats',
-            'trendChart',
-            'cancelChart',
             'monthlyChart',
-            'peakChart',
-            'courtCharts',
-            'occChart',
+            'courtStatusStats',
             'memberChart',
-            'visitChart'
+            'visitChart',
+            'viewDate',
+            'viewDateLabel',
+            'isToday',
+            'todayStr',
+            'viewYear',
+            'availableYears'
         ));
+    }
+
+    /**
+     * AJAX endpoint: returns Peak Booking Hours, Cancellation Analysis, and
+     * Occupancy Timeline data for a given ?view_date=Y-m-d, without
+     * re-rendering the whole page. Used by the Booking Trend chart's click
+     * handler and the "← Today" buttons.
+     */
+    public function viewDateData(Request $request)
+    {
+        $todayStr = now()->toDateString();
+        $viewDate = $this->resolveViewDate($request, $todayStr);
+        $viewDateCarbon = Carbon::parse($viewDate);
+        $isToday = $viewDate === $todayStr;
+        $viewDateLabel = $isToday
+            ? 'วันนี้ (' . $viewDateCarbon->translatedFormat('d M') . ')'
+            : $viewDateCarbon->translatedFormat('d F Y');
+
+        $courts = Court::orderBy('id')->get();
+
+        $viewDateApproved = Booking::whereDate('booking_date', $viewDate)
+            ->where('status', 'approved')
+            ->get(['start_time', 'end_time']);
+
+        $peakHours = [];
+        for ($h = self::OPEN_HOUR; $h < self::CLOSE_HOUR; $h++) {
+            $slotStart = sprintf('%02d:00:00', $h);
+            $slotEnd = sprintf('%02d:00:00', $h + 1);
+            $busy = $viewDateApproved->filter(
+                fn($b) => $b->start_time < $slotEnd && $b->end_time > $slotStart
+            )->count();
+            $peakHours[] = [
+                'label' => sprintf('%02d:00', $h),
+                'count' => $busy,
+            ];
+        }
+
+        $viewDateBookedCount = Booking::whereDate('booking_date', $viewDate)
+            ->whereIn('status', self::COUNTABLE)->count();
+        $viewDateCancelledCount = Booking::whereDate('booking_date', $viewDate)
+            ->whereIn('status', ['cancelled', 'rejected'])->count();
+
+        $occupancy = $this->buildOccupancy($viewDate, $courts);
+
+        return response()->json([
+            'viewDate' => $viewDate,
+            'viewDateLabel' => $viewDateLabel,
+            'isToday' => $isToday,
+            'peakHours' => $peakHours,
+            'cancel' => [
+                'booked' => $viewDateBookedCount,
+                'cancelled' => $viewDateCancelledCount,
+                'total' => $viewDateBookedCount + $viewDateCancelledCount,
+            ],
+            'occupancy' => $occupancy,
+        ]);
+    }
+
+    /**
+     * AJAX endpoint: returns fresh Top Customers + Recent Activities data.
+     * Polled every 10s from the dashboard to keep both feeds live without a
+     * page reload.
+     */
+    public function liveData(Request $request)
+    {
+        $now = now();
+        $monthStart = $now->copy()->startOfMonth()->toDateString();
+        $monthEnd = $now->copy()->endOfMonth()->toDateString();
+
+        $monthApproved = Booking::whereBetween('booking_date', [$monthStart, $monthEnd])
+            ->where('status', 'approved')
+            ->get(['start_time', 'end_time', 'court_id', 'user_id']);
+
+        return response()->json([
+            'updatedAt' => $now->format('H:i:s'),
+            'topCustomers' => $this->buildTopCustomers($monthApproved),
+            'recentActivities' => $this->buildRecentActivities(),
+        ]);
     }
 
     /** Signed percentage change between current and previous, rounded. */
@@ -563,20 +639,6 @@ class DashboardController extends Controller
         $status = $request->query('status', 'pending');
         $court_id = $request->query('court_id');
         $date = $request->query('date');
-
-        // $bookings = Booking::with(['user', 'court'])
-        // // ->whereDate('booking_date', $date)
-        // // ->when($status, fn ($q) => $q->where('status', $status))
-
-        //     // ถ้า $date มีค่า ถึงจะกรองตามวันที่ ถ้าไม่มีก็ดึงมาทั้งหมด
-        //     ->when($date, fn($q) => $q->whereDate('booking_date', $date))
-        //     ->whereDate('booking_date', '>=', now()->toDateString())
-        //     ->where('status', 'pending')
-        //     ->when($court_id, fn($q) => $q->where('court_id', $court_id))
-        //     ->orderBy('created_at')
-        //     ->latest()
-        //     ->paginate(20)
-        //     ->withQueryString();
 
         $bookings = Booking::with(['user', 'court'])
             //วันที่
