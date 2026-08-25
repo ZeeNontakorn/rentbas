@@ -1,6 +1,5 @@
 @extends('layouts.app')
 @section('title', 'จัดการกลุ่มเล่นบาสค')
-
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8" x-data="{
     showSessionForm: false,
