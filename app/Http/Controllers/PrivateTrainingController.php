@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
 use App\Services\CourtAvailabilityService;
 use App\Services\PrivateTrainingBookingLifecycleService;
+use App\Mail\PrivateTrainingRequestedMail;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,8 +96,10 @@ class PrivateTrainingController extends Controller
         $this->bookingLifecycle->expireUnprocessedBookings();
         $this->assertIsCoach($coach);
 
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
         $today = now()->toDateString();
-        $maxDate = now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString();
+        $maxDate = now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString();
 
         $myUpcoming = PrivateTrainingBooking::with('courtAssistant')
             ->where('coach_id', $coach->id)
@@ -125,7 +128,7 @@ class PrivateTrainingController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases') + [
+        return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
             'staffProfile' => $coach->staffProfile,
         ]);
     }
@@ -266,10 +269,11 @@ class PrivateTrainingController extends Controller
             'coach_id' => ['required', 'integer', 'exists:users,id'],
             'date' => [
                 'required', 'date', 'after_or_equal:today',
-                'before_or_equal:'.now()->addDays(CheckoutController::ADVANCE_BOOKING_DAYS)->toDateString(),
+                'before_or_equal:'.now()->addDays((int) \App\Models\Setting::getVal('advance_booking_days', 30))->toDateString(),
             ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'participant_count' => ['required', 'integer', 'min:1', 'max:6'],
             'note' => ['nullable', 'string', 'max:500'],
             'package_purchase_id' => ['required', 'integer', 'exists:package_purchases,id'],
             'assistant_requested' => ['required', 'boolean'],
@@ -386,6 +390,7 @@ class PrivateTrainingController extends Controller
 
             return PrivateTrainingBooking::create([
                 'user_id' => $request->user()->id,
+                'participant_count' => $data['participant_count'],
                 'coach_id' => $coach->id,
                 'assistant_requested' => (bool) $data['assistant_requested'],
                 'court_assistant_id' => $assistant?->id,
@@ -409,9 +414,11 @@ class PrivateTrainingController extends Controller
             : '';
         $this->notifyAdmins(
             'คำขอจองเทรนเนอร์ส่วนตัวใหม่',
-            "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}{$assistantLine}",
+            "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}\nผู้เข้าร่วม {$data['participant_count']} คน{$assistantLine}",
             route('admin.private-training.index', ['status' => 'pending']),
         );
+
+        $this->notifyAdminsByEmail($result->load(['user', 'coach', 'courtAssistant']));
 
         return back()->with('success', 'ส่งคำขอจองเทรนเนอร์ส่วนตัวเรียบร้อย รอแอดมินอนุมัติ');
     }
@@ -486,7 +493,9 @@ class PrivateTrainingController extends Controller
             // withQueryString() ทำให้การกดเปลี่ยนหน้า (pagination) ยังจำ parameter เดิมใน URL ไว้ (เช่น ค่า search, status)
             ->withQueryString();
 
-        return view('admin.private-training.index', compact('bookings', 'status'));
+        $advanceBookingDays = (int) \App\Models\Setting::getVal('advance_booking_days', 30);
+
+        return view('admin.private-training.index', compact('bookings', 'status', 'advanceBookingDays'));
     }
 
     public function availableAssistants(Request $request): JsonResponse
@@ -807,6 +816,17 @@ class PrivateTrainingController extends Controller
         return back()->with('success', 'ปฏิเสธคำขอจองเรียบร้อย');
     }
 
+    public function updateAdvanceBookingDays(Request $request)
+    {
+        $request->validate([
+            'advance_booking_days' => ['required', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        \App\Models\Setting::setVal('advance_booking_days', $request->advance_booking_days);
+
+        return back()->with('success', 'อัปเดตจำนวนวันจองล่วงหน้าเรียบร้อย');
+    }
+
     /* =====================================================================
      |  PRIVATE HELPERS
      ===================================================================== */
@@ -912,6 +932,21 @@ class PrivateTrainingController extends Controller
         $admins = User::whereIn('role', ['admin', 'superadmin'])->pluck('id');
         foreach ($admins as $adminId) {
             $this->notifyUser($adminId, $title, $message, $actionUrl);
+        }
+    }
+
+    private function notifyAdminsByEmail(PrivateTrainingBooking $booking): void
+    {
+        $adminEmails = User::whereIn('role', ['admin', 'superadmin'])
+            ->whereNotNull('email')
+            ->pluck('email');
+
+        foreach ($adminEmails as $email) {
+            try {
+                Mail::to($email)->send(new PrivateTrainingRequestedMail($booking));
+            } catch (\Throwable $e) {
+                Log::error("ส่งอีเมลแจ้งเตือนแอดมิน ({$email}) เรื่องคำขอ Private Training ใหม่ไม่สำเร็จ: ".$e->getMessage());
+            }
         }
     }
 }

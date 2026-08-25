@@ -109,6 +109,11 @@ class Setting extends Model
         return $val;
     }
 
+    public static function setVal($key, $value): void
+    {
+        self::updateOrCreate(['key' => $key], ['value' => $value]);
+    }
+
     /**
      * Get multiple settings as key => value (with defaults and storage URL transform).
      */

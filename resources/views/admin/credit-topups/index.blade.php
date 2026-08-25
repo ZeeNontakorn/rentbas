@@ -72,7 +72,7 @@
                             <tr>
                                 <td class="px-6 py-3 text-gray-500 whitespace-nowrap">{{ $req->created_at->format('d/m/Y H:i') }}</td>
                                 <td class="px-6 py-3 text-gray-700">{{ $req->user->us_name }}</td>
-                                <td class="px-6 py-3 text-gray-500">{{ $req->topper_name }}</td>
+                                <td class="px-6 py-3 text-gray-500">{{ $req->user->name }}</td>
                                 <td class="px-6 py-3 text-gray-500">{{ $methodMeta[$req->payment_method] ?? $req->payment_method }}</td>
                                 <td class="px-6 py-3 text-right text-gray-700">฿{{ number_format($req->price_satang / 100, 2) }}</td>
                                 <td class="px-6 py-3 text-right font-medium text-emerald-600">฿{{ number_format($req->credit_satang / 100, 2) }}</td>

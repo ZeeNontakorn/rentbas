@@ -67,7 +67,7 @@
                         <option value="leave">ลางาน</option>
                         <option value="school_class">คลาสโรงเรียนบาส</option>
                         @if($coach->membership_type === 'coach')
-                            <option value="private_training_manual">Private Training (กำหนดเอง)</option>
+                            <option value="private_training_manual">เทรนเนอร์ส่วนตัว (กำหนดเอง)</option>
                         @endif
                     </select>
                 </div>

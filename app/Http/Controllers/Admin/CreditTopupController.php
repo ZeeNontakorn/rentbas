@@ -47,12 +47,21 @@ class CreditTopupController extends Controller
 
     public function approve(Request $request, CreditTopupRequest $creditTopupRequest)
     {
+        // ถ้าคำขอนี้มาจากแพ็กเกจที่ตั้งวันหมดอายุไว้แล้ว (snapshot ตอนยื่นคำขอ) ใช้ค่านั้นได้เลย
+        // ถ้าไม่มี (กรอกจำนวนเงินเอง หรือแพ็กเกจยังไม่ได้ตั้งวันหมดอายุ) ต้องให้แอดมินกรอกตอนอนุมัติ
+        $needsExpiryDays = ! $creditTopupRequest->expiry_days;
+
         $data = $request->validate([
             'note' => ['nullable', 'string', 'max:255'],
+            'expiry_days' => [$needsExpiryDays ? 'required' : 'nullable', 'integer', 'min:1', 'max:365'],
+        ], [
+            'expiry_days.required' => 'คำขอนี้ไม่ได้ผูกกับแพ็กเกจที่มีวันหมดอายุ กรุณาระบุจำนวนวันหมดอายุของเครดิต',
         ]);
 
+        $expiryDays = $creditTopupRequest->expiry_days ?? $data['expiry_days'];
+
         try {
-            $tx = $this->creditService->approveTopupRequest($creditTopupRequest, $request->user(), $data['note'] ?? null);
+            $tx = $this->creditService->approveTopupRequest($creditTopupRequest, $request->user(), $data['note'] ?? null, $expiryDays);
         } catch (RuntimeException $e) {
             return back()->withErrors(['approve' => $e->getMessage()]);
         }

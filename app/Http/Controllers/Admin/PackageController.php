@@ -88,7 +88,7 @@ class PackageController extends Controller
 
         return redirect()
             ->route('admin.packages.index')
-            ->with('success', 'อัพเดทแพ็กเกจสำเร็จ');
+            ->with('success', 'แก้ไขแพ็กเกจสำเร็จ');
     }
 
     public function delete(Package $package)
