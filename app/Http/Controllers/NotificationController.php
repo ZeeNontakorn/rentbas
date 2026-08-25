@@ -28,7 +28,7 @@ class NotificationController extends Controller
 
     if ($request->ajax() || $request->wantsJson()) {
         return response()->json([
-            'redirect' => $this->destination($notification), 
+            'redirect' => $this->destination($notification),
         ]);
     }
 
@@ -74,6 +74,9 @@ class NotificationController extends Controller
         'มีรีวิวใหม่เข้ามา', 'มีรีวิวใหม่รอตรวจสอบ' => route('admin.edit.text').'#review-moderation',
         'เติมเครดิตสำเร็จ' => route('credits.topup.index'),
         'เครดิตของคุณถูกเติมแล้ว' => route('admin.credits.show', $notification->user_id),
+        'เครดิตของคุณถูกปรับยอด' => route('credits.topup.index'),
+        'เครดิตของคุณหมดอายุแล้ว' => route('credits.topup.index'),
+        'เครดิตของคุณใกล้หมดอายุ' => route('credits.topup.index'),
         'ยืนยันการซื้อแพ็กเกจ' => route('private-training.index'),
         'คำขอเติมเครดิตถูกปฏิเสธ' => route('credits.topup.index'),
         'มีคำขอเติมเครดิตใหม่' => route('admin.credit-topups.index'),

@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'จัดการเครดิต: ' . $user->name)
+@section('title', 'จัดการเครดิต: ' . $user->us_name)
 
 @php
     $typeMeta = [
         'topup' => ['label' => 'เติมเครดิต', 'bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'sign' => '+'],
-        'deduct' => ['label' => 'หักค่าจอง', 'bg' => 'bg-red-100', 'text' => 'text-red-600', 'sign' => '-'],
+        'deduct' => ['label' => 'หักเครดิต', 'bg' => 'bg-red-100', 'text' => 'text-red-600', 'sign' => '-'],
         'refund' => ['label' => 'คืนเครดิต', 'bg' => 'bg-blue-100', 'text' => 'text-blue-700', 'sign' => '+'],
+        'expire' => ['label' => 'หมดอายุอัตโนมัติ', 'bg' => 'bg-gray-200', 'text' => 'text-gray-600', 'sign' => '-'],
     ];
 @endphp
 
@@ -44,16 +45,24 @@
             <div class="md:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-emerald-500">
                 <div class="flex items-center gap-3 mb-5">
                     <div class="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <span class="text-orange-600 text-lg font-bold">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                        <span class="text-orange-600 text-lg font-bold">{{ strtoupper(substr($user->us_name, 0, 1)) }}</span>
                     </div>
                     <div>
-                        <h1 class="font-semibold text-gray-800 leading-tight">{{ $user->name }}</h1>
+                        <h1 class="font-semibold text-gray-800 leading-tight">{{ $user->us_name }}</h1>
                         <p class="text-xs text-gray-400">{{ $user->email }}</p>
                     </div>
                 </div>
 
                 <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">ยอดเครดิตคงเหลือ</p>
                 <p class="text-3xl font-bold text-emerald-600">฿{{ number_format($user->credit_balance / 100, 2) }}</p>
+
+                @if ($user->credit_expires_at)
+                    @php $expiringSoon = $user->credit_expires_at->diffInDays(now(), false) > -7; @endphp
+                    <p class="text-xs mt-3 {{ $expiringSoon ? 'text-red-600 font-medium' : 'text-gray-400' }}">
+                        หมดอายุ {{ $user->credit_expires_at->format('d/m/Y') }}
+                        @if ($expiringSoon) (ใกล้หมดอายุ) @endif
+                    </p>
+                @endif
             </div>
 
             {{-- Top-up form --}}
@@ -72,6 +81,11 @@
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
                             </div>
                             <div class="flex-1 w-full mx-auto mt-3">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">หมดอายุใน (วัน)</label>
+                                <input type="number" step="1" min="1" max="365" name="expiry_days" required placeholder="เช่น 365"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                            <div class="flex-1 w-full mx-auto mt-3">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">หมายเหตุ (ถ้ามี)</label>
                                 <input type="text" name="note" maxlength="255" placeholder="เช่น เติมเงินสดหน้าเคาน์เตอร์"
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
@@ -81,7 +95,7 @@
                             <div class="flex-1 w-full">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">ช่องทางชำระเงิน</label>
                                 <select name="payment_method" required
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none cursor-pointer">
                                     <option value="">-- เลือกช่องทาง --</option>
                                     <option value="line">LINE / QR Code</option>
                                     <option value="cash_counter">ชำระเงินสดที่เคาน์เตอร์</option>
@@ -89,18 +103,43 @@
                             </div>
                             <div class="flex-1 w-full mx-auto mt-3">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">ชื่อ-นามสกุลผู้ดำเนินการ </label>
-                                <input type="text" name="processed_by_name" required maxlength="100" placeholder="เช่น สมชาย ใจดี"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                                <input type="text" name="processed_by_name" value="{{ auth()->user()->name }}" maxlength="100" disabled
+                                        class="bg-gray-100 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none cursor-not-allowed">
                             </div>
                         </div>
                     </div>
 
                     <button type="submit"
-                            class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition whitespace-nowrap">
+                            class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
                         เติมเครดิต
                     </button>
                 </form>
             </div>
+        </div>
+
+        {{-- Manual deduct form --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="font-medium text-gray-700 text-sm mb-1">หักเครดิต (แก้ไข/ปรับยอด)</h2>
+            <p class="text-xs text-gray-400 mb-4">ใช้สำหรับแก้ไขข้อผิดพลาด เช่น เติมผิดจำนวน</p>
+
+            <form id="deductCreditForm" method="POST" action="{{ route('admin.credits.deduct', $user) }}" class="flex flex-col sm:flex-row items-end gap-3">
+                @csrf
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">จำนวนเงิน (บาท)</label>
+                    <input type="number" step="0.01" min="1" name="deduct_amount" required
+                        placeholder="เช่น 200"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none">
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">เหตุผล/หมายเหตุ</label>
+                    <input type="text" name="deduct_note" maxlength="255" placeholder="เช่น เติมผิดจำนวน แก้ไขยอด"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none">
+                </div>
+                <button type="button" onclick="confirmDeductCredit()"
+                        class="text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
+                    หักเครดิต
+                </button>
+            </form>
         </div>
 
         {{-- Transaction history --}}
@@ -117,7 +156,7 @@
                             <th class="px-6 py-3 font-medium">วันที่</th>
                             <th class="px-6 py-3 font-medium">ประเภท</th>
                             <th class="px-6 py-3 font-medium">การจองที่เกี่ยวข้อง</th>
-                            <th class="px-6 py-3 font-medium">หมายเหตุ</th>
+                            <th class="px-6 py-3 font-medium">รายละเอียด</th>
                             <th class="px-6 py-3 font-medium text-right">จำนวนเงิน</th>
                             <th class="px-6 py-3 font-medium text-right">คงเหลือหลังทำรายการ</th>
                         </tr>
@@ -140,12 +179,12 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 text-gray-500 max-w-[220px] truncate" title="{{ $tx->note }}">
-                                    {{ $tx->note ?? '—' }}
                                     @if($tx->admin)
-                                        <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->name }}</span>
+                                        <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->us_name }}</span>
                                         <span class="block text-[11px] text-gray-400">ช่องทาง: {{ $tx->payment_method ?? '—' }}</span>
                                         <span class="block text-[11px] text-gray-400">ดำเนินการโดย: {{ $tx->processed_by_name ?? '—' }}</span>
                                     @endif
+                                    <span class="block text-[11px] text-gray-400">หมายเหตุ: {{ $tx->note ?? '—' }}</span>
                                 </td>
                                 <td class="px-6 py-3 text-right font-medium {{ $meta['text'] }}">
                                     {{ $meta['sign'] }}฿{{ number_format($tx->amount / 100, 2) }}
@@ -170,4 +209,31 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+function confirmDeductCredit() {
+    const form = document.getElementById('deductCreditForm');
+    if (!form.reportValidity()) return;
+
+    const amount = form.querySelector('input[name="deduct_amount"]').value;
+
+    Swal.fire({
+        title: 'ยืนยันหักเครดิตใช่ไหม?',
+        text: `หักเครดิตของ {{ $user->us_name }} จำนวน ${amount} บาท จะไม่สามารถกู้คืนได้`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true,
+        confirmButtonText: 'ยืนยันการหัก',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+</script>
+@endpush
 @endsection

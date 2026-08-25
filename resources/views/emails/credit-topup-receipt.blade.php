@@ -14,7 +14,7 @@
 </head>
 <body style="font-family:sans-serif;line-height:1.6;color:#111;">
     <h1>เติมเครดิตสำเร็จ</h1>
-    <p>สวัสดีคุณ {{ $transaction->user->name }} เครดิตของคุณถูกเติมเรียบร้อยแล้ว ใบเสร็จมีรายละเอียดดังนี้</p>
+    <p>สวัสดีคุณ {{ $transaction->user->us_name }} เครดิตของคุณถูกเติมเรียบร้อยแล้ว ใบเสร็จมีรายละเอียดดังนี้</p>
     <table cellpadding="6" style="border-collapse:collapse;">
         <tr><td style="color:#666;">เลขที่รายการ</td><td>#{{ $transaction->id }}</td></tr>
         <tr><td style="color:#666;">วันที่ทำรายการ</td><td>{{ $transaction->created_at->format('d/m/Y H:i') }}</td></tr>

@@ -16,11 +16,11 @@
 @section('title', 'จัดการคอร์ส')
 
 @section('content')
-<div class="min-h-screen bg-slate-50 py-8 text-gray-900">
+<div class="min-h-screen py-8 text-gray-900">
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการคอร์ส</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการคอร์สเรียน</h1>
                 <p class="mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการคอร์สเรียนทั้งหมดในระบบ</p>
             </div>
             <!-- Search และ ปุ่มเพิ่มคอร์ส -->
@@ -28,20 +28,20 @@
                 <form method="GET" action="{{ route('admin.courses') }}" class="flex w-full md:w-auto">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ระบุชื่อคอร์สที่ต้องการค้นหา..."
                            class="w-full rounded-l-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400 md:w-72">
-                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600">
+                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 shadow-sm cursor-pointer">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
                         ค้นหาคอร์ส
                     </button>
                 </form>
-                <a href="{{ route('admin.courses.create') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <a href="{{ route('admin.courses.create') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                     เพิ่มคอร์ส
                 </a>
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-slate-50">
                 <h2 class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 002 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
                     รายการคอร์สทั้งหมด
@@ -67,13 +67,14 @@
                                 $package = $course->packages->first();
                                 $courseIsActive = $course->packages->contains(fn ($coursePackage) => $coursePackage->is_active);
                             @endphp
-                            <tr class="align-top transition hover:bg-slate-50/80">
-                                <td class="px-3 py-4 sm:px-7 sm:py-6">
+                            <tr class="align-top transition">
+                                <td class="px-3 py-4 sm:px-7 sm:py-6 w-[120px] sm:w-[160px] md:w-[200px]">
                                     @if ($course->image_url)
-                                        <img src="{{ $course->image_url }}" alt="{{ $course->course_name }}" class="h-10 w-10 rounded-xl border border-gray-200 object-cover shadow-sm sm:h-14 sm:w-14">
+                                        <img src="{{ $course->image_url }}" alt="{{ $course->course_name }}"
+                                            class="w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 rounded-xl border border-gray-200 object-cover shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md cursor-pointer">
                                     @else
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300 sm:h-14 sm:w-14">
-                                            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <div class="flex w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300 transition-all duration-300 hover:scale-105 cursor-pointer">
+                                            <svg class="h-6 w-6 sm:h-8 sm:w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         </div>
                                     @endif
                                 </td>
@@ -169,10 +170,16 @@
                                 </td>
                                 <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
                                     <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                        <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
+                                        <a href="{{ route('admin.courses.edit', $course) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:w-17 justify-center sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $course->id }}" action="{{ route('admin.courses.destroy', $course) }}" method="POST">
                                             @csrf @method('DELETE')
-                                            <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5">ลบ</button>
+                                            <button type="button" onclick="confirmDeleteCourse('{{ $course->id }}', '{{ addslashes($course->course_name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 gap-1.5 cursor-pointer">
+                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                ลบ</button>
                                         </form>
                                     </div>
                                 </td>
@@ -328,8 +335,9 @@ function confirmDeleteCourse(courseId, courseName) {
     text: `เมื่อลบคอร์ส "${courseName}" แล้วจะไม่สามารถกู้คืนข้อมูลได้ (รวมถึงรอบเวลาเรียนและแพ็กเกจทั้งหมดของคอร์สนี้)`,
     icon: 'warning',
     showCancelButton: true,
+    reverseButtons: true,
     confirmButtonColor: '#ef4444',
-    cancelButtonColor: '#3085d6',
+    cancelButtonColor: '#6b7280',
     confirmButtonText: 'ยืนยันการลบ',
     cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) document.getElementById('deleteForm-' + courseId).submit();

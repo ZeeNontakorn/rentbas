@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Schedule บุคลากร')
+@section('title', 'ตารางงานบุคลากร')
 
 @section('content')
 @include('private-training._calendar-theme')
@@ -10,29 +10,45 @@
         color: #0f172a !important;
         background-color: #fff;
     }
+    #staff-filter, #staff-filter option,
+    #admin-schedule-modal input, #admin-schedule-modal select, #admin-schedule-modal textarea {
+        color: #0f172a !important;
+        background-color: #fff;
+    }
+
+    /* overlay "เลยกำหนด" (สีเทา) ให้อยู่เหนือพื้นหลังปกติ แต่ต่ำกว่า event กำหนดการจริง */
+    #private-schedule-calendar .fc-bg-event {
+        z-index: 1 !important;
+    }
+    #private-schedule-calendar .fc-timegrid-event-harness {
+        z-index: 3 !important;
+    }
 </style>
 
-<div class="min-h-screen bg-slate-50 py-8 text-slate-900">
+<div class="min-h-screen py-8 text-slate-900">
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Schedule โค้ชและผู้ช่วยสนาม</h1>
-                <p class="mt-1 text-sm text-slate-500">แอดมินเพิ่ม แก้ไข หรือลบกำหนดการให้บุคลากรได้โดยตรง</p>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">ตารางงานโค้ช และผู้ช่วยสนาม</h1>
+                <p class="mt-1 text-sm text-slate-500">จัดการกำหนดการให้บุคลากรได้โดยตรง</p>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
                 <div class="w-full sm:w-72">
                     <label for="staff-filter" class="mb-1.5 block text-xs font-semibold text-slate-600">เลือกบุคลากร</label>
-                    <select id="staff-filter" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                    <select id="staff-filter" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 cursor-pointer">
                         <option value="all" @selected($selectedStaffId === 'all')>ดูรวมทุกคน</option>
                         @foreach($staffs as $staff)
                             <option value="{{ $staff->id }}" @selected($staff->id === $selectedStaffId)>
-                                {{ $staff->name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}
+                                {{ $staff->us_name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}
                             </option>
                         @endforeach
                     </select>
                 </div>
-                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700">
-                    <span class="text-base leading-none">+</span> เพิ่มกำหนดการ
+                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    <span class="text-base leading-none"></span>เพิ่มกำหนดการ
                 </button>
             </div>
         </div>
@@ -56,14 +72,13 @@
     </div>
 </div>
 
-<div id="admin-schedule-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+<div id="admin-schedule-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/55 p-4 bg-black/40">
     <form id="admin-schedule-form" class="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div>
-                <h2 id="admin-modal-title" class="text-lg font-bold text-slate-900">เพิ่มกำหนดการ</h2>
+                <h2 id="admin-modal-title" class="text-2xl font-bold text-slate-900">เพิ่มกำหนดการ</h2>
                 <p id="admin-modal-note" class="mt-0.5 text-xs text-slate-500">เลือกบุคลากร วัน เวลา และสีของ Event</p>
             </div>
-            <button type="button" data-close-admin-modal class="flex h-9 w-9 items-center justify-center rounded-lg text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700">&times;</button>
         </div>
 
         <div class="space-y-4 p-6">
@@ -79,21 +94,21 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="admin-staff-id" class="mb-1 block text-xs font-semibold text-slate-600">เจ้าของ Schedule</label>
-                    <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="">เลือกโค้ชหรือผู้ช่วยสนาม</option>
                         @foreach($staffs as $staff)
-                            <option value="{{ $staff->id }}" data-membership="{{ $staff->membership_type }}">{{ $staff->name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}</option>
+                            <option value="{{ $staff->id }}" data-membership="{{ $staff->membership_type }}">{{ $staff->us_name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
                     <label for="admin-event-type" class="mb-1 block text-xs font-semibold text-slate-600">ประเภท</label>
-                    <select id="admin-event-type" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <select id="admin-event-type" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="general">กิจกรรมส่วนตัว</option>
                         <option value="work">งาน</option>
                         <option value="leave">ลางาน</option>
                         <option value="school_class">คลาสโรงเรียนบาส</option>
-                        <option value="private_training_manual" data-coach-only>Private Training (กำหนดเอง)</option>
+                        <option value="private_training_manual" data-coach-only>เทรนเนอร์ส่วนตัว (กำหนดเอง)</option>
                     </select>
                 </div>
             </div>
@@ -118,7 +133,7 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="admin-event-recurrence" class="mb-1 block text-xs font-semibold text-slate-600">การเกิดซ้ำ</label>
-                    <select id="admin-event-recurrence" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <select id="admin-event-recurrence" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
                         <option value="none">ไม่เกิดซ้ำ</option>
                         <option value="daily">ทุกวัน</option>
                         <option value="weekly">เลือกวันในแต่ละสัปดาห์</option>
@@ -166,8 +181,8 @@
         <div class="flex items-center gap-2 border-t border-slate-100 px-6 py-4">
             <button id="delete-admin-event" type="button" class="hidden rounded-xl px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">ลบ</button>
             <div class="flex-1"></div>
-            <button type="button" data-close-admin-modal class="rounded-xl px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">ยกเลิก</button>
-            <button type="submit" class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700">บันทึก</button>
+            <button type="button" data-close-admin-modal class="rounded-xl px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 cursor-pointer">ยกเลิก</button>
+            <button type="submit" class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700 cursor-pointer">บันทึก</button>
         </div>
     </form>
 </div>
@@ -253,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setCheckedDays(props.recurrenceDays || []);
         selectColor(event?.backgroundColor || '#7986cb');
         field('admin-modal-title').textContent = event ? 'แก้ไขกำหนดการ' : 'เพิ่มกำหนดการ';
-        field('admin-modal-note').textContent = props.recurrence && props.recurrence !== 'none' ? 'การแก้ไขจะมีผลกับ Event ที่เกิดซ้ำทั้งชุด' : 'จัดการ Schedule ของโค้ชหรือผู้ช่วยสนาม';
+        field('admin-modal-note').textContent = props.recurrence && props.recurrence !== 'none' ? 'การแก้ไขจะมีผลกับกำหนดการที่เกิดซ้ำทั้งชุด' : 'จัดการตารางงานของโค้ชหรือผู้ช่วยสนาม';
         field('delete-admin-event').classList.toggle('hidden', !event);
         field('admin-staff-id').disabled = isLegacy;
         field('admin-event-type').disabled = isLegacy;
@@ -290,6 +305,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const scheduleOpenHour = 8, scheduleCloseHour = 22;
+
+    function buildPastOverlay(rangeStart, rangeEnd) {
+        const overlay = [];
+        const now = new Date();
+        const cursor = new Date(rangeStart);
+        cursor.setHours(0, 0, 0, 0);
+
+        while (cursor < rangeEnd) {
+            const dayOpen = new Date(cursor);
+            dayOpen.setHours(scheduleOpenHour, 0, 0, 0);
+            const dayClose = new Date(cursor);
+            dayClose.setHours(scheduleCloseHour, 0, 0, 0);
+
+            const overlayEnd = now < dayClose ? now : dayClose;
+
+            if (overlayEnd > dayOpen) {
+                overlay.push({
+                    start: dayOpen.toISOString(),
+                    end: overlayEnd.toISOString(),
+                    display: 'background',
+                    backgroundColor: '#e5e7eb',
+                    extendedProps: { kind: 'past' }
+                });
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return overlay;
+    }
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: @js($selectedStaffId === 'all' ? 'listWeek' : 'timeGridWeek'), locale: 'th', firstDay: 1, height: 'auto', nowIndicator: true,
         selectable: true, selectMirror: true, editable: true, eventOverlap: false, selectOverlap: false, slotEventOverlap: false,
@@ -299,11 +343,39 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonText: {today:'วันนี้', month:'เดือน', week:'สัปดาห์', day:'วัน', list:'รายการ'},
         events(info, success, failure) {
             fetch(`${eventsApi}?staff_id=${filter.value}&start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`, {headers:{'Accept':'application/json'}})
-                .then(response => response.ok ? response.json() : Promise.reject(response)).then(success).catch(failure);
+                .then(response => response.ok ? response.json() : Promise.reject(response))
+                .then(realEvents => {
+                    const isTimeGridView = calendar.view.type === 'timeGridWeek' || calendar.view.type === 'timeGridDay';
+                    const merged = isTimeGridView
+                        ? [...realEvents, ...buildPastOverlay(info.start, info.end)]
+                        : realEvents;
+                    success(merged);
+                })
+                .catch(failure);
         },
         selectAllow(info) {
             return staysWithinOneDate(info.start, info.end)
                 && info.start > new Date();
+        },
+        eventDidMount(arg) {
+            if (arg.event.extendedProps.kind !== 'past') return;
+
+            arg.el.style.backgroundColor = 'rgba(148, 163, 184, 0.65)';
+
+            const label = document.createElement('div');
+            label.textContent = 'เลยกำหนด';
+            label.style.cssText = `
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 700;
+                color: #1e293b;
+                pointer-events: none;
+            `;
+            arg.el.appendChild(label);
         },
         eventAllow(dropInfo, event) {
             return ['availability', 'calendar_event'].includes(event.extendedProps.kind)
@@ -325,6 +397,14 @@ document.addEventListener('DOMContentLoaded', () => {
             openModal(null, info.start, info.end);
         },
         eventClick(info) {
+            if (info.event.extendedProps.kind === 'past') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'เลยกำหนด',
+                    text: 'ช่วงเวลานี้ผ่านไปแล้ว'
+                });
+                return;
+            }
             if (['availability', 'calendar_event'].includes(info.event.extendedProps.kind)) return openModal(info.event);
             showPrivateTrainingDetails(info.event);
         },

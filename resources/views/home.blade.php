@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'THATA Homecourt - THATA SPORT HQ & Basketball Chonburi ')
+@section('title', 'THATA HOMECOURT - THATA SPORT HQ & Basketball Chonburi ')
 
 @section('content')
 @php
@@ -290,7 +290,7 @@ html { scroll-behavior: smooth; }
     overflow: hidden;
     border: 1px solid rgba(255,255,255,.07);
     transition: border-color .25s, transform .25s;
-    cursor: pointer;
+    cursor: default;
 }
 .court-card:hover { border-color: rgba(232,108,42,.45); transform: translateY(-4px); }
 .court-thumb { height: 130px; position: relative; overflow: hidden; }
@@ -1058,6 +1058,92 @@ html { scroll-behavior: smooth; }
     position: absolute; inset: 0;
     background: linear-gradient(to top, rgba(13,15,30,.55) 0%, rgba(13,15,30,0) 45%);
 }
+/* ─── GROUP SESSIONS (กลุ่มเล่นบาสค่ำ) ─── */
+.groupsession-section {
+    background: var(--cream);
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
+    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.groupsession-header { text-align: center; margin-bottom: 40px; }
+.groupsession-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ore); margin-bottom: 8px;
+}
+.groupsession-title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.groupsession-subtitle { font-size: 13.5px; color: #868e96; }
+
+.groupsession-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+@media (max-width: 768px) { .groupsession-grid { grid-template-columns: 1fr; } }
+
+.gs-card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #edeff2;
+    box-shadow: 0 2px 10px rgba(13,15,30,.04);
+    display: flex;
+    flex-direction: column;
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+.gs-card:hover { transform: translateY(-6px); box-shadow: 0 20px 36px rgba(13,15,30,.12); }
+.gs-card-header {
+    background: var(--ink);
+    padding: 18px 20px;
+    position: relative;
+}
+.gs-card-day {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: #fff;
+    letter-spacing: .04em;
+}
+.gs-card-date { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
+.gs-card-badge {
+    position: absolute; top: 14px; right: 16px;
+    background: var(--ore); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+}
+.gs-card-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
+.gs-card-title { font-family: 'Kanit', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.gs-card-info { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.gs-info-line { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #495057; }
+.gs-info-icon { width: 14px; height: 14px; color: var(--ore); flex-shrink: 0; }
+.gs-spots-wrap { margin-top: auto; padding-top: 14px; border-top: 1px solid #f1f3f5; }
+.gs-spots-bar { height: 6px; border-radius: 4px; background: #f1f3f5; overflow: hidden; margin-bottom: 8px; }
+.gs-spots-fill { height: 100%; background: var(--ore); border-radius: 4px; }
+.gs-spots-text { font-size: 11.5px; color: #868e96; margin-bottom: 12px; }
+.gs-card-btn {
+    display: block; text-align: center;
+    padding: 11px; border-radius: 9px;
+    background: var(--ore); color: #fff;
+    font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 600;
+    transition: background .2s;
+}
+.gs-card-btn:hover { background: var(--ore-d); }
+.gs-card-btn.full {
+    background: #f1f3f5; color: #adb5bd; pointer-events: none;
+}
+
+.groupsession-empty {
+    text-align: center; color: #adb5bd; padding: 56px 0; font-size: 13.5px;
+}
+.groupsession-empty-icon { font-size: 34px; margin-bottom: 10px; opacity: .6; }
+.gs-btn-row { display: flex; gap: 8px; }
+.gs-btn-row > * { flex: 1 1 0; min-width: 0; }
+.gs-btn-row .gs-card-btn { width: 100%; }
+.gs-card-btn-outline {
+    background: #4b5563;
+    color: #fff;
+    border: 1px solid #4b5563;
+}
+.gs-card-btn-outline:hover { background: #374151; color: #fff; }
 </style>
 
 <div class="home-content">
@@ -1082,7 +1168,7 @@ html { scroll-behavior: smooth; }
     <div id="hero-bg-fader" class="hero-bg-fader"></div>
     <div class="hero-content" data-aos="fade-up" data-aos-duration="1200">
         <p class="hero-eyebrow">THATA SPORT HQ & Basketball Chonburi</p>
-        <h1 class="hero-title">THATA<br><span>Homecourt</span></h1>
+        <h1 class="hero-title">THATA<br><span>HOMECOURT</span></h1>
         <p class="hero-sub">ระบบจองสนามบาสเกตบอลมาตรฐานสากล<br>พร้อมให้บริการ 7 วัน 365 วัน</p>
         <div class="hero-actions" data-aos="fade-up" data-aos-delay="400">
             @guest
@@ -1258,7 +1344,7 @@ html { scroll-behavior: smooth; }
         {{-- LEFT: Calendar Card --}}
         <div class="bk-cal-card">
             <div class="bk-cal-header">
-                <span class="bk-cal-month-label" id="cal-month">เมษายน 2568</span>
+                <span class="bk-cal-month-label" id="cal-month"></span>
                 <div class="bk-cal-nav-btns">
                     <button onclick="calPrev()">&#8249;</button>
                     <button onclick="calNext()">&#8250;</button>
@@ -1330,6 +1416,120 @@ html { scroll-behavior: smooth; }
         </p>
     </div>
 </section>
+{{-- ═══ GROUP SESSIONS (กลุ่มเล่นบาสค่ำ) ═══ --}}
+<section id="group-sessions" class="groupsession-section" data-aos="fade-up">
+    <div class="groupsession-header">
+        <p class="groupsession-label">Group Play</p>
+        <h2 class="groupsession-title">กลุ่มเล่นบาส</h2>
+        <p class="groupsession-subtitle">ร่วมสนุกกับกลุ่มเล่นบาสประจำสัปดาห์ ลงชื่อจองที่ได้เลย</p>
+    </div>
+
+    @if(($upcomingGroupRounds ?? collect())->isEmpty())
+        <div class="groupsession-empty">
+            <div class="groupsession-empty-icon">🏀</div>
+            ยังไม่มีรอบเล่นบาสในขณะนี้
+        </div>
+    @else
+        <div class="groupsession-grid">
+            @foreach($upcomingGroupRounds as $round)
+                @php
+                    $round->processExpiredReserves();
+
+                    $mainCount = $round->mainConfirmedCount();
+                    $spotsLeft = max(0, $round->max_players - $mainCount);
+                    $isFull = $spotsLeft <= 0;
+                    $percentFull = $round->max_players > 0
+                        ? min(100, round(($mainCount / $round->max_players) * 100))
+                        : 0;
+                    $dayNames = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+                @endphp
+            <div class="gs-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
+                <div class="gs-card-header">
+                    <div class="gs-card-day">{{ $dayNames[$round->play_date->dayOfWeek] }}</div>
+                    <div class="gs-card-date">{{ $round->play_date->format('d/m/Y') }}</div>
+                </div>
+                <div class="gs-card-body">
+                    <div class="gs-card-title">{{ $round->title }}</div>
+                    <div class="gs-card-info">
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {{ \Carbon\Carbon::parse($round->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($round->end_time)->format('H:i') }} น.
+    </div>
+    @if($round->court)
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        {{ $round->court->name }}
+    </div>
+    @endif
+    <div class="gs-info-line">
+        <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 12v-2m0-8c-1.11 0-2.08.402-2.599 1"/></svg>
+        {{ $round->credit_cost == 0 ? 'ฟรี' : 'เครดิต ' . $round->credit_cost . ' / คน' }}
+    </div>
+    <div class="gs-info-line" style="color:#e67700;">
+    <svg class="gs-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#e67700;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+    @if($round->cancel_deadline)
+        ยกเลิกจองได้ถึง {{ $round->cancel_deadline->format('d/m/Y H:i') }} น.
+    @else
+        ยกเลิกจองได้ตลอดเวลา
+    @endif
+</div>
+</div>
+                    <div class="gs-spots-wrap">
+                        <div class="gs-spots-bar">
+                            <div class="gs-spots-fill" style="width: {{ $percentFull }}%;"></div>
+                        </div>
+                        <p class="gs-spots-text">
+                            ลงชื่อแล้ว {{ $mainCount }}/{{ $round->max_players }} คน
+                            @if(!$isFull) &middot; เหลือ {{ $spotsLeft }} ที่ @endif
+                        </p>
+                       @php
+    $myGroupSignup = auth()->check()
+        ? $round->confirmedSignups->firstWhere('user_id', auth()->id())
+        : null;
+@endphp
+
+@php
+    $mySeatCount = auth()->check() ? $round->bookedSeatsFor(auth()->id()) : 0;
+    $mySeatsRemaining = auth()->check() ? $round->remainingSeatsFor(auth()->id()) : 0;
+@endphp
+
+@if($mySeatCount > 0)
+    <div class="gs-btn-row">
+        <span class="gs-card-btn full" style="background:#ebfbee;color:#2f9e44;">
+            ✓ คุณจอง {{ $mySeatCount }}/{{ \App\Models\GroupRound::MAX_SEATS_PER_USER }} ที่
+        </span>
+        @if($mySeatsRemaining > 0 && !$isFull)
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn gs-card-btn-outline">จองเพิ่ม</a>
+        @else
+            <a href="{{ route('group-rounds.my-bookings') }}" class="gs-card-btn gs-card-btn-outline">จัดการการจอง</a>
+        @endif
+    </div>
+@elseif($isFull)
+    <div class="gs-btn-row">
+        @auth
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
+        @else
+            <a href="{{ route('login') }}" class="gs-card-btn" style="background:#e67700;">ลงชื่อสำรอง</a>
+        @endauth
+        <a href="{{ \App\Models\Setting::getVal('line_official_url', 'https://line.me/R/ti/p/%40THATA-HC') }}" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+    </div>
+@else
+    <div class="gs-btn-row">
+        @auth
+            <a href="{{ route('group-rounds.checkout', $round) }}" class="gs-card-btn">ลงชื่อจอง</a>
+        @else
+            <a href="{{ route('login') }}" class="gs-card-btn">ลงชื่อจอง</a>
+        @endauth
+        <a href="{{ \App\Models\Setting::getVal('line_official_url', 'https://line.me/R/ti/p/%40THATA-HC') }}" target="_blank" rel="noopener noreferrer" class="gs-card-btn gs-card-btn-outline">จองผ่าน LINE</a>
+    </div>
+@endif
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</section>
+@endif
 
 {{-- ═══ COURSES / BASKETBALL SCHOOL ═══ --}}
 <section class="courses-section" data-aos="fade-up">
@@ -1425,21 +1625,21 @@ html { scroll-behavior: smooth; }
 
 @if($packages->isNotEmpty())
     {{-- ═══ PACKAGES ═══ --}}
-    <section class="packages-section" id="packages" data-aos="fade-up">
-        <div class="packages-header">
-            <p class="packages-label">Package</p>
-            <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
-            <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
-        </div>
+   <section class="packages-section" id="packages" data-aos="fade-up">
+    <div class="packages-header">
+        <p class="packages-label">Package</p>
+        <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
+        <p class="packages-subtitle">เลือกแพ็กเกจที่เหมาะกับความต้องการของคุณ</p>
+    </div>
 
-        @if($packages->isEmpty())
-            <div class="packages-empty">
-                <div class="packages-empty-icon">📦</div>
-                ขณะนี้ยังไม่มีแพ็กเกจเปิดให้บริการ
-            </div>
-        @else
-            <div class="packages-grid">
-                @foreach($packages as $package)
+    @if($packages->isEmpty())
+        <div class="packages-empty">
+            <div class="packages-empty-icon">📦</div>
+            ยังไม่มีแพ็กเกจเปิดให้บริการในขณะนี้
+        </div>
+    @else
+        <div class="packages-grid">
+            @foreach($packages as $package)
                     <div class="package-card2 {{ $loop->first ? 'featured' : '' }}" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                         <div class="package-thumb2">
                             <img src="{{ $package->image ? asset('storage/' . $package->image) : 'https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=800&auto=format&fit=crop' }}"
@@ -1456,6 +1656,22 @@ html { scroll-behavior: smooth; }
                                 ใช้ได้ <strong style="color:#fff;">{{ $package->num_of_use }}</strong> ครั้ง
                             </span>
                         </div>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+                            <svg style="width:14px;height:14px;color:var(--ore);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span style="font-size:12.5px;color:rgba(255,255,255,.6);">
+                                @php
+                                    $dayLabels = ['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'];
+                                    $usableDays = $package->usable_days ?? [];
+                                @endphp
+                                @if(empty($usableDays))
+                                    ใช้ได้ <strong style="color:#fff;">ทุกวัน</strong>
+                                @else
+                                    ใช้ได้เฉพาะวัน <strong style="color:#fff;">{{ collect($usableDays)->map(fn($d) => $dayLabels[$d] ?? $d)->implode(', ') }}</strong>
+                                @endif
+                            </span>
+                        </div>
                         <div class="package-price-block">
                             <p class="package-price-label">ราคา</p>
                             <p class="package-price">฿{{ number_format($package->price, 0) }}</p>
@@ -1470,7 +1686,7 @@ html { scroll-behavior: smooth; }
                             </button>
                         </form>
                         @endguest
-                        </div>
+                    </div>
                 @endforeach
             </div>
         @endif
@@ -1530,21 +1746,26 @@ html { scroll-behavior: smooth; }
             <div style="margin-top:20px;">
                 <p class="footer-addr-title" style="margin-bottom:10px;">ติดตามข่าวสาร</p>
                 <div class="footer-social">
-                    <a href="https://www.facebook.com/thatahomecourts/" class="social-badge" target="_blank">
+                    @php
+                        $footerLinks = \App\Models\Setting::values([
+                            'facebook_url', 'youtube_url', 'instagram_url', 'line_footer_url', 'contact_phone', 'contact_email',
+                        ]);
+                    @endphp
+                    <a href="{{ $footerLinks['facebook_url'] ?? 'https://www.facebook.com/thatahomecourts/' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" alt="" {!! $imageFallback !!}> THATA Homecourt - THATA SPORT HQ & Basketball Chonburi
                     </a>
-                    <a href="https://www.youtube.com/THATASPORT" class="social-badge" target="_blank">
+                    <a href="{{ $footerLinks['youtube_url'] ?? 'https://www.youtube.com/THATASPORT' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/1384/1384060.png" alt="">THATA SPORT
                     </a>
-                    <a href="https://www.instagram.com/thata_homecourt" class="social-badge" target="_blank">
-                        <img class="icon-footer" src="https://128/174/174855.png" alt="">thata_homecourt
+                    <a href="{{ $footerLinks['instagram_url'] ?? 'https://www.instagram.com/thata_homecourt' }}" class="social-badge" target="_blank">
+                        <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/174/174855.png" alt="">THATA Homecourt
                     </a>
-                    <a href="https://line.me/R/ti/p/%40THATA-HC" class="social-badge" target="_blank">
+                    <a href="{{ $footerLinks['line_footer_url'] ?? 'https://line.me/R/ti/p/%40THATA-HC' }}" class="social-badge" target="_blank">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/2111/2111498.png" alt="">THATA Homecourt
                     </a>
                     <a href="javascript:void(0)" onclick="copyPhone(this)" class="social-badge">
                         <img class="icon-footer" src="https://cdn-icons-png.flaticon.com/128/5585/5585856.png" alt="">
-                        <span class="phone-num">081-246-0000</span>
+                        <span class="phone-num">{{ $footerLinks['contact_phone'] ?? '081-246-0000' }}</span>
                     </a>
                 </div>
             </div>
@@ -1564,8 +1785,8 @@ html { scroll-behavior: smooth; }
     <div class="footer-bottom">
         <p class="footer-copy">© 2026 THATA HOMECOURT – THATA SPORT HQ & Basketball (Chonburi).</p>
         <div class="footer-links">
-            <a href="https://www.facebook.com/thatahomecourts/" target="_blank">ติดตามเรา</a>
-            <a href="mailto:thatahomecourt@gmail.com" target="_blank">ติดต่อ</a>
+            <a href="{{ $footerLinks['facebook_url'] ?? 'https://www.facebook.com/thatahomecourts/' }}" target="_blank">ติดตามเรา</a>
+            <a href="mailto:{{ $footerLinks['contact_email'] ?? 'thatahomecourt@gmail.com' }}" target="_blank">ติดต่อ</a>
         </div>
     </div>
 </footer>
@@ -1937,9 +2158,9 @@ initHeroSlideshow();
  * คัดลอกเบอร์โทรศัพท์พร้อมแสดงเอฟเฟกต์แจ้งเตือน
  */
 function copyPhone(btn) {
-    const phone = '081-246-0000';
+    const label = btn.querySelector('.phone-num');
+    const phone = label.textContent.trim();
     const doFeedback = () => {
-        const label = btn.querySelector('.phone-num');
         const original = label.textContent;
         label.textContent = 'คัดลอกแล้ว!';
         btn.style.background = 'var(--green)';

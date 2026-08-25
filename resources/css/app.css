@@ -1,3 +1,8 @@
 @import "tailwindcss";
 @source "../**/*.blade.php";
 @source "../**/*.js";
+html {
+    /* The document root owns page scrolling, so reserve its scrollbar on every route. */
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}

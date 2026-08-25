@@ -17,16 +17,18 @@
         body {
             font-family: 'Kanit', sans-serif;
         }
+        [x-cloak] {
+        display: none !important;
+    }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
-<body class="bg-[#ffffff] min-h-screen flex flex-col text-white antialiased">
+<body class="bg-slate-50 min-h-screen flex flex-col text-white antialiased">
 
     {{-- Navbar อยู่ด้านบนสุด --}}
     @include('components.navbar')
-
+    <div id="navbar-spacer"></div>
 
 
 
@@ -52,6 +54,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // แก้บั๊ก sticky navbar กระตุกตอนเปิด SweetAlert2 (heightAuto default ไปเซ็ต height:auto ให้ <html>)
+        Swal = Swal.mixin({ heightAuto: false });
+
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -105,7 +110,59 @@
             });
         });
     </script>
+    <script>
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            // หน้านี้ถูกดึงจาก bfcache (กด back/forward) ให้โหลดใหม่จาก server
+            // เพื่อไม่ให้ flash message เก่า (เช่น toast แจ้งเตือน) ค้างแสดงซ้ำ
+            window.location.reload();
+        }
+    });
+    function syncNavbarSpacer() {
+        const nav = document.querySelector('nav.fixed');
+        const spacer = document.getElementById('navbar-spacer');
+        if (nav && spacer) spacer.style.height = nav.offsetHeight + 'px';
+    }
+    window.addEventListener('load', syncNavbarSpacer);
+    window.addEventListener('resize', syncNavbarSpacer);
+    document.getElementById('mobileMenuBtn')?.addEventListener('click', () => setTimeout(syncNavbarSpacer, 50));
+</script>
+{{-- แทนที่ confirm() ของเบราว์เซอร์ด้วย SweetAlert2 — ใส่ data-confirm="ข้อความ" ในฟอร์มไหนก็ได้
+     รองรับ dynamic message ผ่าน JS ก่อน submit ด้วย --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form[data-confirm]').forEach((form) => {
+            form.addEventListener('submit', function (event) {
+                if (form.dataset.confirmed === '1') {
+                    return; // ยืนยันแล้ว ปล่อยให้ submit ตามปกติ
+                }
 
+                event.preventDefault();
+
+                const message = form.dataset.confirm || 'ยืนยันการทำรายการนี้?';
+                const confirmText = form.dataset.confirmButtonText || 'ยืนยัน';
+                const danger = form.dataset.confirmDanger === '1';
+
+                Swal.fire({
+                    title: 'ยืนยันการทำรายการ',
+                    text: message,
+                    icon: danger ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: confirmText,
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: danger ? '#dc2626' : '#ea580c',
+                    cancelButtonColor: '#6b7280',
+                    reverseButtons: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.dataset.confirmed = '1';
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
     @stack('scripts')
 </body>
 

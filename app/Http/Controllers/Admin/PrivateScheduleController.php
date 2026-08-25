@@ -22,7 +22,7 @@ class PrivateScheduleController extends Controller
 
     public function index(Request $request)
     {
-        $staffs = $this->staffQuery()->orderBy('name')->get(['id', 'name', 'membership_type']);
+        $staffs = $this->staffQuery()->orderBy('us_name')->get(['id', 'us_name', 'membership_type']);
         $requestedId = $request->query('staff_id', $request->query('coach_id'));
         $selectedStaffId = $requestedId === 'all'
             ? 'all'
@@ -53,7 +53,7 @@ class PrivateScheduleController extends Controller
             ->get()
             ->map(fn (Availability $slot) => [
                 'id' => 'availability-'.$slot->id,
-                'title' => ($showAll ? $slot->user->name.' · ' : '').($slot->detail ?: 'กำหนดการเดิม'),
+                'title' => ($showAll ? $slot->user->us_name.' · ' : '').($slot->detail ?: 'กำหนดการเดิม'),
                 'start' => $slot->date.'T'.substr($slot->start_time, 0, 8),
                 'end' => $slot->date.'T'.substr($slot->end_time, 0, 8),
                 'backgroundColor' => '#5f6368',
@@ -66,7 +66,7 @@ class PrivateScheduleController extends Controller
                     'statusLabel' => 'กำหนดการเดิม',
                     'detail' => $slot->detail,
                     'staffId' => $slot->user_id,
-                    'staffName' => $slot->user->name,
+                    'staffName' => $slot->user->us_name,
                 ],
             ]);
 
@@ -78,7 +78,7 @@ class PrivateScheduleController extends Controller
 
                 return [
                     'id' => 'calendar-'.$event->id.'-'.$occurrence['occurrenceKey'],
-                    'title' => ($showAll ? $event->coach->name.' · ' : '').$event->title,
+                    'title' => ($showAll ? $event->coach->us_name.' · ' : '').$event->title,
                     'start' => $occurrence['start']->toIso8601String(),
                     'end' => $occurrence['end']->toIso8601String(),
                     'backgroundColor' => $event->color,
@@ -92,7 +92,7 @@ class PrivateScheduleController extends Controller
                         'statusLabel' => $this->eventTypeLabel($event->event_type),
                         'description' => $event->description,
                         'staffId' => $event->coach_id,
-                        'staffName' => $event->coach->name,
+                        'staffName' => $event->coach->us_name,
                         'seriesStartsAt' => $event->starts_at->format('Y-m-d\TH:i'),
                         'seriesEndsAt' => $event->ends_at?->format('Y-m-d\TH:i'),
                         'recurrence' => $event->recurrence,
@@ -125,7 +125,7 @@ class PrivateScheduleController extends Controller
                 ])->filter(fn (array $item) => $item['staff'] && $staffIds->contains($item['staff']->id))
                     ->map(fn (array $item) => [
                         'id' => 'booking-'.$booking->id.'-staff-'.$item['staff']->id,
-                        'title' => ($showAll ? $item['staff']->name.' · ' : '').$item['prefix'].': '.$booking->user->name,
+                        'title' => ($showAll ? $item['staff']->us_name.' · ' : '').$item['prefix'].': '.$booking->user->us_name,
                         'start' => $booking->date->toDateString().'T'.substr($booking->start_time, 0, 8),
                         'end' => $booking->date->toDateString().'T'.substr($booking->end_time, 0, 8),
                         'backgroundColor' => $booking->status === 'confirmed' ? '#7c3aed' : '#f97316',
@@ -141,14 +141,14 @@ class PrivateScheduleController extends Controller
                                 default => 'รออนุมัติ',
                             },
                             'staffId' => $item['staff']->id,
-                            'staffName' => $item['staff']->name,
+                            'staffName' => $item['staff']->us_name,
                             'roleLabel' => $item['prefix'] === 'Private' ? 'โค้ชผู้สอน' : 'ผู้ช่วยสนาม',
                             'roleCaption' => 'แสดงในตารางของ',
-                            'customerName' => $booking->user->name,
+                            'customerName' => $booking->user->us_name,
                             'customerEmail' => $booking->user->email,
                             'customerPhone' => $booking->user->phone,
-                            'coachName' => $booking->coach->name,
-                            'assistantName' => $booking->courtAssistant?->name,
+                            'coachName' => $booking->coach->us_name,
+                            'assistantName' => $booking->courtAssistant?->us_name,
                             'court' => $booking->court
                                 ? $booking->court->name.($booking->courtSection ? ' — '.$booking->courtSection->name : '')
                                 : null,

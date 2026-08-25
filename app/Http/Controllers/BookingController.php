@@ -529,7 +529,7 @@ class BookingController extends Controller
                 Notification::create([
                     'user_id' => $admin->id,
                     'title' => $title,
-                    'message' => "คุณ {$request->user()->name} ขอจอง |วันที่ {$bookingDate}\n{$summaryLines}",
+                    'message' => "คุณ {$request->user()->us_name} ขอจอง |วันที่ {$bookingDate}\n{$summaryLines}",
                 ]);
             });
         }
@@ -569,7 +569,7 @@ class BookingController extends Controller
             Notification::create([
                 'user_id' => $admin->id,
                 'title' => 'ผู้ใช้ยกเลิกการจอง',
-                'message' => "คุณ {$booking->user->name} ยกเลิกการจอง {$booking->court->name} วันที่ {$bDate}",
+                'message' => "คุณ {$booking->user->us_name} ยกเลิกการจอง {$booking->court->name} วันที่ {$bDate}",
             ]);
         });
 
@@ -688,7 +688,12 @@ class BookingController extends Controller
             ->orderByDesc('updated_at')
             ->get();
 
-        return view('booking.history', compact('current', 'past'));
+        $transactions = $request->user()->creditTransactions()
+            ->latest()
+            ->take(30)
+            ->get();
+
+        return view('booking.history', compact('current', 'past', 'transactions'));
     }
     /**
      * Approve multiple bookings at once (admin)

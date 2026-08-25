@@ -7,7 +7,7 @@
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการ Package</h1>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการแพ็กเกจ</h1>
                 <p class="mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการแพ็กเกจทั้งหมดในระบบ</p>
             </div>
             <!-- Search และ ปุ่มเพิ่มแพ็กเกจ -->
@@ -15,20 +15,20 @@
                 <form method="GET" action="{{ route('admin.packages.index') }}" class="flex w-full md:w-auto">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="ระบุชื่อแพ็กเกจที่ต้องการค้นหา..."
                            class="w-full rounded-l-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400 md:w-72">
-                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600">
+                    <button type="submit" class="flex shrink-0 items-center gap-2 rounded-r-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 shadow-sm cursor-pointer">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/></svg>
                         ค้นหาแพ็กเกจ
                     </button>
                 </form>
-                <a href="{{ route('admin.packages.create') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <a href="{{ route('admin.packages.create') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                     เพิ่มแพ็กเกจ
                 </a>
             </div>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-slate-50">
                 <h2 class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     รายการแพ็กเกจทั้งหมด
@@ -52,14 +52,14 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($packages as $package)
-                            <tr class="align-middle transition hover:bg-slate-50/80">
-                                <td class="px-3 py-4 sm:px-6 sm:py-6">
+                            <tr class="align-middle transition">
+                                <td class="px-3 py-4 sm:px-7 sm:py-6 w-[120px] sm:w-[160px] md:w-[200px]">
                                     @if ($package->image)
                                         <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name }}"
-                                             class="h-10 w-10 rounded-xl border border-gray-200 object-cover shadow-sm sm:h-14 sm:w-14">
+                                             class="w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 rounded-xl border border-gray-200 object-cover shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md cursor-pointer">
                                     @else
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300 sm:h-14 sm:w-14">
-                                            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <div class="flex w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 items-center justify-center rounded-xl border border-gray-200 bg-slate-100 text-slate-300 transition-all duration-300 hover:scale-105 cursor-pointer">
+                                            <svg class="h-6 w-6 sm:h-8 sm:w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         </div>
                                     @endif
                                 </td>
@@ -68,7 +68,7 @@
                                     <!-- ข้อมูลย่อสำหรับจอเล็ก ที่ซ่อนคอลัมน์ไป -->
                                     <p class="mt-1 text-xs text-gray-400 md:hidden">{{ $package->num_of_use }} ครั้ง @if(!is_null($package->day)) · {{ $package->day }} วัน @endif</p>
                                 </td>
-                                <td class="hidden max-w-[220px] px-5 py-6 xl:table-cell">
+                                <td class="hidden max-w-[120px] px-5 py-6 xl:table-cell">
                                     <p class="line-clamp-1 text-sm leading-6 text-gray-500 break-words">{{ $package->description ?: '—' }}</p>
                                 </td>
                                 <td class="hidden px-5 py-6 lg:table-cell">
@@ -125,10 +125,17 @@
                                 </td>
                                 <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
                                     <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:px-4 sm:py-2.5">แก้ไข</a>
+                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:w-17 justify-center sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $package->id }}" action="{{ route('admin.packages.delete', $package) }}" method="POST">
                                             @csrf @method('DELETE')
-                                            <button type="button" onclick="confirmDeletePackage('{{ $package->id }}', '{{ addslashes($package->name) }}')" class="inline-flex rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5">ลบ</button>
+                                            <button type="button" onclick="confirmDeletePackage('{{ $package->id }}', '{{ addslashes($package->name) }}')" class="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 cursor-pointer">
+                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                <span>ลบ</span>
+                                            </button>
                                         </form>
                                     </div>
                                 </td>
@@ -237,6 +244,7 @@ function confirmDeletePackage(packageId, packageName) {
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#3085d6',
+        reverseButtons: true,
         confirmButtonText: 'ยืนยันการลบ',
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {

@@ -157,7 +157,7 @@
                                         </div>
                                         <div class="mt-2 text-right">
                                             <div class="text-gray-400 mb-1">&nbsp;</div>
-                                            <div class="font-medium text-gray-800">{{ $b->user->name }}</div>
+                                            <div class="font-medium text-gray-800">{{ $b->user->us_name }}</div>
                                         </div>
 
                                         <div class="col-span-2 mt-2">
@@ -201,7 +201,7 @@
                             <div class="space-y-3 text-xs mb-5 px-1">
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-500 font-medium">ผู้จอง</span>
-                                    <span class="text-gray-900 font-semibold">{{ $selectedBooking->user->name }}</span>
+                                    <span class="text-gray-900 font-semibold">{{ $selectedBooking->user->us_name }}</span>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-500 font-medium">อีเมล</span>

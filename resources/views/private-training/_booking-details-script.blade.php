@@ -69,7 +69,7 @@ window.showPrivateTrainingDetails = function (event) {
             <div class="bg-slate-900 px-6 pb-5 pt-6 text-left text-white">
                 <div class="flex flex-wrap items-start justify-between gap-3 pr-7">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Private Training</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">เทรนเนอร์ส่วนตัว</p>
                         <h2 class="mt-1 text-xl font-bold">รายละเอียดการจอง #${value(props.bookingId)}</h2>
                     </div>
                     <span class="rounded-full px-3 py-1 text-xs font-bold ${statusTone.join(' ')}">${value(props.statusLabel, 'ไม่ระบุสถานะ')}</span>

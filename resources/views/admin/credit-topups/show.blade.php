@@ -42,12 +42,12 @@
             <div class="grid sm:grid-cols-2 gap-x-6 gap-y-4 text-sm mb-6">
                 <div>
                     <p class="text-xs text-gray-400 mb-1">ผู้ใช้</p>
-                    <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->user->us_name }}</p>
                     <p class="text-xs text-gray-400">{{ $topupRequest->user->email }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-400 mb-1">เติมโดย (ชื่อ-นามสกุลที่แจ้ง)</p>
-                    <p class="font-medium text-gray-800">{{ $topupRequest->topper_name }}</p>
+                    <p class="text-xs text-gray-400 mb-1">เติมโดย</p>
+                    <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 mb-1">ยอดชำระ / เครดิตที่ได้รับ</p>
@@ -64,7 +64,7 @@
                 @if($topupRequest->approver)
                     <div>
                         <p class="text-xs text-gray-400 mb-1">ดำเนินการโดย</p>
-                        <p class="font-medium text-gray-800">{{ $topupRequest->approver->name }} · {{ $topupRequest->approved_at?->format('d/m/Y H:i') }}</p>
+                        <p class="font-medium text-gray-800">{{ $topupRequest->approver->us_name }} · {{ $topupRequest->approved_at?->format('d/m/Y H:i') }}</p>
                     </div>
                 @endif
             </div>
@@ -90,13 +90,24 @@
                     <form method="POST" action="{{ route('admin.credit-topups.approve', $topupRequest) }}" class="flex-1"
                           onsubmit="showMailLoadingOverlay('กำลังอนุมัติและส่งอีเมลใบเสร็จให้ลูกค้า...'); this.querySelector('button').disabled = true;">
                         @csrf
-                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 transition">
-                            ✓ อนุมัติและเติมเครดิต
+                        @if ($topupRequest->expiry_days)
+                            <p class="text-xs text-gray-400 mb-2">เครดิตนี้จะหมดอายุใน {{ $topupRequest->expiry_days }} วัน (ตามแพ็กเกจที่เลือก)</p>
+                        @else
+                            <div class="mb-3">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">
+                                    คำขอนี้ไม่ได้ผูกกับแพ็กเกจที่มีวันหมดอายุ — กรุณาระบุจำนวนวันหมดอายุของเครดิต
+                                </label>
+                                <input type="number" step="1" min="1" max="365" name="expiry_days" required placeholder="เช่น 365"
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
+                            </div>
+                        @endif
+                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                            อนุมัติและเติมเครดิต
                         </button>
                     </form>
 
-                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 transition">
-                            ✕ ปฏิเสธคำขอ
+                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                            ปฏิเสธคำขอ
                     </button>
                 </div>
             @endif
@@ -128,7 +139,7 @@
                 <div class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                     <div>
                         <p class="text-xs text-gray-400">ผู้ใช้</p>
-                        <p class="font-medium text-gray-800">{{ $topupRequest->user->name }}</p>
+                        <p class="font-medium text-gray-800">{{ $topupRequest->user->us_name }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-400">ยอดชำระ</p>
@@ -146,10 +157,10 @@
             </div>
 
             <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onclick="closeRejectTopupModal()" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
+                <button type="button" onclick="closeRejectTopupModal()" class="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 cursor-pointer">
                     ยกเลิก
                 </button>
-                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700">
+                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 cursor-pointer">
                     ปฏิเสธและส่งอีเมลแจ้งลูกค้า
                 </button>
             </div>

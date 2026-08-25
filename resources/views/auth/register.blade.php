@@ -345,7 +345,7 @@
 
             <div class="form-group">
                 <label class="form-label">ชื่อผู้ใช้</label>
-                <input type="text" name="name" id="regName" value="{{ old('name') }}" placeholder="username"
+                <input type="text" name="us_name" id="regName" value="{{ old('us_name') }}" placeholder="username"
                     class="form-input">
                 <span class="field-error" id="error-name"></span>
             </div>
@@ -391,7 +391,7 @@
 
                     <p>
                         ระบบมีความจำเป็นต้องเก็บรวบรวมข้อมูลส่วนบุคคลของท่าน
-                        เช่น ชื่อผู้ใช้ อีเมล หมายเลขโทรศัพท์ และข้อมูลที่เกี่ยวข้องกับการใช้งาน
+                        เช่น ชื่อผู้ใช้ อีเมล เบอร์โทรศัพท์ และข้อมูลที่เกี่ยวข้องกับการใช้งาน
                         เพื่อใช้ในการสมัครสมาชิก ยืนยันตัวตน การจองสนาม
                         การติดต่อผู้ใช้งาน และการให้บริการภายในระบบ
                     </p>

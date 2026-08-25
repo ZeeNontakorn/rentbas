@@ -35,9 +35,9 @@
             <article class="review-card">
                 <div class="review-user-row">
                     <div class="review-user">
-                        <div class="review-avatar">{{ mb_substr($review->user->name, 0, 1) }}</div>
+                        <div class="review-avatar">{{ mb_substr($review->user->us_name, 0, 1) }}</div>
                         <div class="min-w-0">
-                            <div class="review-name">{{ $review->user->name }}</div>
+                            <div class="review-name">{{ $review->user->us_name }}</div>
                             <div class="review-member">✓ สมาชิก THATA</div>
                         </div>
                     </div>
@@ -58,7 +58,7 @@
                     <div class="review-images">
                         @foreach($review->images->take(3) as $image)
                             <a href="{{ $image->image_url }}" target="_blank" rel="noopener">
-                                <img src="{{ $image->image_url }}" alt="รูปประกอบรีวิวของ {{ $review->user->name }}" loading="lazy">
+                                <img src="{{ $image->image_url }}" alt="รูปประกอบรีวิวของ {{ $review->user->us_name }}" loading="lazy">
                             </a>
                         @endforeach
                     </div>

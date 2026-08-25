@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\CreditService;
 use App\Services\PrivateTrainingBookingLifecycleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -8,6 +9,8 @@ use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;
 use Symfony\Component\Mime\Address;
+use App\Models\GroupRound;
+
 
 // Command เดิม
 Artisan::command('inspire', function () {
@@ -41,3 +44,23 @@ Artisan::command('send-mail', function () {
 Schedule::call(function (): void {
     app(PrivateTrainingBookingLifecycleService::class)->expireUnprocessedBookings();
 })->name('private-training:expire-unprocessed')->everyMinute()->withoutOverlapping();
+
+// เซ็ตยอดเครดิตของ user ที่หมดอายุแล้วให้เป็น 0 จริง พร้อมบันทึกลง credit_transactions
+Schedule::call(function (): void {
+    app(CreditService::class)->expireDueCredits();
+})->name('credits:expire-due')->dailyAt('01:00')->withoutOverlapping();
+
+// แจ้งเตือน user ที่เครดิตใกล้หมดอายุ (ภายใน 7 วัน) ทั้งขึ้นกระดิ่งในเว็บและอีเมล
+Schedule::call(function (): void {
+    app(CreditService::class)->notifyExpiringSoonCredits();
+})->name('credits:notify-expiring-soon')->dailyAt('08:00')->withoutOverlapping();
+// คืนเครดิตให้คิวสำรองอัตโนมัติ เมื่อหมดเวลาสละสิทธิ์ หรือรอบเล่นจบไปแล้ว
+Schedule::call(function (): void {
+    GroupRound::whereNull('reserves_processed_at')
+        ->where(function ($q) {
+            $q->whereNotNull('cancel_deadline')->where('cancel_deadline', '<=', now())
+              ->orWhereRaw('play_date < ?', [now()->toDateString()]);
+        })
+        ->get()
+        ->each(fn ($round) => $round->processExpiredReserves());
+})->name('group-round:process-expired-reserves')->everyFifteenMinutes()->withoutOverlapping();

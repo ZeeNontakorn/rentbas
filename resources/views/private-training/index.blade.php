@@ -21,7 +21,7 @@
             {{-- ส่วน Title และ ช่องค้นหา --}}
             <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">เทรนเนอร์ส่วนตัว (Private Training)</h1>
+                    <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">เทรนเนอร์ส่วนตัว</h1>
                     <p class="text-sm text-gray-500 mt-1">เลือกดูโปรไฟล์และตารางว่างของโค้ช เพื่อจองเวลาเรียนส่วนตัว</p>
                 </div>
 
@@ -55,7 +55,7 @@
 
                                     <div class="w-full h-70 bg-orange-50 flex items-center justify-center overflow-hidden border-b border-orange-100 flex-shrink-0">
                                         @if($coach->staffProfile?->profile_image_url)
-                                            <img src="{{ $coach->staffProfile->profile_image_url }}" alt="{{ $coach->name }}"
+                                            <img src="{{ $coach->staffProfile->profile_image_url }}" alt="{{ $coach->us_name }}"
                                                 class="w-full h-full object-cover object-top">
                                         @else
                                             @php
@@ -65,7 +65,7 @@
                                                     default => Storage::disk('public')->url('defaults/coach-default.svg'),
                                                 };
                                             @endphp
-                                            <img src="{{ $defaultCoachImage }}" alt="{{ $coach->name }}"
+                                            <img src="{{ $defaultCoachImage }}" alt="{{ $coach->us_name }}"
                                                 class="w-full h-full object-cover object-top">
                                         @endif
                                     </div>
@@ -73,7 +73,7 @@
                                     <div class="p-5 flex flex-col flex-1">
                                         <div class="flex items-center gap-3">
                                             <p class="font-semibold text-gray-800 truncate group-hover:text-orange-600 transition">
-                                                {{ $coach->name }}
+                                                {{ $coach->us_name }}
                                             </p>
                                         </div>
                                         <span class="inline-block mt-1 w-fit px-2 py-0.5 text-[11px] rounded-full font-medium bg-blue-100 text-blue-700">ผู้ฝึกสอน (Coach)</span>
@@ -138,14 +138,14 @@
                             @forelse($myRequests as $r)
                                 @php $sInfo = $statusMap[$r->status] ?? $statusMap['pending']; @endphp
                                 <div class="px-5 py-3">
-                                    <p class="text-sm font-medium text-gray-700">โค้ช {{ $r->coach->name }}</p>
+                                    <p class="text-sm font-medium text-gray-700">โค้ช {{ $r->coach->us_name }}</p>
                                     <p class="text-xs text-gray-500 mt-0.5">
                                         {{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}
                                         <span class="text-gray-300 mx-1">•</span>
                                         {{ substr($r->start_time, 0, 5) }} - {{ substr($r->end_time, 0, 5) }} น.
                                     </p>
                                     @if($r->assistant_requested)
-                                        <p class="mt-1 text-xs text-blue-600">ผู้ช่วยสนาม: {{ $r->courtAssistant?->name ?? 'รอดำเนินการ' }}</p>
+                                        <p class="mt-1 text-xs text-blue-600">ผู้ช่วยสนาม: {{ $r->courtAssistant?->us_name ?? 'รอดำเนินการ' }}</p>
                                     @endif
                                     <div class="flex items-center justify-between mt-2">
                                         <span class="text-xs px-2.5 py-1 rounded-full font-medium {{ $sInfo['bg'] }} {{ $sInfo['text'] }}">{{ $sInfo['label'] }}</span>

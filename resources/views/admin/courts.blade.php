@@ -3,10 +3,9 @@
 @section('title', 'จัดการสถานะสนาม')
 
 @section('content')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
+
+    <div class="min-h-screen text-[#111827] pt-8 pb-10">
 
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -27,11 +26,30 @@
                 background: #fff;
                 cursor: pointer;
                 transition: all .2s;
+                position: relative;
             }
 
             .slot-card.selected {
-                border: 2px solid #87D068 !important;
+                border: 2px solid #5271ff !important;
                 padding: 11px 9px;
+                background: #eef2ff;
+            }
+
+            /* ติ๊กถูกเล็กๆ มุมขวาบนตอนถูกเลือกแบบ multi-select */
+            .slot-card.selected::after {
+                content: '✓';
+                position: absolute;
+                top: 4px;
+                right: 6px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #5271ff;
+                color: #fff;
+                font-size: 10px;
+                line-height: 16px;
+                text-align: center;
+                font-weight: 700;
             }
 
             .slot-time {
@@ -134,9 +152,9 @@
                     <p class="text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
                 </div>
                 <button type="button" onclick="openCourtModal()"
-                    class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2">
+                    class="font-semibold text-sm border border-orange-500 px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600 flex items-center gap-2 shadow-sm cursor-pointer transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M12 5v14m7-7H5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
                     </svg>
                     เพิ่มสนาม
                 </button>
@@ -307,18 +325,17 @@
 
                                     <!-- ปุ่มบันทึก -->
                                     <button type="submit"
-                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3">
+                                        class="w-full text-[13px] font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2 transition shadow-sm mb-3 cursor-pointer">
                                         บันทึก
                                     </button>
                                 </form>
 
                                 {{-- ปุ่มยกเลิกการแบ่งครึ่งสนาม --}}
-                                <form method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}"
-                                    onsubmit="return confirm('ยกเลิกการแบ่งครึ่งสนาม {{ $selectedCourt->name }}? (ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)');">
+                                <form id="mergeSectionForm" method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}">
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
-                                    <button type="submit"
-                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center">
+                                    <button type="button" onclick="confirmMergeSection()"
+                                        class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center cursor-pointer">
                                         ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
                                     </button>
                                 </form>
@@ -382,6 +399,7 @@
                         @if (!$selectedCourt)
                             <div class="text-center py-20 text-gray-400 font-medium">กรุณาเลือกสนาม</div>
                         @else
+                            <div class="text-xs text-gray-400 mb-3">* คลิกเลือกได้หลายช่วงเวลา แล้วกดยืนยันสถานะครั้งเดียวด้านล่าง</div>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6">
                                 @foreach ($slots as $slot)
                                     @php
@@ -398,8 +416,10 @@
                                         };
                                     @endphp
 
-                                    <div class="slot-card {{ $sClass }}"
-                                        onclick="selectAdminTime('{{ $slot['start'] }}', '{{ $slot['end'] }}', '{{ $slot['status'] }}', this)">
+                                    <div class="slot-card {{ $sClass }}" data-start="{{ $slot['start'] }}"
+                                        data-end="{{ $slot['end'] }}" data-status="{{ $slot['status'] }}"
+                                        data-label="{{ $slot['label'] }}"
+                                        onclick="toggleAdminTime('{{ $slot['start'] }}', '{{ $slot['end'] }}', '{{ $slot['status'] }}', '{{ $slot['label'] }}', this)">
                                         <div class="slot-time">{{ $slot['label'] }}</div>
                                         <div class="slot-btn">{{ $sLabel }}</div>
                                         @if(!empty($slot['customer_name']))
@@ -460,16 +480,23 @@
                     <div id="statusBox"
                         class="hidden border-2 border-gray-200 bg-white rounded-lg p-8 shadow-2xl fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-[800px] z-50 flex flex-col items-start gap-6">
                         <div class="flex justify-between items-center w-full">
-                            <span class="font-bold text-[16px] text-gray-900">เปลี่ยนสถานะ: <span id="s_label"
-                                    class="text-gray-500 ml-2 font-normal"></span></span>
-                            <button
-                                onclick="document.getElementById('statusBox').classList.add('hidden'); if(selEl) { selEl.classList.remove('selected'); }"
-                                class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-full p-1 transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
+                            <span class="font-bold text-[16px] text-gray-900">เปลี่ยนสถานะ:
+                                <span id="s_label" class="text-gray-500 ml-2 font-normal"></span>
+                                <span id="s_count" class="ml-2 inline-flex items-center justify-center text-[11px] font-bold bg-[#5271ff] text-white rounded-full px-2 py-0.5"></span>
+                            </span>
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="clearAdminSelection()"
+                                    class="text-xs text-gray-400 hover:text-red-500 underline underline-offset-2 cursor-pointer transition">
+                                    ล้างที่เลือก
+                                </button>
+                                <button type="button" onclick="closeStatusBox()"
+                                    class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-full p-1 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <form id="slotForm" method="POST" action="{{ route('admin.courts.slot') }}"
@@ -477,19 +504,25 @@
                             @csrf
                             <input type="hidden" name="court_id" value="{{ $selectedCourt?->id }}">
                             <input type="hidden" name="date" value="{{ $date }}">
+                            {{-- ช่วงเวลาที่เลือกทั้งหมด ส่งเป็น JSON array [{start,end}, ...] --}}
+                            <input type="hidden" name="slots" id="slots_val">
+                            {{-- คงชื่อ start_time/end_time เดิมไว้ (ช่วงแรกที่เลือก) เผื่อ backend เดิมยังใช้อยู่ ระหว่างรอปรับ controller --}}
                             <input type="hidden" name="start_time" id="st_val">
                             <input type="hidden" name="end_time" id="en_val">
+                            {{-- สถานะที่จะตั้ง และวันสุดท้ายที่จะทำซ้ำ (ถ้ามี) — เซ็ตค่าโดย JS หลังยืนยัน popup --}}
+                            <input type="hidden" name="status" id="status_val">
+                            <input type="hidden" name="repeat_until_date" id="repeat_until_val">
 
-                            <button type="submit" name="status" value="available"
-                                class="flex-1 bg-[#eeeeee] hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm">
+                            <button type="button" data-status="available" class="status-trigger-btn
+                                flex-1 bg-[#eeeeee] hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm cursor-pointer">
                                 ว่าง
                             </button>
-                            <button type="submit" name="status" value="unavailable"
-                                class="flex-1 bg-[#ff0000] hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm">
+                            <button type="button" data-status="unavailable" class="status-trigger-btn
+                                flex-1 bg-[#ff0000] hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm cursor-pointer">
                                 ไม่ว่าง
                             </button>
-                            <button type="submit" name="status" value="maintenance"
-                                class="flex-1 bg-[#dcd700] hover:bg-[#c2bd00] text-gray-900 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm">
+                            <button type="button" data-status="maintenance" class="status-trigger-btn
+                                flex-1 bg-[#dcd700] hover:bg-[#c2bd00] text-gray-900 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm cursor-pointer">
                                 ปิดปรับปรุง
                             </button>
                         </form>
@@ -504,16 +537,9 @@
             <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <div>
-                        <h2 id="courtModalTitle" class="text-lg font-bold text-gray-900">เพิ่มสนาม</h2>
+                        <h2 id="courtModalTitle" class="text-2xl font-bold text-gray-900">เพิ่มสนาม</h2>
                         <p id="courtModalSubtitle" class="text-sm text-gray-500">กรอกชื่อและสถานะสนาม</p>
                     </div>
-                    <button type="button" onclick="closeCourtModal()"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                            </path>
-                        </svg>
-                    </button>
                 </div>
 
                 <form id="courtForm" method="POST" action="{{ route('admin.court.create') }}" novalidate
@@ -547,9 +573,9 @@
 
                     <div class="flex items-center justify-end gap-3 pt-2">
                         <button type="button" onclick="closeCourtModal()"
-                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition">ยกเลิก</button>
+                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition">ยกเลิก</button>
                         <button type="submit"
-                            class="rounded-lg bg-[#5271ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f5ee8] transition"
+                            class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 cursor-pointer transition"
                             id="courtModalSubmit">บันทึก</button>
                     </div>
                 </form>
@@ -557,7 +583,162 @@
         </div>
 
             <script>
-                let selEl = null;
+                // ===================== Multi-select ช่วงเวลา =====================
+                // เก็บช่วงเวลาที่ถูกเลือกไว้เป็น object คีย์ = start time เพื่อกันเลือกซ้ำ
+                let selectedSlots = {};
+
+                function toggleAdminTime(start, end, status, label, el) {
+                    // ห้ามแก้สถานะทับช่วงที่มีลูกค้าจองอยู่แล้วโดยเด็ดขาด (ล็อกไว้ทั้ง client และ server)
+                    // ต้องไปจัดการผ่านหน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) เท่านั้น
+                    if (status.includes('book')) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'แก้ไขสถานะไม่ได้',
+                            text: 'ช่วงเวลานี้มีลูกค้าจองอยู่แล้ว ไม่สามารถแก้ไขสถานะทับได้ กรุณาไปจัดการที่หน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) ก่อน',
+                            confirmButtonText: 'เข้าใจแล้ว',
+                            confirmButtonColor: '#f97316',
+                        });
+                        return;
+                    }
+
+                    if (selectedSlots[start]) {
+                        // เคยเลือกไว้แล้ว -> คลิกซ้ำ = ยกเลิกการเลือกช่วงนั้น
+                        delete selectedSlots[start];
+                        el.classList.remove('selected');
+                    } else {
+                        // ยังไม่เคยเลือก -> เพิ่มเข้า selection
+                        selectedSlots[start] = { start, end, label };
+                        el.classList.add('selected');
+                    }
+
+                    renderStatusBox();
+                }
+
+                function renderStatusBox() {
+                    const keys = Object.keys(selectedSlots);
+                    const statusBox = document.getElementById('statusBox');
+                    const sLabel = document.getElementById('s_label');
+                    const sCount = document.getElementById('s_count');
+
+                    if (keys.length === 0) {
+                        statusBox.classList.add('hidden');
+                        sLabel.innerText = '';
+                        sCount.innerText = '';
+                        return;
+                    }
+
+                    // เรียงตามเวลาเริ่ม แล้วแสดงตัวอย่างช่วงเวลา (สูงสุด 3 รายการ + ...)
+                    const items = Object.values(selectedSlots).sort((a, b) => a.start.localeCompare(b.start));
+                    const preview = items.slice(0, 3).map(i => i.label).join(', ');
+                    sLabel.innerText = items.length > 3 ? `${preview} ...` : preview;
+                    sCount.innerText = `${items.length} ช่วงเวลา`;
+
+                    statusBox.classList.remove('hidden');
+                }
+
+                function clearAdminSelection() {
+                    Object.keys(selectedSlots).forEach(start => {
+                        const el = document.querySelector(`.slot-card[data-start="${CSS.escape(start)}"]`);
+                        if (el) el.classList.remove('selected');
+                    });
+                    selectedSlots = {};
+                    renderStatusBox();
+                }
+
+                function closeStatusBox() {
+                    clearAdminSelection();
+                }
+
+                // ก่อน submit ฟอร์ม ให้แนบรายการช่วงเวลาที่เลือกทั้งหมดเป็น JSON
+                document.getElementById('slotForm')?.addEventListener('submit', function (e) {
+                    const items = Object.values(selectedSlots);
+                    if (items.length === 0) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    const sorted = items.sort((a, b) => a.start.localeCompare(b.start));
+                    document.getElementById('slots_val').value = JSON.stringify(
+                        sorted.map(i => ({ start: i.start, end: i.end }))
+                    );
+                    // เผื่อ backend เดิมยังอ่าน start_time/end_time เดี่ยวๆ อยู่ ให้ใส่ค่าของช่วงแรกไว้ด้วย
+                    document.getElementById('st_val').value = sorted[0].start;
+                    document.getElementById('en_val').value = sorted[0].end;
+                });
+
+                // ===================== กดปุ่มสถานะ -> เปิด popup ถามว่าจะ "ทำซ้ำ" ถึงวันไหน =====================
+                const STATUS_LABEL_TH = { available: 'ว่าง', unavailable: 'ไม่ว่าง', maintenance: 'ปิดปรับปรุง' };
+                const PAGE_DATE = @js($date); // วันที่ที่กำลังดูอยู่บนหน้านี้ (YYYY-MM-DD)
+
+                document.querySelectorAll('.status-trigger-btn').forEach(btn => {
+                    btn.addEventListener('click', async function () {
+                        const items = Object.values(selectedSlots);
+                        if (items.length === 0) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'กรุณาเลือกช่วงเวลาก่อน',
+                                confirmButtonColor: '#5271ff',
+                            });
+                            return;
+                        }
+
+                        const statusValue = this.dataset.status;
+                        const statusLabel = STATUS_LABEL_TH[statusValue] || statusValue;
+                        const timePreview = items
+                            .sort((a, b) => a.start.localeCompare(b.start))
+                            .map(i => i.label)
+                            .join(', ');
+
+                        const result = await Swal.fire({
+                            title: `<h2 class="text-black">ตั้งสถานะ "${statusLabel}"</h2>`,
+                            html: `
+                                <p class="text-sm text-gray-600 mb-1 text-left">ช่วงเวลาที่เลือก: <b>${timePreview}</b></p>
+                                <p class="text-sm text-gray-600 mb-3 text-left">
+                                    ต้องการทำซ้ำสถานะนี้ทุกวัน (เวลาเดิม) ไปจนถึงวันที่เท่าไหร่?<br>
+                                    <span class="text-xs text-gray-400">ถ้าต้องการแค่วันนี้วันเดียว ปล่อยว่างแล้วกด "ยืนยัน" ได้เลย</span>
+                                </p>
+                                <label class="block text-xs font-medium text-gray-500 mb-1 text-left">ทำซ้ำถึงวันที่ (ไม่บังคับ)</label>
+                                <input type="date" id="swal-repeat-until" class="swal2-input" style="margin:0;width:100%;" min="${PAGE_DATE}">
+                            `,
+                            focusConfirm: false,
+                            showCancelButton: true,
+                            reverseButtons: true,
+                            confirmButtonText: 'ยืนยัน',
+                            cancelButtonText: 'ยกเลิก',
+                            confirmButtonColor: '#f97316',
+                            cancelButtonColor: '#6b7280',
+                            preConfirm: () => {
+                                const val = document.getElementById('swal-repeat-until').value;
+                                if (val && val < PAGE_DATE) {
+                                    Swal.showValidationMessage('วันที่ทำซ้ำต้องไม่ก่อนวันที่กำลังดูอยู่');
+                                    return false;
+                                }
+                                return val || '';
+                            },
+                        });
+
+                        if (!result.isConfirmed) return;
+
+                        document.getElementById('status_val').value = statusValue;
+                        document.getElementById('repeat_until_val').value = result.value || '';
+
+                        // ยืนยันอีกครั้งแบบสั้นๆ ถ้ามีการเลือกทำซ้ำ เพื่อกันกดพลาด
+                        if (result.value) {
+                            const confirmRepeat = await Swal.fire({
+                                icon: 'question',
+                                title: 'ยืนยันการทำซ้ำ',
+                                html: `จะตั้งสถานะ "<b>${statusLabel}</b>" ช่วงเวลา <b>${timePreview}</b><br>ทุกวัน ตั้งแต่ ${PAGE_DATE} ถึง <b>${result.value}</b> ใช่หรือไม่?`,
+                                showCancelButton: true,
+                                confirmButtonText: 'ใช่, ยืนยัน',
+                                cancelButtonText: 'ยกเลิก',
+                                confirmButtonColor: '#5271ff',
+                            });
+                            if (!confirmRepeat.isConfirmed) return;
+                        }
+
+                        document.getElementById('slotForm').requestSubmit();
+                    });
+                });
 
                 // ----- SweetAlert2 Toast (มุมขวาบน, ปิดเองอัตโนมัติ) -----
                 // const Toast = Swal.mixin({
@@ -607,11 +788,7 @@
                     const dateForm = document.getElementById('dateForm');
                     if (dateInput && dateForm) {
                         dateInput.addEventListener('change', function () {
-                            document.getElementById('statusBox')?.classList.add('hidden');
-                            if (selEl) {
-                                selEl.classList.remove('selected');
-                                selEl = null;
-                            }
+                            clearAdminSelection();
                             dateForm.submit();
                         });
                     }
@@ -678,7 +855,7 @@
                             subtitle.innerText = 'กรอกชื่อและสถานะสนาม';
                         }
                         if (submit) {
-                            submit.innerText = 'บันทึก';
+                            submit.innerText = 'เพิ่มสนาม';
                         }
                         // reset ค่าฟอร์มกลับเป็นค่าว่างเสมอตอนเปิดโหมด "เพิ่มสนาม"
                         if (nameInput) {
@@ -827,35 +1004,6 @@
                     }
                 });
 
-                function selectAdminTime(start, end, status, el) {
-                    // ห้ามแก้สถานะทับช่วงที่มีลูกค้าจองอยู่แล้วโดยเด็ดขาด (ล็อกไว้ทั้ง client และ server)
-                    // ต้องไปจัดการผ่านหน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) เท่านั้น
-                    if (status.includes('book')) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'แก้ไขสถานะไม่ได้',
-                            text: 'ช่วงเวลานี้มีลูกค้าจองอยู่แล้ว ไม่สามารถแก้ไขสถานะทับได้ กรุณาไปจัดการที่หน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) ก่อน',
-                            confirmButtonText: 'เข้าใจแล้ว',
-                            confirmButtonColor: '#5271ff',
-                        });
-                        return;
-                    }
-
-                    if (selEl) {
-                        selEl.classList.remove('selected');
-                    }
-
-                    el.classList.add('selected');
-                    selEl = el;
-
-                    document.getElementById('st_val').value = start;
-                    document.getElementById('en_val').value = end;
-                    document.getElementById('s_label').innerText = start.substring(0, 5) + ' - ' + end
-                        .substring(0, 5);
-
-                    document.getElementById('statusBox').classList.remove('hidden');
-                }
-
                 setInterval(() => {
                     let d = new Date();
                     let clock = document.getElementById('currentClock');
@@ -920,6 +1068,26 @@
                                     text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
                                 });
                             }
+                        }
+                    });
+                }
+
+                function confirmMergeSection() {
+                    const courtName = @js($selectedCourt->name ?? '');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ยกเลิกการแบ่งครึ่งสนาม?',
+                        html: `ยกเลิกการแบ่งครึ่งสนาม <b>${courtName}</b> ใช่หรือไม่?<br>
+                               <span class="text-sm text-gray-500">(ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)</span>`,
+                        showCancelButton: true,
+                        confirmButtonText: 'ใช่',
+                        cancelButtonText: 'ไม่ใช่',
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        reverseButtons: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('mergeSectionForm').submit();
                         }
                     });
                 }

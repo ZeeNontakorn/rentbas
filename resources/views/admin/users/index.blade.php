@@ -19,7 +19,7 @@
                        placeholder="ระบุชื่อผู้ใช้ที่ต้องการค้นหา..."
                        class="w-full md:w-72 border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition">
                 <button type="submit"
-                        class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0">
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center gap-2 flex-shrink-0 shadow-sm cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
@@ -74,6 +74,7 @@
                             <th class="px-6 py-3 font-medium text-center">ลำดับ</th>
                             <th class="px-6 py-3 font-medium text-center">ชื่อผู้ใช้</th>
                             <th class="px-6 py-3 font-medium text-center">อีเมล</th>
+                            <th class="px-6 py-3 font-medium text-center">เบอร์โทรศัพท์</th>
                             <th class="px-6 py-3 font-medium text-center">Role</th>
                             <th class="px-6 py-3 font-medium text-center">สถานะยืนยัน (OTP)</th>
                             <th class="px-6 py-3 font-medium text-center">ประเภทสมาชิก</th>
@@ -86,24 +87,32 @@
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 text-gray-400 text-xs font-mono">#{{ $users->firstItem() + $loop->index }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-700">
-                                    <span class="copy-text inline-block max-w-[140px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                    <span class="copy-text inline-block max-w-[70px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
                                           title="{{ $u->name }}" data-copy="{{ $u->name }}" onclick="copyToClipboard(this, event)">{{ $u->name }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">
-                                    <span class="copy-text inline-block max-w-[180px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                    <span class="copy-text inline-block max-w-[100px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
                                           title="{{ $u->email }}" data-copy="{{ $u->email }}" onclick="copyToClipboard(this, event)">{{ $u->email }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500 text-center">
+                                    @if($u->phone)
+                                        <span class="copy-text inline-block max-w-[100px] truncate align-bottom cursor-pointer hover:text-orange-500 transition"
+                                            title="{{ $u->phone }}" data-copy="{{ $u->phone }}" onclick="copyToClipboard(this, event)">{{ $u->phone }}</span>
+                                    @else
+                                        <span class="text-gray-300 text-xs">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($u->role === 'superadmin')
                                         @if($isSuperadmin && $u->id !== auth()->id())
                                             <button type="button"
                                                     onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
+                                                    class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300 cursor-pointer hover:bg-rose-200 hover:border-rose-400 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 Super Admin
                                             </button>
                                         @else
-                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
+                                            <span class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-rose-100 text-rose-700 border border-rose-300">
                                                 Super Admin
                                             </span>
                                         @endif
@@ -119,12 +128,12 @@
                                         @if($u->id !== auth()->id())
                                             <button type="button"
                                                     onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
-                                                    class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
+                                                    class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                     title="แก้ไข Role">
                                                 {{ ucfirst($u->role) }}
                                             </button>
                                         @else
-                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
+                                            <span class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }}">
                                                 {{ ucfirst($u->role) }}
                                             </span>
                                         @endif
@@ -146,7 +155,7 @@
                                 <td class="px-6 py-4">
                                     @if(in_array($u->role, ['admin', 'superadmin'], true))
                                         {{-- แอดมิน: ป้ายพื้นหลังสีเทา มีกรอบ เหมือนป้ายประเภทสมาชิกอื่นๆ --}}
-                                        <span class="inline-flex items-center justify-center w-[107px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
+                                        <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-bold truncate bg-gray-100 text-gray-500 border border-gray-300">แอดมิน</span>
                                     @else
                                         {{-- ประเภทสมาชิก: ป้ายทั้งก้อนคลิกได้เพื่อเปิดโมดัลแก้ไข (สไตล์เดียวกับ Role) --}}
                                         @php
@@ -156,7 +165,7 @@
                                             <button type="button"
                                                 class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
                                                 data-user-id="{{ $u->id }}"
-                                                data-name="{{ $u->name }}"
+                                                data-name="{{ $u->us_name }}"
                                                 data-value="{{ $u->membership_type }}"
                                                 data-url="{{ route('admin.users.updateMembershipType', $u) }}"
                                                 data-role="{{ $u->role }}"
@@ -184,7 +193,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="button"
-                                                    class="user-delete-button inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600">
+                                                    class="user-delete-button inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 cursor-pointer">
                                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -267,11 +276,11 @@
 
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="closeRoleModal()"
-                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer transition">
                     ยกเลิก
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition">
+                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium cursor-pointer transition">
                     บันทึก
                 </button>
             </div>
@@ -326,11 +335,11 @@
 
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="closeMembershipModal()"
-                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">
+                        class="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 cursor-pointer transition">
                     ยกเลิก
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition">
+                        class="px-4 py-2 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium cursor-pointer transition">
                     บันทึก
                 </button>
             </div>
