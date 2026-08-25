@@ -153,6 +153,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/view-date', [DashboardController::class, 'viewDateData'])->name('dashboard.view-date');
     Route::get('/dashboard/live-data', [DashboardController::class, 'liveData'])->name('dashboard.live-data');
+    Route::get('/dashboard/stats-data', [DashboardController::class, 'statsData'])->name('dashboard.stats-data');
+
     // จัดการสนาม
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
     Route::post('/courts', [AdminCourtController::class, 'store'])->name('court.create');
