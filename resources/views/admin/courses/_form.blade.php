@@ -137,7 +137,7 @@
     </section>
     <div class="flex justify-end gap-4 border-t border-slate-200 pt-4"><a href="{{ route('admin.courses') }}"
             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm text-slate-700 hover:bg-slate-50">ยกเลิก</a><button
-            class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 cursor-pointer">{{ $isEdit ? 'บันทึกการแก้ไข' : 'บันทึกคอร์ส' }}</button>
+            class="rounded-lg {{ $isEdit ? 'bg-blue-500 hover:bg-blue-600' : 'bg-violet-500 hover:bg-violet-600' }} px-6 py-2.5 text-sm font-semibold text-white shadow-sm cursor-pointer">{{ $isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มคอร์สเรียน' }}</button>
     </div>
 
     <template id="scheduleTemplate">

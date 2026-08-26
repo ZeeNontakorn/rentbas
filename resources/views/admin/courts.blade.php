@@ -149,7 +149,7 @@
                     <div class="flex items-center gap-2 mb-2">
                         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการสนาม</h1>
                     </div>
-                    <p class="text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
+                    <p class="font-sarabun text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
                 </div>
                 <button type="button" onclick="openCourtModal()"
                     class="font-semibold text-sm border border-orange-500 px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600 flex items-center gap-2 shadow-sm cursor-pointer transition">
@@ -167,7 +167,7 @@
 
                     {{-- BOX 1: เลือกสนาม --}}
                     <div
-                        class="relative z-3 border border-gray-200 bg-white rounded-lg p-5 flex items-center justify-between">
+                        class="relative z-3 border border-gray-200 bg-white rounded-lg p-5 flex items-center justify-between shadow-sm">
                         <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
 
                         <div class="relative w-[120px]">
@@ -259,8 +259,8 @@
 
                     {{-- BOX 4: จัดการส่วนของสนาม (ครึ่ง A/B) --}}
                     <div class="border border-gray-200 bg-white rounded-lg p-4 shadow-sm">
-                        <span class="font-bold text-[15px] sm:text-[16px] text-gray-900 block mb-1">4. จัดการส่วนของสนาม (ครึ่งสนาม)</span>
-                        <p class="text-sm text-gray-500 mb-5">แบ่งสนามนี้เป็นครึ่ง A/B เพื่อให้ลูกค้าจองครึ่งสนามได้ ระบบจะกันไม่ให้จองซ้อนกับเต็มสนามให้อัตโนมัติ</p>
+                        <span class="font-bold text-[15px] sm:text-[16px] text-gray-900 block mb-1">3. จัดการส่วนของสนาม (ครึ่งสนาม)</span>
+                        <p class="font-sarabun text-sm text-gray-500 mb-5">แบ่งสนามนี้เป็นครึ่ง A/B เพื่อให้ลูกค้าจองครึ่งสนามได้ ระบบจะกันไม่ให้จองซ้อนกับเต็มสนามให้อัตโนมัติ</p>
 
                         @if (!$selectedCourt)
                             <div class="text-center py-6 text-gray-400 text-sm">กรุณาเลือกสนาม</div>
@@ -388,9 +388,9 @@
                 <div class="flex-1 flex flex-col gap-6">
 
                     {{-- BOX 3: เลือกเวลา --}}
-                    <div class="border border-gray-300 bg-white rounded-lg p-6 min-h-[400px]">
+                    <div class="border border-gray-200 bg-white rounded-lg p-6 min-h-[400px] shadow-sm">
                         <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
-                            <span class="font-bold text-[16px] text-gray-900">3. เลือกเวลา - {{ $cDate->day }}
+                            <span class="font-bold text-[16px] text-gray-900">4. เลือกเวลา - {{ $cDate->day }}
                                 {{ $thMonthsFull[$cDate->month] }} {{ $cDate->year }}</span>
                             <span class="font-bold text-[14px] text-gray-900">เวลาปัจจุบัน <span
                                     id="currentClock">{{ now()->format('H:i') }}</span> น.</span>
@@ -399,7 +399,7 @@
                         @if (!$selectedCourt)
                             <div class="text-center py-20 text-gray-400 font-medium">กรุณาเลือกสนาม</div>
                         @else
-                            <div class="text-xs text-gray-400 mb-3">* คลิกเลือกได้หลายช่วงเวลา แล้วกดยืนยันสถานะครั้งเดียวด้านล่าง</div>
+                            <div class="font-sarabun text-xs text-gray-400 mb-3">* คลิกเลือกได้หลายช่วงเวลา แล้วกดยืนยันสถานะครั้งเดียวด้านล่าง</div>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6">
                                 @foreach ($slots as $slot)
                                     @php
@@ -538,7 +538,7 @@
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <div>
                         <h2 id="courtModalTitle" class="text-2xl font-bold text-gray-900">เพิ่มสนาม</h2>
-                        <p id="courtModalSubtitle" class="text-sm text-gray-500">กรอกชื่อและสถานะสนาม</p>
+                        <p id="courtModalSubtitle" class="font-sarabun text-sm text-gray-500">กรอกชื่อและสถานะสนาม</p>
                     </div>
                 </div>
 
@@ -575,7 +575,7 @@
                         <button type="button" onclick="closeCourtModal()"
                             class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition">ยกเลิก</button>
                         <button type="submit"
-                            class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 cursor-pointer transition"
+                            class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 cursor-pointer transition"
                             id="courtModalSubmit">บันทึก</button>
                     </div>
                 </form>

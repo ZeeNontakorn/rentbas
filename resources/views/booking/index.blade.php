@@ -101,7 +101,7 @@
         </div>
 
         <div class="flex justify-end">
-            <button type="submit" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-3 px-10 rounded-lg shadow transition" style="font-family:'Kanit',sans-serif;">
+            <button type="submit" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-3 px-10 rounded-lg shadow-sm cursor-pointer transition" style="font-family:'Kanit',sans-serif;">
                 ถัดไป — ดูสนามที่ว่าง
             </button>
         </div>

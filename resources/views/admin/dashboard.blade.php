@@ -9,8 +9,8 @@
         <!-- Header -->
         <div class="mb-6 flex flex-wrap items-end justify-between gap-2">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Dashboard</h1>
-                <p class="text-sm text-gray-500">ภาพรวมสุขภาพธุรกิจสนามบาส · {{ now()->translatedFormat('l d F Y') }}</p>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">แดชบอร์ดสรุปผล</h1>
+                <p class="font-sarabun text-sm text-gray-500">ภาพรวมสุขภาพธุรกิจสนามบาส · {{ now()->translatedFormat('l d F Y') }}</p>
             </div>
             <span class="text-xs text-gray-400 flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -26,7 +26,7 @@
                 <div class="flex items-start justify-between gap-2 mb-4">
                     <div>
                         <h3 class="font-bold text-gray-800">ลูกค้าที่ใช้บริการมากที่สุด</h3>
-                        <p class="text-xs text-gray-400">จากจำนวนชั่วโมงที่จอง</p>
+                        <p class="font-sarabun text-xs text-gray-400 mt-1">จากจำนวนชั่วโมงที่จอง</p>
                     </div>
                     <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -60,7 +60,7 @@
                 <div class="flex items-start justify-between gap-2 mb-4">
                     <div>
                         <h3 class="font-bold text-gray-800">กิจกรรมล่าสุด</h3>
-                        <p class="text-xs text-gray-400">ติดตามกิจกรรมที่เกิดขึ้นล่าสุด</p>
+                        <p class="font-sarabun text-xs text-gray-400 mt-1">ติดตามกิจกรรมที่เกิดขึ้นล่าสุด</p>
                     </div>
                     <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -70,7 +70,7 @@
                 @php
                     $actDot = ['new' => '#3b82f6', 'cancel' => '#ef4444', 'confirm' => '#10b981', 'user' => '#8b5cf6'];
                 @endphp
-                <div id="recentActivitiesList" class="space-y-3 max-h-[210px] overflow-y-auto pr-1">
+                <div id="recentActivitiesList" class="space-y-3 max-h-[210px] overflow-y-auto pr-1 font-sarabun">
                     @forelse($recentActivities as $a)
                         <div class="flex items-start gap-3">
                             <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background: {{ $actDot[$a['type']] ?? '#94a3b8' }};"></span>
@@ -91,7 +91,7 @@
             <div class="flex items-start justify-between mb-4 flex-wrap gap-2">
                 <div>
                     <h3 class="font-bold text-gray-800">แนวโน้มการจอง</h3>
-                    <p class="text-xs text-gray-400" id="trendSubtitle"></p>
+                    <p class="font-sarabun text-xs text-gray-400 mt-1" id="trendSubtitle"></p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
@@ -118,7 +118,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <div class="mb-2">
                     <h3 class="font-bold text-gray-800">วิเคราะจำนวนจากทั้งหมด</h3>
-                    <p class="text-xs text-gray-400">รอดำเนินการ, ยกเลิก, ถูกปฏิเสธ, อนุมัติแล้ว · <span id="cancelDateLabel">{{ $periodLabel }}</span></p>
+                    <p class="font-sarabun text-xs text-gray-400 mt-1">รอดำเนินการ, ยกเลิก, ถูกปฏิเสธ, อนุมัติแล้ว · <span id="cancelDateLabel">{{ $periodLabel }}</span></p>
                 </div>
                 <p id="cancelChartEmpty" class="text-sm text-gray-400 text-center py-10 {{ $cancelTotal > 0 ? 'hidden' : '' }}">ไม่มีข้อมูลการจองในช่วงที่เลือก</p>
                 <div id="cancelChart" class="transition-opacity {{ $cancelTotal > 0 ? '' : 'hidden' }}"></div>
@@ -128,7 +128,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <div class="mb-4">
                     <h3 class="font-bold text-gray-800">ชั่วโมงจองสูงสุด</h3>
-                    <p class="text-xs text-gray-400">ตามช่วงเวลาชั่วโมงที่ถูกจองมากที่สุด · <span id="peakDateLabel">{{ $periodLabel }}</span></p>
+                    <p class="font-sarabun text-xs text-gray-400 mt-1">ตามช่วงเวลาชั่วโมงที่ถูกจองมากที่สุด · <span id="peakDateLabel">{{ $periodLabel }}</span></p>
                 </div>
                 <div id="peakChart" class="transition-opacity"></div>
             </div>
@@ -141,7 +141,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <div class="mb-2">
                     <h3 class="font-bold text-gray-800">การใช้สนาม</h3>
-                    <p class="text-xs text-gray-400">% ของชั่วโมงที่ถูกจองต่อชั่วโมงที่สนามว่าง · <span id="utilDateLabel">{{ $periodLabel }}</span></p>
+                    <p class="font-sarabun text-xs text-gray-400 mt-1">% ของชั่วโมงที่ถูกจองต่อชั่วโมงที่สนามว่าง · <span id="utilDateLabel">{{ $periodLabel }}</span></p>
                 </div>
                 @if(count($courtUtilization))
                     <div class="max-h-[360px] overflow-y-auto overflow-x-hidden pr-1">
@@ -158,7 +158,7 @@
                 <div class="flex flex-wrap items-start justify-between gap-2 mb-4">
                     <div>
                         <h3 class="font-bold text-gray-800">ช่วงการจอง</h3>
-                        <p class="text-xs text-gray-400">
+                        <p class="font-sarabun text-xs text-gray-400 mt-1">
                             ระยะเวลาที่ถูกจองแบบทามไลน์ · <span id="occDateLabel">{{ $periodLabel }}</span>
                             ({{ sprintf('%02d:00', $occupancyHours[0] ?? 8) }}–22:00)
                         </p>
@@ -190,13 +190,13 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <h3 class="font-bold text-gray-800">ผู้สมัครสมาชิก</h3>
-                <p class="text-xs text-gray-400 mb-2">แนวโน้มผู้สมัครสมาชิกใหม่ — <span id="memberPeriodLabel">{{ $periodLabel }}</span></p>
+                <p class="font-sarabun text-xs text-gray-400 mb-2 mt-1">แนวโน้มผู้สมัครสมาชิกใหม่ — <span id="memberPeriodLabel">{{ $periodLabel }}</span></p>
                 <div id="memberChartLoading" class="hidden text-xs text-gray-400 py-2">กำลังโหลด...</div>
                 {!! $memberChart->container() !!}
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <h3 class="font-bold text-gray-800">ผู้เข้าชมเว็บไซต์</h3>
-                <p class="text-xs text-gray-400 mb-2">แนวโน้มผู้เข้าชมเว็บไซต์ — <span id="visitPeriodLabel">{{ $periodLabel }}</span></p>
+                <p class="font-sarabun text-xs text-gray-400 mb-2 mt-1">แนวโน้มผู้เข้าชมเว็บไซต์ — <span id="visitPeriodLabel">{{ $periodLabel }}</span></p>
                 <div id="visitChartLoading" class="hidden text-xs text-gray-400 py-2">กำลังโหลด...</div>
                 {!! $visitChart->container() !!}
             </div>
@@ -209,9 +209,9 @@
         <span class="text-xs font-semibold text-gray-500 mr-1">ระยะเวลา</span>
 
         <div id="viewTypeToggle" class="inline-flex bg-slate-100 rounded-lg p-1 text-sm">
-            <button type="button" data-type="day" class="view-type-btn px-3 py-1.5 rounded-md font-semibold transition">Day</button>
-            <button type="button" data-type="month" class="view-type-btn px-3 py-1.5 rounded-md font-semibold transition">Month</button>
-            <button type="button" data-type="year" class="view-type-btn px-3 py-1.5 rounded-md font-semibold transition">Year</button>
+            <button type="button" data-type="day" class="view-type-btn px-3 py-1.5 rounded-md font-semibold cursor-pointer transition">Day</button>
+            <button type="button" data-type="month" class="view-type-btn px-3 py-1.5 rounded-md font-semibold cursor-pointer transition">Month</button>
+            <button type="button" data-type="year" class="view-type-btn px-3 py-1.5 rounded-md font-semibold cursor-pointer transition">Year</button>
         </div>
 
         <span class="text-xs text-gray-400">กำลังดู: <span id="globalPeriodLabel" class="font-semibold text-gray-600">{{ $periodLabel }}</span></span>
@@ -223,7 +223,7 @@
     </div>
     <!-- Back to top -->
         <button type="button" id="backToTopBtn" aria-label="Back to top"
-            class="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center opacity-0 pointer-events-none translate-y-2 transition-all duration-300 hover:bg-orange-600 shrink-0">
+            class="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center opacity-0 pointer-events-none translate-y-2 transition-all duration-300 hover:bg-orange-600 shrink-0 cursor-pointer">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
         </svg>

@@ -10,7 +10,7 @@
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการผู้ใช้งาน</h1>
-                <p class="text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูล และจัดการผู้ใช้ทั้งหมดในระบบ</p>
+                <p class="font-sarabun text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูล และจัดการผู้ใช้ทั้งหมดในระบบ</p>
             </div>
 
             {{-- ฟอร์มค้นหา --}}
@@ -508,8 +508,8 @@
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'ยืนยันลบบัญชี',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ยืนยันการลบ',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true,
             }).then(function (result) {
