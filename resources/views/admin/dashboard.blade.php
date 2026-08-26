@@ -12,10 +12,6 @@
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">แดชบอร์ดสรุปผล</h1>
                 <p class="font-sarabun text-sm text-gray-500">ภาพรวมสุขภาพธุรกิจสนามบาส · {{ now()->translatedFormat('l d F Y') }}</p>
             </div>
-            <span class="text-xs text-gray-400 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                อัปเดตล่าสุด {{ now()->format('H:i') }}
-            </span>
         </div>
 
         <!-- ============ TOP CUSTOMERS + RECENT ACTIVITIES ============ -->
@@ -94,17 +90,21 @@
                     <p class="font-sarabun text-xs text-gray-400 mt-1" id="trendSubtitle"></p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
-                        Pending: <span id="trendTotalChip">{{ number_format($trendTotal) }}</span>
-                    </span>
-                    <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
-                        Cancelled: <span id="trendCancelledChip">{{ number_format($trendCancelledTotal) }}</span>
-                    </span>
                     <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                         Approved: <span id="trendApprovedChip">{{ number_format($trendApprovedTotal) }}</span>
                     </span>
-                    <span class="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
+                    <span class="text-xs font-semibold text-rose-600 bg-rose-100 px-2.5 py-1 rounded-full">
                         Rejected: <span id="trendRejectedChip">{{ number_format($trendRejectedTotal) }}</span>
+                    </span>
+                    <span class="text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full">
+                        Cancelled: <span id="trendCancelledChip">{{ number_format($trendCancelledTotal) }}</span>
+                    </span>
+                    <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
+                        Pending: <span id="trendTotalChip">{{ number_format($trendTotal) }}</span>
+                    </span>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="trendUpdatedAt">{{ now()->format('H:i:s') }}</span>
                     </span>
                 </div>
             </div>
@@ -116,9 +116,15 @@
 
             <!-- Cancellation Analysis -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <div class="mb-2">
-                    <h3 class="font-bold text-gray-800">วิเคราะจำนวนจากทั้งหมด</h3>
-                    <p class="font-sarabun text-xs text-gray-400 mt-1">รอดำเนินการ, ยกเลิก, ถูกปฏิเสธ, อนุมัติแล้ว · <span id="cancelDateLabel">{{ $periodLabel }}</span></p>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                        <h3 class="font-bold text-gray-800">วิเคราะจำนวนจากทั้งหมด</h3>
+                        <p class="font-sarabun text-xs text-gray-400">รอดำเนินการ, ยกเลิก, ถูกปฏิเสธ, อนุมัติแล้ว · <span id="cancelDateLabel">{{ $periodLabel }}</span></p>
+                    </div>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="cancelUpdatedAt">{{ now()->format('H:i:s') }}</span>
+                    </span>
                 </div>
                 <p id="cancelChartEmpty" class="text-sm text-gray-400 text-center py-10 {{ $cancelTotal > 0 ? 'hidden' : '' }}">ไม่มีข้อมูลการจองในช่วงที่เลือก</p>
                 <div id="cancelChart" class="transition-opacity {{ $cancelTotal > 0 ? '' : 'hidden' }}"></div>
@@ -126,9 +132,15 @@
 
             <!-- Peak Booking Hours -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <div class="mb-4">
-                    <h3 class="font-bold text-gray-800">ชั่วโมงจองสูงสุด</h3>
-                    <p class="font-sarabun text-xs text-gray-400 mt-1">ตามช่วงเวลาชั่วโมงที่ถูกจองมากที่สุด · <span id="peakDateLabel">{{ $periodLabel }}</span></p>
+                <div class="flex items-start justify-between gap-2 mb-4">
+                    <div>
+                        <h3 class="font-bold text-gray-800">ชั่วโมงจองสูงสุด</h3>
+                        <p class="font-sarabun text-xs text-gray-400">ตามช่วงเวลาชั่วโมงที่ถูกจองมากที่สุด · <span id="peakDateLabel">{{ $periodLabel }}</span></p>
+                    </div>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="peakUpdatedAt">{{ now()->format('H:i:s') }}</span>
+                    </span>
                 </div>
                 <div id="peakChart" class="transition-opacity"></div>
             </div>
@@ -139,9 +151,15 @@
 
             <!-- Court Utilization -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <div class="mb-2">
-                    <h3 class="font-bold text-gray-800">การใช้สนาม</h3>
-                    <p class="font-sarabun text-xs text-gray-400 mt-1">% ของชั่วโมงที่ถูกจองต่อชั่วโมงที่สนามว่าง · <span id="utilDateLabel">{{ $periodLabel }}</span></p>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                        <h3 class="font-bold text-gray-800">การใช้สนาม</h3>
+                        <p class="font-sarabun text-xs text-gray-400">% ของชั่วโมงที่ถูกจองต่อชั่วโมงที่สนามว่าง · <span id="utilDateLabel">{{ $periodLabel }}</span></p>
+                    </div>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="utilUpdatedAt">{{ now()->format('H:i:s') }}</span>
+                    </span>
                 </div>
                 @if(count($courtUtilization))
                     <div class="max-h-[360px] overflow-y-auto overflow-x-hidden pr-1">
@@ -163,6 +181,10 @@
                             ({{ sprintf('%02d:00', $occupancyHours[0] ?? 8) }}–22:00)
                         </p>
                     </div>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="occUpdatedAt">{{ now()->format('H:i:s') }}</span>
+                    </span>
                 </div>
                 @if(count($occupancy['rows']))
                     <div id="occupancyChart" class="overflow-x-auto transition-opacity"></div>
@@ -189,14 +211,26 @@
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 class="font-bold text-gray-800">ผู้สมัครสมาชิก</h3>
-                <p class="font-sarabun text-xs text-gray-400 mb-2 mt-1">แนวโน้มผู้สมัครสมาชิกใหม่ — <span id="memberPeriodLabel">{{ $periodLabel }}</span></p>
+                <div class="flex items-start justify-between gap-2">
+                    <h3 class="font-bold text-gray-800">ผู้สมัครสมาชิก</h3>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="memberUpdatedAt">{{ now()->format('H:i:s') }}</span>
+                    </span>
+                </div>
+                <p class="font-sarabun text-xs text-gray-400 mb-2">แนวโน้มผู้สมัครสมาชิกใหม่ — <span id="memberPeriodLabel">{{ $periodLabel }}</span></p>
                 <div id="memberChartLoading" class="hidden text-xs text-gray-400 py-2">กำลังโหลด...</div>
                 {!! $memberChart->container() !!}
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 class="font-bold text-gray-800">ผู้เข้าชมเว็บไซต์</h3>
-                <p class="font-sarabun text-xs text-gray-400 mb-2 mt-1">แนวโน้มผู้เข้าชมเว็บไซต์ — <span id="visitPeriodLabel">{{ $periodLabel }}</span></p>
+                <div class="flex items-start justify-between gap-2">
+                    <h3 class="font-bold text-gray-800">ผู้เข้าชมเว็บไซต์</h3>
+                    <span class="text-[11px] text-gray-400 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Updated <span id="visitUpdatedAt">{{ now()->format('H:i:s') }}</span>
+                    </span>
+                </div>
+                <p class="font-sarabun text-xs text-gray-400 mb-2">แนวโน้มผู้เข้าชมเว็บไซต์ — <span id="visitPeriodLabel">{{ $periodLabel }}</span></p>
                 <div id="visitChartLoading" class="hidden text-xs text-gray-400 py-2">กำลังโหลด...</div>
                 {!! $visitChart->container() !!}
             </div>
@@ -254,7 +288,14 @@
          in place). Changing the selector, its sub-picker, the reset
          button, or clicking a point on the trend chart fetches fresh data
          from the same AJAX endpoint and updates all five charts with
-         updateSeries()/updateOptions() — no page reload. --}}
+         updateSeries()/updateOptions() — no page reload.
+
+         This block also polls the SAME AJAX endpoint every 10s (same
+         cadence as Top Customers / Recent Activities below) so every
+         chart on the dashboard stays live without user interaction. The
+         background poll runs "silent": no opacity fade, no URL rewrite —
+         it just refreshes the numbers behind whatever period is currently
+         selected. --}}
     <script>
         (function () {
             var AJAX_URL = @json(route('admin.dashboard.view-date'));
@@ -276,8 +317,8 @@
             // (grey) are drawn FIRST, Cancelled (red) and Booked (orange)
             // are drawn LAST — in ApexCharts, later series paint on top, so
             // this puts Orange and Red visually above Green and Grey.
-            var TREND_COLORS = ['#10b981', '#94a3b8', '#ef4444', '#f97316'];
-            var TREND_NAMES = ['อนุมัติแล้ว', 'ถูกปฏิเสธ', 'ยกเลิก', 'รอดำเนินการ'];
+            var TREND_COLORS = ['#10b981', '#ef4444', '#94a3b8', '#f97316'];
+            var TREND_NAMES = ['อนุมัติแล้ว', 'ถูกปฏิเสธ', 'ถูกยกเลิก', 'รอดำเนินการ'];
             var TREND_WIDTHS = [2, 2, 2, 3];
             var TREND_DASH = [0, 4, 4, 0];
             var TREND_MARKER_SIZE = [3, 3, 3, 4];
@@ -393,7 +434,7 @@
                         return '<div style="padding:8px 12px;">' +
                             '<div style="font-weight:600;color:#111827;font-size:12px;margin-bottom:4px;">' + opts.w.globals.labels[idx] + '</div>' +
                             rowsHtml +
-                            '<div style="margin-top:6px;font-size:11px;color:#f97316;font-weight:600;">Click to Select</div>' +
+                            '<div style="margin-top:6px;font-size:11px;color:#f97316;font-weight:600;">คลิกเพื่อเลือก</div>' +
                         '</div>';
                     }
                 },
@@ -420,7 +461,7 @@
             // ---- Cancellation Analysis (donut) ----
             var cancelChart = new ApexCharts(document.querySelector('#cancelChart'), {
                 chart: { type: 'donut', height: 320, fontFamily: 'Kanit, sans-serif' },
-                labels: ['Pending', 'Cancelled', 'Approved', 'Rejected'],
+                labels: ['รอดำเนินการ', 'ถูกยกเลิก', 'อนุมัติแล้ว', 'ถูกปฏิเสธ'],
                 colors: ['#f97316', '#94a3b8', '#10b981', '#ef4444'],
                 series: [initialCancel.Booked, initialCancel.Cancelled, initialCancel.Approved, initialCancel.Rejected],
                 legend: { position: 'bottom' }
@@ -443,8 +484,8 @@
             grid: { show: true, borderColor: '#f1f5f9' },
             legend: { show: true, position: 'top', horizontalAlign: 'right' },
             series: [
-                { name: 'Pending', data: initialPeak.total },
-                { name: 'ยกเลิก', data: initialPeak.cancelled },
+                { name: 'รอดำเนินการ', data: initialPeak.total },
+                { name: 'ถูกยกเลิก', data: initialPeak.cancelled },
                 { name: 'อนุมัติแล้ว', data: initialPeak.approved },
                 { name: 'ถูกปฏิเสธ', data: initialPeak.rejected }
             ],
@@ -459,16 +500,19 @@
                 var names = rows.map(function (r) { return r.name; });
                 var pcts = rows.map(function (r) { return r.pct; });
                 var height = Math.max(280, names.length * 60);
+                var formatUtilization = function (val) {
+                    return Number(val).toFixed(2) + '%';
+                };
 
                 if (!courtUtilChart) {
                     courtUtilChart = new ApexCharts(courtUtilEl, {
                         chart: { type: 'bar', height: height, fontFamily: 'Kanit, sans-serif', toolbar: { show: false } },
                         plotOptions: { bar: { horizontal: true, distributed: true, barHeight: '55%' } },
                         colors: ['#f97316'],
-                        dataLabels: { enabled: true, formatter: function (val) { return val + '%'; }, style: { colors: ['#374151'] }, offsetX: 4 },
+                        dataLabels: { enabled: true, formatter: formatUtilization, style: { colors: ['#374151'] }, offsetX: 4 },
                         grid: { show: true, borderColor: '#f1f5f9' },
                         legend: { show: false },
-                        tooltip: { y: { formatter: function (val) { return val + '% occupied'; } } },
+                        tooltip: { y: { formatter: function (val) { return formatUtilization(val) + ' occupied'; } } },
                         xaxis: { categories: names, max: 100, labels: { formatter: function (v) { return v + '%'; } } },
                         series: [{ name: '% Utilization', data: pcts }]
                     });
@@ -597,6 +641,25 @@
                 fadeTargets.forEach(function (el) { el.classList.toggle('opacity-40', loading); });
             }
 
+            // Stamps every chart's "Updated HH:MM:SS" label. Called after
+            // every successful fetchChartData response, same as Top
+            // Customers / Recent Activities do on their own poll.
+            var UPDATED_AT_IDS = [
+                'trendUpdatedAt', 'cancelUpdatedAt', 'peakUpdatedAt',
+                'utilUpdatedAt', 'occUpdatedAt', 'memberUpdatedAt', 'visitUpdatedAt',
+            ];
+            function stampUpdatedAt() {
+                var now = new Date();
+                var hh = String(now.getHours()).padStart(2, '0');
+                var mm = String(now.getMinutes()).padStart(2, '0');
+                var ss = String(now.getSeconds()).padStart(2, '0');
+                var stamp = hh + ':' + mm + ':' + ss;
+                UPDATED_AT_IDS.forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) el.textContent = stamp;
+                });
+            }
+
             function updateStatsCharts(data) {
                 var memberChart = window.dashboardMemberChart;
                 var visitChart = window.dashboardVisitChart;
@@ -614,10 +677,14 @@
                 document.getElementById('visitPeriodLabel').textContent = data.periodLabel;
             }
 
-            function fetchChartData(overrides) {
+            // `silent` = true for background auto-refresh: skips the
+            // opacity-fade loading state and skips rewriting the URL,
+            // since the selected period itself hasn't changed — only the
+            // numbers inside it may have.
+            function fetchChartData(overrides, silent) {
                 if (isFetching) return;
                 isFetching = true;
-                setLoading(true);
+                if (!silent) setLoading(true);
 
                 var next = Object.assign({}, state, overrides);
                 var params = new URLSearchParams({
@@ -667,8 +734,8 @@
                         }
 
                         peakChart.updateSeries([
-                            { name: 'Pending', data: data.peakHours.total },
-                            { name: 'ยกเลิก', data: data.peakHours.cancelled },
+                            { name: 'รอดำเนินการ', data: data.peakHours.total },
+                            { name: 'ถูกยกเลิก', data: data.peakHours.cancelled },
                             { name: 'อนุมัติแล้ว', data: data.peakHours.approved },
                             { name: 'ถูกปฏิเสธ', data: data.peakHours.rejected }
                         ]);
@@ -688,22 +755,41 @@
                             window.dashboardRenderTopCustomers(data.topCustomers || []);
                         }
                         updateStatsCharts(data);
+                        stampUpdatedAt();
 
-                        var url = new URL(window.location.href);
-                        url.searchParams.set('view_type', state.view_type);
-                        url.searchParams.set('view_date', state.view_date);
-                        url.searchParams.set('chart_month', state.chart_month);
-                        url.searchParams.set('chart_year', state.chart_year);
-                        window.history.replaceState({}, '', url);
+                        // Only rewrite the URL for user-driven changes.
+                        // Background polling refreshes numbers in place
+                        // without touching browser history.
+                        if (!silent) {
+                            var url = new URL(window.location.href);
+                            url.searchParams.set('view_type', state.view_type);
+                            url.searchParams.set('view_date', state.view_date);
+                            url.searchParams.set('chart_month', state.chart_month);
+                            url.searchParams.set('chart_year', state.chart_year);
+                            window.history.replaceState({}, '', url);
+                        }
                     })
                     .catch(function (err) {
                         console.error('Failed to load chart data', err);
                     })
                     .finally(function () {
                         isFetching = false;
-                        setLoading(false);
+                        if (!silent) setLoading(false);
                     });
             }
+
+            // ---- Background auto-refresh ----
+            // Keeps Booking Trend, Cancellation Analysis, Peak Booking
+            // Hours, Court Utilization, Occupancy Timeline, and the
+            // Member/Visit charts live on the same 10s cadence as Top
+            // Customers / Recent Activities, without any user interaction.
+            // A tick is skipped (not queued) if a user-initiated fetch is
+            // already in flight, so it never fights with an explicit click
+            // — it just picks back up on the next interval.
+            setInterval(function () {
+                if (isFetching) return;
+                fetchChartData({}, true);
+            }, 10000);
         })();
     </script>
 

@@ -368,7 +368,7 @@ class DashboardController extends Controller
         foreach ($courts as $court) {
             $hours = $approved->where('court_id', $court->id)
                 ->sum(fn($b) => $this->durationHours($b->start_time, $b->end_time));
-            $pct = $capacity > 0 ? (int) round(min($hours / $capacity * 100, 100)) : 0;
+            $pct = $capacity > 0 ? round(min($hours / $capacity * 100, 100), 2) : 0;
             $rows[] = ['name' => $court->name, 'pct' => $pct];
         }
 
