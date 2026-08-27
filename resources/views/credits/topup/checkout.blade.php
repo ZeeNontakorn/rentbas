@@ -105,7 +105,7 @@
             </label>
             <input type="file" name="slip" id="slipInput" accept="image/*" class="hidden" onchange="onSlipChange(this)">
         </div>
-        <button type="submit" id="submitBtn" class="w-full bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-3.5 rounded-lg shadow transition" style="font-family:'Kanit',sans-serif;">
+        <button type="submit" id="submitBtn" class="w-full bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-3.5 rounded-lg shadow transition" style="font-family:'Kanit',sans-serif; cursor:pointer;">
             ส่งคำขอเติมเครดิต
         </button>
     </form>
