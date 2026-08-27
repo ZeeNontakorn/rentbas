@@ -359,7 +359,7 @@
 <div id="userProfileModal" class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100">
         <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4">
-            <h3 class="text-lg font-bold text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
+            <h3 class="text-xl font-bold text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
         </div>
 
         <form action="{{ route('admin.users.profile.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-4 bg-white p-6">
@@ -482,7 +482,7 @@
 
             <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
                 <button type="button" onclick="closeUserProfileModal()" class="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200">ยกเลิก</button>
-                <button type="submit" class="cursor-pointer rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-orange-700">บันทึกข้อมูล</button>
+                <button type="submit" class="cursor-pointer rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700">บันทึกข้อมูล</button>
             </div>
         </form>
     </div>
@@ -619,8 +619,9 @@ function closeUserProfileModal() {
 
 const userProfileModal = document.getElementById('userProfileModal');
 if (userProfileModal) {
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !userProfileModal.classList.contains('hidden')) {
+    // ปิดด้วยการคลิกฉากหลังภายนอก
+    userProfileModal.addEventListener('click', function (event) {
+        if (event.target === this) {
             closeUserProfileModal();
         }
     });

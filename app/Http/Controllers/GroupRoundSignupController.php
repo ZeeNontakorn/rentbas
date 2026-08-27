@@ -55,54 +55,37 @@ class GroupRoundSignupController extends Controller
      * หน้าแสดงรายละเอียดรอบ + ฟอร์มกรอกชื่อผู้เล่น (จองแทนเพื่อนได้ สูงสุด 5 คนต่อรอบ) ก่อนชำระเครดิต
      */
     public function checkout(GroupRound $round, Request $request)
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
 
-    if (! $user) {
-        return redirect()
-            ->route('login')
-            ->with('error', 'กรุณาเข้าสู่ระบบก่อนลงชื่อจอง');
+        if (! $user) {
+            return redirect()
+                ->route('login')
+                ->with('error', 'กรุณาเข้าสู่ระบบก่อนลงชื่อจอง');
+        }
+
+        // เช็คว่ารอบนี้หมดเวลาสละสิทธิ์แล้วหรือยัง ถ้าใช่ให้คืนเครดิตสำรองที่เหลือก่อน (ทำแบบ lazy ไม่ต้องตั้ง cron)
+        $round->processExpiredReserves();
+
+        if ($round->status !== 'open' || $round->play_date->isBefore(today())) {
+            return redirect()->route('home')->withErrors(['round' => 'รอบนี้ปิดรับสมัครแล้ว']);
+        }
+
+        $bookedCount = $round->bookedSeatsFor($user->id);
+        $remaining = $round->remainingSeatsFor($user->id);
+
+        if ($remaining <= 0) {
+            return redirect()->route('group-rounds.my-bookings')->with(
+                'error',
+                'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)'
+            );
+        }
+
+        // ไม่บล็อกแม้ตัวจริงเต็มแล้ว — แค่เตือนไว้ล่วงหน้าว่าจะได้คิวสำรอง (เช็คจริงตอน submit อีกที)
+        $willBeReserve = $round->isFull();
+
+        return view('checkout.group-round', compact('round', 'user', 'willBeReserve', 'bookedCount', 'remaining'));
     }
-
-    // เช็คว่ารอบนี้หมดเวลาสละสิทธิ์แล้วหรือยัง ถ้าใช่ให้คืนเครดิตสำรองที่เหลือก่อน (ทำแบบ lazy ไม่ต้องตั้ง cron)
-    $round->processExpiredReserves();
-
-    if ($round->status !== 'open' || $round->play_date->isBefore(today())) {
-        return redirect()->route('home')->withErrors(['round' => 'รอบนี้ปิดรับสมัครแล้ว']);
-    }
-
-    // หมดเวลายกเลิกจองแล้วหรือยัง (ไม่มีเดดไลน์ = ยังไม่หมดเวลาเสมอ)
-    $deadlinePassed = ! $round->canSelfCancel();
-
-    // เต็มจำนวนตัวจริงแล้ว + หมดเวลาสละสิทธิ์แล้ว -> ปิดรับจองเพิ่มโดยสิ้นเชิง (ไม่รับสำรองเพิ่ม)
-    if ($deadlinePassed && $round->isFull()) {
-        return redirect()->route('home')->withErrors([
-            'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว ไม่สามารถจองเพิ่มได้',
-        ]);
-    }
-
-    $bookedCount = $round->bookedSeatsFor($user->id);
-    $remaining = $round->remainingSeatsFor($user->id);
-
-    if ($remaining <= 0) {
-        return redirect()->route('group-rounds.my-bookings')->with(
-            'error',
-            'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)'
-        );
-    }
-
-    // ถ้าหมดเวลาสละสิทธิ์แล้ว แต่ตัวจริงยังไม่เต็ม -> จองได้ แต่ต้องไม่ทะลุจนล้นเป็นสำรอง
-    // จำนวนที่จองได้จริงตอนนี้ = ค่าที่น้อยกว่าระหว่าง โควตาต่อคน (5 ที่) กับที่นั่งตัวจริงที่เหลือ
-    $maxBookable = $deadlinePassed
-        ? min($remaining, $round->remainingSlots())
-        : $remaining;
-
-    $willBeReserve = $round->isFull();
-
-    return view('checkout.group-round', compact(
-        'round', 'user', 'willBeReserve', 'bookedCount', 'remaining', 'deadlinePassed', 'maxBookable'
-    ));
-}
 
     /**
      * ยืนยันการชำระเครดิต แล้วลงชื่อเข้ารอบทีเดียวหลายที่นั่ง (ตัวเอง + จองแทนเพื่อนได้ ตามชื่อที่กรอก)
@@ -141,41 +124,18 @@ class GroupRoundSignupController extends Controller
             }
 
             if ($round->play_date->isBefore(today())) {
-    return back()->withErrors(['round' => 'รอบนี้ผ่านไปแล้ว']);
-}
+                return back()->withErrors(['round' => 'รอบนี้ผ่านไปแล้ว']);
+            }
 
-// หมดเวลายกเลิกจองแล้วหรือยัง (เช็คซ้ำในนี้ด้วย เพราะเป็นจุดตัดสินใจจริง ไม่พึ่งแค่หน้า checkout)
-$deadlinePassed = ! $round->canSelfCancel();
+            $remaining = $round->remainingSeatsFor($user->id);
 
-// เต็มจำนวนตัวจริง + หมดเวลาสละสิทธิ์แล้ว -> บล็อกทั้งหมด ไม่รับสำรองเพิ่มเด็ดขาด
-if ($deadlinePassed && $round->isFull()) {
-    return back()->withErrors([
-        'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว ไม่สามารถจองเพิ่มได้',
-    ]);
-}
-
-$remaining = $round->remainingSeatsFor($user->id);
-
-if (count($names) > $remaining) {
-    return back()->withErrors([
-        'names' => $remaining > 0
-            ? "จองได้อีกแค่ {$remaining} ที่ (สูงสุด ".GroupRound::MAX_SEATS_PER_USER." คนต่อผู้ใช้ต่อรอบ)"
-            : 'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)',
-    ])->withInput();
-}
-
-// หมดเวลาสละสิทธิ์แล้ว แต่ตัวจริงยังไม่เต็ม -> ห้ามจองทะลุจนล้นเป็นสำรอง
-if ($deadlinePassed) {
-    $mainSlotsRemaining = $round->remainingSlots();
-
-    if (count($names) > $mainSlotsRemaining) {
-        return back()->withErrors([
-            'names' => $mainSlotsRemaining > 0
-                ? "หมดเวลารับคิวสำรองแล้ว ตอนนี้จองได้อีกแค่ {$mainSlotsRemaining} ที่ (เป็นตัวจริงเท่านั้น ไม่รับคิวสำรองเพิ่ม)"
-                : 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว',
-        ])->withInput();
-    }
-}
+            if (count($names) > $remaining) {
+                return back()->withErrors([
+                    'names' => $remaining > 0
+                        ? "จองได้อีกแค่ {$remaining} ที่ (สูงสุด ".GroupRound::MAX_SEATS_PER_USER." คนต่อผู้ใช้ต่อรอบ)"
+                        : 'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)',
+                ])->withInput();
+            }
 
             $totalCredit = $round->credit_cost * count($names);
 

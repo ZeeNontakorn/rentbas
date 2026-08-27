@@ -440,8 +440,53 @@ document.addEventListener('DOMContentLoaded', function () {
         // ซ่อนปุ่มทันทีเมื่อเริ่มลากใหม่ (mousedown/touchstart ในพื้นที่ปฏิทิน)
         // กันปุ่มจากการเลือกครั้งก่อนค้างอยู่ตำแหน่งเดิมระหว่างลากคอลัมน์ใหม่
         // ไม่กระทบปุ่มเอง เพราะ confirmBtn อยู่นอก calendarEl (เป็น sibling ใน calendarWrap)
-        calendarEl.addEventListener('mousedown', hideConfirmButton);
-        calendarEl.addEventListener('touchstart', hideConfirmButton, { passive: true });
+        const DRAG_THRESHOLD_PX = 5;
+        let dragStartPoint = null;
+
+        function getPoint(event) {
+            if (event.touches && event.touches.length) {
+                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            }
+            return { x: event.clientX, y: event.clientY };
+        }
+
+        function handlePointerDown(event) {
+            // ไม่เริ่มตรวจจับถ้ากดโดนปุ่ม confirm เอง (ปล่อยให้ click ทำงานตามปกติ)
+            if (event.target === confirmBtn) return;
+
+            dragStartPoint = getPoint(event);
+            document.addEventListener('mousemove', handlePointerMove);
+            document.addEventListener('touchmove', handlePointerMove, { passive: true });
+            document.addEventListener('mouseup', handlePointerUp);
+            document.addEventListener('touchend', handlePointerUp);
+        }
+
+        function handlePointerMove(event) {
+            if (!dragStartPoint) return;
+            const current = getPoint(event);
+            const distance = Math.hypot(current.x - dragStartPoint.x, current.y - dragStartPoint.y);
+
+            if (distance > DRAG_THRESHOLD_PX) {
+                // เริ่มลากเลือกช่วงใหม่จริง ๆ แล้ว ค่อยซ่อนปุ่มเดิมทิ้ง
+                hideConfirmButton();
+                cleanupPointerTracking();
+            }
+        }
+
+        function handlePointerUp() {
+            cleanupPointerTracking();
+        }
+
+        function cleanupPointerTracking() {
+            dragStartPoint = null;
+            document.removeEventListener('mousemove', handlePointerMove);
+            document.removeEventListener('touchmove', handlePointerMove);
+            document.removeEventListener('mouseup', handlePointerUp);
+            document.removeEventListener('touchend', handlePointerUp);
+        }
+
+        calendarEl.addEventListener('mousedown', handlePointerDown);
+        calendarEl.addEventListener('touchstart', handlePointerDown, { passive: true });
 
         function positionConfirmButton(text) {
             requestAnimationFrame(() => {

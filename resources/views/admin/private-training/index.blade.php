@@ -33,7 +33,7 @@
 
             <div class="mb-6">
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเทรนเนอร์ส่วนตัว</h1>
-                <p class="text-sm text-gray-500 mt-1">ตรวจสอบและอนุมัติคำขอจองเทรนเนอร์ส่วนตัวของลูกค้า</p>
+                <p class="font-sarabun text-sm text-gray-500 mt-1">ตรวจสอบและอนุมัติคำขอจองเทรนเนอร์ส่วนตัวของลูกค้า</p>
             </div>
             <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                 <form method="POST" action="{{ route('admin.private-training.advance-booking-days.update') }}"

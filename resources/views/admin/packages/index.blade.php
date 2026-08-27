@@ -8,7 +8,7 @@
         <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการแพ็กเกจ</h1>
-                <p class="mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการแพ็กเกจทั้งหมดในระบบ</p>
+                <p class="font-sarabun mt-1 text-sm text-gray-500">ค้นหา ดูข้อมูล และจัดการแพ็กเกจทั้งหมดในระบบ</p>
             </div>
             <!-- Search และ ปุ่มเพิ่มแพ็กเกจ -->
             <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
@@ -20,7 +20,7 @@
                         ค้นหาแพ็กเกจ
                     </button>
                 </form>
-                <a href="{{ route('admin.packages.create') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                <a href="{{ route('admin.packages.create') }}" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
                     เพิ่มแพ็กเกจ
                 </a>
@@ -125,7 +125,7 @@
                                 </td>
                                 <td class="px-3 py-4 text-center sm:px-5 sm:py-6">
                                     <div class="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-gray-800 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-gray-600 sm:w-17 justify-center sm:px-4 sm:py-2.5">แก้ไข</a>
+                                        <a href="{{ route('admin.packages.edit', $package) }}" class="inline-flex rounded-lg bg-blue-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-blue-600 sm:w-17 justify-center sm:px-4 sm:py-2.5">แก้ไข</a>
                                         <form id="deleteForm-{{ $package->id }}" action="{{ route('admin.packages.delete', $package) }}" method="POST">
                                             @csrf @method('DELETE')
                                             <button type="button" onclick="confirmDeletePackage('{{ $package->id }}', '{{ addslashes($package->name) }}')" class="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-red-600 sm:px-4 sm:py-2.5 cursor-pointer">
@@ -243,7 +243,7 @@ function confirmDeletePackage(packageId, packageName) {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#6b7280',
         reverseButtons: true,
         confirmButtonText: 'ยืนยันการลบ',
         cancelButtonText: 'ยกเลิก'

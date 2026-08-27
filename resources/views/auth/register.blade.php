@@ -351,6 +351,13 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label">ชื่อจริง</label>
+                <input type="text" name="name" id="regFullName" value="{{ old('name') }}" placeholder="ชื่อ-นามสกุล"
+                    class="form-input">
+                <span class="field-error" id="error-fullname"></span>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label">อีเมล</label>
                 <input type="email" name="email" id="regEmail" value="{{ old('email') }}" placeholder="example@email.com"
                     class="form-input">
@@ -432,6 +439,7 @@
     // ผูก field key กับ input element
     const fields = {
         name: document.getElementById('regName'),
+        fullname: document.getElementById('regFullName'),
         email: document.getElementById('regEmail'),
         phone: document.getElementById('regPhone'),
         password: document.getElementById('regPassword'),
@@ -471,6 +479,7 @@
         let firstInvalid = null;
 
         const name = fields.name.value.trim();
+        const fullname = fields.fullname.value.trim();
         const email = fields.email.value.trim();
         const phone = fields.phone.value.trim();
         const password = fields.password.value;
@@ -486,6 +495,15 @@
         } else if (!/^[a-zA-Z0-9_]+$/.test(name)) {
             showError('name', 'ชื่อผู้ใช้ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข และ _ เท่านั้น');
             isValid = false; firstInvalid = firstInvalid || 'name';
+        }
+
+        // ชื่อจริง
+        if (fullname === '') {
+            showError('fullname', 'กรุณากรอกชื่อจริง');
+            isValid = false; firstInvalid = firstInvalid || 'fullname';
+        } else if (fullname.length > 255) {
+            showError('fullname', 'ชื่อจริงต้องมีความยาวไม่เกิน 255 ตัวอักษร');
+            isValid = false; firstInvalid = firstInvalid || 'fullname';
         }
 
         // อีเมล

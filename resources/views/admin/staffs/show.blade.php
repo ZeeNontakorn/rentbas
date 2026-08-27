@@ -233,7 +233,7 @@
 <div id="staffProfileModal" class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100">
         <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4">
-            <h3 class="text-lg font-bold text-gray-800">แก้ไขข้อมูลบุคลากร</h3>
+            <h3 class="text-xl font-bold text-gray-800">แก้ไขข้อมูลบุคลากร</h3>
             <button type="button" onclick="toggleModal('staffProfileModal', false)" class="text-gray-400 hover:text-gray-600 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -314,7 +314,7 @@
 
             <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 mt-4">
                 <button type="button" onclick="toggleModal('staffProfileModal', false)" class="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200">ยกเลิก</button>
-                <button type="submit" class="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600">บันทึกข้อมูล</button>
+                <button type="submit" class="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600">บันทึกการแก้ไข</button>
             </div>
         </form>
     </div>
@@ -509,6 +509,22 @@
             if (id === 'dragActionModal' && !show) clearSelection();
         }
     }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            ['staffProfileModal', 'dragActionModal'].forEach(id => {
+                const modal = document.getElementById(id);
+                if (modal && !modal.classList.contains('hidden')) toggleModal(id, false);
+            });
+        }
+    });
+
+    // ปิด Modal เมื่อคลิกฉากหลังภายนอก (Backdrop)
+    ['staffProfileModal', 'dragActionModal'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', function (e) {
+            if (e.target === this) toggleModal(id, false);
+        });
+    });
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {

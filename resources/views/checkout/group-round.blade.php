@@ -12,7 +12,7 @@
 <div class="min-h-screen bg-white px-4 py-10 text-gray-900"
     x-data="{
         names: [''],
-        max: {{ (int) $maxBookable }},
+        max: {{ (int) $remaining }},
         pricePerSeat: {{ $pricePerSeat }},
         balanceBaht: {{ $balance / 100 }},
         add() { if (this.names.length < this.max) this.names.push(''); },

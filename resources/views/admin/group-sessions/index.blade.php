@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', 'จัดการกลุ่มเล่นบาสค')
+@section('title', 'จัดการกลุ่มเล่นบาส')
+
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8" 
-x-data="{
+<div class="bg-slate-50 text-gray-900 min-h-screen py-8" x-data="{
     showSessionForm: false,
     showEditForm: false,
     showRoundForm: false,
@@ -10,16 +10,13 @@ x-data="{
     editSession: null,
     editStartH: '00', editStartM: '00', editEndH: '00', editEndM: '00',
     roundStartH: '00', roundStartM: '00', roundEndH: '00', roundEndM: '00'
-    sessionUpdateUrl(id) {
-        return '{{ url('/admin/group-sessions') }}/' + id;
-    }
 }">
 <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">กลุ่มเล่นบาส</h1>
-            <p class="text-sm text-gray-500 mt-1">จัดการรอบประจำ และเปิดรอบให้สมาชิกลงชื่อ</p>
+            <p class="font-sarabun text-sm text-gray-500 mt-1">จัดการรอบประจำ และเปิดรอบให้สมาชิกลงชื่อ</p>
         </div>
         <div class="flex items-center gap-2">
             <a href="{{ route('admin.group-sessions.history') }}"
@@ -27,7 +24,7 @@ x-data="{
                 ประวัติกลุ่มเล่นบาส
             </a>
             <button @click="showSessionForm = true"
-                class="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+                class="inline-flex items-center px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 shadow-sm gap-2 cursor-pointer transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
                     </svg>สร้างรอบประจำใหม่
@@ -118,7 +115,7 @@ x-data="{
         class="text-xs font-medium text-blue-600 hover:text-blue-800 rounded-lg px-3 py-1.5 cursor-pointer transition">แก้ไข</button>
         <form action="{{ route('admin.group-sessions.destroy', $s) }}" method="POST" class="inline"
     data-confirm="ลบเทมเพลต &quot;{{ $s->name }}&quot; ทิ้งถาวร? รอบที่เคยเปิดจากเทมเพลตนี้จะไม่หายไป "
-    data-confirm-button-text="ลบเทมเพลต"
+    data-confirm-button-text="ยืนยันการลบ"
     data-confirm-danger="1">
     @csrf
     @method('DELETE')
@@ -146,8 +143,11 @@ x-data="{
                 prefillSession = null;
                 roundStartH = '00'; roundStartM = '00'; roundEndH = '00'; roundEndM = '00';
             "
-            class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 cursor-pointer transition">
-            + เปิดรอบแบบกำหนดเอง
+            class="text-xs font-medium text-white bg-gray-500 hover:bg-gray-600 rounded-lg px-4 py-2 shadow-sm inline-flex item-center gap-2 cursor-pointer transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+            </svg>
+            เปิดรอบแบบกำหนดเอง
         </button>
     </div>
 
@@ -194,10 +194,19 @@ x-data="{
 
     {{-- Modal: สร้างเทมเพลตรอบประจำ (ไม่มีเดดไลน์ เพราะเป็นแค่เทมเพลต ยังไม่ใช่รอบจริง) --}}
     <div x-show="showSessionForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
-        <div @click.outside="showSessionForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md p-6"
+        <div @click.outside="showSessionForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden"
             x-data="{ startH: '00', startM: '00', endH: '00', endM: '00' }">
-            <h3 class="font-semibold text-gray-800 text-[15px] mb-4">สร้างรอบประจำใหม่</h3>
-            <form action="{{ route('admin.group-sessions.store') }}" method="POST" class="space-y-3">
+
+            <!-- Header พร้อมเส้นคั่น -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-900">สร้างรอบประจำใหม่</h3>
+                    <p class="font-sarabun text-sm text-gray-500 mt-1">กำหนดรายละเอียดรอบเล่นประจำสัปดาห์</p>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form action="{{ route('admin.group-sessions.store') }}" method="POST" class="p-6 space-y-3">
                 @csrf
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">ชื่อรอบ</label>
@@ -250,7 +259,7 @@ x-data="{
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">สนาม</label>
-                    <select name="court_id"  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                    <select name="court_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
                         <option value="">- ไม่ระบุ -</option>
                         @isset($courts)
                             @foreach($courts as $court)
@@ -270,8 +279,8 @@ x-data="{
                     </div>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" @click="showSessionForm = false" class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 cursor-pointer transition">ยกเลิก</button>
-                    <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 cursor-pointer transition">บันทึก</button>
+                    <button type="button" @click="showSessionForm = false" class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-2 cursor-pointer transition">ยกเลิก</button>
+                    <button type="submit" class="text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2 cursor-pointer transition">บันทึก</button>
                 </div>
             </form>
         </div>
@@ -281,7 +290,8 @@ x-data="{
     <div x-show="showEditForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
         <div @click.outside="showEditForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md p-6">
             <h3 class="font-semibold text-gray-800 text-[15px] mb-4">แก้ไขรอบประจำ</h3>
-<form :action="editSession ? '{{ url('/admin/group-sessions') }}/' + editSession.id : '#'" method="POST" class="space-y-3">                @csrf
+            <form :action="editSession ? '{{ url('/admin/group-sessions') }}/' + editSession.id : '#'" method="POST" class="space-y-3">
+                @csrf
                 @method('PUT')
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">ชื่อรอบ</label>
@@ -372,9 +382,16 @@ x-data="{
 
     {{-- Modal: เปิดรอบ (จากเทมเพลต หรือกำหนดเอง) — จุดเดียวที่มีเดดไลน์สละสิทธิ์ เพราะเป็นรอบจริง --}}
     <div x-show="showRoundForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
-        <div @click.outside="showRoundForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md p-6">
-            <h3 class="font-semibold text-gray-800 text-[15px] mb-4">เปิดรอบ</h3>
-            <form action="{{ route('admin.group-sessions.rounds.open') }}" method="POST" class="space-y-3">
+        <div @click.outside="showRoundForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden">
+
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-900">เปิดรอบสนามแบบกำหนดเอง</h3>
+                    <p class="font-sarabun text-sm text-gray-500 mt-1">กรอกข้อมูลเพื่อเปิดรอบสนามใหม่</p>
+                </div>
+            </div>
+
+            <form action="{{ route('admin.group-sessions.rounds.open') }}" method="POST" class="p-6 space-y-3">
                 @csrf
                 <input type="hidden" name="group_session_id" :value="prefillSession ? prefillSession.id : ''">
                 <div>
@@ -423,18 +440,18 @@ x-data="{
                     </div>
                 </div>
                 <div>
-    <label class="block text-xs font-medium text-gray-600 mb-1">สนาม</label>
-    <select name="court_id"
-        x-bind:value="prefillSession ? (prefillSession.court_id ?? '') : ''"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
-        <option value="">- ไม่ระบุ -</option>
-        @isset($courts)
-            @foreach($courts as $court)
-                <option value="{{ $court->id }}">{{ $court->name }}</option>
-            @endforeach
-        @endisset
-    </select>
-</div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">สนาม</label>
+                    <select name="court_id"
+                        x-bind:value="prefillSession ? (prefillSession.court_id ?? '') : ''"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
+                        <option value="">- ไม่ระบุ -</option>
+                        @isset($courts)
+                            @foreach($courts as $court)
+                                <option value="{{ $court->id }}">{{ $court->name }}</option>
+                            @endforeach
+                        @endisset
+                    </select>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">จำนวนคนสูงสุด</label>
@@ -456,8 +473,8 @@ x-data="{
                     <p class="mt-1 text-[11px] text-gray-400">ถ้าไม่กรอก จะยกเลิกจองเองได้ตลอด (ไม่มีเดดไลน์)</p>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" @click="showRoundForm = false" class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 cursor-pointer transition">ยกเลิก</button>
-                    <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 cursor-pointer transition">เปิดรอบ</button>
+                    <button type="button" @click="showRoundForm = false" class="text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-2 cursor-pointer transition">ยกเลิก</button>
+                    <button type="submit" class="text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2 cursor-pointer transition">เปิดรอบ</button>
                 </div>
             </form>
         </div>
