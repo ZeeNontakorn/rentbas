@@ -184,11 +184,6 @@
 
 <div class="auth-page">
 
-    {{-- Brand --}}
-    <div class="auth-brand">
-        <div class="auth-brand-ball">🏀</div>
-        <span class="auth-brand-name">Basketball Court Booking</span>
-    </div>
 
     {{-- Title --}}
     <h1 class="auth-title">ยืนยันบัญชีด้วย OTP</h1>
