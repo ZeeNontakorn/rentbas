@@ -739,7 +739,9 @@ html { scroll-behavior: smooth; }
 .review-avatar {
     width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ff8a4c, var(--ore)); color: #fff; font-weight: 800;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    overflow: hidden;
 }
+.review-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .review-name { color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .review-member { color: #18976b; font-size: 10px; margin-top: 2px; }
 .review-comment { margin-top: 20px; min-height: 54px; color: #5e5a56; font-size: 13.5px; line-height: 1.8; }

@@ -17,9 +17,22 @@
             <form method="POST" action="{{ route('reviews.store') }}" enctype="multipart/form-data" class="space-y-8 p-6 sm:p-10" id="review-form" novalidate>
                 @csrf
 
+                @php
+                    // เช็คว่ามีรูปใน User หรือรูปจากโปรไฟล์พนักงาน/โค้ชหรือไม่ (แพทเทิร์นเดียวกับ admin/users/show.blade.php)
+                    $reviewerAvatarUrl = null;
+                    if (!empty($reviewer->avatar) && \Storage::disk('public')->exists($reviewer->avatar)) {
+                        $reviewerAvatarUrl = asset('storage/' . $reviewer->avatar);
+                    } elseif (!empty($reviewer->staffProfile?->profile_image)) {
+                        $reviewerAvatarUrl = $reviewer->staffProfile->profile_image_url;
+                    }
+                @endphp
                 <div class="flex items-center gap-4 rounded-2xl bg-orange-50 px-5 py-4">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 font-bold text-white">
-                        {{ mb_substr($reviewer->us_name, 0, 1) }}
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 font-bold text-white overflow-hidden">
+                        @if(!empty($reviewerAvatarUrl))
+                            <img src="{{ $reviewerAvatarUrl }}" alt="{{ $reviewer->us_name }}" class="w-full h-full object-cover">
+                        @else
+                            {{ mb_substr($reviewer->us_name, 0, 1) }}
+                        @endif
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">รีวิวโดย</p>

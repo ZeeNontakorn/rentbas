@@ -100,7 +100,7 @@
                             {{-- ปุ่มลบรูป --}}
                             <button type="button" id="removeAvatarBtn" class="{{ !empty($user->avatar) ? '' : 'hidden' }} text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">ลบรูปโปรไฟล์</button>
                         </div>
-                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
+                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 5MB</p>
                         
                         <input type="file" name="avatar" id="profileImageInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
                         {{-- ตัวแปรลับส่งไปบอก Controller ว่ากดลบรูป --}}
@@ -212,8 +212,8 @@ if(fileInput) {
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'กรุณาอัปโหลดรูปขนาดไม่เกิน 2MB' });
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'กรุณาอัปโหลดรูปขนาดไม่เกิน 5MB' });
                 this.value = ''; return;
             }
             const reader = new FileReader();

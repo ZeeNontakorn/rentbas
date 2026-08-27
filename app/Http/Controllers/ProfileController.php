@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -32,7 +33,7 @@ class ProfileController extends Controller
             'name' => 'sometimes|nullable|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . Auth::id(),
             'phone' => 'sometimes|nullable|max:10',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'current_password' => 'required_with:password|string',
             'password' => 'nullable|required_with:current_password|string|min:6|confirmed',
             'otp' => 'nullable|string|size:6'
@@ -45,7 +46,7 @@ class ProfileController extends Controller
             'phone.max' => 'เบอร์โทรศัพท์ต้องมีความยาวไม่เกิน :max ตัวอักษร',
             'avatar.image' => 'ไฟล์ที่อัปโหลดต้องเป็นรูปภาพเท่านั้น',
             'avatar.mimes' => 'รองรับไฟล์รูปภาพประเภท jpeg, png, jpg, webp เท่านั้น',
-            'avatar.max' => 'ขนาดไฟล์รูปภาพต้องไม่เกิน 2MB',
+            'avatar.max' => 'ขนาดไฟล์รูปภาพต้องไม่เกิน 5MB',
             'current_password.required_with' => 'กรุณากรอกรหัสผ่านเดิมเพื่อเปลี่ยนรหัสผ่านใหม่',
             'current_password.string' => 'กรุณากรอกรหัสผ่านเดิมให้ถูกต้อง',
             'password.required_with' => 'กรุณากรอกรหัสผ่านใหม่',
@@ -100,7 +101,7 @@ class ProfileController extends Controller
             if ($user->avatar) {
                 Storage::disk('public')->delete($user->avatar);
             }
-            $imagePath = $request->file('avatar')->store('profiles', 'public');
+            $imagePath = $this->compressAndStoreAvatar($request->file('avatar'));
             $user->avatar = $imagePath;
         }
 
@@ -116,6 +117,72 @@ class ProfileController extends Controller
         $user->save();
 
         return back()->with('success','อัปเดตข้อมูลสำเร็จ');
+    }
+
+    /**
+     * บีบอัดรูปโปรไฟล์ก่อนบันทึก — ย่อด้านยาวสุดไม่เกิน 1024px แล้ว re-encode คุณภาพ ~80
+     * เพื่อลดขนาดไฟล์จริงลง (ตัวรูปยังดูคมชัดปกติบนหน้าจอ) ไม่ให้ storage บวมเร็วเกินไป
+     * หลังจากขยาย limit อัปโหลดจาก 2MB เป็น 5MB — ใช้ GD ที่มีอยู่แล้วในเซิร์ฟเวอร์ ไม่ต้องติดตั้ง library เพิ่ม
+     */
+    private function compressAndStoreAvatar(UploadedFile $file): string
+    {
+        $maxDimension = 1024;
+        $quality = 80;
+
+        $size = @getimagesize($file->getRealPath());
+        $mime = $file->getMimeType();
+
+        $source = match ($mime) {
+            'image/jpeg', 'image/jpg' => @imagecreatefromjpeg($file->getRealPath()),
+            'image/png' => @imagecreatefrompng($file->getRealPath()),
+            'image/webp' => @imagecreatefromwebp($file->getRealPath()),
+            default => null,
+        };
+
+        // อ่านไฟล์ด้วย GD ไม่ได้ (รูปแปลกๆ/format ไม่รองรับ) ให้เก็บไฟล์เดิมไปตรงๆ ไม่บีบอัด
+        if (! $source || ! $size) {
+            return $file->store('profiles', 'public');
+        }
+
+        [$width, $height] = $size;
+        $ratio = min(1, $maxDimension / max($width, $height));
+        $newWidth = (int) round($width * $ratio);
+        $newHeight = (int) round($height * $ratio);
+
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+        // รักษาพื้นหลังโปร่งใสของ PNG/WEBP ไว้ ไม่ให้กลายเป็นพื้นดำ
+        if (in_array($mime, ['image/png', 'image/webp'], true)) {
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+            imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+
+        imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+        $extension = match ($mime) {
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
+        };
+        $filename = 'profiles/' . uniqid('avatar_', true) . '.' . $extension;
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'avatar_');
+
+        match ($mime) {
+            'image/png' => imagepng($resized, $tmpPath, 6), // 0 (ไม่บีบ) - 9 (บีบสุด)
+            'image/webp' => imagewebp($resized, $tmpPath, $quality),
+            default => imagejpeg($resized, $tmpPath, $quality),
+        };
+
+        Storage::disk('public')->put($filename, file_get_contents($tmpPath));
+
+        imagedestroy($source);
+        imagedestroy($resized);
+        @unlink($tmpPath);
+
+        return $filename;
     }
 
     public function requestOtpForEmailChange(Request $request){

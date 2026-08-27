@@ -43,9 +43,22 @@
 
             {{-- Balance + user summary --}}
             <div class="md:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-t-4 border-t-emerald-500">
+                @php
+                    // เช็คว่ามีรูปใน User หรือรูปจากโปรไฟล์พนักงาน/โค้ชหรือไม่ (แพทเทิร์นเดียวกับ admin/users/show.blade.php)
+                    $displayAvatarUrl = null;
+                    if (!empty($user->avatar) && \Storage::disk('public')->exists($user->avatar)) {
+                        $displayAvatarUrl = asset('storage/' . $user->avatar);
+                    } elseif (!empty($user->staffProfile?->profile_image)) {
+                        $displayAvatarUrl = $user->staffProfile->profile_image_url;
+                    }
+                @endphp
                 <div class="flex items-center gap-3 mb-5">
-                    <div class="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                        <span class="text-orange-600 text-lg font-bold">{{ strtoupper(substr($user->us_name, 0, 1)) }}</span>
+                    <div class="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        @if(!empty($displayAvatarUrl))
+                            <img src="{{ $displayAvatarUrl }}" alt="{{ $user->name ?? $user->us_name }}" class="w-full h-full object-cover">
+                        @else
+                            <span class="text-orange-600 text-lg font-bold">{{ strtoupper(substr($user->us_name, 0, 1)) }}</span>
+                        @endif
                     </div>
                     <div>
                         <h1 class="font-semibold text-gray-800 leading-tight">{{ $user->us_name }}</h1>
