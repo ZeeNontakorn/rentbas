@@ -55,7 +55,7 @@
 
                     <button
                         type="submit"
-                        class="px-3 py-1.5 text-sm border border-orange-200 text-orange-600 rounded-lg hover:bg-orange-50 transition"
+                        class="px-3 py-1.5 text-sm border border-orange-200 text-orange-600 rounded-lg hover:bg-orange-50 cursor-pointer transition"
                     >
                         ปิดรับสมัคร
                     </button>
@@ -72,7 +72,7 @@
 
                     <button
                         type="submit"
-                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 cursor-pointer transition"
                     >
                         เปิดรับสมัครอีกครั้ง
                     </button>
@@ -85,7 +85,7 @@
             action="{{ route('admin.group-sessions.rounds.cancel', $round) }}"
             method="POST"
             data-confirm="ยกเลิกรอบนี้และคืนเครดิตให้ทุกคนที่ลงชื่อไว้?"
-            data-confirm-button-text="ยืนยันยกเลิก"
+            data-confirm-button-text="ยืนยัน"
             data-confirm-danger="1"
                 >
                 @csrf
@@ -93,7 +93,7 @@
 
                 <button
                     type="submit"
-                    class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition"
+                    class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 cursor-pointer transition"
                 >
                     ยกเลิกรอบ
                 </button>
@@ -232,9 +232,12 @@
                 {{-- ปุ่มเพิ่ม --}}
                 <button
                     type="submit"
-                    class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition whitespace-nowrap"
+                    class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 inline-flex items-center gap-2 cursor-pointer transition whitespace-nowrap"
                 >
-                    + เพิ่มผู้จอง
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    เพิ่มผู้จอง
                 </button>
 
             </form>
@@ -373,7 +376,7 @@
                                     action="{{ route('admin.group-sessions.rounds.removePlayer', [$round, $signup]) }}"
                                     method="POST"
                                     data-confirm="นำ {{ $playerName }} ออกจากรอบ{{ $signup->credit_used > 0 ? ' และคืนเครดิต '.$signup->credit_used.' หน่วย' : '' }}?"
-                                    data-confirm-button-text="นำออก"
+                                    data-confirm-button-text="ยืนยัน"
                                     data-confirm-danger="1"
                                 >
 
@@ -382,7 +385,7 @@
 
                                     <button
                                         type="submit"
-                                        class="text-red-500 hover:text-red-700 font-medium transition"
+                                        class="text-red-500 hover:text-red-700 font-medium cursor-pointer transition"
                                     >
                                         นำออก
                                     </button>

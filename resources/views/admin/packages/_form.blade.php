@@ -160,7 +160,7 @@
         <a href="{{ route('admin.packages.index') }}" class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
             ยกเลิก
         </a>
-        <button type="submit" class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-orange-600 cursor-pointer">
+        <button type="submit" class="rounded-lg {{ isset($package) ? 'bg-blue-500 hover:bg-blue-600' : 'bg-emerald-500 hover:bg-emerald-600' }} px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition cursor-pointer">
             {{ isset($package) ? 'บันทึกการแก้ไข' : 'เพิ่มแพ็กเกจ' }}
         </button>
     </div>

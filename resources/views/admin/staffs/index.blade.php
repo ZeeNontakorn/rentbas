@@ -9,7 +9,7 @@
 
         <div class="mb-6">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการโค้ช / ผู้ช่วยสนาม</h1>
-            <p class="text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
+            <p class="font-sarabun text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
         </div>
 
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-gray-200 mb-6 gap-4">
@@ -250,7 +250,7 @@
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ยืนยันถอดบทบาท',
+                confirmButtonText: 'ยืนยัน',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true
             }).then((result) => {
