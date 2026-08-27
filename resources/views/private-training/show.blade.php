@@ -12,26 +12,64 @@
             ← กลับไปหน้ารายชื่อโค้ช
         </a>
 
-        <section class="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-6 sm:flex-row sm:items-start">
-                <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-orange-100 shadow-sm">
+        <section class="mb-6 rounded-xl border border-gray-200 border-t-4 border-t-orange-500 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                {{-- Avatar --}}
+                <div class="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border-2 border-white bg-orange-100 shadow-sm flex items-center justify-center">
                     @if($staffProfile?->profile_image_url)
-                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->us_name }}"
+                        <img src="{{ $staffProfile->profile_image_url }}" alt="รูปโปรไฟล์ของ {{ $coach->name }}"
                             class="h-full w-full object-cover">
                     @else
-                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->us_name, 0, 1)) }}</span>
+                        <span class="text-3xl font-bold text-orange-600">{{ mb_strtoupper(mb_substr($coach->name, 0, 1)) }}</span>
                     @endif
                 </div>
-                <div class="flex-1">
+
+                <div class="flex-1 w-full">
+                    {{-- แถวบน: ชื่อ + badge --}}
                     <div class="flex flex-wrap items-center gap-3">
-                        <h1 class="text-2xl font-bold text-gray-800">{{ $coach->us_name }}</h1>
-                        <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">ผู้ฝึกสอน (Coach)</span>
+                        <h1 class="text-xl font-semibold text-gray-800">{{ $coach->name }}</h1>
+                        <span class="inline-flex items-center text-sm font-medium px-2.5 py-1 rounded-full border bg-blue-100 text-blue-700 border-blue-200">
+                            ผู้ฝึกสอน (Coach)
+                        </span>
                     </div>
-                    <div class="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
-                        <p>อีเมล: {{ $coach->email }}</p>
-                        <p>เบอร์โทรศัพท์: {{ $coach->phone ?? 'ไม่ระบุ' }}</p>
-                        <p><strong>ความเชี่ยวชาญ:</strong> {{ $staffProfile?->specialty ?? 'ไม่ระบุ' }}</p>
-                        <p><strong>แนะนำตัว:</strong> {{ $staffProfile?->bio ?? 'ไม่มีข้อมูล' }}</p>
+
+                    {{-- Grid รายละเอียด แบบเดียวกับหน้าข้อมูลผู้ใช้ --}}
+                    <div class="mt-5 grid grid-cols-1 gap-3 text-sm text-gray-600 md:grid-cols-2">
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">อีเมล</div>
+                            <div class="mt-1 flex items-center gap-2 font-medium text-gray-700 break-all">
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                {{ $coach->email }}
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">เบอร์โทรศัพท์</div>
+                            <div class="mt-1 flex items-center gap-2 font-medium text-gray-700">
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                </svg>
+                                {{ $coach->phone ?? 'ไม่ระบุ' }}
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">ความเชี่ยวชาญ</div>
+                            <div class="mt-1 font-medium text-gray-700">
+                                {{ $staffProfile?->specialty ?? 'ไม่ระบุ' }}
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">แนะนำตัว</div>
+                            <div class="mt-1 font-medium text-gray-700">
+                                {{ $staffProfile?->bio ?? 'ไม่มีข้อมูล' }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -152,7 +190,7 @@
             <input type="hidden" name="start_time" id="booking-start">
             <input type="hidden" name="end_time" id="booking-end">
             <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-center">
-                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->us_name }}</p>
+                <p class="text-xs font-semibold text-blue-500">โค้ช {{ $coach->name }}</p>
                 <p id="booking-date-label" class="mt-1 font-bold text-blue-800"></p>
                 <p id="booking-time-label" class="text-lg font-extrabold text-blue-700"></p>
             </div>
