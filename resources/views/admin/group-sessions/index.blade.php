@@ -287,7 +287,7 @@
 
     {{-- Modal: แก้ไขเทมเพลตรอบประจำ --}}
     <div x-show="showEditForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
-        <div @click.outside="showEditForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md p-6">
+        <div @click.outside="showEditForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden">
             <!-- Header พร้อมเส้นคั่น -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <div>
@@ -295,7 +295,8 @@
                     <p class="font-sarabun text-sm text-gray-500 mt-1">แก้ไขรายละเอียดรอบเล่นประจำสัปดาห์</p>
                 </div>
             </div>
-            <form :action="editSession ? '{{ url('/admin/group-sessions') }}/' + editSession.id : '#'" method="POST" class="space-y-3">
+
+            <form :action="editSession ? '{{ url('/admin/group-sessions') }}/' + editSession.id : '#'" method="POST" class="p-6 space-y-3">
                 @csrf
                 @method('PUT')
                 <div>
