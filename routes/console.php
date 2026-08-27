@@ -63,4 +63,4 @@ Schedule::call(function (): void {
         })
         ->get()
         ->each(fn ($round) => $round->processExpiredReserves());
-})->name('group-round:process-expired-reserves')->everyMinutes()->withoutOverlapping();
+})->name('group-round:process-expired-reserves')->everyMinute()->withoutOverlapping();
