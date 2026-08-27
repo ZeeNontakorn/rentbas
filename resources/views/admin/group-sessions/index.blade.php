@@ -2,7 +2,8 @@
 @section('title', 'จัดการกลุ่มเล่นบาส')
 
 @section('content')
-<div class="text-gray-900 min-h-screen py-8" x-data="{
+<div class="text-gray-900 min-h-screen py-8" 
+x-data="{
     showSessionForm: false,
     showEditForm: false,
     showRoundForm: false,
