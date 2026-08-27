@@ -58,7 +58,7 @@ window.showPrivateTrainingDetails = function (event) {
         width: 650,
         padding: 0,
         showCloseButton: true,
-        showConfirmButton: true,
+        showConfirmButton: false,
         confirmButtonText: 'ปิด',
         confirmButtonColor: '#f97316',
         customClass: {
