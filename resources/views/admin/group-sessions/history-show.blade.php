@@ -4,6 +4,12 @@
 @section('content')
 
 <div class="max-w-3xl mx-auto px-4 py-6">
+    <a href="{{ route('admin.group-sessions.history') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
+            <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            กลับหน้าประวัติ
+        </a>
 
     <div class="flex items-center justify-between mb-6">
         <div>
@@ -14,10 +20,7 @@
                 {{ $round->court->name ?? '-' }}
             </p>
         </div>
-        <a href="{{ route('admin.group-sessions.history') }}"
-            class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
-            ← กลับหน้าประวัติ
-        </a>
+    
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">

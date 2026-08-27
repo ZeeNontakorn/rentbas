@@ -4,15 +4,12 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto px-4 py-6">
-
-    {{-- กลับหน้ารายการ --}}
-    
-        href="{{ route('admin.group-sessions.index') }}"
-        class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition"
-    >
-        &larr; กลับไปหน้ารายการรอบ
-    </a>
-
+    <a href="{{ route('admin.group-sessions.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
+            <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            กลับหน้าจัดการ
+        </a>
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-2 mb-6">
 
