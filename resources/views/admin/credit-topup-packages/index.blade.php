@@ -169,7 +169,7 @@
                             @endphp
                             <tr data-id="{{ $pkg->id }}">
                                 <td class="px-3 py-3 text-center">
-                                    <span class="drag-handle inline-flex items-center justify-center w-7 h-7 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 cursor-grab active:cursor-grabbing select-none" title="ลากเพื่อจัดลำดับ">
+                                    <span class="drag-handle inline-flex items-center justify-center w-7 h-7 rounded text-gray-500 hover:text-gray-700 hover:bg-gray-100 cursor-grab active:cursor-grabbing select-none" title="ลากเพื่อจัดลำดับ">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a1 1 0 11-2 0 1 1 0 012 0zM7 10a1 1 0 11-2 0 1 1 0 012 0zM7 16a1 1 0 11-2 0 1 1 0 012 0zM15 4a1 1 0 11-2 0 1 1 0 012 0zM15 10a1 1 0 11-2 0 1 1 0 012 0zM15 16a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
                                     </span>
                                 </td>

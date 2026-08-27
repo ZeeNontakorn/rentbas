@@ -53,9 +53,11 @@
 .tu-upload.has-file { border-color: #87D068; background: #f7fdf4; color: #4a8f2c; }
 </style>
 
+@include('components.mail-loading-overlay')
+
 <div class="tu-main max-w-[520px] mx-auto px-4 py-10" data-aos="fade-up">
 
-    @include('components.mail-loading-overlay')
+
 
     <a href="{{ route('credits.topup.index') }}" class="text-[13px] text-gray-500 hover:text-gray-800 mb-4 inline-block">← เลือกแพ็กเกจใหม่</a>
     <h1 class="text-[26px] font-bold text-gray-900 mb-1">ยืนยันการเติมเครดิต</h1>
@@ -103,7 +105,7 @@
             </label>
             <input type="file" name="slip" id="slipInput" accept="image/*" class="hidden" onchange="onSlipChange(this)">
         </div>
-        <button type="submit" id="submitBtn" class="w-full bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-3.5 rounded-lg shadow transition" style="font-family:'Kanit',sans-serif;">
+        <button type="submit" id="submitBtn" class="w-full bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-3.5 rounded-lg shadow transition" style="font-family:'Kanit',sans-serif; cursor:pointer;">
             ส่งคำขอเติมเครดิต
         </button>
     </form>
