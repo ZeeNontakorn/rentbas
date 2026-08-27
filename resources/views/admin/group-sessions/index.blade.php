@@ -2,7 +2,7 @@
 @section('title', 'จัดการกลุ่มเล่นบาส')
 
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8" x-data="{
+<div class="text-gray-900 min-h-screen py-8" x-data="{
     showSessionForm: false,
     showEditForm: false,
     showRoundForm: false,
@@ -196,7 +196,6 @@
     <div x-show="showSessionForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
         <div @click.outside="showSessionForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden"
             x-data="{ startH: '00', startM: '00', endH: '00', endM: '00' }">
-
             <!-- Header พร้อมเส้นคั่น -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <div>
@@ -289,7 +288,13 @@
     {{-- Modal: แก้ไขเทมเพลตรอบประจำ --}}
     <div x-show="showEditForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
         <div @click.outside="showEditForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md p-6">
-            <h3 class="font-semibold text-gray-800 text-[15px] mb-4">แก้ไขรอบประจำ</h3>
+            <!-- Header พร้อมเส้นคั่น -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900">แก้ไขรอบประจำ</h3>
+                    <p class="font-sarabun text-sm text-gray-500 mt-1">แก้ไขรายละเอียดรอบเล่นประจำสัปดาห์</p>
+                </div>
+            </div>
             <form :action="editSession ? '{{ url('/admin/group-sessions') }}/' + editSession.id : '#'" method="POST" class="space-y-3">
                 @csrf
                 @method('PUT')
@@ -379,6 +384,7 @@
             </form>
         </div>
     </div>
+</div>
 
     {{-- Modal: เปิดรอบ (จากเทมเพลต หรือกำหนดเอง) — จุดเดียวที่มีเดดไลน์สละสิทธิ์ เพราะเป็นรอบจริง --}}
     <div x-show="showRoundForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
@@ -479,6 +485,7 @@
             </form>
         </div>
     </div>
+</div>
 
 </div>
 </div>
