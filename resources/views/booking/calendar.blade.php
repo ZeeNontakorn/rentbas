@@ -313,7 +313,7 @@
                     </div>
 
                     <div class="flex justify-end mt-2">
-                        <button type="button" id="confirmSubmitBtn" onclick="submitBooking()" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="button" id="confirmSubmitBtn" onclick="submitBooking()" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-bold py-2.5 px-8 rounded-lg shadow transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                             ยืนยัน
                         </button>
                     </div>
@@ -708,7 +708,7 @@ function updateConfirmBox() {
     list.innerHTML = selections.map((s, idx) => `
         <div class="flex justify-between items-center border-b border-gray-50 pb-2">
             <span class="text-gray-500"><span class="text-gray-400">(${s.sectionName})</span> เวลา <span class="font-bold text-gray-900">${s.label} น.</span></span>
-            <button type="button" onclick="removeSelectionByIndex(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3">ลบ</button>
+            <button type="button" onclick="removeSelectionByIndex(${idx})" class="text-red-400 hover:text-red-600 text-xs font-bold ml-3 cursor-pointer">ลบ</button>
         </div>`).join('');
 
     renderPricingBox();
