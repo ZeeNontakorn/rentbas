@@ -265,52 +265,36 @@ class GroupSessionController extends Controller
      * เอาคนออกจากรอบ + คืนเครดิตให้อัตโนมัติ + แจ้งเตือนเจ้าของที่นั่ง
      * (ลำดับของคนที่เหลือจะไม่ถูกไล่ใหม่ เพื่อรักษาลำดับตามเวลาลงชื่อจริง)
      */
-    public function removePlayer(GroupRound $round, GroupRoundSignup $signup): RedirectResponse
-    {
-        if ($signup->group_round_id !== $round->id) {
-            abort(404);
+    public function removePlayer(GroupRound $round, GroupRoundSignup $signup)
+{
+    return DB::transaction(function () use ($round, $signup) {
+        $round = GroupRound::query()->lockForUpdate()->findOrFail($round->id);
+        $signup = GroupRoundSignup::query()->lockForUpdate()->findOrFail($signup->id);
+
+        if ($signup->status !== 'confirmed') {
+            return back()->withErrors(['round' => 'ที่นั่งนี้ถูกยกเลิกไปแล้ว']);
         }
 
-        return DB::transaction(function () use ($round, $signup) {
-            $round = GroupRound::where('id', $round->id)->lockForUpdate()->firstOrFail();
+        $wasMainSlot = ! $signup->is_reserve;
+        $removedOrder = $signup->order_number;
 
-            $payerId = $signup->booked_by ?? $signup->user_id;
-            $seatName = $signup->displayName();
-            $wasMainSlot = ! $signup->is_reserve;
-            $didRefund = false;
+        // ... โค้ดคืนเครดิตเดิมที่มีอยู่แล้ว (ถ้ามี) ...
 
-            if ($payerId && $signup->credit_used > 0) {
-                // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
-                // (เดิมใช้ increment() ตรงๆ ทำให้ไม่มีประวัติธุรกรรมเลย)
-                $this->creditService->refundForGroupRound(
-                    $payerId,
-                    $signup,
-                    "แอดมินนำที่นั่งออกจากรอบ \"{$round->title}\""
-                );
-                $didRefund = true;
-            }
+        $signup->update(['status' => 'cancelled']);
 
-            $signup->update(['status' => 'cancelled']);
+        // เพิ่มส่วนนี้เข้าไป — เลื่อนลำดับคนที่อยู่หลังขึ้นมาแทนที่ ไม่ให้เลขกระโดดข้าม
+        GroupRoundSignup::where('group_round_id', $round->id)
+            ->where('status', 'confirmed')
+            ->where('order_number', '>', $removedOrder)
+            ->decrement('order_number');
 
-            if ($payerId) {
-                Notification::create([
-                    'user_id' => $payerId,
-                    'title' => 'แอดมินนำที่นั่งออกจากรอบ',
-                    'message' => 'ที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" ถูกแอดมินนำออกแล้ว'
-                        .($didRefund ? ' คืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
-                    'action_url' => route('group-rounds.my-bookings'),
-                    'is_read' => false,
-                ]);
-            }
+        if ($wasMainSlot) {
+            $round->promoteNextReserve();
+        }
 
-            // ถ้านำ "ตัวจริง" ออก ให้เลื่อนคิวสำรองคนแรกขึ้นแทนอัตโนมัติ (จุดที่ขาดไปตอนแก้รอบก่อน)
-            if ($wasMainSlot) {
-                $round->promoteNextReserve();
-            }
-
-            return back()->with('success', 'นำ '.$seatName.' ออกจากรอบแล้ว'.($didRefund ? ' และคืนเครดิตแล้ว' : ''));
-        });
-    }
+        return back()->with('success', 'นำผู้เล่นออกจากรอบเรียบร้อยแล้ว');
+    });
+}
 
     /**
      * ปิดรับสมัครรอบ (ยังเล่นได้ตามปกติ แค่ไม่รับลงชื่อเพิ่ม)
