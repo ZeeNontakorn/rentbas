@@ -1,7 +1,8 @@
 @extends('layouts.app')
 @section('title', 'จัดการกลุ่มเล่นบาสค')
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8" x-data="{
+<div class="bg-slate-50 text-gray-900 min-h-screen py-8" 
+x-data="{
     showSessionForm: false,
     showEditForm: false,
     showRoundForm: false,
@@ -9,6 +10,9 @@
     editSession: null,
     editStartH: '00', editStartM: '00', editEndH: '00', editEndM: '00',
     roundStartH: '00', roundStartM: '00', roundEndH: '00', roundEndM: '00'
+    sessionUpdateUrl(id) {
+        return '{{ url('/admin/group-sessions') }}/' + id;
+    }
 }">
 <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
@@ -277,8 +281,7 @@
     <div x-show="showEditForm" x-cloak class="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
         <div @click.outside="showEditForm = false" class="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md p-6">
             <h3 class="font-semibold text-gray-800 text-[15px] mb-4">แก้ไขรอบประจำ</h3>
-            <form :action="editSession ? '/admin/group-sessions/' + editSession.id : '#'" method="POST" class="space-y-3">
-                @csrf
+<form :action="editSession ? '{{ url('/admin/group-sessions') }}/' + editSession.id : '#'" method="POST" class="space-y-3">                @csrf
                 @method('PUT')
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">ชื่อรอบ</label>
