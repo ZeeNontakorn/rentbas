@@ -125,7 +125,7 @@
                                             ];
                                             $roleClass = $roleColors[$u->role] ?? 'bg-gray-100 text-gray-600';
                                         @endphp
-                                        @if($u->id !== auth()->id())
+                                        @if($isSuperadmin && $u->id !== auth()->id())
                                             <button type="button"
                                                     onclick="openRoleModal('{{ $u->id }}', '{{ $u->name }}', '{{ $u->role }}', '{{ route('admin.users.updateRole', $u) }}')"
                                                     class="inline-flex items-center justify-center w-[100px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $roleClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
@@ -161,19 +161,25 @@
                                         @php
                                             $membershipClass = $membershipColorMap[$u->membership_type] ?? 'bg-gray-100 text-gray-600';
                                         @endphp
-                                        <div class="membership-cell" data-user-id="{{ $u->id }}">
-                                            <button type="button"
-                                                class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
-                                                data-user-id="{{ $u->id }}"
-                                                data-name="{{ $u->us_name }}"
-                                                data-value="{{ $u->membership_type }}"
-                                                data-url="{{ route('admin.users.updateMembershipType', $u) }}"
-                                                data-role="{{ $u->role }}"
-                                                onclick="openMembershipModal(this.dataset.userId, this.dataset.name, this.dataset.value, this.dataset.url, this.dataset.role)"
-                                                title="แก้ไขประเภทสมาชิก">
+                                        @if($isSuperadmin)
+                                            <div class="membership-cell" data-user-id="{{ $u->id }}">
+                                                <button type="button"
+                                                    class="membership-label membership-edit-btn inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }} cursor-pointer hover:brightness-95 hover:ring-1 hover:ring-orange-300 hover:shadow-sm transition"
+                                                    data-user-id="{{ $u->id }}"
+                                                    data-name="{{ $u->us_name }}"
+                                                    data-value="{{ $u->membership_type }}"
+                                                    data-url="{{ route('admin.users.updateMembershipType', $u) }}"
+                                                    data-role="{{ $u->role }}"
+                                                    onclick="openMembershipModal(this.dataset.userId, this.dataset.name, this.dataset.value, this.dataset.url, this.dataset.role)"
+                                                    title="แก้ไขประเภทสมาชิก">
+                                                    {{ $u->membershipTypeLabel() }}
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="inline-flex items-center justify-center w-[136px] px-2.5 py-1 text-xs rounded-full font-medium truncate {{ $membershipClass }}">
                                                 {{ $u->membershipTypeLabel() }}
-                                            </button>
-                                        </div>
+                                            </span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -187,7 +193,7 @@
                                             ดูข้อมูลและประวัติ
                                         </a>
 
-                                        @if($u->id !== auth()->id() && $u->role !== 'superadmin' && ($u->role !== 'admin' || $isSuperadmin))
+                                        @if($isSuperadmin && $u->id !== auth()->id() && $u->role !== 'superadmin')
                                             <form action="{{ route('admin.users.destroy', $u) }}" method="POST"
                                                 class="user-delete-form">
                                                 @csrf
