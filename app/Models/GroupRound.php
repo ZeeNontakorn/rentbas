@@ -147,7 +147,7 @@ class GroupRound extends Model
             $notifyUser = User::find($notifyUserId);
 
             if ($notifyUser && $notifyUser->email) {
-                Mail::to($notifyUser->email)->queue(new ReservePromoted($this, $next));
+                Mail::to($notifyUser->email)->send(new ReservePromoted($this, $next));
             }
         }
 
