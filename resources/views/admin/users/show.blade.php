@@ -45,7 +45,7 @@
 .otp-msg.err { display:flex; align-items:center; gap:8px; background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
 
 .section-divider {
-    display:flex; align-items:center; gap:10px; margin:20px 0 16px; color:#d1d5db; 
+    display:flex; align-items:center; gap:10px; margin:20px 0 16px; color:#d1d5db;
     font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em;
 }
 .section-divider::before,.section-divider::after { content:''; flex:1; height:1px; background:#f1f3f5; }
@@ -69,6 +69,9 @@
 </script>
 @endif
 
+@php
+    $isSuperadmin = auth()->user()->role === 'superadmin';
+@endphp
 @section('content')
 <div class="bg-slate-50 text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
@@ -89,8 +92,8 @@
                 @php
                     // เช็คว่ามีรูปใน User หรือ รูปจากโปรไฟล์พนักงาน/โค้ช หรือไม่
                     $displayAvatarUrl = null;
-                    
-                    // เพิ่มการเช็คว่ามีค่าใน DB และ ไฟล์ต้องมีอยู่จริงในโฟลเดอร์ storage 
+
+                    // เพิ่มการเช็คว่ามีค่าใน DB และ ไฟล์ต้องมีอยู่จริงในโฟลเดอร์ storage
                     if (!empty($user->avatar) && \Storage::disk('public')->exists($user->avatar)) {
                         $displayAvatarUrl = asset('storage/' . $user->avatar);
                     } elseif (!empty($user->staffProfile?->profile_image)) {
@@ -106,7 +109,7 @@
                         <span class="text-3xl font-bold">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
                     @endif
                 </div>
-                
+
                 <div class="flex-1 w-full">
                     {{-- แถวบน: ชื่อ, สถานะ OTP และ ปุ่มจัดการ --}}
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -160,12 +163,14 @@
                                 </svg>
                                 จัดการเครดิต ({{ number_format($user->credit_balance / 100, 0) }} บาท)
                             </a>
-                            <button type="button" onclick="openUserProfileModal()" class="flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                แก้ไขข้อมูลส่วนตัว
-                            </button>
+                            @if($isSuperadmin)
+                                <button type="button" onclick="openUserProfileModal()" class="flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    แก้ไขข้อมูลส่วนตัว
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -202,7 +207,7 @@
                             <div class="text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400">เบอร์โทรศัพท์</div>
                             <div class="mt-1 flex items-center gap-2 font-medium text-gray-700">
                                 <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                                 </svg>
                                 {{ $user->phone ?: '-' }}
@@ -356,137 +361,139 @@
     </div>
 </div>
 
-<div id="userProfileModal" class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100">
-        <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4">
-            <h3 class="text-xl font-bold text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
-        </div>
-
-        <form action="{{ route('admin.users.profile.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-4 bg-white p-6">
-            @csrf
-            @method('PUT')
-
-            {{-- ช่องอัปโหลดรูปโปรไฟล์ --}}
-            <div class="md:col-span-2">
-                <label class="mb-1.5 block text-xs font-medium text-gray-600">รูปโปรไฟล์</label>
-                <div class="flex items-center gap-5 mb-2 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
-                    {{-- วงกลมรูปโปรไฟล์ --}}
-                    <div class="relative w-[72px] h-[72px] rounded-full border-2 border-white shadow-sm bg-orange-50 flex items-center justify-center overflow-hidden group cursor-pointer flex-shrink-0" onclick="document.getElementById('avatarInput').click()">
-                        <img id="avatarPreview" src="{{ $displayAvatarUrl ?? '' }}" class="{{ !empty($displayAvatarUrl) ? '' : 'hidden' }} w-full h-full object-cover">
-                        <span id="avatarFallback" class="{{ !empty($displayAvatarUrl) ? 'hidden' : '' }} text-3xl font-kanit font-bold text-orange-400">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
-                        
-                        {{-- Hover Effect รูปกล้อง --}}
-                        <div class="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center transition">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1">
-                        <div class="flex flex-wrap gap-2">
-                             {{-- ปุ่มเปลี่ยนรูป --}}
-                            <button type="button" onclick="document.getElementById('avatarInput').click()" class="text-[12px] font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">เปลี่ยนรูป</button>
-                            
-                            {{-- ปุ่มลบรูป --}}
-                            <button type="button" id="removeAvatarBtn" class="{{ !empty($user->avatar) ? '' : 'hidden' }} text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">ลบรูปโปรไฟล์</button>
-                        </div>
-                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
-                        
-                        {{-- Input ซ่อน --}}
-                        <input type="file" name="avatar" id="avatarInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
-                        {{-- ตัวแปรลับส่งไปบอก Controller ว่ากดลบรูป --}}
-                        <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
-                    </div>
-                </div>
+@if($isSuperadmin)
+    <div id="userProfileModal" class="fixed inset-0 z-[60] hidden bg-gray-900/60 backdrop-blur-sm items-center justify-center p-4 transition-all">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100">
+            <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4">
+                <h3 class="text-xl font-bold text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
             </div>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $user->name ?? '') }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
-                </div>
 
-                <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">ชื่อบัญชีผู้ใช้ <span class="text-red-500">*</span></label>
-                    <input type="text" name="us_name" value="{{ old('us_name', $user->us_name) }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
-                </div>
+            <form action="{{ route('admin.users.profile.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-4 bg-white p-6">
+                @csrf
+                @method('PUT')
 
-                <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">บทบาท (Role) <span class="text-red-500">*</span></label>
-                    
-                    @if(auth()->id() === $user->id)
-                        <input type="hidden" name="role" value="{{ $user->role }}">
-                        <select id="roleSelect" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-500 outline-none">
-                            <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>ผู้ใช้งาน (User)</option>
-                            <option value="staff" {{ $user->role === 'staff' ? 'selected' : '' }}>พนักงาน (Staff)</option>
-                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
-                            <option value="superadmin" {{ $user->role === 'superadmin' ? 'selected' : '' }}>ผู้ดูแลระบบสูงสุด (Super Admin)</option>
-                        </select>
-                    @else
-                        <select name="role" id="roleSelect" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
-                            <option value="user" {{ old('role', $user->role) === 'user' ? 'selected' : '' }}>ผู้ใช้งาน (User)</option>
-                            <option value="staff" {{ old('role', $user->role) === 'staff' ? 'selected' : '' }}>พนักงาน (Staff)</option>
-                            <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
-                            
-                            @if(auth()->user()->role === 'superadmin')
-                                <option value="superadmin" {{ old('role', $user->role) === 'superadmin' ? 'selected' : '' }}>ผู้ดูแลระบบสูงสุด (Super Admin)</option>
-                            @endif
-                        </select>
-                    @endif
-                </div>
+                {{-- ช่องอัปโหลดรูปโปรไฟล์ --}}
+                <div class="md:col-span-2">
+                    <label class="mb-1.5 block text-xs font-medium text-gray-600">รูปโปรไฟล์</label>
+                    <div class="flex items-center gap-5 mb-2 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
+                        {{-- วงกลมรูปโปรไฟล์ --}}
+                        <div class="relative w-[72px] h-[72px] rounded-full border-2 border-white shadow-sm bg-orange-50 flex items-center justify-center overflow-hidden group cursor-pointer flex-shrink-0" onclick="document.getElementById('avatarInput').click()">
+                            <img id="avatarPreview" src="{{ $displayAvatarUrl ?? '' }}" class="{{ !empty($displayAvatarUrl) ? '' : 'hidden' }} w-full h-full object-cover">
+                            <span id="avatarFallback" class="{{ !empty($displayAvatarUrl) ? 'hidden' : '' }} text-3xl font-kanit font-bold text-orange-400">{{ mb_strtoupper(mb_substr($user->name ?? $user->us_name, 0, 1)) }}</span>
 
-                <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">ประเภทสมาชิก <span class="text-red-500">*</span></label>
-                    <select name="membership_type" id="membershipSelect" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                        
-                    </select>
-                </div>
+                            {{-- Hover Effect รูปกล้อง --}}
+                            <div class="absolute inset-0 bg-black/40 hidden group-hover:flex flex-col items-center justify-center transition">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </div>
+                        </div>
 
-                <div class="md:col-span-2 mt-2">
-                    <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400 after:h-px after:flex-1 after:bg-gray-100">
-                        ข้อมูลติดต่อ
-                    </div>
-                </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap gap-2">
+                                 {{-- ปุ่มเปลี่ยนรูป --}}
+                                <button type="button" onclick="document.getElementById('avatarInput').click()" class="text-[12px] font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">เปลี่ยนรูป</button>
 
-                <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">อีเมล <span class="text-red-500">*</span></label>
-                    <input type="email" name="email" id="emailInput" data-original-email="{{ $user->email }}" value="{{ old('email', $user->email) }}" required placeholder="example@email.com" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
-                </div>
+                                {{-- ปุ่มลบรูป --}}
+                                <button type="button" id="removeAvatarBtn" class="{{ !empty($user->avatar) ? '' : 'hidden' }} text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">ลบรูปโปรไฟล์</button>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
 
-                <div>
-                    <label class="mb-1.5 block text-xs font-medium text-gray-600">เบอร์โทรศัพท์ <span class="text-red-500">*</span></label>
-                    <input type="text" name="phone" value="{{ old('phone', $user->phone ?? '') }}" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required placeholder="0812345678" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
-                </div>
-
-                {{-- OTP Section --}}
-                <div id="otpSection" class="md:col-span-2" style="display:none;">
-                    <div class="otp-notice mb-3">
-                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                        </svg>
-                        <div class="otp-notice-text">
-                            <strong>ต้องยืนยัน OTP เพื่อเปลี่ยนอีเมล</strong>
-                            กดปุ่ม "ส่ง OTP" แล้วนำรหัสมาตรวจสอบก่อนบันทึก
+                            {{-- Input ซ่อน --}}
+                            <input type="file" name="avatar" id="avatarInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
+                            {{-- ตัวแปรลับส่งไปบอก Controller ว่ากดลบรูป --}}
+                            <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
                         </div>
                     </div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <label class="mb-1.5 block text-xs font-medium text-gray-600">รหัส OTP (6 หลัก)</label>
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <input type="text" name="otp" id="otpInput" maxlength="6" pattern="[0-9]{6}" placeholder="000000" class="w-full sm:w-1/2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
-                            <button type="button" onclick="requestOtp()" class="w-full sm:w-1/2 py-2 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 cursor-pointer transition font-kanit">
-                                ส่ง OTP ไปยังอีเมลใหม่
-                            </button>
+                        <label class="mb-1.5 block text-xs font-medium text-gray-600">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" value="{{ old('name', $user->name ?? '') }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-medium text-gray-600">ชื่อบัญชีผู้ใช้ <span class="text-red-500">*</span></label>
+                        <input type="text" name="us_name" value="{{ old('us_name', $user->us_name) }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-medium text-gray-600">บทบาท (Role) <span class="text-red-500">*</span></label>
+
+                        @if(auth()->id() === $user->id)
+                            <input type="hidden" name="role" value="{{ $user->role }}">
+                            <select id="roleSelect" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-500 outline-none">
+                                <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>ผู้ใช้งาน (User)</option>
+                                <option value="staff" {{ $user->role === 'staff' ? 'selected' : '' }}>พนักงาน (Staff)</option>
+                                <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
+                                <option value="superadmin" {{ $user->role === 'superadmin' ? 'selected' : '' }}>ผู้ดูแลระบบสูงสุด (Super Admin)</option>
+                            </select>
+                        @else
+                            <select name="role" id="roleSelect" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
+                                <option value="user" {{ old('role', $user->role) === 'user' ? 'selected' : '' }}>ผู้ใช้งาน (User)</option>
+                                <option value="staff" {{ old('role', $user->role) === 'staff' ? 'selected' : '' }}>พนักงาน (Staff)</option>
+                                <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>ผู้ดูแลระบบ (Admin)</option>
+
+                                @if(auth()->user()->role === 'superadmin')
+                                    <option value="superadmin" {{ old('role', $user->role) === 'superadmin' ? 'selected' : '' }}>ผู้ดูแลระบบสูงสุด (Super Admin)</option>
+                                @endif
+                            </select>
+                        @endif
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-medium text-gray-600">ประเภทสมาชิก <span class="text-red-500">*</span></label>
+                        <select name="membership_type" id="membershipSelect" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 mt-2">
+                        <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-400 after:h-px after:flex-1 after:bg-gray-100">
+                            ข้อมูลติดต่อ
                         </div>
-                        <div id="otpMessage" class="otp-msg"></div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-medium text-gray-600">อีเมล <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" id="emailInput" data-original-email="{{ $user->email }}" value="{{ old('email', $user->email) }}" required placeholder="example@email.com" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-medium text-gray-600">เบอร์โทรศัพท์ <span class="text-red-500">*</span></label>
+                        <input type="text" name="phone" value="{{ old('phone', $user->phone ?? '') }}" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" required placeholder="0812345678" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
+                    </div>
+
+                    {{-- OTP Section --}}
+                    <div id="otpSection" class="md:col-span-2" style="display:none;">
+                        <div class="otp-notice mb-3">
+                            <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                            <div class="otp-notice-text">
+                                <strong>ต้องยืนยัน OTP เพื่อเปลี่ยนอีเมล</strong>
+                                กดปุ่ม "ส่ง OTP" แล้วนำรหัสมาตรวจสอบก่อนบันทึก
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-medium text-gray-600">รหัส OTP (6 หลัก)</label>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <input type="text" name="otp" id="otpInput" maxlength="6" pattern="[0-9]{6}" placeholder="000000" class="w-full sm:w-1/2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-orange-500">
+                                <button type="button" onclick="requestOtp()" class="w-full sm:w-1/2 py-2 text-[13px] font-semibold border border-green-200 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 cursor-pointer transition font-kanit">
+                                    ส่ง OTP ไปยังอีเมลใหม่
+                                </button>
+                            </div>
+                            <div id="otpMessage" class="otp-msg"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
-                <button type="button" onclick="closeUserProfileModal()" class="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200">ยกเลิก</button>
-                <button type="submit" class="cursor-pointer rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700">บันทึกข้อมูล</button>
-            </div>
-        </form>
+                <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
+                    <button type="button" onclick="closeUserProfileModal()" class="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200">ยกเลิก</button>
+                    <button type="submit" class="cursor-pointer rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+@endif
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -633,22 +640,22 @@ function requestOtp() {
     const email = emailInput.value.trim();
     const originalEmail = emailInput.getAttribute('data-original-email');
     const box = document.getElementById('otpMessage');
-    
+
     if (email === originalEmail) {
         box.textContent = 'อีเมลไม่มีการเปลี่ยนแปลง';
-        box.className = 'otp-msg err'; 
+        box.className = 'otp-msg err';
         return;
     }
-    
+
     const fd = new FormData();
     fd.append('email', email);
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     if(csrfToken) fd.append('_token', csrfToken.getAttribute('content'));
-    
+
     box.style.display = 'flex';
     box.innerHTML = 'กำลังส่ง OTP...';
     box.className = 'otp-msg ok';
-    
+
     fetch('{{ route('profile.request-otp-email') }}', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
@@ -660,9 +667,9 @@ function requestOtp() {
                 box.className = 'otp-msg err';
             }
         })
-        .catch(() => { 
-            box.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ'; 
-            box.className = 'otp-msg err'; 
+        .catch(() => {
+            box.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+            box.className = 'otp-msg err';
         });
 }
 
@@ -693,7 +700,7 @@ if (avatarInput) {
                 avatarPreview.src = e.target.result;
                 avatarPreview.classList.remove('hidden');
                 if (avatarFallback) avatarFallback.classList.add('hidden');
-                
+
                 if (removeAvatarBtn) removeAvatarBtn.classList.remove('hidden');
                 if (removeAvatarInput) removeAvatarInput.value = '0';
             }
@@ -707,10 +714,10 @@ if (removeAvatarBtn) {
         avatarPreview.classList.add('hidden');
         avatarPreview.src = '';
         if (avatarFallback) avatarFallback.classList.remove('hidden');
-        
+
         if (avatarInput) avatarInput.value = '';
         this.classList.add('hidden');
-        
+
         // ส่งค่าไปบอกระบบหลังบ้านให้ลบไฟล์เดิม
         if (removeAvatarInput) removeAvatarInput.value = '1';
     });

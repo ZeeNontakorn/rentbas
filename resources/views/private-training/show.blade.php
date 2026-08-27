@@ -5,6 +5,7 @@
 @section('content')
 @include('private-training._calendar-theme')
 <div class="min-h-screen bg-slate-50 py-8 text-gray-900">
+    @include('components.mail-loading-overlay')
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
         <a href="{{ route('private-training.index') }}"
             class="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-orange-500">
@@ -144,7 +145,7 @@
         <div class="border-b border-gray-100 bg-gray-50 px-6 py-4">
             <h3 class="font-bold text-gray-800">ยืนยันคำขอจองเทรนเนอร์ส่วนตัว</h3>
         </div>
-        <form action="{{ route('private-training.store') }}" method="POST" class="space-y-4 p-6">
+        <form action="{{ route('private-training.store') }}" method="POST" class="space-y-4 p-6" onsubmit="showMailLoadingOverlay('กำลังส่งคำขอจองไปที่อีเมลของผู้ดูแลระบบ'); this.querySelector('button[type=submit]').disabled = true;">
             @csrf
             <input type="hidden" name="coach_id" value="{{ $coach->id }}">
             <input type="hidden" name="date" id="booking-date">

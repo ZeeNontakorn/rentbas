@@ -61,6 +61,7 @@ class UserController extends Controller
     public function updateRole(Request $request, User $user)
     {
         $actor = $request->user();
+        abort_unless($actor->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถแก้ไข role ของผู้ใช้ได้');
         $actorIsSuperadmin = $actor->role === 'superadmin';
 
         if (! $actorIsSuperadmin && $user->role === 'superadmin') {
@@ -102,6 +103,7 @@ class UserController extends Controller
     // แก้ไขประเภทสมาชิก (ชุดตัวเลือกจะต่างกันตาม role ของ user คนนั้น)
     public function updateMembershipType(Request $request, User $user)
     {
+        abort_unless($request->user()->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถแก้ไขประเภทสมาชิกได้');
         abort_if(
             in_array($user->role, ['admin', 'superadmin'], true),
             403,
@@ -132,6 +134,7 @@ class UserController extends Controller
     public function updateProfile(Request $request, User $user)
     {
         $actor = $request->user();
+        abort_unless($actor->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถแก้ไขข้อมูลผู้ใช้ได้');
         $actorIsSuperadmin = $actor->role === 'superadmin';
 
         // 1. ป้องกันไม่ให้แอดมินธรรมดาแก้ไขข้อมูลของ Super Admin
@@ -195,7 +198,7 @@ class UserController extends Controller
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
-            
+
             // บันทึกรูปใหม่และเก็บ path
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $avatarPath;
@@ -217,7 +220,7 @@ class UserController extends Controller
             $user->fill($request->only(['name', 'us_name', 'email', 'phone']));
             $user->role = $validated['role'];
         }
-        
+
         // 5. จัดการ Membership Type ตามเงื่อนไขของ Role
         if (in_array($validated['role'], ['admin', 'superadmin'], true)) {
             $user->membership_type = 'admin'; // บังคับเป็น admin
@@ -238,6 +241,7 @@ class UserController extends Controller
     public function destroy(Request $request, User $user)
     {
         $actor = $request->user();
+        abort_unless($actor->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถลบบัญชีผู้ใช้ได้');
 
         abort_if($user->id === $actor->id, 403, 'ไม่สามารถลบบัญชีของตนเองได้');
         abort_if($user->role === 'superadmin', 403, 'ไม่สามารถลบบัญชี Super Admin ได้');
