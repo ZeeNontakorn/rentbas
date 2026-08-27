@@ -10,7 +10,7 @@
         <div class="mb-8 flex items-center justify-between">
             <div>
                 <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการเว็บไซต์</h1>
-                <p class="text-sm text-gray-500 mt-1">จัดการเนื้อหา รูปภาพ สิ่งอำนวยความสะดวก และรีวิวที่แสดงบนหน้า Home</p>
+                <p class="font-sarabun text-sm text-gray-500 mt-1">จัดการเนื้อหา รูปภาพ สิ่งอำนวยความสะดวก และรีวิวที่แสดงบนหน้า Home</p>
             </div>
         </div>
 
@@ -52,7 +52,7 @@
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">1. แก้ไขส่วน About Court</h3>
-                        <p class="text-xs text-gray-400">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
+                        <p class="font-sarabun text-xs text-gray-400">ข้อความที่แสดงในส่วน "เกี่ยวกับสนาม" ของหน้าหลัก</p>
 
                     </div>
                     <x-save-status />
@@ -85,9 +85,23 @@
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ About {{ $i }}</label>
                                 <img data-original-src="{{ $settings['about_img_'.$i] ?? '' }}" id="preview-about-{{ $i }}" src="{{ $settings['about_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" id="" name="about_img_{{ $i }}_file" accept="image/*"
-                                       class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
-                                       onchange="previewImg(this, 'preview-about-{{ $i }}')">
+                                <div class="flex items-center gap-2 mt-1">
+                                {{-- ปุ่มเปลี่ยนรูป --}}
+                                <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                    เปลี่ยนรูป
+                                    <input type="file" id="about_img_{{ $i }}_file" name="about_img_{{ $i }}_file" accept="image/*"
+                                        class="hidden"
+                                        onchange="
+                                            previewImg(this, 'preview-about-{{ $i }}');
+                                            document.getElementById('filename-about-{{ $i }}').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                        ">
+                                </label>
+
+                                {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                                <span id="filename-about-{{ $i }}" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                                    ไม่ได้เลือกไฟล์
+                                </span>
+                            </div>
                             </div>
                             @endforeach
                         </div>
@@ -106,7 +120,7 @@
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">2. แก้ไขส่วน Preview Promotion</h3>
-                        <p class="text-xs text-gray-400">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
+                        <p class="font-sarabun text-xs text-gray-400">ข้อความหัวเรื่องและการ์ดโปรโมชั่นแรกในหน้าหลัก</p>
                     </div>
                     <x-save-status />
                 </div>
@@ -169,9 +183,23 @@
                             <p class="text-xs text-center text-gray-400 mt-1">รูปปัจจุบัน</p>
                             <div class="flex items-start gap-4">
                                 <div class="flex-1">
-                                    <input type="file" id="" name="promo_image_file" accept="image/*"
-                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
-                                        onchange="previewImg(this)">
+                                    <div class="flex items-center gap-3">
+                                        {{-- ปุ่มเปลี่ยนรูป --}}
+                                        <label class="cursor-pointer inline-block px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-sm rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                            เปลี่ยนรูป
+                                            <input type="file" id="promo_image_file" name="promo_image_file" accept="image/*"
+                                                class="hidden"
+                                                onchange="
+                                                    previewImg(this);
+                                                    document.getElementById('filename-promo-image').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                                ">
+                                        </label>
+
+                                        {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                                        <span id="filename-promo-image" class="text-sm text-gray-500 truncate max-w-[250px]" style="font-family: 'Kanit', sans-serif;">
+                                            ไม่ได้เลือกไฟล์
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -190,7 +218,7 @@
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">3. แก้ไขรูปภาพหน้าหลักอื่นๆ</h3>
-                        <p class="text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, พื้นหลัง, Community)</p>
+                        <p class="font-sarabun text-xs text-gray-400">อัปโหลดรูปภาพส่วนต่างๆ ของหน้า Home Page (Hero, พื้นหลัง, Community)</p>
                     </div>
                     <x-save-status />
                 </div>
@@ -205,9 +233,23 @@
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Hero Banner {{ $i }}</label>
                                 <img data-original-src="{{ $settings['hero_img_'.$i] ?? '' }}" id="preview-hero-{{ $i }}" src="{{ $settings['hero_img_'.$i] ?? '' }}" class="h-40 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" name="hero_img_{{ $i }}_file" accept="image/*"
-                                       class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
-                                       onchange="previewImg(this, 'preview-hero-{{ $i }}')">
+                                <div class="flex items-center gap-2 mb-2 mt-1">
+                                    {{-- ปุ่มเปลี่ยนรูป --}}
+                                    <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                        เปลี่ยนรูป
+                                        <input type="file" id="hero_img_{{ $i }}_file" name="hero_img_{{ $i }}_file" accept="image/*"
+                                            class="hidden"
+                                            onchange="
+                                                previewImg(this, 'preview-hero-{{ $i }}');
+                                                document.getElementById('filename-hero-{{ $i }}').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                            ">
+                                    </label>
+
+                                    {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                                    <span id="filename-hero-{{ $i }}" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                                        ไม่ได้เลือกไฟล์
+                                    </span>
+                                </div>
                             </div>
                             @endforeach
                         </div>
@@ -220,16 +262,45 @@
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">พื้นหลังสนาม</label>
                                 <img data-original-src="{{ $settings['courts_bg'] ?? '' }}" id="preview-courts" src="{{ $settings['courts_bg'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" id="" name="courts_bg_file" accept="image/*"
-                                       class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
-                                       onchange="previewImg(this, 'preview-courts')">
+                                <div class="flex items-center gap-2 mb-2 mt-1">
+                                    {{-- ปุ่มเปลี่ยนรูป --}}
+                                    <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                        เปลี่ยนรูป
+                                        <input type="file" id="courts_bg_file" name="courts_bg_file" accept="image/*"
+                                            class="hidden"
+                                            onchange="
+                                                previewImg(this, 'preview-courts');
+                                                document.getElementById('filename-courts-bg').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                            ">
+                                    </label>
+
+                                    {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                                    <span id="filename-courts-bg" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                                        ไม่ได้เลือกไฟล์
+                                    </span>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-2">ภาพ Community</label>
                                 <img data-original-src="{{ $settings['community_img'] ?? '' }}" id="preview-community" src="{{ $settings['community_img'] ?? '' }}" class="h-60 w-full object-cover rounded-lg border border-gray-200">
-                                <input type="file" id="" name="community_img_file" accept="image/*"
-                                       class="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer"
-                                       onchange="previewImg(this, 'preview-community')">
+
+                                <div class="flex items-center gap-2 mt-2 mb-2">
+                                    {{-- ปุ่มเปลี่ยนรูป --}}
+                                    <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                        เปลี่ยนรูป
+                                        <input type="file" id="community_img_file" name="community_img_file" accept="image/*"
+                                            class="hidden"
+                                            onchange="
+                                                previewImg(this, 'preview-community');
+                                                document.getElementById('filename-community-img').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                            ">
+                                    </label>
+
+                                    {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                                    <span id="filename-community-img" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                                        ไม่ได้เลือกไฟล์
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -250,7 +321,7 @@
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">4. แก้ไขรูปภาพประจำสนาม</h3>
-                        <p class="text-xs text-gray-400">รูปแบนเนอร์ที่จะแสดงในหน้า Court Booking ของแต่ละสนาม</p>
+                        <p class="font-sarabun text-xs text-gray-400">รูปแบนเนอร์ที่จะแสดงในหน้า Court Booking ของแต่ละสนาม</p>
                     </div>
                     <x-save-status />
                 </div>
@@ -266,11 +337,23 @@
                              src="{{ $courtImgSrc }}"
                              class="h-32 w-full object-cover rounded-lg border border-gray-200 mb-3">
 
-                        <input type="file" id="" name="court_images[{{ $court->id }}]" accept="image/*"
-                               class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg
-                                      file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600
-                                      hover:file:bg-orange-100 cursor-pointer"
-                               onchange="previewImg(this, 'preview-court-{{ $court->id }}')">
+                        <div class="flex items-center gap-2 mt-1">
+                            {{-- ปุ่มเปลี่ยนรูป --}}
+                            <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                เปลี่ยนรูป
+                                <input type="file" id="court_image_{{ $court->id }}" name="court_images[{{ $court->id }}]" accept="image/*"
+                                    class="hidden"
+                                    onchange="
+                                        previewImg(this, 'preview-court-{{ $court->id }}');
+                                        document.getElementById('filename-court-{{ $court->id }}').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                    ">
+                            </label>
+
+                            {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                            <span id="filename-court-{{ $court->id }}" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                                ไม่ได้เลือกไฟล์
+                            </span>
+                        </div>
                     </div>
                     @endforeach
                 </div>
@@ -285,7 +368,7 @@
             <section id="facility-management" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 scroll-mt-24">
                 <div class="mb-6">
                     <h3 class="text-lg font-bold text-gray-800 mb-1">5. สิ่งอำนวยความสะดวก</h3>
-                    <p class="text-xs text-gray-400">เพิ่มการ์ดใหม่พร้อมรูปภาพ หรือเปิด–ปิดการแสดงผลบนหน้า Home</p>
+                    <p class="font-sarabun text-xs text-gray-400">เพิ่มการ์ดใหม่พร้อมรูปภาพ หรือเปิด–ปิดการแสดงผลบนหน้า Home</p>
                 </div>
 
                 <form action="{{ route('admin.website.facilities.store') }}" method="POST" enctype="multipart/form-data" novalidate
@@ -317,8 +400,22 @@
                         <div class="md:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-gray-700">รูปภาพ</label>
                             <div class="rounded-lg border p-2 {{ $errors->facilityCreate->has('image') ? 'border-red-500 bg-red-50/40' : 'border-transparent' }}">
-                                <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
-                                       class="block w-full text-xs text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-100 file:px-4 file:py-2 file:font-semibold file:text-orange-700 hover:file:bg-orange-200">
+                                <div class="flex items-center gap-2 mt-1">
+                                    {{-- ปุ่มเปลี่ยนรูป --}}
+                                    <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                                        เปลี่ยนรูป
+                                        <input type="file" id="image" name="image" required accept="image/jpeg,image/png,image/webp"
+                                            class="hidden"
+                                            onchange="
+                                                document.getElementById('filename-image').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                                            ">
+                                    </label>
+
+                                    {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+                                    <span id="filename-image" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                                        ไม่ได้เลือกไฟล์
+                                    </span>
+                                </div>
                             </div>
                             <p class="mt-1 text-[11px] text-gray-400">JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</p>
                             @if($errors->facilityCreate->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->facilityCreate->first('image') }}</p>@endif
@@ -362,19 +459,33 @@
                                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('description') : $facility->description }}</textarea>
                                 @if($errors->getBag('facilityUpdate'.$facility->id)->has('description'))<p class="text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('description') }}</p>@endif
                                 <div class="grid grid-cols-[90px_1fr] gap-3">
-                                    <div>
-                                        <label class="mb-1 block text-xs text-gray-500">ลำดับ</label>
-                                        <input type="number" name="sort_order" value="{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('sort_order') : $facility->sort_order }}" min="0" max="999" required
-                                               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">
-                                        @if($errors->getBag('facilityUpdate'.$facility->id)->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('sort_order') }}</p>@endif
-                                    </div>
-                                    <div>
-                                        <label class="mb-1 block text-xs text-gray-500">เปลี่ยนรูป</label>
-                                        <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
-                                               class="block w-full text-xs text-gray-500 file:mr-2 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-2">
-                                        @if($errors->getBag('facilityUpdate'.$facility->id)->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('image') }}</p>@endif
-                                    </div>
-                                </div>
+    <div>
+        <label class="mb-1 block text-xs text-gray-500" style="font-family: 'Kanit', sans-serif;">ลำดับ</label>
+        <input type="number" name="sort_order" value="{{ $errors->getBag('facilityUpdate'.$facility->id)->any() ? old('sort_order') : $facility->sort_order }}" min="0" max="999" required
+               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-orange-500">
+        @if($errors->getBag('facilityUpdate'.$facility->id)->has('sort_order'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('sort_order') }}</p>@endif
+    </div>
+    <div>
+        <label class="mb-1 block text-xs text-gray-500" style="font-family: 'Kanit', sans-serif;">ไอคอน/รูปภาพ</label>
+        <div class="flex items-center gap-2">
+            {{-- ปุ่มเปลี่ยนรูป --}}
+            <label class="cursor-pointer inline-block px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold text-xs rounded-lg transition whitespace-nowrap" style="font-family: 'Kanit', sans-serif;">
+                เปลี่ยนรูป
+                <input type="file" id="facility_img_{{ $facility->id }}_file" name="image" accept="image/jpeg,image/png,image/webp"
+                    class="hidden"
+                    onchange="
+                        document.getElementById('filename-facility-{{ $facility->id }}').textContent = this.files[0] ? this.files[0].name : 'ไม่ได้เลือกไฟล์';
+                    ">
+            </label>
+
+            {{-- ส่วนแสดงชื่อไฟล์ที่เลือก --}}
+            <span id="filename-facility-{{ $facility->id }}" class="text-xs text-gray-500 truncate max-w-[200px]" style="font-family: 'Kanit', sans-serif;">
+                ไม่ได้เลือกไฟล์
+            </span>
+        </div>
+        @if($errors->getBag('facilityUpdate'.$facility->id)->has('image'))<p class="mt-1 text-xs text-red-600">{{ $errors->getBag('facilityUpdate'.$facility->id)->first('image') }}</p>@endif
+    </div>
+</div>
                                 <div class="grid grid-cols-[1fr_auto] gap-2">
                                     <button type="submit" class="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 cursor-pointer">บันทึกการ์ด</button>
                                     <button type="submit" form="delete-facility-{{ $facility->id }}"
@@ -399,7 +510,7 @@
                 <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 mb-1">6. รีวิวจากสมาชิก</h3>
-                        <p class="text-xs text-gray-400">รีวิวใหม่จะรอตรวจสอบ และจะแสดงบนหน้า Home หลัง Admin กดเผยแพร่เท่านั้น</p>
+                        <p class="font-sarabun text-xs text-gray-400">รีวิวใหม่จะรอตรวจสอบ และจะแสดงบนหน้า Home หลัง Admin กดเผยแพร่เท่านั้น</p>
                     </div>
                     <div class="flex gap-2 text-xs">
                         <span class="rounded-full bg-amber-100 px-3 py-1 font-semibold text-amber-700">รอตรวจ {{ $pendingReviewsCount }}</span>

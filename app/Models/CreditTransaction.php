@@ -16,6 +16,7 @@ class CreditTransaction extends Model
     'private_training_booking_id',
     'package_purchase_id',
     'credit_topup_request_id',
+    'group_round_signup_id',
     'payment_method',
     'processed_by_name',
 ];

@@ -217,7 +217,8 @@
                 ยกเลิก
             </button>
         @endif
-        <button type="submit" class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 cursor-pointer transition">
+        <button type="submit"
+                class="text-xs font-semibold text-white {{ $isEdit ? 'bg-blue-500 hover:bg-blue-600' : 'bg-emerald-500 hover:bg-emerald-600' }} rounded-lg px-5 py-2 cursor-pointer transition">
             {{ $isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มแพ็กเกจ' }}
         </button>
     </div>

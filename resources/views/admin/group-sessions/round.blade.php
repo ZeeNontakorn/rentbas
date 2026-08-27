@@ -4,15 +4,12 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto px-4 py-6">
-
-    {{-- กลับหน้ารายการ --}}
-    <a
-        href="{{ route('admin.group-sessions.index') }}"
-        class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition"
-    >
-        &larr; กลับไปหน้ารายการรอบ
-    </a>
-
+    <a href="{{ route('admin.group-sessions.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
+            <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            กลับหน้าจัดการ
+        </a>
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-2 mb-6">
 
@@ -55,7 +52,7 @@
 
                     <button
                         type="submit"
-                        class="px-3 py-1.5 text-sm border border-orange-200 text-orange-600 rounded-lg hover:bg-orange-50 transition"
+                        class="px-3 py-1.5 text-sm border border-orange-200 text-orange-600 rounded-lg hover:bg-orange-50 cursor-pointer transition"
                     >
                         ปิดรับสมัคร
                     </button>
@@ -72,7 +69,7 @@
 
                     <button
                         type="submit"
-                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 cursor-pointer transition"
                     >
                         เปิดรับสมัครอีกครั้ง
                     </button>
@@ -85,7 +82,7 @@
             action="{{ route('admin.group-sessions.rounds.cancel', $round) }}"
             method="POST"
             data-confirm="ยกเลิกรอบนี้และคืนเครดิตให้ทุกคนที่ลงชื่อไว้?"
-            data-confirm-button-text="ยืนยันยกเลิก"
+            data-confirm-button-text="ยืนยัน"
             data-confirm-danger="1"
                 >
                 @csrf
@@ -93,7 +90,7 @@
 
                 <button
                     type="submit"
-                    class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition"
+                    class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 cursor-pointer transition"
                 >
                     ยกเลิกรอบ
                 </button>
@@ -162,10 +159,10 @@
 
 
             <form
+                id="add-player-form"
                 action="{{ route('admin.group-sessions.rounds.addPlayer', $round) }}"
                 method="POST"
                 class="flex flex-col lg:flex-row gap-2"
-                onsubmit="return this.user_id.value || this.guest_name.value.trim() !== '' ? true : (alert('เลือกสมาชิก หรือกรอกชื่อผู้จองภายนอกอย่างใดอย่างหนึ่ง'), false)"
             >
 
                 @csrf
@@ -232,9 +229,12 @@
                 {{-- ปุ่มเพิ่ม --}}
                 <button
                     type="submit"
-                    class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition whitespace-nowrap"
+                    class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 inline-flex items-center gap-2 cursor-pointer transition whitespace-nowrap"
                 >
-                    + เพิ่มผู้จอง
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    เพิ่มผู้จอง
                 </button>
 
             </form>
@@ -373,7 +373,7 @@
                                     action="{{ route('admin.group-sessions.rounds.removePlayer', [$round, $signup]) }}"
                                     method="POST"
                                     data-confirm="นำ {{ $playerName }} ออกจากรอบ{{ $signup->credit_used > 0 ? ' และคืนเครดิต '.$signup->credit_used.' หน่วย' : '' }}?"
-                                    data-confirm-button-text="นำออก"
+                                    data-confirm-button-text="ยืนยัน"
                                     data-confirm-danger="1"
                                 >
 
@@ -382,7 +382,7 @@
 
                                     <button
                                         type="submit"
-                                        class="text-red-500 hover:text-red-700 font-medium transition"
+                                        class="text-red-500 hover:text-red-700 font-medium cursor-pointer transition"
                                     >
                                         นำออก
                                     </button>
@@ -442,5 +442,18 @@
             }
         }
     }
+
+    document.getElementById('add-player-form')?.addEventListener('submit', function (event) {
+        const userId = this.user_id.value;
+        const guestName = this.guest_name.value.trim();
+
+        if (!userId && guestName === '') {
+            event.preventDefault();
+            Toast.fire({
+                icon: 'warning',
+                title: 'เลือกสมาชิก หรือกรอกชื่อผู้จองภายนอกอย่างใดอย่างหนึ่ง',
+            });
+        }
+    });
 </script>
 @endpush

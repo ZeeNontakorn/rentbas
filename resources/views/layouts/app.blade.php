@@ -17,6 +17,11 @@
         body {
             font-family: 'Kanit', sans-serif;
         }
+
+        .font-sarabun {
+            font-family: 'Sarabun', sans-serif;
+        }
+        
         [x-cloak] {
         display: none !important;
     }

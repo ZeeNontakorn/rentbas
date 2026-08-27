@@ -3,16 +3,18 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto px-4 py-6">
-
+<a href="{{ route('admin.group-sessions.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-500 mb-6 transition font-medium group">
+            <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            กลับหน้าจัดการ
+        </a>
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900">ประวัติกลุ่มเล่นบาส</h1>
-            <p class="text-sm text-gray-500 mt-1">รอบที่ผ่านไปแล้ว หรือปิดรับสมัครแล้ว</p>
+            <p class="font-sarabun text-sm text-gray-500 mt-1">รอบที่ผ่านไปแล้ว หรือปิดรับสมัครแล้ว</p>
         </div>
-        <a href="{{ route('admin.group-sessions.index') }}"
-            class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
-            ← กลับหน้าจัดการ
-        </a>
+        
     </div>
 
     {{-- ฟอร์มค้นหา --}}
@@ -21,16 +23,16 @@
         <div class="flex-1 min-w-[200px]">
             <label class="block text-xs font-medium text-gray-600 mb-1">ค้นหาชื่อรอบ</label>
             <input type="text" name="search" value="{{ $search }}" placeholder="เช่น กินข้าวกันครับอ้าย"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">วันที่เล่น</label>
             <input type="date" name="date" value="{{ $date }}"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none">
         </div>
         <div class="flex gap-2">
             <button type="submit"
-                class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+                    class="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 focus:ring-2 focus:ring-orange-500/30 outline-none cursor-pointer transition">
                 ค้นหา
             </button>
             @if($search || $date)
