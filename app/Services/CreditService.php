@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
+use App\Models\GroupRoundSignup;
+
 
 class CreditService
 {
@@ -421,4 +423,49 @@ class CreditService
 
         return $notifiedCount;
     }
-}
+
+        /**
+         * หักเครดิตสำหรับลงชื่อกลุ่มเล่นบาส — เรียกตอนแอดมินเพิ่มสมาชิกเข้ารอบ (addPlayer)
+         * ต้องเรียกภายใน DB::transaction ของฝั่ง GroupSessionController อยู่แล้ว (ที่ lock $round ไว้)
+         */
+        public function deductForGroupRound(User $user, GroupRoundSignup $signup): CreditTransaction
+        {
+            $lockedUser = User::whereKey($user->id)->lockForUpdate()->first();
+
+            if ($lockedUser->credit_balance < $signup->credit_used * 100) {
+                throw new RuntimeException('ยอดเครดิตไม่เพียงพอ');
+            }
+
+            $lockedUser->decrement('credit_balance', $signup->credit_used * 100);
+
+            return CreditTransaction::create([
+                'user_id' => $lockedUser->id,
+                'type' => 'deduct',
+                'amount' => $signup->credit_used * 100,
+                'balance_after' => $lockedUser->fresh()->credit_balance,
+                'group_round_signup_id' => $signup->id,
+                'note' => "ชำระค่าลงชื่อกลุ่มเล่นบาส รอบ #{$signup->group_round_id}",
+            ]);
+        }
+
+        /**
+         * คืนเครดิตกรณีที่นั่งกลุ่มเล่นบาสถูกยกเลิก/นำออก/หมดเวลาสละสิทธิ์
+         */
+        public function refundForGroupRound(int $userId, GroupRoundSignup $signup, ?string $note = null): CreditTransaction
+        {
+            return DB::transaction(function () use ($userId, $signup, $note) {
+                $lockedUser = User::whereKey($userId)->lockForUpdate()->first();
+                $amount = $signup->credit_used * 100;
+                $lockedUser->increment('credit_balance', $amount);
+
+                return CreditTransaction::create([
+                    'user_id' => $lockedUser->id,
+                    'type' => 'refund',
+                    'amount' => $amount,
+                    'balance_after' => $lockedUser->fresh()->credit_balance,
+                    'group_round_signup_id' => $signup->id,
+                    'note' => $note ?? "คืนเครดิตที่นั่งกลุ่มเล่นบาส #{$signup->id}",
+                ]);
+            });
+        }
+ }
