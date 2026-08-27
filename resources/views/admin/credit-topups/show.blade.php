@@ -101,12 +101,12 @@
                                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none">
                             </div>
                         @endif
-                        <button type="submit" class="w-full text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                        <button type="submit" class="w-full  text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 cursor-pointer transition">
                             อนุมัติและเติมเครดิต
                         </button>
                     </form>
 
-                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 cursor-pointer transition">
+                    <button type="button" onclick="openRejectTopupModal()" class="flex-1 h-full mt-17 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-5 py-2.5 cursor-pointer transition">
                             ปฏิเสธคำขอ
                     </button>
                 </div>
