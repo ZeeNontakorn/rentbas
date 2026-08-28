@@ -21,7 +21,7 @@
         </div>
         <div class="slider-actions">
             @auth
-                <a href="{{ route('reviews.create') }}" class="write-review-btn"><span aria-hidden="true">✦</span> เขียนรีวิว</a>
+                <a href="{{ route('reviews.create') }}" class="write-review-btn"><span aria-hidden="true">✦</span>เขียนรีวิว</a>
             @endauth
             @if(($reviews ?? collect())->count() > 1)
                 <button type="button" class="slider-btn" data-slider="review-track" data-direction="-1" aria-label="เลื่อนรีวิวไปทางซ้าย">←</button>
