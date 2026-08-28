@@ -205,7 +205,7 @@ class GroupRound extends Model
                     $creditService->refundForGroupRound(
                         $payerId,
                         $signup,
-                        "คืนเครดิตอัตโนมัติ (หมดเวลาสละสิทธิ์/รอบเล่นจบแล้ว) รอบ \"{$round->title}\""
+                        "หมดเวลาสละสิทธิ หรือ รอบ\"{$round->title}\"เล่นจบแล้ว "
                     );
                 }
 
@@ -240,5 +240,14 @@ class GroupRound extends Model
             : $this->play_date->copy()->endOfDay();
 
         return now()->greaterThan($end);
+    }
+    /**
+     * หมดสิทธิ์รับคิวสำรอง/คนใหม่แล้วหรือยัง — true ถ้า "หมดเวลายกเลิกจอง" หรือ "รอบเล่นจบไปแล้ว"
+     * อย่างใดอย่างหนึ่ง (รอบที่ไม่ตั้ง cancel_deadline ไว้ canSelfCancel() จะ true เสมอ แต่ถ้ารอบ
+     * เล่นจบไปแล้วก็ควรถือว่าปิดรับคนใหม่ด้วย ไม่งั้นจะเพิ่มคนได้ไม่จำกัดแม้รอบจบไปแล้วก็ตาม)
+     */
+    public function reservationsClosed(): bool
+    {
+        return ! $this->canSelfCancel() || $this->hasRoundEnded();
     }
 }
