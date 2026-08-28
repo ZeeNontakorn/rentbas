@@ -191,11 +191,11 @@ class GroupSessionController extends Controller
             }
 
             // เต็มจำนวนตัวจริง + หมดเวลาสละสิทธิ์แล้ว -> ปิดรับเพิ่มคนโดยสิ้นเชิง (แม้แต่แอดมินก็เพิ่มไม่ได้)
-            if (! $round->canSelfCancel() && $round->isFull()) {
-                return back()->withErrors([
-                    'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว ไม่สามารถเพิ่มคนเข้ารอบได้',
-                ]);
-            }
+            if ($round->reservationsClosed() && $round->isFull()) {
+            return back()->withErrors([
+                'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว (รอบเล่นจบแล้ว/หมดเวลายกเลิก) ไม่สามารถเพิ่มคนเข้ารอบได้',
+            ]);
+        }
 
             // ไม่บล็อกแม้ตัวจริงเต็มแล้ว — ให้เพิ่มเป็นคิวสำรองแทน
             $isReserve = $round->mainConfirmedCount() >= $round->max_players;
