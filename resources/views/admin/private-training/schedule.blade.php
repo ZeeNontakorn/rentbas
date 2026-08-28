@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Schedule บุคลากร')
+@section('title', 'ตารางงานบุคลากร')
 
 @section('content')
 @include('private-training._calendar-theme')
@@ -25,12 +25,12 @@
     }
 </style>
 
-<div class="min-h-screen bg-slate-50 py-8 text-slate-900">
+<div class="min-h-screen py-8 text-slate-900">
     <div class="mx-auto max-w-7xl px-4 sm:px-6">
         <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">Schedule โค้ชและผู้ช่วยสนาม</h1>
-                <p class="mt-1 text-sm text-slate-500">แอดมินเพิ่ม แก้ไข หรือลบกำหนดการให้บุคลากรได้โดยตรง</p>
+                <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">ตารางงานโค้ช และผู้ช่วยสนาม</h1>
+                <p class="font-sarabun mt-1 text-sm text-slate-500">จัดการกำหนดการให้บุคลากรได้โดยตรง</p>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
                 <div class="w-full sm:w-72">
@@ -44,8 +44,11 @@
                         @endforeach
                     </select>
                 </div>
-                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 cursor-pointer">
-                    <span class="text-base leading-none">+</span> เพิ่มกำหนดการ
+                <button id="new-admin-schedule" type="button" class="inline-flex h-[42px] self-end items-center justify-center gap-1.5 rounded-lg bg-orange-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    <span class="text-base leading-none"></span>เพิ่มกำหนดการ
                 </button>
             </div>
         </div>
@@ -69,14 +72,13 @@
     </div>
 </div>
 
-<div id="admin-schedule-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+<div id="admin-schedule-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/55 p-4 bg-black/40">
     <form id="admin-schedule-form" class="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div>
-                <h2 id="admin-modal-title" class="text-lg font-bold text-slate-900">เพิ่มกำหนดการ</h2>
-                <p id="admin-modal-note" class="mt-0.5 text-xs text-slate-500">เลือกบุคลากร วัน เวลา และสีของ Event</p>
+                <h2 id="admin-modal-title" class="text-2xl font-bold text-slate-900">เพิ่มกำหนดการ</h2>
+                <p id="admin-modal-note" class="font-sarabun mt-1 text-sm text-slate-500">เลือกบุคลากร วัน เวลา และสีของ Event</p>
             </div>
-            <button type="button" data-close-admin-modal class="flex h-9 w-9 items-center justify-center rounded-lg text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700">&times;</button>
         </div>
 
         <div class="space-y-4 p-6">
@@ -86,13 +88,13 @@
 
             <div>
                 <label for="admin-event-title" class="mb-1 block text-xs font-semibold text-slate-600">ชื่อกำหนดการ</label>
-                <input id="admin-event-title" required maxlength="255" placeholder="เช่น ประชุมทีม หรือลางาน" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                <input id="admin-event-title" required maxlength="255" placeholder="เช่น ประชุมทีม หรือลางาน" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none">
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="admin-staff-id" class="mb-1 block text-xs font-semibold text-slate-600">เจ้าของ Schedule</label>
-                    <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                    <select id="admin-staff-id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none cursor-pointer">
                         <option value="">เลือกโค้ชหรือผู้ช่วยสนาม</option>
                         @foreach($staffs as $staff)
                             <option value="{{ $staff->id }}" data-membership="{{ $staff->membership_type }}">{{ $staff->us_name }} — {{ $staff->membership_type === 'coach' ? 'โค้ช' : 'ผู้ช่วยสนาม' }}</option>
@@ -101,7 +103,7 @@
                 </div>
                 <div>
                     <label for="admin-event-type" class="mb-1 block text-xs font-semibold text-slate-600">ประเภท</label>
-                    <select id="admin-event-type" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                    <select id="admin-event-type" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none cursor-pointer">
                         <option value="general">กิจกรรมส่วนตัว</option>
                         <option value="work">งาน</option>
                         <option value="leave">ลางาน</option>
@@ -114,16 +116,16 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="col-span-2 sm:col-span-1">
                     <label for="admin-event-date" class="mb-1 block text-xs font-semibold text-slate-600">วันที่</label>
-                    <input id="admin-event-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                    <input id="admin-event-date" type="date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="admin-event-start" class="mb-1 block text-xs font-semibold text-slate-600">เริ่ม</label>
-                        <input id="admin-event-start" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                        <input id="admin-event-start" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none">
                     </div>
                     <div>
                         <label for="admin-event-end" class="mb-1 block text-xs font-semibold text-slate-600">สิ้นสุด</label>
-                        <input id="admin-event-end" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                        <input id="admin-event-end" type="time" step="1800" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none">
                     </div>
                 </div>
             </div>
@@ -131,7 +133,7 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label for="admin-event-recurrence" class="mb-1 block text-xs font-semibold text-slate-600">การเกิดซ้ำ</label>
-                    <select id="admin-event-recurrence" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 cursor-pointer">
+                    <select id="admin-event-recurrence" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none cursor-pointer">
                         <option value="none">ไม่เกิดซ้ำ</option>
                         <option value="daily">ทุกวัน</option>
                         <option value="weekly">เลือกวันในแต่ละสัปดาห์</option>
@@ -140,7 +142,7 @@
                 </div>
                 <div id="admin-recurrence-until-wrap" class="hidden">
                     <label for="admin-recurrence-until" class="mb-1 block text-xs font-semibold text-slate-600">เกิดซ้ำถึงวันที่</label>
-                    <input id="admin-recurrence-until" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
+                    <input id="admin-recurrence-until" type="date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none">
                 </div>
             </div>
 
@@ -150,7 +152,7 @@
                     @foreach(['mon' => 'จ', 'tue' => 'อ', 'wed' => 'พ', 'thu' => 'พฤ', 'fri' => 'ศ', 'sat' => 'ส', 'sun' => 'อา'] as $value => $label)
                         <label class="cursor-pointer">
                             <input type="checkbox" name="admin_recurrence_days" value="{{ $value }}" class="peer sr-only">
-                            <span class="flex h-10 items-center justify-center rounded-xl border border-slate-200 text-xs font-bold text-slate-500 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">{{ $label }}</span>
+                            <span class="flex h-10 items-center justify-center rounded-xl border border-slate-200 text-xs font-bold text-slate-500 peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:text-white">{{ $label }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -170,17 +172,17 @@
 
             <div>
                 <label for="admin-event-description" class="mb-1 block text-xs font-semibold text-slate-600">รายละเอียด</label>
-                <textarea id="admin-event-description" rows="3" maxlength="1000" placeholder="เพิ่มรายละเอียด (ถ้ามี)" class="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5"></textarea>
+                <textarea id="admin-event-description" rows="3" maxlength="1000" placeholder="เพิ่มรายละเอียด (ถ้ามี)" class="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none"></textarea>
             </div>
 
             <p id="admin-event-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600"></p>
         </div>
 
         <div class="flex items-center gap-2 border-t border-slate-100 px-6 py-4">
-            <button id="delete-admin-event" type="button" class="hidden rounded-xl px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">ลบ</button>
+            <button id="delete-admin-event" type="button" class="hidden rounded-xl px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 cursor-pointer">ลบ</button>
             <div class="flex-1"></div>
             <button type="button" data-close-admin-modal class="rounded-xl px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 cursor-pointer">ยกเลิก</button>
-            <button type="submit" class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700 cursor-pointer">บันทึก</button>
+            <button id="submit-admin-event" type="submit" class="rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-bold text-white hover:bg-orange-600 cursor-pointer transition">เพิ่มกำหนดการ</button>
         </div>
     </form>
 </div>
@@ -265,8 +267,23 @@ document.addEventListener('DOMContentLoaded', () => {
         field('admin-event-description').value = props.description || props.detail || '';
         setCheckedDays(props.recurrenceDays || []);
         selectColor(event?.backgroundColor || '#7986cb');
+        
+        // ตั้งค่าหัวข้อและข้อความ Modal
         field('admin-modal-title').textContent = event ? 'แก้ไขกำหนดการ' : 'เพิ่มกำหนดการ';
         field('admin-modal-note').textContent = props.recurrence && props.recurrence !== 'none' ? 'การแก้ไขจะมีผลกับกำหนดการที่เกิดซ้ำทั้งชุด' : 'จัดการตารางงานของโค้ชหรือผู้ช่วยสนาม';
+        
+        // สลับสีและข้อความของปุ่มบันทึกตามเคส (แก้ไข = Blue / เพิ่ม = Emerald)
+        const submitBtn = field('submit-admin-event');
+        if (submitBtn) {
+            if (event) {
+                submitBtn.textContent = 'บันทึกการแก้ไข';
+                submitBtn.className = 'rounded-xl bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-600 cursor-pointer transition';
+            } else {
+                submitBtn.textContent = 'เพิ่มกำหนดการ';
+                submitBtn.className = 'rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 cursor-pointer transition';
+            }
+        }
+
         field('delete-admin-event').classList.toggle('hidden', !event);
         field('admin-staff-id').disabled = isLegacy;
         field('admin-event-type').disabled = isLegacy;
@@ -454,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
     field('delete-admin-event').addEventListener('click', async () => {
         const id = field('admin-event-id').value;
         const isLegacy = field('admin-source-kind').value === 'availability';
-        const result = await Swal.fire({icon:'warning', title:'ลบกำหนดการนี้?', text:field('admin-event-recurrence').value !== 'none' ? 'Event ที่เกิดซ้ำจะถูกลบทั้งชุด' : 'รายการนี้จะหายจาก Schedule', showCancelButton:true, confirmButtonText:'ลบ', cancelButtonText:'ยกเลิก', confirmButtonColor:'#dc2626'});
+        const result = await Swal.fire({icon:'warning', title:'ลบกำหนดการนี้?', text:field('admin-event-recurrence').value !== 'none' ? 'Event ที่เกิดซ้ำจะถูกลบทั้งชุด' : 'รายการนี้จะหายจาก Schedule', showCancelButton:true, reverseButtons:true, confirmButtonText:'ยืนยันการลบ', cancelButtonText:'ยกเลิก', confirmButtonColor:'#dc2626'});
         if (!result.isConfirmed) return;
         try {
             await request(isLegacy ? `${availabilityApi}/${id}` : `${eventApi}/${id}`, 'DELETE');

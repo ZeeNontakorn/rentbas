@@ -11,11 +11,12 @@ use App\Models\CourtSection;
 use App\Models\Notification;
 use App\Models\PackagePurchase;
 use App\Models\PrivateTrainingBooking;
-use App\Models\PromotionPackage;
+use App\Models\Package;
 use App\Models\User;
 use App\Services\CalendarEventOccurrenceService;
 use App\Services\CourtAvailabilityService;
 use App\Services\PrivateTrainingBookingLifecycleService;
+use App\Mail\PrivateTrainingRequestedMail;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,8 +54,8 @@ class PrivateTrainingController extends Controller
 
         // มีแพ็กเกจ Private Training ที่เปิดขายอยู่ในระบบเลยไหม (ไม่ผูกกับ user คนใดคนหนึ่ง)
         // ใช้เช็คว่าควรให้ปุ่ม "ซื้อแพ็กเกจ" กดไปที่ไหนได้จริงหรือไม่
-        $hasAnyPackagesInSystem = PromotionPackage::where('is_active', true)
-            ->where('category', 'private')
+        $hasAnyPackagesInSystem = Package::where('is_active', true)
+            ->where('type', 'private')
             ->exists();
 
         $myRequests = PrivateTrainingBooking::with('coach')
@@ -122,9 +123,9 @@ class PrivateTrainingController extends Controller
             ->orderByRaw('expired_at IS NULL, expired_at ASC')
             ->get();
 
-        $promotionPackages = PromotionPackage::where('is_active', true)
-            ->where('category', 'private')
-            ->orderBy('label')
+        $promotionPackages = Package::where('is_active', true)
+            ->where('type', 'private')
+            ->orderBy('name')
             ->get();
 
         return view('private-training.show', compact('coach', 'today', 'maxDate', 'myUpcoming', 'promotionPackages', 'myPackagePurchases', 'advanceBookingDays') + [
@@ -416,6 +417,8 @@ class PrivateTrainingController extends Controller
             "คุณ {$request->user()->us_name} ขอจองเทรนเนอร์ส่วนตัวกับโค้ช {$coach->us_name} |วันที่ {$date}\nเวลา {$timeLabel}\nผู้เข้าร่วม {$data['participant_count']} คน{$assistantLine}",
             route('admin.private-training.index', ['status' => 'pending']),
         );
+
+        $this->notifyAdminsByEmail($result->load(['user', 'coach', 'courtAssistant']));
 
         return back()->with('success', 'ส่งคำขอจองเทรนเนอร์ส่วนตัวเรียบร้อย รอแอดมินอนุมัติ');
     }
@@ -929,6 +932,21 @@ class PrivateTrainingController extends Controller
         $admins = User::whereIn('role', ['admin', 'superadmin'])->pluck('id');
         foreach ($admins as $adminId) {
             $this->notifyUser($adminId, $title, $message, $actionUrl);
+        }
+    }
+
+    private function notifyAdminsByEmail(PrivateTrainingBooking $booking): void
+    {
+        $adminEmails = User::whereIn('role', ['admin', 'superadmin'])
+            ->whereNotNull('email')
+            ->pluck('email');
+
+        foreach ($adminEmails as $email) {
+            try {
+                Mail::to($email)->send(new PrivateTrainingRequestedMail($booking));
+            } catch (\Throwable $e) {
+                Log::error("ส่งอีเมลแจ้งเตือนแอดมิน ({$email}) เรื่องคำขอ Private Training ใหม่ไม่สำเร็จ: ".$e->getMessage());
+            }
         }
     }
 }

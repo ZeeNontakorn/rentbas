@@ -57,4 +57,23 @@ class GroupRoundSignup extends Model
     {
         return is_null($this->user_id);
     }
+
+    /**
+     * user_id ของคนที่ต้องคืนเครดิตให้เมื่อที่นั่งนี้ถูกยกเลิก — booked_by ก่อน (จองแทนเพื่อนแบบ self-service)
+     * ไม่งั้นค่อย fallback ไป user_id (แอดมินผูกบัญชีตรงๆ) ใช้ is_null() เช็คแทน ?? หรือ truthy เฉยๆ
+     * เพราะระบบนี้มี user id=0 จริง (บัญชี superadmin ตั้งต้น) — ถ้าเช็คแบบ if ($x) หรือ $a ?? $b เดิม
+     * ค่า 0 จะถูกมองว่า "ไม่มีค่า" ทำให้ข้ามการคืนเครดิต/แจ้งเตือนไปเงียบๆ ทั้งที่จริงมีเจ้าของต้องคืนให้
+     */
+    public function payerId(): ?int
+    {
+        if (! is_null($this->booked_by)) {
+            return $this->booked_by;
+        }
+
+        if (! is_null($this->user_id)) {
+            return $this->user_id;
+        }
+
+        return null;
+    }
 }

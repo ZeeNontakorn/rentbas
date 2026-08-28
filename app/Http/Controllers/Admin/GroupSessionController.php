@@ -8,6 +8,7 @@ use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\CreditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,10 @@ class GroupSessionController extends Controller
      * เครดิตของระบบเก็บใน users.credit_balance (หน่วยสตางค์)
      */
     private const CREDIT_COLUMN = 'credit_balance';
+
+    public function __construct(protected CreditService $creditService)
+    {
+    }
 
     /**
      * หน้า Admin หลัก: แสดงเทมเพลตรอบประจำ + รายการรอบที่เปิดอยู่/จะถึง
@@ -141,24 +146,28 @@ class GroupSessionController extends Controller
     }
 
     /**
-     * แสดงรายละเอียดรอบ + รายชื่อคนลงเล่น เรียงลำดับ  ตามเวลาจริง
+     * แสดงรายละเอียดรอบ + รายชื่อคนลงเล่น เรียงลำดับ 1-25 ตามเวลาจริง
      */
     public function showRound(GroupRound $round)
-{
-    $round->processExpiredReserves();
+    {
+        // เช็คว่ารอบนี้หมดเวลาสละสิทธิ์แล้วหรือยัง ถ้าใช่ให้คืนเครดิตสำรองที่เหลือก่อนแสดงผล
+        $round->processExpiredReserves();
 
-    $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
+        $round->load(['court', 'session', 'signups.user', 'signups.addedBy']);
 
-    $members = User::query()
-        ->whereNotIn(
-            'id',
-            $round->signups()->where('status', 'confirmed')->pluck('user_id')->filter()
-        )
-        ->orderBy('us_name')
-        ->get(['id', 'us_name', 'email', 'phone']);
+        // รายชื่อสมาชิกที่ยังไม่มีรายการ "ที่ยังไม่ถูกยกเลิก" ในรอบนี้ — ใช้ status='confirmed' เท่านั้น
+        // (เดิมใช้ $round->signups->pluck('user_id') ซึ่งดึงมาทุกสถานะ ทำให้คนที่เคยถูก "นำออก"
+        // ยังคงถูกกันออกจากรายชื่อค้นหาต่อไปเรื่อยๆ ทั้งที่จริงๆ ไม่ได้อยู่ในรอบแล้ว)
+        $members = User::query()
+            ->whereNotIn(
+                'id',
+                $round->signups()->where('status', 'confirmed')->pluck('user_id')->filter()
+            )
+            ->orderBy('us_name')
+            ->get(['id', 'us_name', 'email', 'phone']);
 
-    return view('admin.group-sessions.round', compact('round', 'members'));
-}
+        return view('admin.group-sessions.round', compact('round', 'members'));
+    }
 
     /**
      * แอดมินเพิ่มคนเข้ารอบด้วยตัวเอง (กรณีลูกค้ายังโอนเงิน/แจ้งผ่านไลน์อยู่)
@@ -199,10 +208,11 @@ class GroupSessionController extends Controller
                 $user = User::lockForUpdate()->findOrFail($data['user_id']);
 
                 if ($user->{self::CREDIT_COLUMN} < $round->credit_cost * 100) {
-                    return back()->withErrors(['user_id' => "เครดิตของ {$user->name} ไม่พอ (มี ฿".number_format($user->{self::CREDIT_COLUMN} / 100, 2).", ต้องใช้ ฿".number_format($round->credit_cost, 2).")"]);
+                    return back()->withErrors(['user_id' => "เครดิตของ {$user->us_name} ไม่พอ (มี ฿".number_format($user->{self::CREDIT_COLUMN} / 100, 2).", ต้องใช้ ฿".number_format($round->credit_cost, 2).")"]);
                 }
 
-                $user->decrement(self::CREDIT_COLUMN, $round->credit_cost * 100);
+                // หมายเหตุ: ยังไม่หักเครดิตตรงนี้ — จะหักผ่าน CreditService หลังสร้าง signup สำเร็จ
+                // ด้านล่าง เพื่อให้มี $signup->id ผูกกับ credit_transactions ไว้เป็นหลักฐาน
                 $creditUsed = $round->credit_cost;
             } else {
                 $guestName = $data['guest_name'];
@@ -212,7 +222,7 @@ class GroupSessionController extends Controller
 
             if ($user) {
                 // เดิมจุดนี้ไม่ได้เซ็ต is_reserve เลย ทำให้เพิ่มสมาชิกตอนตัวจริงเต็มแล้วผิดเป็นตัวจริงเสมอ — แก้แล้ว
-                GroupRoundSignup::updateOrCreate(
+                $signup = GroupRoundSignup::updateOrCreate(
                     [
                         'group_round_id' => $round->id,
                         'user_id' => $user->id,
@@ -227,6 +237,12 @@ class GroupSessionController extends Controller
                         'added_by' => auth()->id(),
                     ]
                 );
+
+                // หักเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+                // (เดิมใช้ $user->decrement() ตรงๆ ทำให้ไม่มีประวัติธุรกรรมเลย)
+                if ($creditUsed > 0) {
+                    $this->creditService->deductForGroupRound($user, $signup);
+                }
             } else {
                 GroupRoundSignup::create([
                     'group_round_id' => $round->id,
@@ -241,7 +257,7 @@ class GroupSessionController extends Controller
                 ]);
             }
 
-            return back()->with('success', 'เพิ่ม '.($user?->name ?? $guestName)." เป็นลำดับที่ {$nextOrder} แล้ว".($isReserve ? ' (คิวสำรอง)' : ''));
+            return back()->with('success', 'เพิ่ม '.($user?->us_name ?? $guestName)." เป็นลำดับที่ {$nextOrder} แล้ว".($isReserve ? ' (คิวสำรอง)' : ''));
         });
     }
 
@@ -249,52 +265,62 @@ class GroupSessionController extends Controller
      * เอาคนออกจากรอบ + คืนเครดิตให้อัตโนมัติ + แจ้งเตือนเจ้าของที่นั่ง
      * (ลำดับของคนที่เหลือจะไม่ถูกไล่ใหม่ เพื่อรักษาลำดับตามเวลาลงชื่อจริง)
      */
-    public function removePlayer(GroupRound $round, GroupRoundSignup $signup): RedirectResponse
+    public function removePlayer(GroupRound $round, GroupRoundSignup $signup)
 {
-    if ($signup->group_round_id !== $round->id) {
-        abort(404);
-    }
-
     return DB::transaction(function () use ($round, $signup) {
-        $round = GroupRound::where('id', $round->id)->lockForUpdate()->firstOrFail();
+        $round = GroupRound::query()->lockForUpdate()->findOrFail($round->id);
+        $signup = GroupRoundSignup::query()->lockForUpdate()->findOrFail($signup->id);
 
-        $payerId = $signup->booked_by ?? $signup->user_id;
-        $seatName = $signup->displayName();
+        if ($signup->status !== 'confirmed') {
+            return back()->withErrors(['round' => 'ที่นั่งนี้ถูกยกเลิกไปแล้ว']);
+        }
+
         $wasMainSlot = ! $signup->is_reserve;
         $removedOrder = $signup->order_number;
+        $seatName = $signup->displayName();
+
+        // ผู้จ่ายเงินจริง: booked_by (จองแทนเพื่อนแบบ self-service, user_id ของที่นั่งจะเป็น null เสมอ)
+        // หรือ user_id (แอดมินเพิ่มโดยผูกบัญชีสมาชิกโดยตรง) — เดิมจุดนี้ไม่มีโค้ดคืนเครดิตเลย มีแค่คอมเมนต์
+        // ค้างไว้ ทำให้หักเงินตอนเพิ่ม/ลงชื่อไปแล้ว แต่พอแอดมินเอาออกไม่มีการคืนเงินและไม่มี transaction คืนเงิน
+        // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง (ดูรายละเอียด
+        // ในคอมเมนต์ของ GroupRoundSignup::payerId())
+        $payerId = $signup->payerId();
         $didRefund = false;
 
-        if ($payerId && $signup->credit_used > 0) {
-            User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
+        if ($payerId !== null && $signup->credit_used > 0) {
+            // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+            $this->creditService->refundForGroupRound(
+                $payerId,
+                $signup,
+                "ถูกนำออกจากรอบ \"{$round->title}\" โดยแอดมิน"
+            );
             $didRefund = true;
         }
 
         $signup->update(['status' => 'cancelled']);
 
-        // เลื่อนลำดับคนที่อยู่หลังคนที่ถูกเอาออก ขึ้นมาแทนที่ทันที ไม่ให้เลขกระโดดข้าม
-        // เช่น คนที่ 15 ออก -> คนที่ 16,17,18,... จะกลายเป็น 15,16,17,...
-        GroupRoundSignup::where('group_round_id', $round->id)
-            ->where('status', 'confirmed')
-            ->where('order_number', '>', $removedOrder)
-            ->decrement('order_number');
-
-        if ($payerId) {
+        if ($payerId !== null) {
             Notification::create([
                 'user_id' => $payerId,
-                'title' => 'แอดมินนำที่นั่งออกจากรอบ',
-                'message' => 'ที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" ถูกแอดมินนำออกแล้ว'
-                    .($didRefund ? ' คืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
+                'title' => 'ถูกนำออกจากรอบกลุ่มเล่นบาส',
+                'message' => 'ที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" ถูกนำออกโดยแอดมิน'
+                    .($didRefund ? ' ระบบคืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
                 'action_url' => route('group-rounds.my-bookings'),
                 'is_read' => false,
             ]);
         }
 
-        // ถ้านำ "ตัวจริง" ออก ให้เลื่อนคิวสำรองคนแรกขึ้นแทนอัตโนมัติ
+        // เพิ่มส่วนนี้เข้าไป — เลื่อนลำดับคนที่อยู่หลังขึ้นมาแทนที่ ไม่ให้เลขกระโดดข้าม
+        GroupRoundSignup::where('group_round_id', $round->id)
+            ->where('status', 'confirmed')
+            ->where('order_number', '>', $removedOrder)
+            ->decrement('order_number');
+
         if ($wasMainSlot) {
             $round->promoteNextReserve();
         }
 
-        return back()->with('success', 'นำ '.$seatName.' ออกจากรอบแล้ว'.($didRefund ? ' และคืนเครดิตแล้ว' : ''));
+        return back()->with('success', 'นำผู้เล่นออกจากรอบเรียบร้อยแล้ว');
     });
 }
 
@@ -316,45 +342,53 @@ class GroupSessionController extends Controller
     }
 
     /**
-     * ยกเลิกรอบทั้งหมด + คืนเครดิตให้ทุกคนที่ลงชื่อไว้
+     * ยกเลิกรอบทั้งหมด + คืนเครดิตให้ทุกคนที่ลงชื่อไว้ + แจ้งเตือนทุกคน
      */
     public function cancelRound(GroupRound $round): RedirectResponse
-{
-    DB::transaction(function () use ($round) {
-        $signups = GroupRoundSignup::where('group_round_id', $round->id)
-            ->where('status', 'confirmed')
-            ->get();
+    {
+        DB::transaction(function () use ($round) {
+            $signups = GroupRoundSignup::where('group_round_id', $round->id)
+                ->where('status', 'confirmed')
+                ->get();
 
-        foreach ($signups as $signup) {
-            $payerId = $signup->booked_by ?? $signup->user_id;
-            $didRefund = false;
+            foreach ($signups as $signup) {
+                // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง
+                // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+                $payerId = $signup->payerId();
+                $didRefund = false;
 
-            if ($payerId && $signup->credit_used > 0) {
-                User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
-                $didRefund = true;
+                if ($payerId !== null && $signup->credit_used > 0) {
+                    // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+                    $this->creditService->refundForGroupRound(
+                        $payerId,
+                        $signup,
+                        "ยกเลิกทั้งรอบ \"{$round->title}\" โดยแอดมิน"
+                    );
+                    $didRefund = true;
+                }
+
+                $signup->update(['status' => 'cancelled']);
+
+                // แจ้งเตือนผู้ใช้ (เดิมไม่มีการแจ้งเตือนเลยตอนยกเลิกทั้งรอบ)
+                if ($payerId !== null) {
+                    Notification::create([
+                        'user_id' => $payerId,
+                        'title' => 'รอบเล่นบาสถูกยกเลิก',
+                        'message' => 'ที่นั่งของ "'.$signup->displayName().'" ในรอบ "'.$round->title.'" ถูกยกเลิกทั้งรอบโดยแอดมิน'
+                            .($didRefund ? ' ระบบคืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
+                        'action_url' => route('group-rounds.my-bookings'),
+                        'is_read' => false,
+                    ]);
+                }
             }
 
-            $signup->update(['status' => 'cancelled']);
+            $round->update(['status' => 'cancelled']);
+        });
 
-            if ($payerId) {
-                Notification::create([
-                    'user_id' => $payerId,
-                    'title' => 'รอบเล่นบาสถูกยกเลิก',
-                    'message' => 'ที่นั่งของ "'.$signup->displayName().'" ในรอบ "'.$round->title.'" ถูกยกเลิกทั้งรอบโดยแอดมิน'
-                        .($didRefund ? ' ระบบคืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
-                    'action_url' => route('group-rounds.my-bookings'),
-                    'is_read' => false,
-                ]);
-            }
-        }
-
-        $round->update(['status' => 'cancelled']);
-    });
-
-    return redirect()
-        ->route('admin.group-sessions.index')
-        ->with('success', 'ยกเลิกรอบและคืนเครดิตให้ทุกคนแล้ว');
-}
+        return redirect()
+            ->route('admin.group-sessions.index')
+            ->with('success', 'ยกเลิกรอบและคืนเครดิตให้ทุกคนแล้ว');
+    }
 
     /**
      * ประวัติรอบที่ผ่านมาแล้ว/ปิดรับสมัครแล้ว พร้อมค้นหาตามชื่อ/วันที่
@@ -380,9 +414,9 @@ class GroupSessionController extends Controller
     }
 
     public function showRoundHistory(GroupRound $round)
-{
-    $round->load(['court', 'confirmedSignups.user', 'confirmedSignups.addedBy', 'confirmedSignups.bookedBy']);
+    {
+        $round->load(['court', 'confirmedSignups.user', 'confirmedSignups.addedBy', 'confirmedSignups.bookedBy']);
 
-    return view('admin.group-sessions.history-show', compact('round'));
-}
+        return view('admin.group-sessions.history-show', compact('round'));
+    }
 }

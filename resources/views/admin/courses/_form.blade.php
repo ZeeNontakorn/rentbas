@@ -128,7 +128,7 @@
             </p>
             @if($isEdit)
                 <button type="button" id="remove-image-btn"
-                    class="{{ $course->image_url ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
+                    class="{{ $course->image_url ? '' : 'hidden' }} rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 cursor-pointer">
                     ลบภาพ
                 </button>
                 <input type="hidden" name="remove_image" id="remove_image_input" value="0">
@@ -137,7 +137,7 @@
     </section>
     <div class="flex justify-end gap-4 border-t border-slate-200 pt-4"><a href="{{ route('admin.courses') }}"
             class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm text-slate-700 hover:bg-slate-50">ยกเลิก</a><button
-            class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 cursor-pointer">{{ $isEdit ? 'บันทึกการแก้ไข' : 'บันทึกคอร์ส' }}</button>
+            class="rounded-lg {{ $isEdit ? 'bg-blue-500 hover:bg-blue-600' : 'bg-violet-500 hover:bg-violet-600' }} px-6 py-2.5 text-sm font-semibold text-white shadow-sm cursor-pointer">{{ $isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มคอร์สเรียน' }}</button>
     </div>
 
     <template id="scheduleTemplate">
@@ -148,7 +148,7 @@
             <label class="mb-2 mt-3 block text-xs font-medium text-slate-500">เลือกวันเรียน <span class="text-xs text-red-500"> *</span></label>
             <div class="days flex flex-wrap gap-2">
                 @foreach(['mon'=>'จ','tue'=>'อ','wed'=>'พ','thu'=>'พฤ','fri'=>'ศ','sat'=>'ส','sun'=>'อา'] as $value=>$label)<label class="cursor-pointer"><input class="day peer sr-only" type="checkbox" value="{{ $value }}"><span
-                        class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm text-slate-600 transition peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">{{ $label }}</span></label>@endforeach
+                        class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm text-slate-600 transition peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:text-white">{{ $label }}</span></label>@endforeach
             </div>
             <p class="day-error hidden mt-1.5 text-xs text-red-600">กรุณาเลือกวันเรียนอย่างน้อย 1 วัน</p>
 

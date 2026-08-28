@@ -636,6 +636,9 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/view-date', [DashboardController::class, 'viewDateData'])->name('dashboard.view-date');
+    Route::get('/dashboard/live-data', [DashboardController::class, 'liveData'])->name('dashboard.live-data');
+    Route::get('/dashboard/stats-data', [DashboardController::class, 'statsData'])->name('dashboard.stats-data');
 
     // จัดการสนาม
     Route::get('/courts', [AdminCourtController::class, 'index'])->name('courts');
@@ -670,8 +673,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/courses/calendar/course-events/{schedule}/{date}', [CalendarController::class, 'updateCourseEvent'])->where('date', '\\d{4}-\\d{2}-\\d{2}')->name('courses.calendar.course-events.update');
 
     // ระบบจัดการผู้ใช้ (User Management)
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
     Route::put('/users/{user}/profile', [UserController::class, 'updateProfile'])->name('users.profile.update');
     Route::patch('/users/{user}/membership-type', [UserController::class, 'updateMembershipType'])->name('users.updateMembershipType');
     Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
@@ -772,13 +773,6 @@ Route::controller(AuthController::class)->group(function () {
 
 // จัดการการจองได้ต้องเป็น admin และ staff ที่เป็น พนักงานประจำ นักศึกษาฝึกงาน พนักงานชั่วคราว
 Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->group(function () {
-    // จัดการคำขอจองเทรนเนอร์ส่วนตัว
-    Route::get('/private-training', [PrivateTrainingController::class, 'adminIndex'])->name('private-training.index');
-    Route::get('/private-training/{privateTrainingBooking}/available-courts', [PrivateTrainingController::class, 'availableCourts'])->name('private-training.available-courts');
-    Route::post('/private-training/{privateTrainingBooking}/approve', [PrivateTrainingController::class, 'approve'])->name('private-training.approve');
-    Route::post('/private-training/{privateTrainingBooking}/assign-court', [PrivateTrainingController::class, 'assignCourt'])->name('private-training.assign-court');
-    Route::post('/private-training/{privateTrainingBooking}/reject', [PrivateTrainingController::class, 'reject'])->name('private-training.reject');
-
     // จัดการการจอง
     Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
     Route::post('/bookings/{booking}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
@@ -787,12 +781,24 @@ Route::middleware(['auth', 'staff_or_admin'])->prefix('admin')->name('admin.')->
     Route::post('/bookings/bulk-reject', [BookingController::class, 'bulkReject'])->name('bookings.bulkReject');
 });
 
+// จัดการคำขอจองเทรนเนอร์ส่วนตัว — เฉพาะ admin และ staff ประเภทพนักงานประจำเท่านั้น
+// (พนักงานชั่วคราว และนักศึกษาฝึกงาน เข้าไม่ได้)
+Route::middleware(['auth', 'permanent_staff_or_admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/private-training', [PrivateTrainingController::class, 'adminIndex'])->name('private-training.index');
+    Route::get('/private-training/{privateTrainingBooking}/available-courts', [PrivateTrainingController::class, 'availableCourts'])->name('private-training.available-courts');
+    Route::post('/private-training/{privateTrainingBooking}/approve', [PrivateTrainingController::class, 'approve'])->name('private-training.approve');
+    Route::post('/private-training/{privateTrainingBooking}/assign-court', [PrivateTrainingController::class, 'assignCourt'])->name('private-training.assign-court');
+    Route::post('/private-training/{privateTrainingBooking}/reject', [PrivateTrainingController::class, 'reject'])->name('private-training.reject');
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+});
+
 // จัดการ Group Sessions (ระบบ Round/Group) — ต้องเป็น admin เท่านั้น
 Route::middleware(['auth', 'admin'])->prefix('admin/group-sessions')->name('admin.group-sessions.')->group(function () {
     Route::get('/', [GroupSessionController::class, 'index'])->name('index');
     Route::get('/history', [GroupSessionController::class, 'history'])->name('history');
     Route::get('/history', [GroupSessionController::class, 'history'])->name('history');
-    Route::get('/history/{round}', [GroupSessionController::class, 'showRoundHistory'])->name('history.show');  
+    Route::get('/history/{round}', [GroupSessionController::class, 'showRoundHistory'])->name('history.show');
     Route::post('/', [GroupSessionController::class, 'storeSession'])->name('store');
     Route::put('/{session}', [GroupSessionController::class, 'updateSession'])->name('update');
     Route::delete('/{session}', [GroupSessionController::class, 'destroySession'])->name('destroy');

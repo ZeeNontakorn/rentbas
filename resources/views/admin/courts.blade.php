@@ -3,10 +3,9 @@
 @section('title', 'จัดการสถานะสนาม')
 
 @section('content')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <div class="bg-[#f8f9fe] min-h-screen text-[#111827] pt-8 pb-10">
+
+    <div class="min-h-screen text-[#111827] pt-8 pb-10">
 
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap');
@@ -150,12 +149,12 @@
                     <div class="flex items-center gap-2 mb-2">
                         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการสนาม</h1>
                     </div>
-                    <p class="text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
+                    <p class="font-sarabun text-gray-600 text-[15px]">แก้ไขข้อมูลสนาม และสถานะสนาม</p>
                 </div>
                 <button type="button" onclick="openCourtModal()"
-                    class="text-sm border border-gray-300 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition">
+                    class="font-semibold text-sm border border-orange-500 px-4 py-2 rounded-lg text-white bg-orange-500 hover:bg-orange-600 flex items-center gap-2 shadow-sm cursor-pointer transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M12 5v14m7-7H5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
                     </svg>
                     เพิ่มสนาม
                 </button>
@@ -168,7 +167,7 @@
 
                     {{-- BOX 1: เลือกสนาม --}}
                     <div
-                        class="relative z-3 border border-gray-200 bg-white rounded-lg p-5 flex items-center justify-between">
+                        class="relative z-3 border border-gray-200 bg-white rounded-lg p-5 flex items-center justify-between shadow-sm">
                         <span class="font-bold text-[15px] text-gray-900">1. เลือกสนาม</span>
 
                         <div class="relative w-[120px]">
@@ -260,8 +259,8 @@
 
                     {{-- BOX 4: จัดการส่วนของสนาม (ครึ่ง A/B) --}}
                     <div class="border border-gray-200 bg-white rounded-lg p-4 shadow-sm">
-                        <span class="font-bold text-[15px] sm:text-[16px] text-gray-900 block mb-1">4. จัดการส่วนของสนาม (ครึ่งสนาม)</span>
-                        <p class="text-sm text-gray-500 mb-5">แบ่งสนามนี้เป็นครึ่ง A/B เพื่อให้ลูกค้าจองครึ่งสนามได้ ระบบจะกันไม่ให้จองซ้อนกับเต็มสนามให้อัตโนมัติ</p>
+                        <span class="font-bold text-[15px] sm:text-[16px] text-gray-900 block mb-1">3. จัดการส่วนของสนาม (ครึ่งสนาม)</span>
+                        <p class="font-sarabun text-sm text-gray-500 mb-5">แบ่งสนามนี้เป็นครึ่ง A/B เพื่อให้ลูกค้าจองครึ่งสนามได้ ระบบจะกันไม่ให้จองซ้อนกับเต็มสนามให้อัตโนมัติ</p>
 
                         @if (!$selectedCourt)
                             <div class="text-center py-6 text-gray-400 text-sm">กรุณาเลือกสนาม</div>
@@ -326,17 +325,16 @@
 
                                     <!-- ปุ่มบันทึก -->
                                     <button type="submit"
-                                        class="w-full text-[13px] font-medium text-white bg-[#5271ff] hover:bg-[#3f5ee8] rounded-lg px-4 py-2 transition shadow-sm mb-3 cursor-pointer">
+                                        class="w-full text-[13px] font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2 transition shadow-sm mb-3 cursor-pointer">
                                         บันทึก
                                     </button>
                                 </form>
 
                                 {{-- ปุ่มยกเลิกการแบ่งครึ่งสนาม --}}
-                                <form method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}"
-                                    onsubmit="return confirm('ยกเลิกการแบ่งครึ่งสนาม {{ $selectedCourt->name }}? (ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)');">
+                                <form id="mergeSectionForm" method="POST" action="{{ route('admin.courts.sections.merge', $selectedCourt->id) }}">
                                     @csrf
                                     <input type="hidden" name="return_date" value="{{ $date }}">
-                                    <button type="submit"
+                                    <button type="button" onclick="confirmMergeSection()"
                                         class="w-full text-[13px] font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg px-3 py-2 transition text-center cursor-pointer">
                                         ยกเลิกการแบ่งครึ่งสนาม (รวมกลับเป็นเต็มสนาม)
                                     </button>
@@ -390,9 +388,9 @@
                 <div class="flex-1 flex flex-col gap-6">
 
                     {{-- BOX 3: เลือกเวลา --}}
-                    <div class="border border-gray-300 bg-white rounded-lg p-6 min-h-[400px]">
+                    <div class="border border-gray-200 bg-white rounded-lg p-6 min-h-[400px] shadow-sm">
                         <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
-                            <span class="font-bold text-[16px] text-gray-900">3. เลือกเวลา - {{ $cDate->day }}
+                            <span class="font-bold text-[16px] text-gray-900">4. เลือกเวลา - {{ $cDate->day }}
                                 {{ $thMonthsFull[$cDate->month] }} {{ $cDate->year }}</span>
                             <span class="font-bold text-[14px] text-gray-900">เวลาปัจจุบัน <span
                                     id="currentClock">{{ now()->format('H:i') }}</span> น.</span>
@@ -401,7 +399,7 @@
                         @if (!$selectedCourt)
                             <div class="text-center py-20 text-gray-400 font-medium">กรุณาเลือกสนาม</div>
                         @else
-                            <div class="text-xs text-gray-400 mb-3">* คลิกเลือกได้หลายช่วงเวลา แล้วกดยืนยันสถานะครั้งเดียวด้านล่าง</div>
+                            <div class="font-sarabun text-xs text-gray-400 mb-3">* คลิกเลือกได้หลายช่วงเวลา แล้วกดยืนยันสถานะครั้งเดียวด้านล่าง</div>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6">
                                 @foreach ($slots as $slot)
                                     @php
@@ -488,7 +486,7 @@
                             </span>
                             <div class="flex items-center gap-3">
                                 <button type="button" onclick="clearAdminSelection()"
-                                    class="text-xs text-gray-400 hover:text-red-500 underline underline-offset-2">
+                                    class="text-xs text-gray-400 hover:text-red-500 underline underline-offset-2 cursor-pointer transition">
                                     ล้างที่เลือก
                                 </button>
                                 <button type="button" onclick="closeStatusBox()"
@@ -516,15 +514,15 @@
                             <input type="hidden" name="repeat_until_date" id="repeat_until_val">
 
                             <button type="button" data-status="available" class="status-trigger-btn
-                                flex-1 bg-[#eeeeee] hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm">
+                                flex-1 bg-[#eeeeee] hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm cursor-pointer">
                                 ว่าง
                             </button>
                             <button type="button" data-status="unavailable" class="status-trigger-btn
-                                flex-1 bg-[#ff0000] hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm">
+                                flex-1 bg-[#ff0000] hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm cursor-pointer">
                                 ไม่ว่าง
                             </button>
                             <button type="button" data-status="maintenance" class="status-trigger-btn
-                                flex-1 bg-[#dcd700] hover:bg-[#c2bd00] text-gray-900 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm">
+                                flex-1 bg-[#dcd700] hover:bg-[#c2bd00] text-gray-900 font-medium py-3 px-6 rounded-lg transition text-[15px] shadow-sm cursor-pointer">
                                 ปิดปรับปรุง
                             </button>
                         </form>
@@ -539,16 +537,9 @@
             <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <div>
-                        <h2 id="courtModalTitle" class="text-lg font-bold text-gray-900">เพิ่มสนาม</h2>
-                        <p id="courtModalSubtitle" class="text-sm text-gray-500">กรอกชื่อและสถานะสนาม</p>
+                        <h2 id="courtModalTitle" class="text-2xl font-bold text-gray-900">เพิ่มสนาม</h2>
+                        <p id="courtModalSubtitle" class="font-sarabun text-sm text-gray-500">กรอกชื่อและสถานะสนาม</p>
                     </div>
-                    <button type="button" onclick="closeCourtModal()"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                            </path>
-                        </svg>
-                    </button>
                 </div>
 
                 <form id="courtForm" method="POST" action="{{ route('admin.court.create') }}" novalidate
@@ -584,7 +575,7 @@
                         <button type="button" onclick="closeCourtModal()"
                             class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition">ยกเลิก</button>
                         <button type="submit"
-                            class="rounded-lg bg-[#5271ff] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f5ee8] cursor-pointer transition"
+                            class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 cursor-pointer transition"
                             id="courtModalSubmit">บันทึก</button>
                     </div>
                 </form>
@@ -605,7 +596,7 @@
                             title: 'แก้ไขสถานะไม่ได้',
                             text: 'ช่วงเวลานี้มีลูกค้าจองอยู่แล้ว ไม่สามารถแก้ไขสถานะทับได้ กรุณาไปจัดการที่หน้ารายการจอง (อนุมัติ/ปฏิเสธ/ยกเลิก) ก่อน',
                             confirmButtonText: 'เข้าใจแล้ว',
-                            confirmButtonColor: '#5271ff',
+                            confirmButtonColor: '#f97316',
                         });
                         return;
                     }
@@ -699,7 +690,7 @@
                             .join(', ');
 
                         const result = await Swal.fire({
-                            title: `ตั้งสถานะ "${statusLabel}"`,
+                            title: `<h2 class="text-black">ตั้งสถานะ "${statusLabel}"</h2>`,
                             html: `
                                 <p class="text-sm text-gray-600 mb-1 text-left">ช่วงเวลาที่เลือก: <b>${timePreview}</b></p>
                                 <p class="text-sm text-gray-600 mb-3 text-left">
@@ -711,9 +702,10 @@
                             `,
                             focusConfirm: false,
                             showCancelButton: true,
+                            reverseButtons: true,
                             confirmButtonText: 'ยืนยัน',
                             cancelButtonText: 'ยกเลิก',
-                            confirmButtonColor: '#5271ff',
+                            confirmButtonColor: '#f97316',
                             cancelButtonColor: '#6b7280',
                             preConfirm: () => {
                                 const val = document.getElementById('swal-repeat-until').value;
@@ -863,7 +855,7 @@
                             subtitle.innerText = 'กรอกชื่อและสถานะสนาม';
                         }
                         if (submit) {
-                            submit.innerText = 'บันทึก';
+                            submit.innerText = 'เพิ่มสนาม';
                         }
                         // reset ค่าฟอร์มกลับเป็นค่าว่างเสมอตอนเปิดโหมด "เพิ่มสนาม"
                         if (nameInput) {
@@ -1076,6 +1068,26 @@
                                     text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้'
                                 });
                             }
+                        }
+                    });
+                }
+
+                function confirmMergeSection() {
+                    const courtName = @js($selectedCourt->name ?? '');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ยกเลิกการแบ่งครึ่งสนาม?',
+                        html: `ยกเลิกการแบ่งครึ่งสนาม <b>${courtName}</b> ใช่หรือไม่?<br>
+                               <span class="text-sm text-gray-500">(ประวัติการจองเดิมจะยังอยู่ แต่ลูกค้าจะจองได้เฉพาะเต็มสนามเท่านั้นต่อจากนี้)</span>`,
+                        showCancelButton: true,
+                        confirmButtonText: 'ใช่',
+                        cancelButtonText: 'ไม่ใช่',
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        reverseButtons: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('mergeSectionForm').submit();
                         }
                     });
                 }

@@ -7,7 +7,7 @@
     <div class="container mx-auto px-4 sm:px-6 max-w-4xl">
 
         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการลิงก์เว็บไซต์</h1>
-        <p class="text-sm text-gray-400 mb-6">ตั้งค่าลิงก์สำหรับแต่ละส่วนของเว็บไซต์</p>
+        <p class="font-sarabun text-sm text-gray-400 mb-6">ตั้งค่าลิงก์สำหรับแต่ละส่วนของเว็บไซต์</p>
 
         @if (session('success'))
             <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm">
@@ -72,12 +72,12 @@
         @endphp
 
         @foreach($groups as $groupTitle => $rows)
-            <h2 class="font-bold text-[15px] text-gray-900 mb-3 mt-8 first:mt-0">{{ $groupTitle }}</h2>
+            <h2 class="font-bold text-[15px] {{ $groupTitle === 'LINE' ? 'text-emerald-500' : 'text-gray-900' }} mb-3 mt-8 first:mt-0">{{ $groupTitle }}</h2>
             <div class="flex flex-col gap-4 mb-2">
                 @foreach($rows as $row)
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 class="font-medium text-gray-700 text-sm">{{ $row['title'] }}</h3>
-                        <p class="text-xs text-gray-400 mb-4">{{ $row['desc'] }}</p>
+                        <h3 class="font-semibold text-gray-700 text-sm">{{ $row['title'] }}</h3>
+                        <p class="font-sarabun text-xs text-gray-400 mb-4 mt-1">{{ $row['desc'] }}</p>
 
                         <form method="POST" action="{{ route($row['route']) }}" class="flex flex-col sm:flex-row gap-3 items-start">
                             @csrf
@@ -96,7 +96,7 @@
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
-                            <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
+                            <button type="submit" class="text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-5 py-2 transition whitespace-nowrap cursor-pointer">
                                 บันทึก
                             </button>
                         </form>

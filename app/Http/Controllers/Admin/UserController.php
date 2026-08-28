@@ -5,6 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Booking;
+use App\Models\CreditTopupRequest;
+use App\Models\CreditTransaction;
+use App\Models\GroupRoundSignup;
+use App\Models\PackagePurchase;
+use App\Models\PrivateTrainingBooking;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
@@ -61,6 +67,7 @@ class UserController extends Controller
     public function updateRole(Request $request, User $user)
     {
         $actor = $request->user();
+        abort_unless($actor->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถแก้ไข role ของผู้ใช้ได้');
         $actorIsSuperadmin = $actor->role === 'superadmin';
 
         if (! $actorIsSuperadmin && $user->role === 'superadmin') {
@@ -102,6 +109,7 @@ class UserController extends Controller
     // แก้ไขประเภทสมาชิก (ชุดตัวเลือกจะต่างกันตาม role ของ user คนนั้น)
     public function updateMembershipType(Request $request, User $user)
     {
+        abort_unless($request->user()->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถแก้ไขประเภทสมาชิกได้');
         abort_if(
             in_array($user->role, ['admin', 'superadmin'], true),
             403,
@@ -132,6 +140,7 @@ class UserController extends Controller
     public function updateProfile(Request $request, User $user)
     {
         $actor = $request->user();
+        abort_unless($actor->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถแก้ไขข้อมูลผู้ใช้ได้');
         $actorIsSuperadmin = $actor->role === 'superadmin';
 
         // 1. ป้องกันไม่ให้แอดมินธรรมดาแก้ไขข้อมูลของ Super Admin
@@ -195,7 +204,7 @@ class UserController extends Controller
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
-            
+
             // บันทึกรูปใหม่และเก็บ path
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $avatarPath;
@@ -217,7 +226,7 @@ class UserController extends Controller
             $user->fill($request->only(['name', 'us_name', 'email', 'phone']));
             $user->role = $validated['role'];
         }
-        
+
         // 5. จัดการ Membership Type ตามเงื่อนไขของ Role
         if (in_array($validated['role'], ['admin', 'superadmin'], true)) {
             $user->membership_type = 'admin'; // บังคับเป็น admin
@@ -238,6 +247,7 @@ class UserController extends Controller
     public function destroy(Request $request, User $user)
     {
         $actor = $request->user();
+        abort_unless($actor->role === 'superadmin', 403, 'เฉพาะ Super Admin เท่านั้นที่สามารถลบบัญชีผู้ใช้ได้');
 
         abort_if($user->id === $actor->id, 403, 'ไม่สามารถลบบัญชีของตนเองได้');
         abort_if($user->role === 'superadmin', 403, 'ไม่สามารถลบบัญชี Super Admin ได้');
@@ -246,6 +256,14 @@ class UserController extends Controller
             403,
             'เฉพาะ Super Admin เท่านั้นที่สามารถลบบัญชี Admin ได้'
         );
+
+        // บล็อกการลบถ้า user คนนี้มีประวัติการจอง/ธุรกรรมอยู่ในระบบ (กันข้อมูลสำคัญหายไปเงียบๆ
+        // จาก cascadeOnDelete ของ FK ต่างๆ) — อนุญาตให้ลบได้เฉพาะ user ที่ยังไม่เคยมีการเคลื่อนไหวจริงเท่านั้น
+        if ($this->userHasActivityHistory($user)) {
+            return back()->withErrors([
+                'delete' => "ไม่สามารถลบผู้ใช้ {$user->us_name} ได้ เนื่องจากมีประวัติการจองอยู่ในระบบ",
+            ]);
+        }
 
         $profileImage = $user->staffProfile?->profile_image;
         $name = $user->us_name;
@@ -259,5 +277,24 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', "ลบบัญชีผู้ใช้ {$name} ออกจากระบบเรียบร้อยแล้ว");
+    }
+
+    /**
+     * เช็คว่า user คนนี้มีประวัติการจอง/ธุรกรรมที่มีความหมายอยู่ในระบบหรือไม่ — ไม่นับ notification/OTP/
+     * availability ที่เป็นข้อมูลชั่วคราวไม่ใช่ "ประวัติ" จริงๆ ถ้ามีจะไม่ยอมให้ลบ กัน cascadeOnDelete ของ
+     * FK ต่างๆ ลบประวัติสำคัญ (เช่นรายการจอง/เครดิต) ไปเงียบๆ โดยแอดมินไม่ทันสังเกต
+     */
+    private function userHasActivityHistory(User $user): bool
+    {
+        return Booking::where('user_id', $user->id)->exists()
+            || PrivateTrainingBooking::where('user_id', $user->id)
+                ->orWhere('coach_id', $user->id)
+                ->orWhere('court_assistant_id', $user->id)
+                ->exists()
+            || PackagePurchase::where('user_id', $user->id)->exists()
+            || CreditTopupRequest::where('user_id', $user->id)->exists()
+            || CreditTransaction::where('user_id', $user->id)->exists()
+            || Review::where('user_id', $user->id)->exists()
+            || GroupRoundSignup::where('user_id', $user->id)->exists();
     }
 }

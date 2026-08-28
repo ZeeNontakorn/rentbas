@@ -195,9 +195,13 @@ html { scroll-behavior: smooth; }
     padding-right: max(40px, calc((100% - var(--max-w)) / 2));
 }
 
-.footer {
-    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
-    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+/* footer เอง full-bleed เต็มจอเสมอ; max-width + padding ย้ายไปที่ .footer-inner แทน
+   (เหตุผลเดียวกับ .packages-inner ด้านล่าง — กันพื้นหลังโดนบีบแคบตามความกว้างเนื้อหา) */
+.footer-inner {
+    max-width: calc(var(--max-w) + 80px);
+    margin: 0 auto;
+    padding-left: 40px;
+    padding-right: 40px;
 }
 
 /* ─── ABOUT SECTION ─── */
@@ -735,7 +739,9 @@ html { scroll-behavior: smooth; }
 .review-avatar {
     width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ff8a4c, var(--ore)); color: #fff; font-weight: 800;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    overflow: hidden;
 }
+.review-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .review-name { color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .review-member { color: #18976b; font-size: 10px; margin-top: 2px; }
 .review-comment { margin-top: 20px; min-height: 54px; color: #5e5a56; font-size: 13.5px; line-height: 1.8; }
@@ -865,7 +871,11 @@ html { scroll-behavior: smooth; }
     .nav-hamburger { display: flex; }
     .about-section, .community-section, .footer-grid { grid-template-columns: 1fr; gap: 32px; }
     .about-section, .courts-section, .booking-section,
-    .community-section, .footer {
+    .community-section {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    .packages-inner, .footer-inner {
         padding-left: 20px !important;
         padding-right: 20px !important;
     }
@@ -967,13 +977,19 @@ html { scroll-behavior: smooth; }
     border-color: var(--ore);
 }
 
-/* ─── PACKAGES SECTION ─── */
+/* ─── PACKAGES SECTION ───
+   พื้นหลังอยู่ที่ section (เต็มจอเสมอ ไม่ผูกกับความกว้างเนื้อหา)
+   ส่วน max-width + padding ย้ายไปอยู่ที่ .packages-inner แทน กันพื้นหลังโดนบีบแคบตามเนื้อหา */
 .packages-section {
     background: var(--navy-d);
     padding-top: 72px;
     padding-bottom: 72px;
-    padding-left:  max(40px, calc((100% - var(--max-w)) / 2));
-    padding-right: max(40px, calc((100% - var(--max-w)) / 2));
+}
+.packages-inner {
+    max-width: calc(var(--max-w) + 80px);
+    margin: 0 auto;
+    padding-left: 40px;
+    padding-right: 40px;
 }
 .packages-header { text-align: center; margin-bottom: 40px; }
 .packages-label {
@@ -1528,8 +1544,8 @@ html { scroll-behavior: smooth; }
             </div>
         @endforeach
     </div>
+    @endif
 </section>
-@endif
 
 {{-- ═══ COURSES / BASKETBALL SCHOOL ═══ --}}
 <section class="courses-section" data-aos="fade-up">
@@ -1626,6 +1642,7 @@ html { scroll-behavior: smooth; }
 @if($packages->isNotEmpty())
     {{-- ═══ PACKAGES ═══ --}}
    <section class="packages-section" id="packages" data-aos="fade-up">
+    <div class="packages-inner">
     <div class="packages-header">
         <p class="packages-label">Package</p>
         <h2 class="packages-title">แพ็กเกจจองเทรนเนอร์ส่วนตัว</h2>
@@ -1690,6 +1707,7 @@ html { scroll-behavior: smooth; }
                 @endforeach
             </div>
         @endif
+    </div>
     </section>
 @endif
 
@@ -1730,6 +1748,7 @@ html { scroll-behavior: smooth; }
 
 {{-- ═══ FOOTER ═══ --}}
 <footer class="footer" data-aos="fade-in">
+    <div class="footer-inner">
     <div class="footer-grid">
         <div>
             <p class="footer-brand">THATA Homecourt</p>
@@ -1788,6 +1807,7 @@ html { scroll-behavior: smooth; }
             <a href="{{ $footerLinks['facebook_url'] ?? 'https://www.facebook.com/thatahomecourts/' }}" target="_blank">ติดตามเรา</a>
             <a href="mailto:{{ $footerLinks['contact_email'] ?? 'thatahomecourt@gmail.com' }}" target="_blank">ติดต่อ</a>
         </div>
+    </div>
     </div>
 </footer>
 

@@ -9,7 +9,7 @@
 
         <div class="mb-6">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการโค้ช / ผู้ช่วยสนาม</h1>
-            <p class="text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
+            <p class="font-sarabun text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
         </div>
 
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-gray-200 mb-6 gap-4">
@@ -36,7 +36,7 @@
 
                     <input type="text" name="search" value="{{ $search }}" placeholder="ค้นหาชื่อ หรืออีเมล..."
                            class="w-full md:w-72 border border-gray-300 rounded-l-lg px-4 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition relative -translate-y-1.5">
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer relative -translate-y-1.5">
+                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-r-lg text-sm font-medium transition flex items-center justify-center gap-2 flex-shrink-0 shadown-sm cursor-pointer relative -translate-y-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 0 5 11a6 6 0 0 0 12 0z"/>
                         </svg>
@@ -249,8 +249,8 @@
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'ยืนยันถอดบทบาท',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ยืนยัน',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true
             }).then((result) => {

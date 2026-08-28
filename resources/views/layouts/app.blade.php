@@ -17,16 +17,23 @@
         body {
             font-family: 'Kanit', sans-serif;
         }
+
+        .font-sarabun {
+            font-family: 'Sarabun', sans-serif;
+        }
+        
+        [x-cloak] {
+        display: none !important;
+    }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
-<body class="bg-[#ffffff] min-h-screen flex flex-col text-white antialiased">
+<body class="bg-slate-50 min-h-screen flex flex-col text-white antialiased">
 
     {{-- Navbar อยู่ด้านบนสุด --}}
     @include('components.navbar')
-
+    <div id="navbar-spacer"></div>
 
 
 
@@ -52,6 +59,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // แก้บั๊ก sticky navbar กระตุกตอนเปิด SweetAlert2 (heightAuto default ไปเซ็ต height:auto ให้ <html>)
+        Swal = Swal.mixin({ heightAuto: false });
+
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -113,6 +123,14 @@
             window.location.reload();
         }
     });
+    function syncNavbarSpacer() {
+        const nav = document.querySelector('nav.fixed');
+        const spacer = document.getElementById('navbar-spacer');
+        if (nav && spacer) spacer.style.height = nav.offsetHeight + 'px';
+    }
+    window.addEventListener('load', syncNavbarSpacer);
+    window.addEventListener('resize', syncNavbarSpacer);
+    document.getElementById('mobileMenuBtn')?.addEventListener('click', () => setTimeout(syncNavbarSpacer, 50));
 </script>
 {{-- แทนที่ confirm() ของเบราว์เซอร์ด้วย SweetAlert2 — ใส่ data-confirm="ข้อความ" ในฟอร์มไหนก็ได้
      รองรับ dynamic message ผ่าน JS ก่อน submit ด้วย --}}

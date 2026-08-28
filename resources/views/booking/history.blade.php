@@ -84,6 +84,7 @@
     color: #64748b;
     border-bottom: 2px solid transparent;
     cursor: pointer;
+    font-family: 'Kanit', sans-serif;
 }
 .tab-btn.active {
     color: #111827;
@@ -111,13 +112,13 @@
 <div class="hist-main max-w-[1200px] mx-auto px-4 py-8" x-data="{ tab: 'current' }" data-aos="fade-up">
 
     {{-- HEADER --}}
-    <div class="mb-6 flex flex-col md:flex-row justify-between items-baseline gap-4" data-aos="fade-right">
-        <div class="flex items-baseline gap-4">
-            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">My Bookings</h1>
-            <span class="text-gray-600 text-[15px] hidden sm:inline">ประวัติการจองสนามบาสเกตบอล</span>
+    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-baseline gap-4" data-aos="fade-right">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">การจองของฉัน</h1>
+            <span class="text-gray-600 text-[15px]">ประวัติการจองสนามบาสเกตบอล</span>
         </div>
-        <a href="{{ route('booking.index') }}" class="bg-[#87D068] hover:bg-[#76bc5a] text-white font-medium px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <a href="{{ route('booking.index') }}" style="font-family: 'Kanit', sans-serif;" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg>
             จองสนามเพิ่ม
         </a>
     </div>

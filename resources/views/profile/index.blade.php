@@ -74,7 +74,7 @@
                     <svg class="w-5 h-5 text-[#e86c2a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </div>
                 <div>
-                    <div class="text-[16px] font-semibold text-gray-800">ข้อมูลบัญชี</div>
+                    <div class="font-kanit text-[16px] font-semibold text-gray-800">ข้อมูลบัญชี</div>
                     <div class="text-[13px] text-gray-500">แก้ไขข้อมูลที่บันทึกในระบบ</div>
                 </div>
             </div>
@@ -100,7 +100,7 @@
                             {{-- ปุ่มลบรูป --}}
                             <button type="button" id="removeAvatarBtn" class="{{ !empty($user->avatar) ? '' : 'hidden' }} text-[12px] font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer">ลบรูปโปรไฟล์</button>
                         </div>
-                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 2MB</p>
+                        <p class="text-[11px] text-gray-400 mt-1.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 5MB</p>
                         
                         <input type="file" name="avatar" id="profileImageInput" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
                         {{-- ตัวแปรลับส่งไปบอก Controller ว่ากดลบรูป --}}
@@ -111,24 +111,24 @@
                 {{-- กรอกข้อมูล --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="form-group mb-0">
-                        <label class="form-label">ชื่อผู้ใช้ (Username)</label>
+                        <label class="form-label font-kanit">ชื่อผู้ใช้ (Username)</label>
                         <input type="text" name="us_name" value="{{ old('us_name', $user->us_name) }}" class="form-input" placeholder="ชื่อที่ใช้เข้าระบบ">
                     </div>
                     <div class="form-group mb-0">
-                        <label class="form-label">ชื่อ-นามสกุล (Name)</label>
+                        <label class="form-label font-kanit">ชื่อ-นามสกุล (Name)</label>
                         <input type="text" name="name" value="{{ old('name', $user->name) }}" class="form-input" placeholder="ชื่อและนามสกุลจริง">
                     </div>
                 </div>
 
-                <div class="section-divider" style="margin: 10px 0 0">ข้อมูลติดต่อ</div>
+                <div class="section-divider font-kanit" style="margin: 10px 0 0">ข้อมูลติดต่อ</div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 mb-2">
                     <div class="form-group mb-0">
-                        <label class="form-label">อีเมล (Email)</label>
+                        <label class="form-label font-kanit">อีเมล (Email)</label>
                         <input type="email" name="email" id="emailInput" value="{{ old('email', $user->email) }}" class="form-input" placeholder="example@email.com">
                     </div>
                     <div class="form-group mb-0">
-                        <label class="form-label">เบอร์โทรศัพท์ (Phone)</label>
+                        <label class="form-label font-kanit">เบอร์โทรศัพท์ (Phone)</label>
                         <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="form-input" placeholder="08xxxxxxxx" maxlength="10">
                     </div>
                 </div>
@@ -144,7 +144,7 @@
 
                 <div class="mt-auto pt-4"> 
                         <div class="section-divider" style="margin: 10px 0 14px;"></div>
-                        <button type="submit" class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] text-white font-semibold rounded-lg transition flex justify-center items-center gap-2 cursor-pointer">
+                        <button type="submit" class="w-full py-2.5 bg-[#e86c2a] hover:bg-[#d05a1a] font-kanit text-white font-semibold rounded-lg transition flex justify-center items-center gap-2 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         บันทึกข้อมูลส่วนตัว
                     </button>
@@ -159,7 +159,7 @@
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
                 <div>
-                    <div class="text-[16px] font-semibold text-gray-800">ตั้งรหัสผ่านใหม่</div>
+                    <div class="font-kanit text-[16px] font-semibold text-gray-800">ตั้งรหัสผ่านใหม่</div>
                     <div class="text-[13px] text-gray-500">กรอกรหัสผ่านปัจจุบันเพื่อเปลี่ยนรหัสผ่านใหม่</div>
                 </div>
             </div>
@@ -167,17 +167,17 @@
             <form method="POST" action="{{ route('profile.update') }}" id="passwordForm" class="p-6 flex flex-col flex-grow">
                 @csrf
                 <div class="form-group mt-2">
-                    <label class="form-label">รหัสผ่านปัจจุบัน</label>
+                    <label class="form-label font-kanit">รหัสผ่านปัจจุบัน</label>
                     <input type="password" name="current_password" id="current_password" class="form-input" placeholder="ใส่รหัสผ่านที่ใช้ในปัจจุบัน">
                 </div>
                 
                 <div class="form-group mt-4">
-                    <label class="form-label">รหัสผ่านใหม่</label>
+                    <label class="form-label font-kanit">รหัสผ่านใหม่</label>
                     <input type="password" name="password" id="new_password" class="form-input" placeholder="อย่างน้อย 6 ตัวอักษร">
                 </div>
                 
                 <div class="form-group mb-0 mt-4">
-                    <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                    <label class="form-label font-kanit">ยืนยันรหัสผ่านใหม่</label>
                     <input type="password" name="password_confirmation" id="confirm_password" class="form-input" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
                 </div>
 
@@ -186,7 +186,7 @@
 
                 <div class="mt-auto pt-4">
                     <div class="section-divider" style="margin: 10px 0 14px;"></div>
-                    <button type="submit" class="w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg transition flex justify-center items-center gap-2 cursor-pointer">
+                    <button type="submit" class="font-kanit w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg transition flex justify-center items-center gap-2 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         บันทึกรหัสผ่านใหม่
                     </button>
@@ -212,8 +212,8 @@ if(fileInput) {
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'กรุณาอัปโหลดรูปขนาดไม่เกิน 2MB' });
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'กรุณาอัปโหลดรูปขนาดไม่เกิน 5MB' });
                 this.value = ''; return;
             }
             const reader = new FileReader();

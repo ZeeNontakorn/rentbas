@@ -192,10 +192,7 @@
 
 <div class="auth-page">
 
-    {{-- Brand --}}
-    <div class="auth-brand">
-        <span class="auth-brand-name">Basketball Court Booking</span>
-    </div>
+
 
     {{-- Title --}}
     <h1 class="auth-title">ยินดีต้อนรับ</h1>

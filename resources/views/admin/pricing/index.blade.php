@@ -19,13 +19,13 @@
 @endphp
 
 @section('content')
-<div class="bg-slate-50 text-gray-900 min-h-screen py-8">
+<div class="text-gray-900 min-h-screen py-8">
     <div class="container mx-auto px-4 sm:px-6 max-w-7xl">
 
         {{-- Header --}}
         <div class="mb-6">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">ตั้งค่าราคา</h1>
-            <p class="text-sm text-gray-500 mt-1">ปรับราคาต่อชั่วโมงตามช่วงเวลา และราคาแพ็กเกจโปรโมชั่น — มีผลกับการคำนวณราคาจองทันทีที่บันทึก</p>
+            <p class="font-sarabun text-sm text-gray-500 mt-1">ปรับราคาต่อชั่วโมงตามช่วงเวลา และราคาแพ็กเกจโปรโมชั่น — มีผลกับการคำนวณราคาจองทันทีที่บันทึก</p>
         </div>
 
         {{-- ═══ PRICING RULES (รายชั่วโมง) ═══ --}}
@@ -42,10 +42,10 @@
                 $cardMinTime = $isEveningCard ? '16:00' : '06:00';
                 $cardMaxTime = $isEveningCard ? '23:00' : '16:00';
             @endphp
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-5">
-                <div class="px-6 py-3 border-b border-gray-100 bg-slate-50">
+            <div class="rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-5">
+                <div class="px-6 py-3 border-b border-gray-200 bg-slate-50">
                     <h3 class="font-medium text-gray-700 text-sm">{{ $dayTypeLabel[$dayType] ?? $dayType }}</h3>
-                    <p class="text-[11px] text-gray-400 mt-0.5">ตั้งช่วงเวลาได้ระหว่าง {{ $cardMinTime }}–{{ $cardMaxTime }} น.</p>
+                    <p class="text-[11px] text-gray-400 mt-1">ตั้งช่วงเวลาได้ระหว่าง {{ $cardMinTime }}–{{ $cardMaxTime }} น.</p>
                 </div>
 
                 {{-- One form per card: all rows submit together, single save button at the bottom --}}
@@ -65,7 +65,7 @@
                                     <th class="px-6 py-3 font-medium">เปิดใช้งาน</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-gray-100 bg-white">
                                 @foreach ($rules as $rule)
                                     <tr>
                                         <td class="px-6 py-3 text-gray-800 font-medium max-w-[200px]">
@@ -111,12 +111,12 @@
                         </table>
                     </div>
 
-                    <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-slate-50">
+                    <div class="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-white">
                         <button type="button" class="rules-cancel-btn text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg px-4 py-1.5 cursor-pointer transition"
                                 data-target="rules-form-{{ $dayType }}">
                             ยกเลิก
                         </button>
-                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 cursor-pointer transition">
+                        <button type="submit" class="text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-1.5 shadow-sm cursor-pointer transition">
                             บันทึก
                         </button>
                     </div>
@@ -131,8 +131,11 @@
                 <h2 class="font-medium text-gray-700 text-sm">แพ็กเกจโปรโมชั่น</h2>
             </div>
             <button type="button" onclick="toggleCreatePkgForm()"
-                    class="text-xs font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 cursor-pointer transition">
-                + เพิ่มแพ็กเกจใหม่
+                    class="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 inline-flex item-center gap-1 shadow-sm cursor-pointer transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    เพิ่มแพ็กเกจใหม่
             </button>
         </div>
 
@@ -328,8 +331,9 @@
                 + `<span class="text-gray-400 text-sm">(การจองเก่าที่เคยใช้แพ็กเกจนี้จะไม่ถูกลบ แค่ตัดการเชื่อมโยงกับแพ็กเกจนี้)</span>`,
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#3085d6',
+            cancelButtonColor: '#6b7280',
             confirmButtonText: 'ยืนยันการลบ',
             cancelButtonText: 'ยกเลิก',
         }).then((result) => {

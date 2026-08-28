@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Mail\ReservePromoted;
+use App\Services\CreditService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -119,112 +120,125 @@ class GroupRound extends Model
      * เรียกใช้ทุกครั้งที่มีคน "ตัวจริง" ยกเลิก/ถูกนำออกจากรอบ
      */
     public function promoteNextReserve(): ?GroupRoundSignup
-{
-    $next = GroupRoundSignup::where('group_round_id', $this->id)
-        ->where('status', 'confirmed')
-        ->where('is_reserve', true)
-        ->orderBy('order_number')
-        ->first();
+    {
+        $next = GroupRoundSignup::where('group_round_id', $this->id)
+            ->where('status', 'confirmed')
+            ->where('is_reserve', true)
+            ->orderBy('order_number')
+            ->first();
 
-    if (! $next) {
-        return null;
-    }
-
-    $next->update(['is_reserve' => false]);
-
-    $notifyUserId = $next->user_id ?? $next->booked_by;
-
-    if ($notifyUserId) {
-        Notification::create([
-            'user_id' => $notifyUserId,
-            'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
-            'message' => "ที่นั่งของ \"{$next->displayName()}\" เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
-            'action_url' => route('group-rounds.my-bookings'),
-            'is_read' => false,
-        ]);
-
-        $notifyUser = User::find($notifyUserId);
-
-        if ($notifyUser && $notifyUser->email) {
-            Mail::to($notifyUser->email)->queue(new ReservePromoted($this, $next));
+        if (! $next) {
+            return null;
         }
-    }
 
-    return $next;
-}
+        $next->update(['is_reserve' => false]);
+
+        // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง
+        // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+        $notifyUserId = $next->payerId();
+
+        if ($notifyUserId !== null) {
+            Notification::create([
+                'user_id' => $notifyUserId,
+                'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
+                'message' => "ที่นั่งของ \"{$next->displayName()}\" เลื่อนจากคิวสำรองขึ้นเป็นตัวจริงในรอบ \"{$this->title}\" เรียบร้อยแล้ว",
+                'action_url' => route('group-rounds.my-bookings'),
+                'is_read' => false,
+            ]);
+
+            $notifyUser = User::find($notifyUserId);
+
+            if ($notifyUser && $notifyUser->email) {
+                Mail::to($notifyUser->email)->send(new ReservePromoted($this, $next));
+            }
+        }
+
+        return $next;
+    }
 
     /**
-     * เมื่อหมดเวลาสละสิทธิ์แล้ว (cancel_deadline ผ่านไปแล้ว) ให้คืนเครดิตให้คิวสำรอง
-     * ที่ยังไม่ได้เลื่อนเป็นตัวจริงทั้งหมด แล้วปิดจ็อบไม่ให้ประมวลผลซ้ำอีก
+     * เมื่อหมดเวลาสละสิทธิ์แล้ว (cancel_deadline ผ่านไปแล้ว) หรือรอบเล่นจบแล้ว
+     * ให้คืนเครดิตให้คิวสำรองที่ยังไม่ได้เลื่อนเป็นตัวจริงทั้งหมด แล้วปิดจ็อบไม่ให้ประมวลผลซ้ำอีก
      */
     public function processExpiredReserves(): void
-{
-    if ($this->reserves_processed_at) {
-        return;
-    }
-
-    $deadlinePassed = $this->cancel_deadline && now()->greaterThanOrEqualTo($this->cancel_deadline);
-    $roundEnded = $this->hasRoundEnded();
-
-    if (! $deadlinePassed && ! $roundEnded) {
-        return;
-    }
-
-    DB::transaction(function () {
-        $round = self::where('id', $this->id)->lockForUpdate()->first();
-
-        if (! $round || $round->reserves_processed_at) {
+    {
+        if ($this->reserves_processed_at) {
             return;
         }
 
-        $deadlinePassed = $round->cancel_deadline && now()->greaterThanOrEqualTo($round->cancel_deadline);
-        $roundEnded = $round->hasRoundEnded();
+        $deadlinePassed = $this->cancel_deadline && now()->greaterThanOrEqualTo($this->cancel_deadline);
+        $roundEnded = $this->hasRoundEnded();
 
         if (! $deadlinePassed && ! $roundEnded) {
             return;
         }
 
-        $reserves = GroupRoundSignup::where('group_round_id', $round->id)
-            ->where('status', 'confirmed')
-            ->where('is_reserve', true)
-            ->get();
+        DB::transaction(function () {
+            $round = self::where('id', $this->id)->lockForUpdate()->first();
 
-        foreach ($reserves as $signup) {
-            $payerId = $signup->booked_by ?? $signup->user_id;
-
-            if ($payerId && $signup->credit_used > 0) {
-                User::where('id', $payerId)->increment('credit_balance', $signup->credit_used * 100);
+            if (! $round || $round->reserves_processed_at) {
+                return;
             }
 
-            $signup->update(['status' => 'cancelled']);
+            $deadlinePassed = $round->cancel_deadline && now()->greaterThanOrEqualTo($round->cancel_deadline);
+            $roundEnded = $round->hasRoundEnded();
 
-            if ($payerId) {
-                Notification::create([
-                    'user_id' => $payerId,
-                    'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',
-                    'message' => "ที่นั่งของ \"{$signup->displayName()}\" ในรอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
-                    'action_url' => route('group-rounds.my-bookings'),
-                    'is_read' => false,
-                ]);
+            if (! $deadlinePassed && ! $roundEnded) {
+                return;
             }
-        }
 
-        $round->update(['reserves_processed_at' => now()]);
-    });
+            $reserves = GroupRoundSignup::where('group_round_id', $round->id)
+                ->where('status', 'confirmed')
+                ->where('is_reserve', true)
+                ->get();
 
-    $this->refresh();
-}
+            $creditService = app(CreditService::class);
+
+            foreach ($reserves as $signup) {
+                // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง
+                // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+                $payerId = $signup->payerId();
+
+                if ($payerId !== null && $signup->credit_used > 0) {
+                    // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+                    // (เดิมใช้ increment() ตรงๆ ทำให้ไม่มีประวัติธุรกรรมเลย)
+                    $creditService->refundForGroupRound(
+                        $payerId,
+                        $signup,
+                        "คืนเครดิตอัตโนมัติ (หมดเวลาสละสิทธิ์/รอบเล่นจบแล้ว) รอบ \"{$round->title}\""
+                    );
+                }
+
+                $signup->update(['status' => 'cancelled']);
+
+                if ($payerId !== null) {
+                    Notification::create([
+                        'user_id' => $payerId,
+                        'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',
+                        'message' => "ที่นั่งของ \"{$signup->displayName()}\" ในรอบ \"{$round->title}\" เต็มจำนวนตัวจริงและหมดเวลาสละสิทธิ์แล้ว ระบบคืนเครดิต ฿".number_format($signup->credit_used, 2)." ให้คุณเรียบร้อยแล้ว",
+                        'action_url' => route('group-rounds.my-bookings'),
+                        'is_read' => false,
+                    ]);
+                }
+            }
+
+            $round->update(['reserves_processed_at' => now()]);
+        });
+
+        $this->refresh();
+    }
+
     /** รอบนี้ถึงเวลาเล่นจบแล้วหรือยัง (คำนวณจาก play_date + end_time) */
-        public function hasRoundEnded(): bool
-        {
-            if (! $this->play_date) {
-                return false;
-            }
-
-            $end = $this->end_time
-                ? \Carbon\Carbon::parse($this->play_date->format('Y-m-d').' '.$this->end_time)
-                : $this->play_date->copy()->endOfDay();
-
-            return now()->greaterThan($end);
+    public function hasRoundEnded(): bool
+    {
+        if (! $this->play_date) {
+            return false;
         }
+
+        $end = $this->end_time
+            ? \Carbon\Carbon::parse($this->play_date->format('Y-m-d').' '.$this->end_time)
+            : $this->play_date->copy()->endOfDay();
+
+        return now()->greaterThan($end);
+    }
 }

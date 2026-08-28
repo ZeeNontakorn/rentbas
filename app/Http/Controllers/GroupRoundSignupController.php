@@ -10,11 +10,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\CreditService;
+
 
 class GroupRoundSignupController extends Controller
 {
     /** เครดิตในระบบเก็บในคอลัมน์ credit_balance (หน่วยสตางค์) ส่วน credit_cost ของรอบเป็นหน่วยบาท */
     private const CREDIT_COLUMN = 'credit_balance';
+    public function __construct(protected CreditService $creditService)
+    {
+    }
 
     /**
      * แสดงรอบกลุ่มเล่นบาสทั้งหมดที่ผู้ใช้จองไว้ (รวมที่จองแทนเพื่อน) จัดกลุ่มตามรอบ
@@ -66,22 +71,38 @@ class GroupRoundSignupController extends Controller
             return redirect()->route('home')->withErrors(['round' => 'รอบนี้ปิดรับสมัครแล้ว']);
         }
 
+            // หมดเวลายกเลิกจองแล้วหรือยัง (ไม่มีเดดไลน์ = ยังไม่หมดเวลาเสมอ)
+            $deadlinePassed = ! $round->canSelfCancel();
+
+         // เต็มจำนวนตัวจริงแล้ว + หมดเวลาสละสิทธิ์แล้ว -> ปิดรับจองเพิ่มโดยสิ้นเชิง (ไม่รับสำรองเพิ่ม)
+        if ($deadlinePassed && $round->isFull()) {
+            return redirect()->route('home')->withErrors([
+                'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว ไม่สามารถจองเพิ่มได้',
+            ]);
+        }
+
         $bookedCount = $round->bookedSeatsFor($user->id);
         $remaining = $round->remainingSeatsFor($user->id);
 
         if ($remaining <= 0) {
-            return redirect()->route('group-rounds.my-bookings')->with(
-                'error',
-                'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)'
-            );
-        }
-
-        // ไม่บล็อกแม้ตัวจริงเต็มแล้ว — แค่เตือนไว้ล่วงหน้าว่าจะได้คิวสำรอง (เช็คจริงตอน submit อีกที)
-        $willBeReserve = $round->isFull();
-
-        return view('checkout.group-round', compact('round', 'user', 'willBeReserve', 'bookedCount', 'remaining'));
+        return redirect()->route('group-rounds.my-bookings')->with(
+            'error',
+            'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)'
+        );
     }
 
+    // ถ้าหมดเวลาสละสิทธิ์แล้ว แต่ตัวจริงยังไม่เต็ม -> จองได้ แต่ต้องไม่ทะลุจนล้นเป็นสำรอง
+    // จำนวนที่จองได้จริงตอนนี้ = ค่าที่น้อยกว่าระหว่าง โควตาต่อคน (5 ที่) กับที่นั่งตัวจริงที่เหลือ
+    $maxBookable = $deadlinePassed
+        ? min($remaining, $round->remainingSlots())
+        : $remaining;
+
+    $willBeReserve = $round->isFull();
+
+    return view('checkout.group-round', compact(
+        'round', 'user', 'willBeReserve', 'bookedCount', 'remaining', 'deadlinePassed', 'maxBookable'
+    ));
+}
     /**
      * ยืนยันการชำระเครดิต แล้วลงชื่อเข้ารอบทีเดียวหลายที่นั่ง (ตัวเอง + จองแทนเพื่อนได้ ตามชื่อที่กรอก)
      * แต่ละที่นั่งเป็นตัวจริงหรือสำรอง ขึ้นอยู่กับว่าตัวจริงเต็มไปถึงไหนแล้ว ณ ขณะจอง
@@ -122,15 +143,37 @@ class GroupRoundSignupController extends Controller
                 return back()->withErrors(['round' => 'รอบนี้ผ่านไปแล้ว']);
             }
 
-            $remaining = $round->remainingSeatsFor($user->id);
+            // หมดเวลายกเลิกจองแล้วหรือยัง (เช็คซ้ำในนี้ด้วย เพราะเป็นจุดตัดสินใจจริง ไม่พึ่งแค่หน้า checkout)
+            $deadlinePassed = ! $round->canSelfCancel();
+            // เต็มจำนวนตัวจริง + หมดเวลาสละสิทธิ์แล้ว -> บล็อกทั้งหมด ไม่รับสำรองเพิ่มเด็ดขาด
+if ($deadlinePassed && $round->isFull()) {
+    return back()->withErrors([
+        'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว ไม่สามารถจองเพิ่มได้',
+    ]);
+}
 
-            if (count($names) > $remaining) {
-                return back()->withErrors([
-                    'names' => $remaining > 0
-                        ? "จองได้อีกแค่ {$remaining} ที่ (สูงสุด ".GroupRound::MAX_SEATS_PER_USER." คนต่อผู้ใช้ต่อรอบ)"
-                        : 'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)',
-                ])->withInput();
-            }
+$remaining = $round->remainingSeatsFor($user->id);
+
+if (count($names) > $remaining) {
+    return back()->withErrors([
+        'names' => $remaining > 0
+            ? "จองได้อีกแค่ {$remaining} ที่ (สูงสุด ".GroupRound::MAX_SEATS_PER_USER." คนต่อผู้ใช้ต่อรอบ)"
+            : 'คุณจองครบจำนวนสูงสุดแล้วในรอบนี้ ('.GroupRound::MAX_SEATS_PER_USER.' คน)',
+    ])->withInput();
+}
+
+// หมดเวลาสละสิทธิ์แล้ว แต่ตัวจริงยังไม่เต็ม -> ห้ามจองทะลุจนล้นเป็นสำรอง
+if ($deadlinePassed) {
+    $mainSlotsRemaining = $round->remainingSlots();
+
+    if (count($names) > $mainSlotsRemaining) {
+        return back()->withErrors([
+            'names' => $mainSlotsRemaining > 0
+                ? "หมดเวลารับคิวสำรองแล้ว ตอนนี้จองได้อีกแค่ {$mainSlotsRemaining} ที่ (เป็นตัวจริงเท่านั้น ไม่รับคิวสำรองเพิ่ม)"
+                : 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว',
+        ])->withInput();
+    }
+}
 
             $totalCredit = $round->credit_cost * count($names);
 
@@ -142,37 +185,39 @@ class GroupRoundSignupController extends Controller
                 ])->withInput();
             }
 
-            $lockedUser->decrement(self::CREDIT_COLUMN, $totalCredit * 100);
-
             $nextOrder = ((int) GroupRoundSignup::query()
-                ->where('group_round_id', $round->id)
-                ->max('order_number')) + 1;
+    ->where('group_round_id', $round->id)
+    ->max('order_number')) + 1;
 
-            $mainCount = $round->mainConfirmedCount();
-            $reserveCount = 0;
+$mainCount = $round->mainConfirmedCount();
+$reserveCount = 0;
 
-            foreach ($names as $i => $name) {
-                $isReserve = $mainCount >= $round->max_players;
+foreach ($names as $i => $name) {
+    $isReserve = $mainCount >= $round->max_players;
 
-                GroupRoundSignup::create([
-                    'group_round_id' => $round->id,
-                    'user_id' => null,
-                    'guest_name' => $name,
-                    'order_number' => $nextOrder + $i,
-                    'credit_used' => $round->credit_cost,
-                    'status' => 'confirmed',
-                    'is_reserve' => $isReserve,
-                    'signed_up_at' => now(),
-                    'added_by' => null,
-                    'booked_by' => $user->id,
-                ]);
+    $signup = GroupRoundSignup::create([
+        'group_round_id' => $round->id,
+        'user_id' => null,
+        'guest_name' => $name,
+        'order_number' => $nextOrder + $i,
+        'credit_used' => $round->credit_cost,
+        'status' => 'confirmed',
+        'is_reserve' => $isReserve,
+        'signed_up_at' => now(),
+        'added_by' => null,
+        'booked_by' => $user->id,
+    ]);
 
-                if ($isReserve) {
-                    $reserveCount++;
-                } else {
-                    $mainCount++;
-                }
-            }
+    // หักเครดิตผ่าน CreditService ทีละที่นั่ง เพื่อให้มีบันทึกใน credit_transactions
+    // ผูกกับ signup แต่ละที่นั่งจริง (เดิมหักรวมก้อนเดียวตรงๆ ไม่มีประวัติเลย)
+    $this->creditService->deductForGroupRound($lockedUser, $signup);
+
+    if ($isReserve) {
+        $reserveCount++;
+    } else {
+        $mainCount++;
+    }
+}
 
             // แจ้งเตือนผู้จอง (ตัวเอง) ว่าชำระเงินสำเร็จ
             Notification::create([
@@ -247,11 +292,18 @@ class GroupRoundSignupController extends Controller
         $seatName = $signup->displayName();
         $removedOrder = $signup->order_number;
 
-        $payerId = $signup->booked_by ?? $signup->user_id;
+        // payerId() ใช้ is_null() เช็คแทนการเช็ค truthy/?? ตรงๆ เพราะระบบนี้มี user id=0 จริง
+        // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+        $payerId = $signup->payerId();
 
-        if ($payerId && $signup->credit_used > 0) {
-            User::where('id', $payerId)->increment(self::CREDIT_COLUMN, $signup->credit_used * 100);
-        }
+        if ($payerId !== null && $signup->credit_used > 0) {
+    // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+    $this->creditService->refundForGroupRound(
+        $payerId,
+        $signup,
+        "ยกเลิกที่นั่งของ \"{$seatName}\" เอง ในรอบ \"{$round->title}\""
+    );
+}
 
         $signup->update(['status' => 'cancelled']);
 
@@ -261,7 +313,7 @@ class GroupRoundSignupController extends Controller
             ->where('order_number', '>', $removedOrder)
             ->decrement('order_number');
 
-        if ($payerId) {
+        if ($payerId !== null) {
             Notification::create([
                 'user_id' => $payerId,
                 'title' => 'ยกเลิกการจองกลุ่มเล่นบาสสำเร็จ',
