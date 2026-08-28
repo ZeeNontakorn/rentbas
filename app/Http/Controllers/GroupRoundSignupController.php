@@ -292,9 +292,11 @@ foreach ($names as $i => $name) {
         $seatName = $signup->displayName();
         $removedOrder = $signup->order_number;
 
-        $payerId = $signup->booked_by ?? $signup->user_id;
+        // payerId() ใช้ is_null() เช็คแทนการเช็ค truthy/?? ตรงๆ เพราะระบบนี้มี user id=0 จริง
+        // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+        $payerId = $signup->payerId();
 
-        if ($payerId && $signup->credit_used > 0) {
+        if ($payerId !== null && $signup->credit_used > 0) {
     // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
     $this->creditService->refundForGroupRound(
         $payerId,
@@ -311,7 +313,7 @@ foreach ($names as $i => $name) {
             ->where('order_number', '>', $removedOrder)
             ->decrement('order_number');
 
-        if ($payerId) {
+        if ($payerId !== null) {
             Notification::create([
                 'user_id' => $payerId,
                 'title' => 'ยกเลิกการจองกลุ่มเล่นบาสสำเร็จ',

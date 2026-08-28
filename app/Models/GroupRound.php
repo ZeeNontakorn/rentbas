@@ -133,9 +133,11 @@ class GroupRound extends Model
 
         $next->update(['is_reserve' => false]);
 
-        $notifyUserId = $next->user_id ?? $next->booked_by;
+        // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง
+        // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+        $notifyUserId = $next->payerId();
 
-        if ($notifyUserId) {
+        if ($notifyUserId !== null) {
             Notification::create([
                 'user_id' => $notifyUserId,
                 'title' => 'เลื่อนจากสำรองเป็นตัวจริงแล้ว',
@@ -193,9 +195,11 @@ class GroupRound extends Model
             $creditService = app(CreditService::class);
 
             foreach ($reserves as $signup) {
-                $payerId = $signup->booked_by ?? $signup->user_id;
+                // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง
+                // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+                $payerId = $signup->payerId();
 
-                if ($payerId && $signup->credit_used > 0) {
+                if ($payerId !== null && $signup->credit_used > 0) {
                     // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
                     // (เดิมใช้ increment() ตรงๆ ทำให้ไม่มีประวัติธุรกรรมเลย)
                     $creditService->refundForGroupRound(
@@ -207,7 +211,7 @@ class GroupRound extends Model
 
                 $signup->update(['status' => 'cancelled']);
 
-                if ($payerId) {
+                if ($payerId !== null) {
                     Notification::create([
                         'user_id' => $payerId,
                         'title' => 'การจองกลุ่มเล่นบาสถูกยกเลิก',

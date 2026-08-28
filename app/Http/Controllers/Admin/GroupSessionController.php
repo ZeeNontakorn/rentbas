@@ -277,10 +277,38 @@ class GroupSessionController extends Controller
 
         $wasMainSlot = ! $signup->is_reserve;
         $removedOrder = $signup->order_number;
+        $seatName = $signup->displayName();
 
-        // ... โค้ดคืนเครดิตเดิมที่มีอยู่แล้ว (ถ้ามี) ...
+        // ผู้จ่ายเงินจริง: booked_by (จองแทนเพื่อนแบบ self-service, user_id ของที่นั่งจะเป็น null เสมอ)
+        // หรือ user_id (แอดมินเพิ่มโดยผูกบัญชีสมาชิกโดยตรง) — เดิมจุดนี้ไม่มีโค้ดคืนเครดิตเลย มีแค่คอมเมนต์
+        // ค้างไว้ ทำให้หักเงินตอนเพิ่ม/ลงชื่อไปแล้ว แต่พอแอดมินเอาออกไม่มีการคืนเงินและไม่มี transaction คืนเงิน
+        // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง (ดูรายละเอียด
+        // ในคอมเมนต์ของ GroupRoundSignup::payerId())
+        $payerId = $signup->payerId();
+        $didRefund = false;
+
+        if ($payerId !== null && $signup->credit_used > 0) {
+            // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+            $this->creditService->refundForGroupRound(
+                $payerId,
+                $signup,
+                "ถูกนำออกจากรอบ \"{$round->title}\" โดยแอดมิน"
+            );
+            $didRefund = true;
+        }
 
         $signup->update(['status' => 'cancelled']);
+
+        if ($payerId !== null) {
+            Notification::create([
+                'user_id' => $payerId,
+                'title' => 'ถูกนำออกจากรอบกลุ่มเล่นบาส',
+                'message' => 'ที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" ถูกนำออกโดยแอดมิน'
+                    .($didRefund ? ' ระบบคืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
+                'action_url' => route('group-rounds.my-bookings'),
+                'is_read' => false,
+            ]);
+        }
 
         // เพิ่มส่วนนี้เข้าไป — เลื่อนลำดับคนที่อยู่หลังขึ้นมาแทนที่ ไม่ให้เลขกระโดดข้าม
         GroupRoundSignup::where('group_round_id', $round->id)
@@ -324,10 +352,12 @@ class GroupSessionController extends Controller
                 ->get();
 
             foreach ($signups as $signup) {
-                $payerId = $signup->booked_by ?? $signup->user_id;
+                // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง
+                // (ดูรายละเอียดในคอมเมนต์ของ GroupRoundSignup::payerId())
+                $payerId = $signup->payerId();
                 $didRefund = false;
 
-                if ($payerId && $signup->credit_used > 0) {
+                if ($payerId !== null && $signup->credit_used > 0) {
                     // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
                     $this->creditService->refundForGroupRound(
                         $payerId,
@@ -340,7 +370,7 @@ class GroupSessionController extends Controller
                 $signup->update(['status' => 'cancelled']);
 
                 // แจ้งเตือนผู้ใช้ (เดิมไม่มีการแจ้งเตือนเลยตอนยกเลิกทั้งรอบ)
-                if ($payerId) {
+                if ($payerId !== null) {
                     Notification::create([
                         'user_id' => $payerId,
                         'title' => 'รอบเล่นบาสถูกยกเลิก',
