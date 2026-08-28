@@ -592,7 +592,9 @@ class PrivateTrainingController extends Controller
             route('private-training.index'),
         );
 
-        return back()->with('success', 'รับคำขอเรียบร้อยแล้ว ขั้นตอนถัดไปกรุณาจัดสนาม');
+        return redirect()
+            ->route('admin.private-training.index', ['status' => 'awaiting_court'])
+            ->with('success', 'รับคำขอเรียบร้อยแล้ว ขั้นตอนถัดไปกรุณาจัดสนาม');
     }
 
     public function assignCourt(Request $request, PrivateTrainingBooking $privateTrainingBooking)

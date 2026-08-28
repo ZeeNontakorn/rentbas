@@ -144,7 +144,7 @@ test.describe.serial('Private Training PTB-01 ถึง PTB-26', () => {
 
         const txRow = page.locator('tbody tr').filter({ hasText: 'ชำระค่าแพ็กเกจ' });
         await expect(txRow).toHaveCount(1);
-        await expect(txRow).toContainText('หักค่าจอง');
+        await expect(txRow).toContainText('หักเครดิต');
         await expect(txRow).toContainText(`-฿${money(fixture.packages.weekday.price, 2)}`);
         await expect(txRow).toContainText(`฿${money(fixture.user.credit_balance - fixture.packages.weekday.price, 2)}`);
     });

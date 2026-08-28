@@ -30,15 +30,25 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Models\OtpToken;
 use App\Models\Availability;
+use App\Models\Booking;
+use App\Models\CalendarEvent;
 use App\Models\Court;
+use App\Models\CourtSection;
+use App\Models\CourtClosure;
 use App\Models\CreditTransaction;
+use App\Models\CreditTopupPackage;
+use App\Models\CreditTopupRequest;
+use App\Models\Facility;
 use App\Models\GroupRound;
 use App\Models\GroupRoundSignup;
 use App\Models\GroupSession;
 use App\Models\Package;
 use App\Models\PackagePurchase;
 use App\Models\PrivateTrainingBooking;
+use App\Models\PricingRule;
 use App\Models\PromotionPackage;
+use App\Models\Review;
+use App\Models\StaffProfile;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -177,6 +187,77 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
         abort_unless($otp, 404);
 
         return response()->json(['otp' => $otp]);
+    });
+
+    Route::post('/__e2e/coach-assistant-management/case', function () {
+        return DB::transaction(function () {
+            $oldUsers = User::where('email', 'like', 'coas-%@e2e.local')->get();
+            CalendarEvent::whereIn('coach_id', $oldUsers->pluck('id'))->delete();
+            Availability::whereIn('user_id', $oldUsers->pluck('id'))->delete();
+            User::whereIn('id', $oldUsers->pluck('id'))->delete();
+
+            $account = function (string $email, string $name, string $role, string $membershipType, string $phone) {
+                return User::create([
+                    'name' => $name,
+                    'us_name' => $name,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'password' => '123456',
+                    'role' => $role,
+                    'membership_type' => $membershipType,
+                    'is_verified' => true,
+                    'email_verified_at' => now(),
+                ]);
+            };
+
+            $admin = $account('coas-admin@e2e.local', 'ผู้ดูแล COAS E2E', 'admin', 'admin', '0898000001');
+            $coach = $account('coas-coach@e2e.local', 'โค้ชชาตรี E2E', 'staff', 'coach', '0898000002');
+            $assistant = $account('coas-assistant@e2e.local', 'ผู้ช่วยสนามมานะ E2E', 'staff', 'court_assistant', '0898000003');
+            $removable = $account('coas-remove@e2e.local', 'ผู้ช่วยรอถอดบทบาท E2E', 'staff', 'court_assistant', '0898000004');
+
+            StaffProfile::create([
+                'user_id' => $coach->id,
+                'specialty' => 'พัฒนาทักษะการยิงและการเลี้ยงบอล',
+                'bio' => 'โค้ชทดสอบสำหรับระบบจัดการบุคลากร',
+                'gender' => 'male',
+                'experience_years' => 8,
+            ]);
+            StaffProfile::create([
+                'user_id' => $assistant->id,
+                'specialty' => 'ดูแลสนามและอุปกรณ์',
+                'bio' => 'ผู้ช่วยสนามสำหรับทดสอบระบบ',
+                'gender' => 'female',
+                'experience_years' => 3,
+            ]);
+
+            $eventDate = now('Asia/Bangkok')->addDay()->startOfDay();
+            CalendarEvent::create([
+                'title' => 'ฝึกซ้อมทีมเยาวชน E2E',
+                'description' => 'กิจกรรมทดสอบตารางงาน CO-AS-M',
+                'starts_at' => $eventDate->copy()->setTime(10, 0),
+                'ends_at' => $eventDate->copy()->setTime(12, 0),
+                'coach_id' => $coach->id,
+                'coach_name' => $coach->us_name,
+                'event_type' => 'work',
+                'recurrence' => 'none',
+                'color' => '#2563eb',
+            ]);
+
+            return response()->json([
+                'admin' => ['email' => $admin->email, 'password' => '123456'],
+                'coach' => ['id' => $coach->id, 'name' => $coach->name, 'email' => $coach->email],
+                'assistant' => ['id' => $assistant->id, 'name' => $assistant->name, 'email' => $assistant->email],
+                'removable' => ['id' => $removable->id, 'name' => $removable->name, 'email' => $removable->email],
+                'event' => ['title' => 'ฝึกซ้อมทีมเยาวชน E2E', 'date' => $eventDate->toDateString(), 'start' => '10:00', 'end' => '12:00'],
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/coach-assistant-management/{staff}/state', function (User $staff) {
+        return response()->json([
+            'user' => $staff->only(['id', 'name', 'us_name', 'email', 'phone', 'role', 'membership_type', 'avatar']),
+            'profile' => $staff->staffProfile?->only(['specialty', 'bio', 'gender', 'profile_image']),
+        ]);
     });
 
     Route::post('/__e2e/group-rounds/seed', function () {
@@ -623,11 +704,344 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
                     'participant_count' => $booking->participant_count,
                     'assistant_requested' => $booking->assistant_requested,
                     'court_assistant_id' => $booking->court_assistant_id,
+                    'court_id' => $booking->court_id,
+                    'court_section_id' => $booking->court_section_id,
                     'status' => $booking->status,
                     'reject_reason' => $booking->reject_reason,
                     'package_purchase_id' => $booking->package_purchase_id,
                     'note' => $booking->note,
                 ]),
+        ]);
+    });
+
+    Route::post('/__e2e/private-training-management/case', function () {
+        return DB::transaction(function () {
+            $fixture = json_decode(Route::dispatch(
+                \Illuminate\Http\Request::create('/__e2e/private-training/case', 'POST', ['purchases' => ['weekday']])
+            )->getContent(), true);
+
+            $user = User::findOrFail($fixture['user']['id']);
+            $admin = User::findOrFail($fixture['admin']['id']);
+            $coach = User::findOrFail($fixture['coach']['id']);
+            $assistant = User::findOrFail($fixture['assistants']['free']['id']);
+            $purchaseId = $fixture['purchases']['weekday']['id'] ?? null;
+            $purchase = $purchaseId
+                ? PackagePurchase::findOrFail($purchaseId)
+                : PackagePurchase::create([
+                    'user_id' => $user->id, 'package_id' => $fixture['packages']['weekday']['id'],
+                    'price' => 100000, 'status' => 'approved', 'booking_source' => 'credit',
+                    'payment_method' => 'credit', 'payment_status' => 'paid', 'remaining_use' => 4,
+                    'paid_at' => now(), 'expired_at' => now()->addDays(60),
+                ]);
+            $fixture['purchases']['weekday'] = ['id' => $purchase->id, 'remaining_use' => $purchase->remaining_use];
+
+            $alternateCoach = User::updateOrCreate(['email' => 'ptm-coach-alt@e2e.local'], [
+                'name' => 'โค้ชสำรอง PTM E2E', 'us_name' => 'โค้ชสำรอง PTM E2E', 'phone' => '0891000009',
+                'password' => '123456', 'role' => 'staff', 'membership_type' => 'coach', 'is_verified' => true,
+                'email_verified_at' => now(),
+            ]);
+
+            PrivateTrainingBooking::where('coach_id', $alternateCoach->id)->delete();
+            $court = Court::updateOrCreate(['name' => '[E2E PTM] สนามว่าง'], ['court_status' => 'open']);
+            $freeSection = CourtSection::updateOrCreate(
+                ['court_id' => $court->id, 'code' => 'full'],
+                ['name' => 'เต็มสนาม', 'is_active' => true]
+            );
+            $busyCourt = Court::updateOrCreate(['name' => '[E2E PTM] สนามไม่ว่าง'], ['court_status' => 'open']);
+            $busySection = CourtSection::updateOrCreate(
+                ['court_id' => $busyCourt->id, 'code' => 'full'],
+                ['name' => 'เต็มสนาม', 'is_active' => true]
+            );
+
+            $future = Carbon::today('Asia/Bangkok')->addDays(7);
+            $make = function (string $note, string $status, Carbon $date, string $start, string $end, array $extra = []) use ($user, $coach, $purchase) {
+                return PrivateTrainingBooking::create(array_merge([
+                    'user_id' => $user->id, 'coach_id' => $coach->id,
+                    'package_purchase_id' => $purchase->id, 'participant_count' => 2,
+                    'assistant_requested' => true, 'date' => $date->toDateString(),
+                    'start_time' => $start, 'end_time' => $end, 'status' => $status,
+                    'note' => $note, 'payment_status' => 'paid_by_package',
+                ], $extra));
+            };
+
+            $pending = $make('[E2E PTM] รออนุมัติ', 'pending', $future, '09:00:00', '10:00:00');
+            $awaiting = $make('[E2E PTM] รอจัดสนาม', 'awaiting_court', $future, '11:00:00', '12:00:00', [
+                'court_assistant_id' => $assistant->id,
+            ]);
+            $confirmed = $make('[E2E PTM] ยืนยันแล้ว', 'confirmed', $future, '13:00:00', '14:00:00', [
+                'court_id' => $court->id, 'court_section_id' => $freeSection->id,
+                'court_assistant_id' => $assistant->id, 'court_assigned_by' => $admin->id,
+                'court_assigned_at' => now(),
+            ]);
+            $rejected = $make('[E2E PTM] ปฏิเสธแล้ว', 'rejected', $future, '15:00:00', '16:00:00', [
+                'reject_reason' => 'ไม่สามารถให้บริการในช่วงเวลาที่เลือก',
+            ]);
+            $expired = $make('[E2E PTM] เลยกำหนด', 'expired', Carbon::today('Asia/Bangkok')->subDay(), '10:00:00', '11:00:00');
+
+            $blocker = PrivateTrainingBooking::create([
+                'user_id' => $user->id, 'coach_id' => $alternateCoach->id,
+                'participant_count' => 1, 'assistant_requested' => false,
+                'court_id' => $busyCourt->id, 'court_section_id' => $busySection->id,
+                'court_assigned_by' => $admin->id, 'court_assigned_at' => now(),
+                'date' => $future->toDateString(), 'start_time' => '11:00:00', 'end_time' => '12:00:00',
+                'status' => 'confirmed', 'note' => '[E2E PTM] ตัวบล็อกสนาม', 'payment_status' => 'paid',
+            ]);
+
+            collect([$pending, $awaiting, $confirmed, $rejected, $expired, $blocker])
+                ->values()
+                ->each(fn (PrivateTrainingBooking $booking, int $index) => $booking
+                    ->forceFill(['created_at' => now()->subYears(10)->addSeconds($index)])
+                    ->saveQuietly());
+
+            return response()->json(array_merge($fixture, [
+                'bookings' => [
+                    'pending' => $pending->id, 'awaiting_court' => $awaiting->id,
+                    'confirmed' => $confirmed->id, 'rejected' => $rejected->id,
+                    'expired' => $expired->id, 'blocker' => $blocker->id,
+                ],
+                'courts' => [
+                    'free' => ['id' => $court->id, 'section_id' => $freeSection->id, 'name' => $court->name],
+                    'busy' => ['id' => $busyCourt->id, 'section_id' => $busySection->id, 'name' => $busyCourt->name],
+                ],
+                'schedule_date' => $future->toDateString(),
+            ]));
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::post('/__e2e/private-training-package/case', function () {
+        return DB::transaction(function () {
+            $fixture = json_decode(Route::dispatch(
+                \Illuminate\Http\Request::create('/__e2e/private-training/case', 'POST')
+            )->getContent(), true);
+
+            $oldIds = Package::where('name', 'like', '[E2E PTP]%')->pluck('id');
+            PackagePurchase::whereIn('package_id', $oldIds)->delete();
+            Package::whereIn('id', $oldIds)->delete();
+
+            $active = Package::create([
+                'name' => '[E2E PTP] Private Training',
+                'type' => 'private', 'description' => 'แพ็กเกจสำหรับจองไพรเวทเทรนนิ่ง',
+                'price' => 6900, 'num_of_use' => 4, 'day' => 120,
+                'usable_days' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'is_active' => true,
+            ]);
+            $inactive = Package::create([
+                'name' => '[E2E PTP] ปิดใช้งาน',
+                'type' => 'private', 'description' => 'แพ็กเกจที่ไม่ควรแสดงให้ลูกค้า',
+                'price' => 7500, 'num_of_use' => 5, 'day' => 90,
+                'usable_days' => [], 'is_active' => false,
+            ]);
+
+            return response()->json(array_merge($fixture, [
+                'ptp_packages' => [
+                    'active' => ['id' => $active->id, 'name' => $active->name],
+                    'inactive' => ['id' => $inactive->id, 'name' => $inactive->name],
+                ],
+            ]));
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/private-training-package/state', function () {
+        return response()->json(Package::where('name', 'like', '[E2E PTP]%')
+            ->orderBy('id')->get()->map(fn (Package $package) => [
+                'id' => $package->id, 'name' => $package->name,
+                'description' => $package->description, 'price' => (float) $package->price,
+                'num_of_use' => $package->num_of_use, 'day' => $package->day,
+                'usable_days' => $package->usable_days ?? [], 'is_active' => $package->is_active,
+                'image' => $package->image,
+            ]));
+    });
+
+    Route::post('/__e2e/review-rating/case', function () {
+        return DB::transaction(function () {
+            $fixture = json_decode(Route::dispatch(
+                \Illuminate\Http\Request::create('/__e2e/private-training/case', 'POST')
+            )->getContent(), true);
+            $user = User::findOrFail($fixture['user']['id']);
+            $reviewer = User::updateOrCreate(['email' => 'review-display@e2e.local'], [
+                'name' => 'สมาชิกรีวิว E2E', 'us_name' => 'สมาชิกรีวิว E2E', 'phone' => '0892000001',
+                'password' => '123456', 'role' => 'user', 'membership_type' => 'customer',
+                'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+
+            Review::whereIn('user_id', [$user->id, $reviewer->id])->delete();
+            Facility::where('slug', 'like', 'e2e-%')->delete();
+            $facilities = collect([
+                ['slug' => 'e2e-cafe', 'name' => 'คาเฟ่ & เครื่องดื่ม'],
+                ['slug' => 'e2e-shop', 'name' => 'Basketball Shop'],
+                ['slug' => 'e2e-restroom', 'name' => 'ห้องน้ำ & ห้องอาบน้ำ'],
+            ])->mapWithKeys(function (array $item, int $index) {
+                $facility = Facility::firstOrCreate(['name' => $item['name']], [
+                    'slug' => $item['slug'], 'description' => 'หัวข้อรีวิวสำหรับ E2E',
+                    'is_active' => true, 'sort_order' => $index + 1,
+                ]);
+                $facility->update(['is_active' => true]);
+
+                return [$item['slug'] => $facility];
+            });
+
+            foreach (range(1, 4) as $index) {
+                $review = Review::create([
+                    'user_id' => $reviewer->id, 'overall_rating' => 5,
+                    'comment' => "รีวิวตัวอย่าง E2E ลำดับ {$index} บริการดีและสนามสะอาด",
+                    'status' => 'published', 'published_at' => now()->subMinutes($index),
+                ]);
+                $review->ratings()->create(['facility_id' => $facilities->first()->id, 'rating' => 5]);
+            }
+
+            return response()->json(array_merge($fixture, [
+                'review_user' => ['id' => $user->id, 'name' => $user->us_name, 'email' => $user->email, 'password' => '123456'],
+                'facilities' => $facilities->map(fn (Facility $facility) => ['id' => $facility->id, 'name' => $facility->name]),
+                'baseline_comment' => 'รีวิวตัวอย่าง E2E ลำดับ 1 บริการดีและสนามสะอาด',
+            ]));
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/review-rating/state', function () {
+        $user = User::where('email', 'ptb-user@e2e.local')->firstOrFail();
+
+        return response()->json(Review::with(['ratings.facility', 'images'])
+            ->where('user_id', $user->id)->orderBy('id')->get()->map(fn (Review $review) => [
+                'id' => $review->id, 'overall_rating' => $review->overall_rating,
+                'comment' => $review->comment, 'status' => $review->status,
+                'ratings' => $review->ratings->mapWithKeys(fn ($rating) => [$rating->facility->name => $rating->rating]),
+                'images' => $review->images->pluck('image_path')->values(),
+            ]));
+    });
+
+    Route::post('/__e2e/court-booking/case', function (\Illuminate\Http\Request $request) {
+        return DB::transaction(function () use ($request) {
+            $fixture = json_decode(Route::dispatch(\Illuminate\Http\Request::create('/__e2e/private-training/case', 'POST'))->getContent(), true);
+            $user = User::findOrFail($fixture['user']['id']);
+            Booking::where('user_id', $user->id)->delete();
+            $user->forceFill(['credit_balance' => (int) $request->input('credit_balance', 5000) * 100])->save();
+
+            $court = Court::updateOrCreate(['name' => '[E2E COUR-BOO] สนาม 1'], [
+                'court_status' => 'open', 'slot_interval_minutes' => 30, 'min_booking_minutes' => 30,
+            ]);
+            $sections = collect(['full' => 'เต็มสนาม', 'a' => 'ครึ่ง A', 'b' => 'ครึ่ง B'])
+                ->mapWithKeys(fn ($name, $code) => [$code => CourtSection::updateOrCreate(
+                    ['court_id' => $court->id, 'code' => $code], ['name' => $name, 'is_active' => true]
+                )]);
+            DB::table('court_section_blocks')->whereIn('court_section_id', $sections->pluck('id'))->delete();
+            foreach (['a', 'b'] as $half) {
+                DB::table('court_section_blocks')->insertOrIgnore([
+                    ['court_section_id' => $sections['full']->id, 'blocks_section_id' => $sections[$half]->id],
+                    ['court_section_id' => $sections[$half]->id, 'blocks_section_id' => $sections['full']->id],
+                ]);
+            }
+            $date = Carbon::today('Asia/Bangkok')->addDay();
+            CourtClosure::where('court_id', $court->id)->delete();
+            CourtClosure::create(['court_id' => $court->id, 'date' => $date, 'start_time' => '20:00', 'end_time' => '21:00', 'type' => 'unavailable']);
+            PricingRule::updateOrCreate(['code' => 'e2e-court-full'], [
+                'label' => 'ราคาปกติเต็มสนาม', 'day_type' => 'everyday', 'start_time' => '06:00', 'end_time' => '22:00',
+                'court_type' => 'full', 'price_per_hour' => 100000, 'priority' => 100, 'is_active' => true,
+            ]);
+            PricingRule::updateOrCreate(['code' => 'e2e-court-half'], [
+                'label' => 'ราคาปกติครึ่งสนาม', 'day_type' => 'everyday', 'start_time' => '06:00', 'end_time' => '22:00',
+                'court_type' => 'half', 'price_per_hour' => 50000, 'priority' => 100, 'is_active' => true,
+            ]);
+            PromotionPackage::updateOrCreate(['code' => 'e2e-court-promo'], [
+                'label' => 'COUR-BOO Promotion', 'category' => 'court', 'court_type' => 'full',
+                'available_days' => ['weekday', 'weekend', 'holiday'], 'available_start_time' => '18:00',
+                'available_end_time' => '20:00', 'duration_hours' => 1, 'base_price' => 80000, 'is_active' => true,
+            ]);
+
+            $block = Booking::create([
+                'user_id' => $user->id, 'court_id' => $court->id, 'court_section_id' => $sections['a']->id,
+                'booking_date' => $date, 'start_time' => '18:00', 'end_time' => '19:00',
+                'status' => 'approved', 'payment_status' => 'paid', 'price' => 50000,
+            ]);
+            $checkout = null;
+            if ($request->boolean('with_checkout')) {
+                $checkout = Booking::create([
+                    'user_id' => $user->id, 'court_id' => $court->id, 'court_section_id' => $sections['b']->id,
+                    'booking_date' => $date, 'start_time' => '16:00', 'end_time' => '17:00',
+                    'status' => 'pending_payment', 'payment_status' => 'unpaid', 'price' => 50000,
+                    'price_breakdown' => [['label' => 'ราคาปกติครึ่งสนาม', 'price' => 50000]],
+                    'locked_until' => now()->addSeconds((int) $request->input('lock_seconds', 900)),
+                ]);
+            }
+            return response()->json(array_merge($fixture, [
+                'user' => array_merge($fixture['user'], ['credit_balance' => (int) $request->input('credit_balance', 5000)]),
+                'court' => ['id' => $court->id, 'name' => $court->name],
+                'sections' => $sections->map(fn ($section) => ['id' => $section->id, 'name' => $section->name]),
+                'date' => $date->toDateString(), 'block_booking_id' => $block->id,
+                'checkout_booking_id' => $checkout?->id,
+            ]));
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/court-booking/state', function () {
+        $user = User::where('email', 'ptb-user@e2e.local')->firstOrFail();
+        return response()->json([
+            'credit_balance' => $user->credit_balance / 100,
+            'bookings' => Booking::where('user_id', $user->id)->orderBy('id')->get()->map(fn (Booking $booking) => [
+                'id' => $booking->id, 'status' => $booking->status, 'payment_status' => $booking->payment_status,
+                'price' => $booking->price / 100, 'locked_until' => $booking->locked_until?->toIso8601String(),
+            ]),
+            'transactions' => CreditTransaction::where('user_id', $user->id)->whereNotNull('booking_id')->count(),
+        ]);
+    });
+
+    Route::post('/__e2e/credit-management/case', function () {
+        return DB::transaction(function () {
+            $admin = User::updateOrCreate(['email' => 'credit-admin@e2e.local'], [
+                'name' => 'ผู้ดูแลเครดิต E2E', 'us_name' => 'ผู้ดูแลเครดิต E2E', 'phone' => '0890000091',
+                'password' => '123456', 'role' => 'admin', 'membership_type' => 'admin',
+                'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+            $customer = User::updateOrCreate(['email' => 'credit-customer@e2e.local'], [
+                'name' => 'ลูกค้าทดสอบเครดิต', 'us_name' => 'ลูกค้าทดสอบเครดิต', 'phone' => '0890000092',
+                'password' => '123456', 'role' => 'user', 'membership_type' => 'customer',
+                'is_verified' => true, 'email_verified_at' => now(), 'credit_balance' => 100000,
+                'credit_expires_at' => now()->addDays(365),
+            ]);
+
+            CreditTransaction::where('user_id', $customer->id)->delete();
+            CreditTopupRequest::where('user_id', $customer->id)->delete();
+            $customer->forceFill(['credit_balance' => 100000, 'credit_expires_at' => now()->addDays(365)])->save();
+
+            $package = CreditTopupPackage::updateOrCreate(['label' => '[E2E CREDIT-M] แพ็กเกจ 500'], [
+                'price_satang' => 50000, 'credit_satang' => 55000, 'expiry_days' => 180,
+                'is_active' => true, 'sort_order' => 999,
+            ]);
+            $make = fn (string $status, ?int $packageId, ?int $expiryDays, int $amount) => CreditTopupRequest::create([
+                'user_id' => $customer->id, 'credit_topup_package_id' => $packageId,
+                'price_satang' => $amount, 'credit_satang' => $packageId ? 55000 : $amount,
+                'expiry_days' => $expiryDays, 'payment_method' => 'promptpay',
+                'slip_path' => 'credit-topup-slips/Ei1m0sHADNz8MsPpO67Y7gx7WQ4KNtmLBNbWNzPn.png',
+                'status' => $status, 'approved_by' => $status === 'pending' ? null : $admin->id,
+                'approved_at' => $status === 'pending' ? null : now(),
+                'rejected_reason' => $status === 'rejected' ? 'ข้อมูลสลิปไม่ถูกต้อง' : null,
+            ]);
+            $requests = [
+                'package' => $make('pending', $package->id, 180, 50000),
+                'custom' => $make('pending', null, null, 70000),
+                'approved' => $make('approved', $package->id, 180, 50000),
+                'rejected' => $make('rejected', null, null, 70000),
+            ];
+            CreditTransaction::create([
+                'user_id' => $customer->id, 'type' => 'topup', 'amount' => 100000,
+                'balance_after' => 100000, 'admin_id' => $admin->id,
+                'note' => '[E2E CREDIT-M] ยอดตั้งต้น', 'payment_method' => 'cash_counter',
+                'processed_by_name' => $admin->name,
+            ]);
+
+            return response()->json([
+                'admin' => ['id' => $admin->id, 'email' => $admin->email, 'password' => '123456'],
+                'customer' => ['id' => $customer->id, 'name' => $customer->us_name, 'email' => $customer->email],
+                'requests' => collect($requests)->map(fn ($item) => $item->id),
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/credit-management/state', function () {
+        $customer = User::where('email', 'credit-customer@e2e.local')->firstOrFail();
+        return response()->json([
+            'credit_balance' => $customer->credit_balance / 100,
+            'credit_expires_at' => $customer->credit_expires_at?->toDateString(),
+            'requests' => CreditTopupRequest::where('user_id', $customer->id)->get(['id', 'status', 'rejected_reason']),
+            'transactions' => CreditTransaction::where('user_id', $customer->id)->get(['type', 'amount', 'balance_after', 'note']),
         ]);
     });
 }

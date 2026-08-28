@@ -277,19 +277,32 @@
 
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                    <input type="hidden" name="us_name" value="{{ $staff->us_name }}">
-                    <input type="hidden" name="email" value="{{ $staff->email }}">    
+                    <label class="mb-1.5 block text-xs font-medium text-gray-600">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+                    <input type="text" name="us_name" value="{{ old('us_name', $staff->us_name) }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-blue-500">
+                    @error('us_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-medium text-gray-600">อีเมล <span class="text-red-500">*</span></label>
+                    <input type="email" name="email" value="{{ old('email', $staff->email) }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-blue-500">
+                    @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
 
                     <label class="mb-1.5 block text-xs font-medium text-gray-600">ตำแหน่ง (Role) <span class="text-red-500">*</span></label>
                     <select name="membership_type" required class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- เลือกตำแหน่ง --</option>
                         <option value="court_assistant" {{ old('membership_type', $staff->membership_type) === 'court_assistant' ? 'selected' : '' }}>ผู้ช่วยสนาม (Staff)</option>
                         <option value="coach" {{ old('membership_type', $staff->membership_type) === 'coach' ? 'selected' : '' }}>ผู้ฝึกสอน (Coach)</option>
                     </select>
+                    @error('membership_type')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="mb-1.5 block text-xs font-medium text-gray-600">เบอร์โทรศัพท์</label>
                     <input type="text" name="phone" value="{{ old('phone', $staff->phone ?? '') }}" maxlength="10" placeholder="08xxxxxxxx" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none transition focus:ring-2 focus:ring-blue-500">
+                    @error('phone')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
@@ -314,7 +327,7 @@
 
             <div class="flex justify-end gap-2 border-t border-gray-100 pt-4 mt-4">
                 <button type="button" onclick="toggleModal('staffProfileModal', false)" class="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200">ยกเลิก</button>
-                <button type="submit" class="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600">บันทึกการแก้ไข</button>
+                <button type="submit" class="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60">บันทึกการแก้ไข</button>
             </div>
         </form>
     </div>
@@ -517,6 +530,12 @@
                 if (modal && !modal.classList.contains('hidden')) toggleModal(id, false);
             });
         }
+    });
+
+    document.querySelector('#staffProfileModal form')?.addEventListener('submit', function () {
+        const submit = this.querySelector('button[type="submit"]');
+        submit.disabled = true;
+        submit.textContent = 'กำลังบันทึก...';
     });
 
     // ปิด Modal เมื่อคลิกฉากหลังภายนอก (Backdrop)

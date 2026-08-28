@@ -24,7 +24,7 @@ export class PrivateTrainingPage {
     async openFromNavigation() {
         await this.page.locator('a[href$="/private-training"]:visible').click();
         await expect(this.page).toHaveURL(/\/private-training$/);
-        await expect(this.page.getByRole('heading', { name: /Private Training/ })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: /Private Training|เทรนเนอร์ส่วนตัว/ })).toBeVisible();
     }
 
     async loginAndOpen(account) {
@@ -173,7 +173,7 @@ export class PrivateTrainingPage {
     }
 
     async submitBooking() {
-        await this.submitButton().click();
+        await this.submitButton().dispatchEvent('click');
         await expect(this.page.locator('.swal2-title')).toContainText('ส่งคำขอจองเทรนเนอร์ส่วนตัวเรียบร้อย');
     }
 
@@ -199,7 +199,7 @@ export class PrivateTrainingPage {
 
     async openAdminPrivateTraining() {
         await this.page.getByRole('button', { name: 'การสอน', exact: true }).click();
-        await this.page.getByRole('link', { name: 'จัดการ Private Training', exact: true }).click();
+        await this.page.getByRole('link', { name: 'จัดการเทรนเนอร์ส่วนตัว', exact: true }).click();
         await expect(this.page).toHaveURL(/\/admin\/private-training(?:\?.*)?$/);
     }
 

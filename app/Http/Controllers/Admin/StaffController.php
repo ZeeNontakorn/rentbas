@@ -184,19 +184,27 @@ class StaffController extends Controller
             'us_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$staff->id,
             'membership_type' => self::MEMBERSHIP_TYPE_RULE,
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'regex:/^0[0-9]{9}$/'],
             'specialty' => 'nullable|string|max:255',
             'bio' => 'nullable|string',
             'gender' => 'nullable|in:male,female',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
             'remove_profile_image' => 'nullable|boolean',
         ], [
+            'us_name.required' => 'กรุณากรอกชื่อ-นามสกุล',
+            'email.required' => 'กรุณากรอกอีเมล',
+            'email.email' => 'กรุณากรอกรูปแบบอีเมลให้ถูกต้อง',
+            'membership_type.required' => 'กรุณาเลือกตำแหน่ง',
             'profile_image.image' => 'รูปโปรไฟล์ต้องเป็นไฟล์รูปภาพเท่านั้น',
             'profile_image.mimes' => 'รูปโปรไฟล์รองรับเฉพาะไฟล์ JPG, PNG และ WEBP',
             'profile_image.max' => 'รูปโปรไฟล์ต้องมีขนาดไม่เกิน 20MB',
+            'phone.regex' => 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก และขึ้นต้นด้วย 0',
         ]);
 
-        $staff->update($request->only(['us_name', 'email', 'membership_type', 'phone']));
+        $staff->update([
+            ...$request->only(['us_name', 'email', 'membership_type', 'phone']),
+            'name' => $validated['us_name'],
+        ]);
 
         $staffProfile = $staff->staffProfile()->firstOrNew(
             ['user_id' => $staff->id]

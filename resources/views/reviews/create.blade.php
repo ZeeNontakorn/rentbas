@@ -186,16 +186,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageInput = document.getElementById('review-images');
     const previews = document.getElementById('image-previews');
     const imageError = document.getElementById('image-error');
+    let selectedImages = [];
+
+    const syncImageInput = () => {
+        const transfer = new DataTransfer();
+        selectedImages.forEach(file => transfer.items.add(file));
+        imageInput.files = transfer.files;
+    };
+
+    const renderImagePreviews = () => {
+        previews.innerHTML = '';
+        selectedImages.forEach((file, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative';
+            const image = document.createElement('img');
+            image.src = URL.createObjectURL(file);
+            image.alt = `ตัวอย่างรูปรีวิว ${index + 1}`;
+            image.className = 'aspect-[4/3] w-full rounded-xl object-cover';
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.dataset.removeReviewImage = String(index);
+            remove.setAttribute('aria-label', `ลบรูป ${index + 1}`);
+            remove.className = 'absolute right-1 top-1 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white shadow';
+            remove.textContent = 'ลบ';
+            remove.addEventListener('click', () => {
+                selectedImages.splice(index, 1);
+                syncImageInput();
+                renderImagePreviews();
+            });
+            wrapper.append(image, remove);
+            previews.appendChild(wrapper);
+        });
+    };
 
     imageInput.addEventListener('change', () => {
-        previews.innerHTML = '';
         imageError.classList.add('hidden');
         const files = Array.from(imageInput.files || []);
 
-        if (files.length > 3) {
+        if (selectedImages.length + files.length > 3) {
             imageError.textContent = 'เลือกได้สูงสุด 3 รูป';
             imageError.classList.remove('hidden');
-            imageInput.value = '';
+            syncImageInput();
             return;
         }
 
@@ -203,16 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file.size > 5 * 1024 * 1024) {
                 imageError.textContent = `รูป ${file.name} มีขนาดเกิน 5 MB`;
                 imageError.classList.remove('hidden');
-                imageInput.value = '';
-                previews.innerHTML = '';
+                syncImageInput();
                 return;
             }
-            const image = document.createElement('img');
-            image.src = URL.createObjectURL(file);
-            image.alt = 'ตัวอย่างรูปรีวิว';
-            image.className = 'aspect-[4/3] w-full rounded-xl object-cover';
-            previews.appendChild(image);
+            selectedImages.push(file);
         }
+        syncImageInput();
+        renderImagePreviews();
     });
 
     // ---- Client-side validation ก่อน submit ----
@@ -267,6 +295,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // เลื่อนไปยัง error แรกที่เจอ ให้ผู้ใช้เห็นชัดเจน
             const firstError = form.querySelector('.text-red-600:not(.hidden)');
             firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            const submitButton = form.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'กำลังส่งรีวิว...';
         }
     });
 });
