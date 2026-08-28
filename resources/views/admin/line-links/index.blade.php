@@ -20,22 +20,26 @@
                 'LINE' => [
                     [
                         'key' => 'line_footer_url', 'bag' => 'footer', 'route' => 'admin.line-links.footer', 'type' => 'url',
-                        'title' => 'LINE ที่ Footer',
+                        'title' => 'LINE ที่แถบล่างเว็บไซต์',
+                        'title_color' => 'text-emerald-500',
                         'desc' => 'ไอคอน LINE ในแถบท้ายเว็บ (footer) หน้าแรก',
                     ],
                     [
                         'key' => 'line_topup_url', 'bag' => 'topup', 'route' => 'admin.line-links.topup', 'type' => 'url',
                         'title' => 'LINE หน้าเติมเครดิต',
+                        'title_color' => 'text-emerald-500',
                         'desc' => 'ปุ่ม "เติมผ่านไลน์ — แอดไลน์แอดมิน" ในหน้าเติมเครดิตของผู้ใช้',
                     ],
                     [
                         'key' => 'line_course_url', 'bag' => 'course', 'route' => 'admin.line-links.course', 'type' => 'url',
                         'title' => 'LINE หน้าคอร์สเรียน',
+                        'title_color' => 'text-emerald-500',
                         'desc' => 'ปุ่ม "แอดไลน์สอบถามและสมัครเรียน" ในหน้ารายละเอียดคอร์ส',
                     ],
                     [
                         'key' => 'line_official_url', 'bag' => 'official', 'route' => 'admin.line-links.official', 'type' => 'url',
                         'title' => 'LINE ทางการ (จองผ่าน LINE)',
+                        'title_color' => 'text-emerald-500',
                         'desc' => 'ปุ่ม "จองผ่าน LINE" บนการ์ดรอบจองกลุ่ม (group session) ในหน้าแรก',
                     ],
                 ],
@@ -43,28 +47,33 @@
                     [
                         'key' => 'facebook_url', 'bag' => 'facebook', 'route' => 'admin.line-links.facebook', 'type' => 'url',
                         'title' => 'Facebook',
+                        'title_color' => 'text-[#1877F2]',
                         'desc' => 'ไอคอน Facebook ที่ footer และลิงก์ "ติดตามเรา" ด้านล่างสุดของหน้าแรก',
-                    ],
-                    [
-                        'key' => 'youtube_url', 'bag' => 'youtube', 'route' => 'admin.line-links.youtube', 'type' => 'url',
-                        'title' => 'YouTube',
-                        'desc' => 'ไอคอน YouTube ที่ footer หน้าแรก',
                     ],
                     [
                         'key' => 'instagram_url', 'bag' => 'instagram', 'route' => 'admin.line-links.instagram', 'type' => 'url',
                         'title' => 'Instagram',
+                        'title_color' => 'bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600 bg-clip-text text-transparent inline-block',
                         'desc' => 'ไอคอน Instagram ที่ footer หน้าแรก',
+                    ],
+                    [
+                        'key' => 'youtube_url', 'bag' => 'youtube', 'route' => 'admin.line-links.youtube', 'type' => 'url',
+                        'title' => 'YouTube',
+                        'title_color' => 'text-red-600',
+                        'desc' => 'ไอคอน YouTube ที่ footer หน้าแรก',
                     ],
                 ],
                 'ข้อมูลติดต่อ' => [
                     [
                         'key' => 'contact_phone', 'bag' => 'phone', 'route' => 'admin.line-links.phone', 'type' => 'tel',
                         'title' => 'เบอร์โทรศัพท์',
+                        'title_color' => 'text-gray-700',
                         'desc' => 'เบอร์ที่ปุ่ม "คัดลอกเบอร์" ในหน้าแรก และลิงก์โทรออกในหน้าคอร์สเรียน',
                     ],
                     [
                         'key' => 'contact_email', 'bag' => 'email', 'route' => 'admin.line-links.email', 'type' => 'email',
                         'title' => 'อีเมลติดต่อ',
+                        'title_color' => 'text-gray-700',
                         'desc' => 'ลิงก์ "ติดต่อ" ด้านล่างสุดของหน้าแรก (เปิดโปรแกรมส่งอีเมล)',
                     ],
                 ],
@@ -72,11 +81,11 @@
         @endphp
 
         @foreach($groups as $groupTitle => $rows)
-            <h2 class="font-bold text-[15px] {{ $groupTitle === 'LINE' ? 'text-emerald-500' : 'text-gray-900' }} mb-3 mt-8 first:mt-0">{{ $groupTitle }}</h2>
+            <h2 class="font-bold text-xl {{ $groupTitle === 'LINE' ? 'text-emerald-500' : 'text-gray-900' }} mb-3 mt-8 first:mt-0">{{ $groupTitle }}</h2>
             <div class="flex flex-col gap-4 mb-2">
                 @foreach($rows as $row)
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 class="font-semibold text-gray-700 text-sm">{{ $row['title'] }}</h3>
+                        <h3 class="font-semibold text-medium {{ $row['title_color'] ?? 'text-gray-700' }}">{{ $row['title'] }}</h3>
                         <p class="font-sarabun text-xs text-gray-400 mb-4 mt-1">{{ $row['desc'] }}</p>
 
                         <form method="POST" action="{{ route($row['route']) }}" class="flex flex-col sm:flex-row gap-3 items-start">

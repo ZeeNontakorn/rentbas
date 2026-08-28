@@ -156,8 +156,8 @@
         </div>
 
         {{-- Transaction history --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+        <div class="rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2 body-slate-50">
                 <span class="w-2 h-2 rounded-full bg-orange-500"></span>
                 <h2 class="font-medium text-gray-700 text-sm">ประวัติธุรกรรมเครดิต</h2>
             </div>
@@ -174,7 +174,7 @@
                             <th class="px-6 py-3 font-medium text-right">คงเหลือหลังทำรายการ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse ($transactions as $tx)
                             @php $meta = $typeMeta[$tx->type] ?? ['label' => $tx->type, 'bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'sign' => ''] @endphp
                             <tr>
@@ -191,7 +191,7 @@
                                         —
                                     @endif
                                 </td>
-                                <td class="px-6 py-3 text-gray-500 max-w-[220px] truncate" title="{{ $tx->note }}">
+                                <td class="font-sarabun px-6 py-3 text-gray-500 max-w-[220px] truncate" title="{{ $tx->note }}">
                                     @if($tx->admin)
                                         <span class="block text-[11px] text-gray-400">โดย {{ $tx->admin->us_name }}</span>
                                         <span class="block text-[11px] text-gray-400">ช่องทาง: {{ $tx->payment_method ?? '—' }}</span>
