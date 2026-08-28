@@ -315,6 +315,7 @@
 </style>
 
 <div class="auth-page">
+    @include('components.mail-loading-overlay')
 
 
 
@@ -570,6 +571,9 @@
         if (!checkbox.checked) return;
         hasConsented = true;
         modal.classList.remove('show');
+        showMailLoadingOverlay('กำลังส่งรหัส OTP ไปยังอีเมลของคุณ...');
+        confirmBtn.disabled = true;
+
         form.submit();
     });
 
