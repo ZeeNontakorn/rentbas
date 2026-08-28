@@ -172,6 +172,8 @@ class GroupSessionController extends Controller
     /**
      * แอดมินเพิ่มคนเข้ารอบด้วยตัวเอง (กรณีลูกค้ายังโอนเงิน/แจ้งผ่านไลน์อยู่)
      * ตัดเครดิตทันทีและลงลำดับตามเวลาที่กดตอนนี้ ไม่บล็อกแม้ตัวจริงเต็มแล้ว — เพิ่มเป็นคิวสำรองแทน
+     * ยกเว้นกรณี "เต็มจำนวนตัวจริง + หมดเวลาสละสิทธิ์แล้ว" ซึ่งจะปิดรับเพิ่มคนโดยสิ้นเชิง
+     * (กฎเดียวกับฝั่งสมาชิกจองเอง ดู GroupRoundSignupController::store/checkout)
      */
     public function addPlayer(Request $request, GroupRound $round): RedirectResponse
     {
@@ -186,6 +188,13 @@ class GroupSessionController extends Controller
 
             if ($round->status !== 'open') {
                 return back()->withErrors(['round' => 'รอบนี้ปิดรับสมัครแล้ว']);
+            }
+
+            // เต็มจำนวนตัวจริง + หมดเวลาสละสิทธิ์แล้ว -> ปิดรับเพิ่มคนโดยสิ้นเชิง (แม้แต่แอดมินก็เพิ่มไม่ได้)
+            if (! $round->canSelfCancel() && $round->isFull()) {
+                return back()->withErrors([
+                    'round' => 'รอบนี้เต็มจำนวนตัวจริงแล้ว และหมดเวลารับคิวสำรองแล้ว ไม่สามารถเพิ่มคนเข้ารอบได้',
+                ]);
             }
 
             // ไม่บล็อกแม้ตัวจริงเต็มแล้ว — ให้เพิ่มเป็นคิวสำรองแทน
@@ -266,63 +275,63 @@ class GroupSessionController extends Controller
      * (ลำดับของคนที่เหลือจะไม่ถูกไล่ใหม่ เพื่อรักษาลำดับตามเวลาลงชื่อจริง)
      */
     public function removePlayer(GroupRound $round, GroupRoundSignup $signup)
-{
-    return DB::transaction(function () use ($round, $signup) {
-        $round = GroupRound::query()->lockForUpdate()->findOrFail($round->id);
-        $signup = GroupRoundSignup::query()->lockForUpdate()->findOrFail($signup->id);
+    {
+        return DB::transaction(function () use ($round, $signup) {
+            $round = GroupRound::query()->lockForUpdate()->findOrFail($round->id);
+            $signup = GroupRoundSignup::query()->lockForUpdate()->findOrFail($signup->id);
 
-        if ($signup->status !== 'confirmed') {
-            return back()->withErrors(['round' => 'ที่นั่งนี้ถูกยกเลิกไปแล้ว']);
-        }
+            if ($signup->status !== 'confirmed') {
+                return back()->withErrors(['round' => 'ที่นั่งนี้ถูกยกเลิกไปแล้ว']);
+            }
 
-        $wasMainSlot = ! $signup->is_reserve;
-        $removedOrder = $signup->order_number;
-        $seatName = $signup->displayName();
+            $wasMainSlot = ! $signup->is_reserve;
+            $removedOrder = $signup->order_number;
+            $seatName = $signup->displayName();
 
-        // ผู้จ่ายเงินจริง: booked_by (จองแทนเพื่อนแบบ self-service, user_id ของที่นั่งจะเป็น null เสมอ)
-        // หรือ user_id (แอดมินเพิ่มโดยผูกบัญชีสมาชิกโดยตรง) — เดิมจุดนี้ไม่มีโค้ดคืนเครดิตเลย มีแค่คอมเมนต์
-        // ค้างไว้ ทำให้หักเงินตอนเพิ่ม/ลงชื่อไปแล้ว แต่พอแอดมินเอาออกไม่มีการคืนเงินและไม่มี transaction คืนเงิน
-        // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง (ดูรายละเอียด
-        // ในคอมเมนต์ของ GroupRoundSignup::payerId())
-        $payerId = $signup->payerId();
-        $didRefund = false;
+            // ผู้จ่ายเงินจริง: booked_by (จองแทนเพื่อนแบบ self-service, user_id ของที่นั่งจะเป็น null เสมอ)
+            // หรือ user_id (แอดมินเพิ่มโดยผูกบัญชีสมาชิกโดยตรง) — เดิมจุดนี้ไม่มีโค้ดคืนเครดิตเลย มีแค่คอมเมนต์
+            // ค้างไว้ ทำให้หักเงินตอนเพิ่ม/ลงชื่อไปแล้ว แต่พอแอดมินเอาออกไม่มีการคืนเงินและไม่มี transaction คืนเงิน
+            // payerId() ใช้ is_null() เช็คแทน ?? หรือ truthy ตรงๆ เพราะระบบนี้มี user id=0 จริง (ดูรายละเอียด
+            // ในคอมเมนต์ของ GroupRoundSignup::payerId())
+            $payerId = $signup->payerId();
+            $didRefund = false;
 
-        if ($payerId !== null && $signup->credit_used > 0) {
-            // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
-            $this->creditService->refundForGroupRound(
-                $payerId,
-                $signup,
-                "ถูกนำออกจากรอบ \"{$round->title}\" โดยแอดมิน"
-            );
-            $didRefund = true;
-        }
+            if ($payerId !== null && $signup->credit_used > 0) {
+                // คืนเครดิตผ่าน CreditService เพื่อให้มีบันทึกใน credit_transactions
+                $this->creditService->refundForGroupRound(
+                    $payerId,
+                    $signup,
+                    "ถูกนำออกจากรอบ \"{$round->title}\" โดยแอดมิน"
+                );
+                $didRefund = true;
+            }
 
-        $signup->update(['status' => 'cancelled']);
+            $signup->update(['status' => 'cancelled']);
 
-        if ($payerId !== null) {
-            Notification::create([
-                'user_id' => $payerId,
-                'title' => 'ถูกนำออกจากรอบกลุ่มเล่นบาส',
-                'message' => 'ที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" ถูกนำออกโดยแอดมิน'
-                    .($didRefund ? ' ระบบคืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
-                'action_url' => route('group-rounds.my-bookings'),
-                'is_read' => false,
-            ]);
-        }
+            if ($payerId !== null) {
+                Notification::create([
+                    'user_id' => $payerId,
+                    'title' => 'ถูกนำออกจากรอบกลุ่มเล่นบาส',
+                    'message' => 'ที่นั่งของ "'.$seatName.'" ในรอบ "'.$round->title.'" ถูกนำออกโดยแอดมิน'
+                        .($didRefund ? ' ระบบคืนเครดิต ฿'.number_format($signup->credit_used, 2).' ให้เรียบร้อยแล้ว' : ''),
+                    'action_url' => route('group-rounds.my-bookings'),
+                    'is_read' => false,
+                ]);
+            }
 
-        // เพิ่มส่วนนี้เข้าไป — เลื่อนลำดับคนที่อยู่หลังขึ้นมาแทนที่ ไม่ให้เลขกระโดดข้าม
-        GroupRoundSignup::where('group_round_id', $round->id)
-            ->where('status', 'confirmed')
-            ->where('order_number', '>', $removedOrder)
-            ->decrement('order_number');
+            // เพิ่มส่วนนี้เข้าไป — เลื่อนลำดับคนที่อยู่หลังขึ้นมาแทนที่ ไม่ให้เลขกระโดดข้าม
+            GroupRoundSignup::where('group_round_id', $round->id)
+                ->where('status', 'confirmed')
+                ->where('order_number', '>', $removedOrder)
+                ->decrement('order_number');
 
-        if ($wasMainSlot) {
-            $round->promoteNextReserve();
-        }
+            if ($wasMainSlot) {
+                $round->promoteNextReserve();
+            }
 
-        return back()->with('success', 'นำผู้เล่นออกจากรอบเรียบร้อยแล้ว');
-    });
-}
+            return back()->with('success', 'นำผู้เล่นออกจากรอบเรียบร้อยแล้ว');
+        });
+    }
 
     /**
      * ปิดรับสมัครรอบ (ยังเล่นได้ตามปกติ แค่ไม่รับลงชื่อเพิ่ม)
