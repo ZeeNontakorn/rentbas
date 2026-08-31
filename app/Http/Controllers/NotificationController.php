@@ -59,6 +59,89 @@ class NotificationController extends Controller
         return back();
     }
 
+    /**
+     * ดึงแจ้งเตือนล่าสุดเป็น JSON (สำหรับการอัดเรต polling)
+     */
+    public function getNotifications(Request $request)
+    {
+        $user = auth()->user();
+
+        $notifications = $user->unreadNotifications()
+            ->latest()
+            ->take(200)
+            ->get();
+
+        $unreadCount = $user->unreadNotifications()->count();
+
+        return response()->json([
+            'unreadCount' => $unreadCount,
+            'notifications' => $notifications->map(function ($n) {
+                $visualType = $n->visualType();
+                $visual = match ($visualType) {
+                    'success' => [
+                        'border' => 'border-l-4 border-l-emerald-500',
+                        'surface' => 'bg-gradient-to-r from-emerald-500/10 to-transparent hover:from-emerald-500/15',
+                        'title' => 'text-emerald-300',
+                        'accent' => 'text-emerald-400',
+                        'iconBg' => 'bg-emerald-500/15 ring-emerald-500/25',
+                        'iconColor' => 'text-emerald-400',
+                        'path' => 'M5 13l4 4L19 7',
+                    ],
+                    'danger' => [
+                        'border' => 'border-l-4 border-l-rose-500',
+                        'surface' => 'bg-gradient-to-r from-rose-500/10 to-transparent hover:from-rose-500/15',
+                        'title' => 'text-rose-300',
+                        'accent' => 'text-rose-400',
+                        'iconBg' => 'bg-rose-500/15 ring-rose-500/25',
+                        'iconColor' => 'text-rose-400',
+                        'path' => 'M6 18L18 6M6 6l12 12',
+                    ],
+                    'warning' => [
+                        'border' => 'border-l-4 border-l-amber-500',
+                        'surface' => 'bg-gradient-to-r from-amber-500/10 to-transparent hover:from-amber-500/15',
+                        'title' => 'text-amber-300',
+                        'accent' => 'text-amber-400',
+                        'iconBg' => 'bg-amber-500/15 ring-amber-500/25',
+                        'iconColor' => 'text-amber-400',
+                        'path' => 'M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',
+                    ],
+                    default => [
+                        'border' => 'border-l-4 border-l-sky-500',
+                        'surface' => 'bg-gradient-to-r from-sky-500/10 to-transparent hover:from-sky-500/15',
+                        'title' => 'text-sky-300',
+                        'accent' => 'text-sky-400',
+                        'iconBg' => 'bg-sky-500/15 ring-sky-500/25',
+                        'iconColor' => 'text-sky-400',
+                        'path' => 'M12 8h.01M11 12h1v4h1m8-4a9 9 0 11-18 0 9 9 0 0118 0z',
+                    ],
+                };
+
+                $isCourtBookingNotification = str_starts_with($n->title ?? '', 'คำขอจองใหม่')
+                    || ($n->title ?? '') === 'มีการจองสนามบาสใหม่';
+
+                $notifTarget = $isCourtBookingNotification
+                    ? route('admin.bookings', [
+                        'status'   => 'approved',
+                        'date'     => now()->format('Y-m-d'),
+                        'court_id' => '',
+                    ])
+                    : route('notifications.open', $n);
+
+                $msgParts = explode('|', $n->message ?? ($n->data['message'] ?? ''));
+
+                return [
+                    'id' => $n->id,
+                    'title' => $n->title ?? 'การจอง',
+                    'message' => trim($msgParts[0] ?? ''),
+                    'messagePart2' => isset($msgParts[1]) && trim($msgParts[1]) !== '' ? trim($msgParts[1]) : null,
+                    'created_at' => $n->created_at->format('d M Y H:i'),
+                    'target' => $notifTarget,
+                    'visual' => $visual,
+                ];
+            })->values(),
+        ]);
+    }
+
     private function destination(Notification $notification): string
     {
         if ($notification->action_url) {
