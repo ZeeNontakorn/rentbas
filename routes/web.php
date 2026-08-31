@@ -123,6 +123,7 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 
+    // Credits
     Route::prefix('checkout')->name('checkout.')->group(function () {
         Route::post('/quote', [CheckoutController::class, 'quote'])->name('quote');
         Route::post('/reserve', [CheckoutController::class, 'reserve'])->name('reserve');
@@ -130,6 +131,11 @@ Route::middleware(['auth', 'verified_otp'])->group(function () {
         Route::post('/{booking}/pay/credit', [CheckoutController::class, 'payWithCredit'])->name('pay.credit');
         Route::post('/{booking}/pay/promptpay', [CheckoutController::class, 'payWithPromptpay'])->name('pay.promptpay');
     });
+
+    Route::get('/credits/current', [\App\Http\Controllers\CreditController::class, 'current'])
+    ->middleware('auth')
+    ->name('credits.current');
+
     Route::prefix('package-checkout')->name('package-checkout.')->group(function () {
         Route::post('/{package}', [PackageCheckoutController::class, 'purchase'])->name('purchase');
         Route::get('/purchase/{purchase}', [PackageCheckoutController::class, 'show'])->name('show');

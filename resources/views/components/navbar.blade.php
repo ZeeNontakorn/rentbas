@@ -31,12 +31,12 @@
                 @if(auth()->user()->role === 'admin')
                     <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
                         onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1 text-[10px]">฿</span>
                     </button>
                 @else
                     <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
                         onclick="window.location.href='{{ route('credits.topup.index') }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1 text-[10px]">฿</span>
                     </button>
                 @endif
             @endauth
@@ -344,12 +344,12 @@
                 @if($isAdminLike)
                     <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1">฿</span>
                     </button>
                 @else
                     <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('credits.topup.index') }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1">฿</span>
                     </button>
                 @endif
             @endauth
@@ -959,7 +959,49 @@ function pollNotifications() {
 }
 
 // เริ่ม polling ทุก 10 วินาที
-setInterval(pollNotifications, 10000);
+let notifPollInterval = setInterval(pollNotifications, 10000);
+
+// ===================== โพลยอดเครดิตทุก 5 วินาที =====================
+
+function pollCreditBalance() {
+    fetch('{{ route("credits.current") }}', {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('failed');
+        return res.json();
+    })
+    .then(function (data) {
+        const formatted = Number(data.balance).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+        document.querySelectorAll('.credit-balance-value').forEach(function (el) {
+            el.textContent = formatted;
+        });
+    })
+    .catch(function (err) {
+        console.error('Credit balance polling error:', err);
+    });
+}
+
+let creditPollInterval = setInterval(pollCreditBalance, 5000);
+
+// หยุด polling เมื่อแท็บถูกซ่อน และเริ่มใหม่เมื่อกลับมาแสดงผล เพื่อลดการยิง request โดยไม่จำเป็น
+document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+        clearInterval(notifPollInterval);
+        clearInterval(creditPollInterval);
+    } else {
+        notifPollInterval = setInterval(pollNotifications, 10000);
+        creditPollInterval = setInterval(pollCreditBalance, 5000);
+        pollNotifications();
+        pollCreditBalance();
+    }
+});
 
     </script>
 </nav>
