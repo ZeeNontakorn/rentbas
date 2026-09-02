@@ -48,7 +48,7 @@ Schedule::call(function (): void {
 // เซ็ตยอดเครดิตของ user ที่หมดอายุแล้วให้เป็น 0 จริง พร้อมบันทึกลง credit_transactions
 Schedule::call(function (): void {
     app(CreditService::class)->expireDueCredits();
-})->name('credits:expire-due')->dailyAt('01:00')->withoutOverlapping();
+})->name('credits:expire-due')->everyMinute()->withoutOverlapping();
 
 // แจ้งเตือน user ที่เครดิตใกล้หมดอายุ (ภายใน 7 วัน) ทั้งขึ้นกระดิ่งในเว็บและอีเมล
 Schedule::call(function (): void {
