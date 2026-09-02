@@ -14,7 +14,7 @@
         </a>
 
         <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">แพ็กเกจเครดิต &amp; โปรโมชั่น</h1>
-        <p class="text-sm text-gray-400 mb-6">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
+        <p class="font-sarabun text-sm text-gray-400 mb-6 mt-1">กำหนดราคาแพ็กเกจที่ผู้ใช้เลือกได้ในหน้าเติมเครดิต — ถ้าตั้งเครดิตที่ได้รับมากกว่ายอดชำระ ระบบจะถือเป็นโบนัส/โปรโมชั่นให้อัตโนมัติ</p>
 
         @if (auth()->user()->role === 'superadmin')
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -129,7 +129,12 @@
                     @enderror
                 </div>
 
-                <button type="submit" class="text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 transition cursor-pointer">+ เพิ่ม</button>
+                <button type="submit" class="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2 inline-flex items-center justify-center gap-2 transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14m7-7H5" />
+                    </svg>
+                    เพิ่ม
+                </button>
             </form>
         </div>
 
@@ -164,7 +169,7 @@
                             @endphp
                             <tr data-id="{{ $pkg->id }}">
                                 <td class="px-3 py-3 text-center">
-                                    <span class="drag-handle inline-flex items-center justify-center w-7 h-7 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 cursor-grab active:cursor-grabbing select-none" title="ลากเพื่อจัดลำดับ">
+                                    <span class="drag-handle inline-flex items-center justify-center w-7 h-7 rounded text-gray-500 hover:text-gray-700 hover:bg-gray-100 cursor-grab active:cursor-grabbing select-none" title="ลากเพื่อจัดลำดับ">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a1 1 0 11-2 0 1 1 0 012 0zM7 10a1 1 0 11-2 0 1 1 0 012 0zM7 16a1 1 0 11-2 0 1 1 0 012 0zM15 4a1 1 0 11-2 0 1 1 0 012 0zM15 10a1 1 0 11-2 0 1 1 0 012 0zM15 16a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
                                     </span>
                                 </td>

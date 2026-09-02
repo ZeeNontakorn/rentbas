@@ -9,7 +9,7 @@
 
         <div class="mb-6">
             <h1 class="text-[32px] font-bold text-gray-900 tracking-tight">จัดการโค้ช / ผู้ช่วยสนาม</h1>
-            <p class="text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
+            <p class="font-sarabun text-sm text-gray-500 mt-1">ค้นหา ดูข้อมูลโปรไฟล์ ตารางเวลาว่างของโค้ช และผู้ช่วยสนาม</p>
         </div>
 
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-gray-200 mb-6 gap-4">
@@ -67,7 +67,7 @@
             $currentConfig = $roleConfigs[request('type')] ?? $roleConfigs['default'];
         @endphp
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="font-medium text-gray-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4 {{ $currentConfig['color'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -92,7 +92,7 @@
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse($staffs as $s)
                             @php
                                 $isCoach = $s->membership_type === 'coach';
@@ -250,7 +250,7 @@
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ยืนยันถอดบทบาท',
+                confirmButtonText: 'ยืนยัน',
                 cancelButtonText: 'ยกเลิก',
                 reverseButtons: true
             }).then((result) => {

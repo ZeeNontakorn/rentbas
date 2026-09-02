@@ -726,7 +726,8 @@ html { scroll-behavior: smooth; }
 .reviews-score small { display: block; margin-top: 2px; color: #92877d; font-size: 9px; }
 .write-review-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 19px; border-radius: 12px;
-    background: var(--ore); box-shadow: 0 10px 25px rgba(232,108,42,.25); color: #fff !important; font-size: 13px; font-weight: 700; transition: .2s;
+    background: var(--ore); box-shadow: 0 10px 25px rgba(232,108,42,.25); color: #fff !important; font-size: 14px; font-weight: 700; transition: .2s;
+    font-family: 'Kanit', sans-serif;
 }
 .write-review-btn:hover { background: var(--ore-d); transform: translateY(-1px); }
 .review-track { gap: 14px; padding: 28px 2px 2px; }
@@ -739,7 +740,9 @@ html { scroll-behavior: smooth; }
 .review-avatar {
     width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ff8a4c, var(--ore)); color: #fff; font-weight: 800;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    overflow: hidden;
 }
+.review-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .review-name { color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .review-member { color: #18976b; font-size: 10px; margin-top: 2px; }
 .review-comment { margin-top: 20px; min-height: 54px; color: #5e5a56; font-size: 13.5px; line-height: 1.8; }
@@ -1054,7 +1057,7 @@ html { scroll-behavior: smooth; }
     display: block; text-align: center;
     padding: 12px; border-radius: 9px;
     background: var(--ore); color: #fff;
-    font-family: 'Kanit', sans-serif; font-size: 13.5px; font-weight: 600;
+    font-family: 'Kanit', sans-serif; font-size: 18px; font-weight: 600;
     transition: background .2s;
 }
 .package-btn:hover { background: var(--ore-d); }
@@ -1275,13 +1278,16 @@ html { scroll-behavior: smooth; }
                 $img = $uploadedImg ?: $courtImgs[$loop->index % count($courtImgs)];
             @endphp
 
-            <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}">
+            <!-- 1. เพิ่ม style ให้ card สูงเท่ากันและเป็น flex -->
+            <div class="court-card" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 150 }}" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="court-thumb">
                     <img src="{{ $img }}" alt="{{ $court->name }}" {!! $imageFallback !!}>
                     <div class="court-thumb-overlay"></div>
                     <div class="court-num">{{ $loop->iteration }}</div>
                 </div>
-                <div class="court-body">
+                
+                <!-- 2. เพิ่ม style ให้ body ขยายเต็มพื้นที่คงเหลือ (flex: 1) -->
+                <div class="court-body" style="display: flex; flex-direction: column; flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
                         <div class="court-name" style="margin-bottom:0;">{{ $court->name }}</div>
                         <span style="font-size: 10px; background: rgba(255,255,255,0.1); color: #ccc; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Indoor</span>
@@ -1293,55 +1299,60 @@ html { scroll-behavior: smooth; }
                             {{ $statusText }}
                         </span>
                     </div>
-                    @if($isOpen)
-                        <!-- คลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
-                        <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
 
-                        <div class="half-court-divider"></div>
-                        <div class="half-court-actions">
-                            @php
-                                $sections = collect();
-                                if (method_exists($court, 'sections') && $court->sections) {
-                                    $sections = $court->sections;
-                                } elseif (method_exists($court, 'courtSections') && $court->courtSections) {
-                                    $sections = $court->courtSections;
-                                } elseif (isset($court->sections)) {
-                                    $sections = $court->sections;
-                                }
-                                $usesSectionSystem = $sections->isNotEmpty();
-                            @endphp
+                    <!-- 3. ครอบส่วนปุ่มทั้งหมดด้วย div ที่ใส่ margin-top: auto เพื่อดันลงล่างสุด -->
+                    <div class="court-card-footer" style="margin-top: auto;">
+                        @if($isOpen)
+                            <!-- คลิกเพื่อเลื่อนลงไปที่ตารางตารางการจองสนามพร้อมเปลี่ยนสนามอัตโนมัติ -->
+                            <a href="javascript:void(0);" onclick="scrollToBookingAndSelect({{ $court->id }})" class="court-btn-book">ดูช่วงเวลา</a>
 
-                            @if($usesSectionSystem)
+                            <div class="half-court-divider"></div>
+                            <div class="half-court-actions">
                                 @php
-                                    $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
-                                    $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
-                                        $isActive = !isset($s->is_active) || $s->is_active;
-                                        return $s->id !== $defaultSectionId && $isActive;
-                                    });
+                                    $sections = collect();
+                                    if (method_exists($court, 'sections') && $court->sections) {
+                                        $sections = $court->sections;
+                                    } elseif (method_exists($court, 'courtSections') && $court->courtSections) {
+                                        $sections = $court->courtSections;
+                                    } elseif (isset($court->sections)) {
+                                        $sections = $court->sections;
+                                    }
+                                    $usesSectionSystem = $sections->isNotEmpty();
                                 @endphp
 
-                                @if($halfSections->isNotEmpty())
-                                    @foreach($halfSections as $section)
-                                        <a href="javascript:void(0);" class="court-btn-half">
-                                            {{ $section->name ?? 'ครึ่งสนาม' }}
-                                        </a>
-                                    @endforeach
-                                @else
-                                    <div class="court-btn-disabled" style="flex: 1; padding: 7px; font-size: 12px;">ครึ่งสนามปิดให้บริการ</div>
-                                @endif
+                                @if($usesSectionSystem)
+                                    @php
+                                        $defaultSectionId = method_exists($court, 'defaultSection') && $court->defaultSection() ? $court->defaultSection()->id : null;
+                                        $halfSections = $sections->filter(function($s) use ($defaultSectionId) {
+                                            $isActive = !isset($s->is_active) || $s->is_active;
+                                            return $s->id !== $defaultSectionId && $isActive;
+                                        });
+                                    @endphp
 
-                            @else
-                                <a href="javascript:void(0);" class="court-btn-half">
-                                    {{ $court->half_a_name ?? 'ครึ่ง A' }}
-                                </a>
-                                <a href="javascript:void(0);" class="court-btn-half">
-                                    {{ $court->half_b_name ?? 'ครึ่ง B' }}
-                                </a>
-                            @endif
-                        </div>
-                    @else
-                        <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
-                    @endif
+                                    @if($halfSections->isNotEmpty())
+                                        @foreach($halfSections as $section)
+                                            <a href="javascript:void(0);" class="court-btn-half">
+                                                {{ $section->name ?? 'ครึ่งสนาม' }}
+                                            </a>
+                                        @endforeach
+                                    @else
+                                        <div class="court-btn-disabled" style="flex: 1; padding: 7px; font-size: 12px;">ครึ่งสนามปิดให้บริการ</div>
+                                    @endif
+
+                                @else
+                                    <a href="javascript:void(0);" class="court-btn-half">
+                                        {{ $court->half_a_name ?? 'ครึ่ง A' }}
+                                    </a>
+                                    <a href="javascript:void(0);" class="court-btn-half">
+                                        {{ $court->half_b_name ?? 'ครึ่ง B' }}
+                                    </a>
+                                @endif
+                            </div>
+                        @else
+                            <div class="court-btn-disabled">ไม่พร้อมให้บริการ</div>
+                        @endif
+                    </div>
+
                 </div>
             </div>
         @endforeach
@@ -1639,7 +1650,7 @@ html { scroll-behavior: smooth; }
 
 @if($packages->isNotEmpty())
     {{-- ═══ PACKAGES ═══ --}}
-   <section class="packages-section" id="packages" data-aos="fade-up">
+    <section class="packages-section" id="packages" data-aos="fade-up">
     <div class="packages-inner">
     <div class="packages-header">
         <p class="packages-label">Package</p>
@@ -1696,7 +1707,7 @@ html { scroll-behavior: smooth; }
                         @else
                         <form action="{{ route('package-checkout.purchase', $package) }}" method="POST" style="margin:0;">
                             @csrf
-                            <button type="submit" class="package-btn" style="width:100%;border:none;cursor:pointer;font:inherit;">
+                            <button type="submit" class="package-btn" style="width:100%;border:none;cursor:pointer;">
                                 เลือกแพ็กเกจนี้
                             </button>
                         </form>

@@ -64,6 +64,7 @@
                 @php
                     $user = auth()->user();
                     $isAdminLike = in_array($user->role, ['admin', 'superadmin'], true);
+                    $isPermanentStaff = $user->role === 'staff' && $user->membership_type === 'permanent';
                     $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
                 @endphp
                 @if($isAdminLike)
@@ -86,7 +87,7 @@
 
                     <!-- การสอน -->
                     <div class="relative flex-shrink-0" data-admin-nav-dropdown>
-                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
+                        <button type="button" class="cursor-pointer admin-nav-dropdown-btn flex items-center gap-1 text-sm whitespace-nowrap hover:text-orange-500 transition focus:outline-none {{ request()->routeIs('admin.private-training.*', 'admin.private-schedule.*', 'admin.courses', 'admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}" aria-expanded="false">
                             การสอน
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
@@ -94,7 +95,7 @@
                             <a href="{{ route('admin.private-training.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : '' }}">จัดการเทรนเนอร์ส่วนตัว</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : '' }}">ตารางงานบุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : '' }}">จัดการคอร์สเรียน</a>
-                             <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจ</a>
+                             <a href="{{ route('admin.packages.index') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : '' }}">จัดการแพ็กเกจเทรนเนอร์</a>
                         </div>
                     </div>
 
@@ -105,7 +106,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-52 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
-                            <a href="{{ route('admin.dashboard') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : '' }}">Dashboard</a>
+                            <a href="{{ route('admin.dashboard') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : '' }}">แดชบอร์ดสรุปผล</a>
                             <a href="{{ route('history') }}" class="block px-4 py-3 hover:bg-gray-700 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : '' }}">ดูประวัติการจอง</a>
                         </div>
                     </div>
@@ -116,7 +117,7 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="admin-nav-dropdown hidden absolute left-0 mt-3 w-52 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-sm text-gray-100 shadow-lg z-50">
-                         <a href="{{ route('admin.credit-topup-packages.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">แพ็กเกจเครดิต</a>
+                         <a href="{{ route('admin.credit-topup-packages.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">จัดการแพ็กเกจเครดิต</a>
                         <a href="{{ route('admin.credit-topups.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">คำขอเติมเครดิต</a>
                         </div>
                     </div>
@@ -306,11 +307,13 @@
                             <div class="text-xs text-gray-400">เข้าสู่ระบบในฐานะ</div>
                             <div class="font-bold truncate text-orange-500" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
                         </div>
-                        @if($isAdminLike)
+                        @if($isAdminLike || $isPermanentStaff)
                             <a href="{{ route('admin.users.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                 จัดการผู้ใช้งาน
                             </a>
+                        @endif
+                        @if($isAdminLike)
                             <a href="{{ route('admin.staffs.index') }}" class="block px-4 py-3 text-sm hover:bg-gray-700 transition flex items-center">
                                 <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"></path></svg>
                                 โค้ช และผู้ช่วย
@@ -385,6 +388,7 @@
             @php
                 $user = auth()->user();
                 $isAdminLike = in_array($user->role, ['admin', 'superadmin'], true);
+                $isPermanentStaff = $user->role === 'staff' && $user->membership_type === 'permanent';
                 $canManageBookings = $isAdminLike || ($user->role === 'staff' && in_array($user->membership_type, ['permanent', 'temporary', 'intern'], true));
             @endphp
             @if($isAdminLike)
@@ -412,7 +416,7 @@
                             <a href="{{ route('admin.private-training.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-training.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการเทรนเนอร์ส่วนตัว</a>
                             <a href="{{ route('admin.private-schedule.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.private-schedule.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ตารางงานบุคลากร</a>
                             <a href="{{ route('admin.courses') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.courses') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการคอร์สเรียน</a>
-                            <a href="{{ route('admin.packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจ</a>
+                            <a href="{{ route('admin.packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.packages.*') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจเทรนเนอร์</a>
                         </div>
                     </div>
                     <div class="border-t border-gray-800" data-mobile-nav-dropdown>
@@ -421,7 +425,7 @@
                             <svg class="h-5 w-5 transition-transform {{ request()->routeIs('history', 'admin.dashboard') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('history', 'admin.dashboard') ? '' : 'hidden' }}">
-                            <a href="{{ route('admin.dashboard') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">Dashboard</a>
+                            <a href="{{ route('admin.dashboard') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.dashboard') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">แดชบอร์ดสรุปผล</a>
                             <a href="{{ route('history') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('history') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">ดูประวัติการจอง</a>
                         </div>
                     </div>
@@ -431,11 +435,20 @@
                             <svg class="h-5 w-5 transition-transform {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="m6 9 6 6 6-6"></path></svg>
                         </button>
                         <div class="mobile-nav-dropdown pl-3 {{ request()->routeIs('admin.credit-topup-packages.index', 'admin.credit-topups.index') ? '' : 'hidden' }}">
-                            <a href="{{ route('admin.credit-topup-packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topup-packages.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">แพ็กเกจเครดิต</a>
+                            <a href="{{ route('admin.credit-topup-packages.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topup-packages.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">จัดการแพ็กเกจเครดิต</a>
                             <a href="{{ route('admin.credit-topups.index') }}" class="block py-2 text-sm hover:text-orange-500 transition {{ request()->routeIs('admin.credit-topups.index') ? 'text-orange-500 font-bold' : 'text-gray-300' }}">คำขอเติมเครดิต</a>
                         </div>
                     </div>
 
+                </div>
+            @elseif($isPermanentStaff)
+                <div class="border-t border-gray-800 pt-2 mt-1">
+                    <div class="text-xs text-gray-400 mb-1">เข้าสู่ระบบในฐานะ</div>
+                    <div class="font-bold text-orange-500 mb-2 truncate" title="{{ auth()->user()->us_name }}">{{ auth()->user()->us_name }}</div>
+                    <div class="flex flex-col">
+                        <a href="{{ route('admin.users.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการผู้ใช้งาน</a>
+                        <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
+                    </div>
                 </div>
             @else
                 <div class="flex flex-col py-2">
@@ -502,7 +515,7 @@
                         <a href="{{ route('admin.edit.text') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แก้ไขเนื้อหาเว็บไซต์</a>
                         <a href="{{ route('admin.line-links.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการลิงก์เว็บไซต์</a>
                         <a href="{{ route('admin.credit-topups.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">คำขอเติมเครดิต</a>
-                        <a href="{{ route('admin.credit-topup-packages.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">แพ็กเกจเครดิต</a>
+                        <a href="{{ route('admin.credit-topup-packages.index') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">จัดการแพ็กเกจเครดิต</a>
                         <a href="{{ route('profile') }}" class="py-2 text-sm text-gray-300 hover:text-orange-500 transition">ตั้งค่าโปรไฟล์</a>
                     </div>
                 </div>

@@ -183,12 +183,7 @@
 </style>
 
 <div class="auth-page">
-
-    {{-- Brand --}}
-    <div class="auth-brand">
-        <div class="auth-brand-ball">🏀</div>
-        <span class="auth-brand-name">Basketball Court Booking</span>
-    </div>
+    @include('components.mail-loading-overlay')
 
     {{-- Title --}}
     <h1 class="auth-title">ยืนยันบัญชีด้วย OTP</h1>
@@ -204,7 +199,8 @@
             <div class="auth-error">{{ $errors->first() }}</div>
         @endif
 
-        <form method="POST" action="{{ route('verify-otp') }}">
+        <form method="POST" action="{{ route('verify-otp') }}"
+            onsubmit="showMailLoadingOverlay('กำลังตรวจสอบรหัส OTP...'); this.querySelector('button[type=submit]').disabled = true;">
             @csrf
 
             {{-- Hidden real input --}}
@@ -229,7 +225,8 @@
         </div>
 
         {{-- Resend OTP --}}
-        <form method="POST" action="{{ route('otp.resend') }}" style="margin-top:10px;" id="resend-form">
+        <form method="POST" action="{{ route('otp.resend') }}" style="margin-top:10px;" id="resend-form"
+            onsubmit="showMailLoadingOverlay('กำลังส่งรหัส OTP ใหม่ไปที่อีเมลของคุณ...');">>
             @csrf
             <button type="submit" class="btn-resend" id="resend-btn" disabled>
                 ส่งรหัส OTP อีกครั้ง (<span id="resend-countdown">30</span>)

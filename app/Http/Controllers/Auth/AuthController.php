@@ -23,6 +23,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'us_name' => ['required', 'string', 'max:255', 'unique:users,us_name'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
@@ -30,6 +31,8 @@ class AuthController extends Controller
             'us_name.required' => 'กรุณากรอกชื่อผู้ใช้',
             'us_name.max' => 'ชื่อผู้ใช้ต้องมีความยาวไม่เกิน :max ตัวอักษร',
             'us_name.unique' => 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น',
+            'name.required' => 'กรุณากรอกชื่อจริง',
+            'name.max' => 'ชื่อจริงต้องมีความยาวไม่เกิน :max ตัวอักษร',
             'email.required' => 'กรุณากรอกอีเมล',
             'email.email' => 'กรุณากรอกอีเมลให้ถูกต้อง',
             'email.max' => 'อีเมลต้องมีความยาวไม่เกิน :max ตัวอักษร',
@@ -43,6 +46,7 @@ class AuthController extends Controller
 
         $user = User::create([
             'us_name' => $data['us_name'],
+            'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'],
             'password' => Hash::make($data['password']),

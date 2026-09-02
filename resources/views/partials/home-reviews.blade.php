@@ -21,7 +21,7 @@
         </div>
         <div class="slider-actions">
             @auth
-                <a href="{{ route('reviews.create') }}" class="write-review-btn"><span aria-hidden="true">✦</span> เขียนรีวิว</a>
+                <a href="{{ route('reviews.create') }}" class="write-review-btn"><span aria-hidden="true">✦</span>เขียนรีวิว</a>
             @endauth
             @if(($reviews ?? collect())->count() > 1)
                 <button type="button" class="slider-btn" data-slider="review-track" data-direction="-1" aria-label="เลื่อนรีวิวไปทางซ้าย">←</button>
@@ -32,10 +32,25 @@
 
     <div id="review-track" class="review-track">
         @forelse(($reviews ?? collect()) as $review)
+            @php
+                // เช็คว่ามีรูปใน User หรือรูปจากโปรไฟล์พนักงาน/โค้ชหรือไม่ (แพทเทิร์นเดียวกับ admin/users/show.blade.php)
+                $reviewerAvatarUrl = null;
+                if (!empty($review->user->avatar) && \Storage::disk('public')->exists($review->user->avatar)) {
+                    $reviewerAvatarUrl = asset('storage/' . $review->user->avatar);
+                } elseif (!empty($review->user->staffProfile?->profile_image)) {
+                    $reviewerAvatarUrl = $review->user->staffProfile->profile_image_url;
+                }
+            @endphp
             <article class="review-card">
                 <div class="review-user-row">
                     <div class="review-user">
-                        <div class="review-avatar">{{ mb_substr($review->user->us_name, 0, 1) }}</div>
+                        <div class="review-avatar">
+                            @if(!empty($reviewerAvatarUrl))
+                                <img src="{{ $reviewerAvatarUrl }}" alt="{{ $review->user->us_name }}">
+                            @else
+                                {{ mb_substr($review->user->us_name, 0, 1) }}
+                            @endif
+                        </div>
                         <div class="min-w-0">
                             <div class="review-name">{{ $review->user->us_name }}</div>
                             <div class="review-member">✓ สมาชิก THATA</div>
