@@ -67,7 +67,7 @@
             $currentConfig = $roleConfigs[request('type')] ?? $roleConfigs['default'];
         @endphp
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="font-medium text-gray-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4 {{ $currentConfig['color'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -92,7 +92,7 @@
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse($staffs as $s)
                             @php
                                 $isCoach = $s->membership_type === 'coach';

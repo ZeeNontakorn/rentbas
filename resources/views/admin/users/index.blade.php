@@ -33,7 +33,7 @@
             $isSuperadmin = auth()->user()->role === 'superadmin';
         @endphp
         {{-- ตารางผู้ใช้งาน --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
             {{-- Table Header --}}
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -81,7 +81,7 @@
                             <th class="px-6 py-3 font-medium text-center">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse($users as $u)
 
                             <tr class="hover:bg-slate-50 transition">

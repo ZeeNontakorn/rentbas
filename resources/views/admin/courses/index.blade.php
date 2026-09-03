@@ -61,7 +61,7 @@
                             <th class="px-3 py-4 font-medium sm:px-5">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse ($courses as $course)
                             @php
                                 $package = $course->packages->first();
