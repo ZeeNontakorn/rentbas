@@ -26,7 +26,7 @@ class SettingController extends Controller
         $facilities = Facility::orderBy('sort_order')
             ->orderBy('name')
             ->get();
-        $reviews = Review::with(['user:id,name,email', 'ratings.facility:id,name', 'images'])
+        $reviews = Review::with(['user:id,us_name,name,email', 'ratings.facility:id,name', 'images'])
             ->latest()
             ->paginate(10);
         $pendingReviewsCount = Review::where('status', 'pending')->count();

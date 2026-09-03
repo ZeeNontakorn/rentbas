@@ -16,6 +16,10 @@
         "test:e2e:cour-boo": "playwright test tests/Browser/court-booking.spec.js",
         "test:e2e:credit-m": "playwright test tests/Browser/credit-management.spec.js",
         "test:e2e:co-as-m": "playwright test tests/Browser/coach-assistant-management.spec.js",
+        "test:e2e:web-m": "playwright test tests/Browser/website-manage.spec.js",
+        "test:e2e:credit-pack": "playwright test tests/Browser/credit-packages.spec.js",
+        "test:e2e:credit-pur": "playwright test tests/Browser/credit-purchase.spec.js",
+        "test:e2e:staff-sch": "playwright test tests/Browser/staff-schedule.spec.js",
         "test:e2e:headed": "playwright test --headed",
         "test:e2e:ui": "playwright test --ui"
     },

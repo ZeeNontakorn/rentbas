@@ -1044,6 +1044,255 @@ if (app()->environment('e2e') || env('E2E_TESTING', false)) {
             'transactions' => CreditTransaction::where('user_id', $customer->id)->get(['type', 'amount', 'balance_after', 'note']),
         ]);
     });
+
+    Route::post('/__e2e/website-manage/case', function () {
+        return DB::transaction(function () {
+            $admin = User::updateOrCreate(['email' => 'wm-admin@e2e.local'], [
+                'us_name' => 'แอดมินจัดการเว็บไซต์ E2E', 'name' => 'แอดมินจัดการเว็บไซต์ E2E',
+                'phone' => '0890000020', 'password' => '123456', 'role' => 'admin',
+                'membership_type' => 'admin', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+            $reviewer = User::updateOrCreate(['email' => 'wm-reviewer@e2e.local'], [
+                'us_name' => 'ผู้รีวิว E2E', 'name' => 'ผู้รีวิว E2E',
+                'phone' => '0890000021', 'password' => '123456', 'role' => 'user',
+                'membership_type' => 'customer', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+
+            Facility::where('name', 'like', '[E2E WM]%')->delete();
+            Review::where('user_id', $reviewer->id)->delete();
+
+            $facilities = collect(range(1, 3))->map(function (int $i) {
+                return Facility::create([
+                    'name' => "[E2E WM] สิ่งอำนวยความสะดวก {$i}",
+                    'slug' => "e2e-wm-facility-{$i}-".uniqid(),
+                    'description' => "รายละเอียดทดสอบ E2E ลำดับ {$i}",
+                    'image_path' => 'images/logo.png',
+                    'is_active' => true,
+                    'sort_order' => $i,
+                ]);
+            });
+
+            $reviews = collect([
+                'pending' => Review::create([
+                    'user_id' => $reviewer->id, 'overall_rating' => 4,
+                    'comment' => '[E2E WM] รีวิวรอตรวจสอบ', 'status' => 'pending',
+                ]),
+                'published' => Review::create([
+                    'user_id' => $reviewer->id, 'overall_rating' => 5,
+                    'comment' => '[E2E WM] รีวิวเผยแพร่แล้ว', 'status' => 'published',
+                    'published_at' => now(),
+                ]),
+                'hidden' => Review::create([
+                    'user_id' => $reviewer->id, 'overall_rating' => 2,
+                    'comment' => '[E2E WM] รีวิวถูกซ่อน', 'status' => 'hidden',
+                    'published_at' => now()->subDay(),
+                ]),
+            ]);
+
+            $reviews->each(function (Review $review) use ($facilities) {
+                $review->ratings()->create(['facility_id' => $facilities->first()->id, 'rating' => $review->overall_rating]);
+            });
+
+            return response()->json([
+                'admin' => ['email' => $admin->email, 'password' => '123456'],
+                'reviewer' => ['name' => $reviewer->us_name, 'email' => $reviewer->email],
+                'facilities' => $facilities->map(fn (Facility $facility) => [
+                    'id' => $facility->id, 'name' => $facility->name, 'sort_order' => $facility->sort_order,
+                ])->values(),
+                'reviews' => $reviews->map(fn (Review $review, string $key) => [
+                    'id' => $review->id, 'status' => $key, 'comment' => $review->comment,
+                ])->values(),
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/website-manage/state', function (\Illuminate\Http\Request $request) {
+        $facilities = Facility::when(
+            $request->filled('facility_name'),
+            fn ($q) => $q->where('name', $request->query('facility_name')),
+            fn ($q) => $q->where('name', 'like', '[E2E WM]%'),
+        )->orderBy('id')->get(['id', 'name', 'sort_order', 'is_active']);
+
+        $reviews = Review::whereHas('user', fn ($q) => $q->where('email', 'wm-reviewer@e2e.local'))
+            ->orderBy('id')->get(['id', 'comment', 'status']);
+
+        return response()->json([
+            'facilities' => $facilities,
+            'reviews' => $reviews,
+            'max_sort_order' => (int) Facility::max('sort_order'),
+        ]);
+    });
+
+    Route::post('/__e2e/credit-packages/case', function () {
+        return DB::transaction(function () {
+            $admin = User::updateOrCreate(['email' => 'cp-admin@e2e.local'], [
+                'us_name' => 'ซุปเปอร์แอดมิน E2E', 'name' => 'ซุปเปอร์แอดมิน E2E',
+                'phone' => '0890000030', 'password' => '123456', 'role' => 'superadmin',
+                'membership_type' => 'admin', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+            $customer = User::updateOrCreate(['email' => 'cp-customer@e2e.local'], [
+                'us_name' => 'ลูกค้า E2E', 'name' => 'ลูกค้า E2E',
+                'phone' => '0890000031', 'password' => '123456', 'role' => 'user',
+                'membership_type' => 'customer', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+
+            \App\Models\CreditTopupPackage::where('label', 'like', '[E2E CP]%')->delete();
+
+            $packages = collect([
+                ['label' => '[E2E CP] แพ็กเกจ 1', 'price_satang' => 10000, 'credit_satang' => 10000, 'expiry_days' => 30, 'sort_order' => 1],
+                ['label' => '[E2E CP] แพ็กเกจ 2', 'price_satang' => 20000, 'credit_satang' => 22000, 'expiry_days' => 30, 'sort_order' => 2],
+                ['label' => '[E2E CP] แพ็กเกจ 3', 'price_satang' => 30000, 'credit_satang' => 30000, 'expiry_days' => 30, 'sort_order' => 3],
+            ])->map(fn (array $pkg) => \App\Models\CreditTopupPackage::create($pkg + ['is_active' => true]));
+
+            \App\Models\Setting::updateOrCreate(['key' => 'promptpay_number'], ['value' => '0812345678']);
+            \App\Models\Setting::updateOrCreate(['key' => 'promptpay_name'], ['value' => 'ทดสอบ ระบบ']);
+            \App\Models\Setting::updateOrCreate(['key' => 'line_topup_url'], ['value' => null]);
+
+            return response()->json([
+                'admin' => ['email' => $admin->email, 'password' => '123456'],
+                'customer' => ['email' => $customer->email, 'password' => '123456'],
+                'packages' => $packages->map(fn (\App\Models\CreditTopupPackage $p) => [
+                    'id' => $p->id, 'label' => $p->label, 'sort_order' => $p->sort_order,
+                    'price_satang' => $p->price_satang, 'credit_satang' => $p->credit_satang,
+                ])->values(),
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/credit-packages/state', function () {
+        $packages = \App\Models\CreditTopupPackage::where('label', 'like', '[E2E CP]%')
+            ->orderBy('sort_order')->orderBy('price_satang')
+            ->get(['id', 'label', 'price_satang', 'credit_satang', 'expiry_days', 'is_active', 'sort_order']);
+
+        return response()->json([
+            'packages' => $packages,
+            'promptpay_number' => \App\Models\Setting::getVal('promptpay_number'),
+            'promptpay_name' => \App\Models\Setting::getVal('promptpay_name'),
+            'line_topup_url' => \App\Models\Setting::getVal('line_topup_url'),
+        ]);
+    });
+
+    Route::post('/__e2e/credit-purchase/case', function () {
+        return DB::transaction(function () {
+            $admin = User::updateOrCreate(['email' => 'pur-admin@e2e.local'], [
+                'us_name' => 'แอดมิน PUR E2E', 'name' => 'แอดมิน PUR E2E',
+                'phone' => '0890000040', 'password' => '123456', 'role' => 'admin',
+                'membership_type' => 'admin', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+            $customer = User::updateOrCreate(['email' => 'pur-customer@e2e.local'], [
+                'us_name' => 'ลูกค้า PUR E2E', 'name' => 'ลูกค้า PUR E2E',
+                'phone' => '0890000041', 'password' => '123456', 'role' => 'user',
+                'membership_type' => 'customer', 'is_verified' => true, 'email_verified_at' => now(),
+                'credit_balance' => 100000,
+            ]);
+            $customer->forceFill(['credit_balance' => 100000])->save();
+
+            \App\Models\CreditTopupPackage::where('label', 'like', '[E2E PUR]%')->delete();
+            \App\Models\CreditTopupRequest::where('user_id', $customer->id)->delete();
+
+            $packages = collect([250, 500, 800, 1600])->map(function (int $baht) {
+                return \App\Models\CreditTopupPackage::create([
+                    'label' => "[E2E PUR] {$baht}",
+                    'price_satang' => $baht * 100,
+                    'credit_satang' => $baht * 100,
+                    'expiry_days' => 365,
+                    'is_active' => true,
+                    'sort_order' => $baht,
+                ]);
+            });
+
+            $pendingRequest = \App\Models\CreditTopupRequest::create([
+                'user_id' => $customer->id,
+                'credit_topup_package_id' => $packages->firstWhere('label', '[E2E PUR] 800')->id,
+                'price_satang' => 80000,
+                'credit_satang' => 80000,
+                'expiry_days' => 365,
+                'payment_method' => 'promptpay',
+                'slip_path' => null,
+                'status' => 'pending',
+            ]);
+
+            \App\Models\Setting::updateOrCreate(['key' => 'promptpay_number'], ['value' => '0811112222']);
+            \App\Models\Setting::updateOrCreate(['key' => 'promptpay_name'], ['value' => 'ทดสอบ พีเออาร์']);
+
+            return response()->json([
+                'admin' => ['email' => $admin->email, 'password' => '123456'],
+                'customer' => ['email' => $customer->email, 'password' => '123456'],
+                'packages' => $packages->map(fn (\App\Models\CreditTopupPackage $p) => [
+                    'id' => $p->id, 'label' => $p->label,
+                    'price_satang' => $p->price_satang, 'credit_satang' => $p->credit_satang,
+                ])->values(),
+                'pendingRequest' => ['id' => $pendingRequest->id, 'price_satang' => $pendingRequest->price_satang, 'credit_satang' => $pendingRequest->credit_satang],
+                'promptpay_number' => '0811112222',
+                'promptpay_name' => 'ทดสอบ พีเออาร์',
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+
+    Route::get('/__e2e/credit-purchase/state', function () {
+        $customer = User::where('email', 'pur-customer@e2e.local')->firstOrFail();
+
+        return response()->json([
+            'credit_balance' => $customer->credit_balance / 100,
+            'requests' => \App\Models\CreditTopupRequest::where('user_id', $customer->id)
+                ->orderBy('id')
+                ->get(['id', 'status', 'price_satang', 'credit_satang', 'rejected_reason']),
+        ]);
+    });
+
+    Route::post('/__e2e/staff-schedule/case', function () {
+        return DB::transaction(function () {
+            $admin = User::updateOrCreate(['email' => 'sts-admin@e2e.local'], [
+                'us_name' => 'แอดมิน STS E2E', 'name' => 'แอดมิน STS E2E',
+                'phone' => '0890000050', 'password' => '123456', 'role' => 'admin',
+                'membership_type' => 'admin', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+            $coach = User::updateOrCreate(['email' => 'sts-coach@e2e.local'], [
+                'us_name' => 'โค้ชชาตรี STS E2E', 'name' => 'โค้ชชาตรี STS E2E',
+                'phone' => '0890000051', 'password' => '123456', 'role' => 'staff',
+                'membership_type' => 'coach', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+            $assistant = User::updateOrCreate(['email' => 'sts-assistant@e2e.local'], [
+                'us_name' => 'ผู้ช่วยมานะ STS E2E', 'name' => 'ผู้ช่วยมานะ STS E2E',
+                'phone' => '0890000052', 'password' => '123456', 'role' => 'staff',
+                'membership_type' => 'court_assistant', 'is_verified' => true, 'email_verified_at' => now(),
+            ]);
+
+            \App\Models\CalendarEvent::whereIn('coach_id', [$coach->id, $assistant->id])->delete();
+
+            $day = now('Asia/Bangkok')->addDay()->startOfDay();
+            $coachEvent = \App\Models\CalendarEvent::create([
+                'title' => 'กิจกรรมโค้ช STS E2E',
+                'description' => 'ทดสอบตารางงานของโค้ช',
+                'starts_at' => $day->copy()->setTime(10, 0),
+                'ends_at' => $day->copy()->setTime(12, 0),
+                'coach_id' => $coach->id,
+                'coach_name' => $coach->us_name,
+                'event_type' => 'work',
+                'recurrence' => 'none',
+                'color' => '#33b679',
+            ]);
+            $assistantEvent = \App\Models\CalendarEvent::create([
+                'title' => 'กิจกรรมผู้ช่วย STS E2E',
+                'description' => 'ทดสอบตารางงานของผู้ช่วยสนาม',
+                'starts_at' => $day->copy()->setTime(14, 0),
+                'ends_at' => $day->copy()->setTime(15, 0),
+                'coach_id' => $assistant->id,
+                'coach_name' => $assistant->us_name,
+                'event_type' => 'work',
+                'recurrence' => 'none',
+                'color' => '#f6bf26',
+            ]);
+
+            return response()->json([
+                'admin' => ['email' => $admin->email, 'password' => '123456'],
+                'coach' => ['id' => $coach->id, 'name' => $coach->us_name],
+                'assistant' => ['id' => $assistant->id, 'name' => $assistant->us_name],
+                'coachEvent' => ['id' => $coachEvent->id, 'title' => $coachEvent->title],
+                'assistantEvent' => ['id' => $assistantEvent->id, 'title' => $assistantEvent->title],
+            ]);
+        });
+    })->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
 }
 
 // 5. Admin Routes — ต้องเป็น Admin เท่านั้น

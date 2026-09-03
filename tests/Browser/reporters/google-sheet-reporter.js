@@ -17,7 +17,14 @@ export default class GoogleSheetReporter {
 
     async onEnd() {
         for (const { test, result } of this.pendingUpdates) {
-            await this.reportTest(test, result);
+            try {
+                await this.reportTest(test, result);
+            } catch (error) {
+                // One test's webhook call failing (network blip, Apps Script quota,
+                // etc.) must not stop every later test in the run from being
+                // reported at all — log it and keep going.
+                console.warn(`[Google Sheet] Failed to report ${test.title}: ${error.message}`);
+            }
         }
     }
 
@@ -49,15 +56,22 @@ export default class GoogleSheetReporter {
         });
 
         for (let attempt = 1; attempt <= 3; attempt++) {
-            const response = await fetch(this.webhookUrl, {
-                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body,
-            });
-            if (!response.ok) throw new Error(`Google Sheet webhook returned HTTP ${response.status}`);
+            try {
+                const response = await fetch(this.webhookUrl, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body,
+                });
+                if (!response.ok) throw new Error(`Google Sheet webhook returned HTTP ${response.status}`);
 
-            const payload = await response.json();
-            if (payload.ok) return;
-            if (attempt === 3) throw new Error(`Google Sheet update failed: ${payload.error ?? 'Unknown error'}`);
-            await new Promise(resolve => setTimeout(resolve, attempt * 500));
+                const payload = await response.json();
+                if (payload.ok) return;
+                throw new Error(`Google Sheet update failed: ${payload.error ?? 'Unknown error'}`);
+            } catch (error) {
+                // A transient HTTP error (common with Apps Script web apps under
+                // back-to-back calls) used to skip the retry loop entirely and
+                // throw immediately — now every failure mode gets the same 3 tries.
+                if (attempt === 3) throw error;
+                await new Promise(resolve => setTimeout(resolve, attempt * 500));
+            }
         }
     }
 }
