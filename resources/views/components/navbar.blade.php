@@ -31,12 +31,12 @@
                 @if(auth()->user()->role === 'admin')
                     <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
                         onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1 text-[10px]">฿</span>
                     </button>
                 @else
                     <button type="button" class="border border-gray-500 text-gray-300 px-3 py-1 rounded-full text-xs font-medium hover:border-orange-500 hover:text-orange-500 transition flex items-center"
                         onclick="window.location.href='{{ route('credits.topup.index') }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1 text-[10px]">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1 text-[10px]">฿</span>
                     </button>
                 @endif
             @endauth
@@ -347,12 +347,12 @@
                 @if($isAdminLike)
                     <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('admin.credits.show', auth()->user()) }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1">฿</span>
                     </button>
                 @else
                     <button type="button" class="border border-gray-500 text-gray-300 px-4 py-1.5 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition flex items-center flex-shrink-0 whitespace-nowrap cursor-pointer"
                         onclick="window.location.href='{{ route('credits.topup.index') }}'">
-                        {{ number_format(auth()->user()->credit_balance / 100, 2) }} <span class="ml-1">฿</span>
+                        <span class="credit-balance-value">{{ number_format(auth()->user()->credit_balance / 100, 2) }}</span> <span class="ml-1">฿</span>
                     </button>
                 @endif
             @endauth
@@ -820,6 +820,199 @@ document.addEventListener('submit', function (e) {
         }).catch(function (err) {
             console.error(err);
         });
+    }
+});
+
+       // ===================== โพลแจ้งเตือนใหม่ทุก 10 วินาที =====================
+
+// ตัวติดตามรหัสแจ้งเตือนที่มีอยู่ก่อนหน้านี้
+let existingNotifIds = new Set();
+const notifItemsWrap = document.getElementById('notifItemsWrap');
+if (notifItemsWrap) {
+    document.querySelectorAll('#notifItemsWrap .notif-item').forEach(function (item) {
+        const id = item.getAttribute('data-notif-id');
+        existingNotifIds.add(id);
+    });
+}
+
+// ฟังก์ชันเพื่อสร้าง HTML สำหรับแจ้งเตือน
+function createNotificationHTML(notif) {
+    const visual = notif.visual;
+    const messagePart2 = notif.messagePart2 ? `<div class="mt-1 font-medium whitespace-pre-line break-words ${visual.accent}" style="overflow-wrap: anywhere;">${escapeHtml(notif.messagePart2)}</div>` : '';
+
+    const html = `<div class="notif-item w-full p-4 border-b border-gray-700/80 ${visual.border} ${visual.surface} flex items-start gap-3 cursor-pointer transition-colors"
+                data-notif-id="${notif.id}"
+                onclick="window.location.href='${notif.target}'">
+                <span class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ring-1 ${visual.iconBg} ${visual.iconColor}">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="${visual.path}"></path></svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="flex min-w-0 items-start gap-2">
+                        <div class="min-w-0 font-semibold text-[15px] leading-snug whitespace-normal break-words ${visual.title}" style="overflow-wrap: anywhere;">${escapeHtml(notif.title)}</div>
+                    </div>
+                    <div class="min-w-0 text-[13px] text-gray-300 mt-1 leading-relaxed whitespace-normal break-words" style="overflow-wrap: anywhere;">
+                        ${escapeHtml(notif.message)}
+                        ${messagePart2}
+                    </div>
+                    <div class="text-[11px] text-gray-400 mt-2">${notif.created_at}</div>
+                </div>
+                <form class="mark-read-form flex-shrink-0" method="POST" action="/notifications/${notif.id}/read" onclick="event.stopPropagation()">
+                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')}">
+                    <button type="submit" class="text-[11px] bg-gray-700/80 hover:bg-gray-600 text-gray-200 border border-gray-600 px-2.5 py-1 rounded-full transition whitespace-nowrap cursor-pointer">อ่านแล้ว</button>
+                </form>
+            </div>`;
+
+    return html;
+}
+
+// ฟังก์ชันเพื่อ escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// ฟังก์ชันเพื่ออัพเดต badge count
+function updateBadgeCount(count) {
+    [document.getElementById('notifBadge'), document.getElementById('notifBadgeMobile')]
+        .forEach(function (badge) {
+            if (!badge) return;
+            if (count <= 0) {
+                badge.classList.add('hidden');
+                badge.textContent = '0';
+            } else {
+                badge.classList.remove('hidden');
+                badge.textContent = count > 99 ? '99+' : count;
+            }
+        });
+}
+
+// ฟังก์ชันเพื่อจัดการรูปแบบของ dropdown ว่างเปล่า
+function updateNotifDropdownState(notifCount) {
+    const notifDropdownHeader = document.getElementById('notifDropdownHeader');
+    const notifEmptyMsg = document.getElementById('notifEmptyMsg');
+
+    if (notifCount === 0) {
+        notifDropdownHeader?.classList.add('hidden');
+        notifEmptyMsg?.classList.remove('hidden');
+    } else {
+        notifDropdownHeader?.classList.remove('hidden');
+        notifEmptyMsg?.classList.add('hidden');
+    }
+}
+
+// ฟังก์ชันเพื่อโพลแจ้งเตือนใหม่
+function pollNotifications() {
+    const currentNotifDropdown = document.getElementById('notifDropdown');
+    const currentNotifItemsWrap = document.getElementById('notifItemsWrap');
+    const currentNotifBtn = document.getElementById('notifBtn');
+    const wasDropdownOpen = currentNotifDropdown && !currentNotifDropdown.classList.contains('hidden');
+
+    fetch('{{ route("notifications.fetch") }}', {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('failed');
+        return res.json();
+    })
+    .then(function (data) {
+        const newNotifications = data.notifications || [];
+        const notifItemsWrap = document.getElementById('notifItemsWrap');
+        const notifDropdown = document.getElementById('notifDropdown');
+
+        if (!notifItemsWrap) {
+            return;
+        }
+
+        const newNotifIds = new Set(newNotifications.map(n => n.id));
+
+        document.querySelectorAll('#notifItemsWrap .notif-item').forEach(item => item.remove());
+
+        newNotifications.forEach(function (notif) {
+            const notifHTML = createNotificationHTML(notif);
+            notifItemsWrap.insertAdjacentHTML('beforeend', notifHTML);
+        });
+
+        existingNotifIds = newNotifIds;
+
+        updateBadgeCount(data.unreadCount);
+
+        const notifDropdownHeader = document.getElementById('notifDropdownHeader');
+        const notifEmptyMsg = document.getElementById('notifEmptyMsg');
+
+        if (!wasDropdownOpen) {
+            if (newNotifications.length === 0) {
+                notifDropdownHeader?.classList.add('hidden');
+                notifEmptyMsg?.classList.remove('hidden');
+            } else {
+                notifDropdownHeader?.classList.remove('hidden');
+                notifEmptyMsg?.classList.add('hidden');
+            }
+        } else {
+            notifDropdownHeader?.classList.remove('hidden');
+            notifEmptyMsg?.classList.add('hidden');
+        }
+
+        if (wasDropdownOpen && notifDropdown) {
+            notifDropdown.classList.remove('hidden');
+        }
+    })
+    .catch(function (err) {
+        console.error('Notification polling error:', err);
+    });
+}
+
+// เริ่ม polling ทุก 10 วินาที
+let notifPollInterval = setInterval(pollNotifications, 10000);
+
+// ===================== โพลยอดเครดิตทุก 5 วินาที =====================
+
+function pollCreditBalance() {
+    fetch('{{ route("credits.current") }}', {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(function (res) {
+        if (!res.ok) throw new Error('failed');
+        return res.json();
+    })
+    .then(function (data) {
+        const formatted = Number(data.balance).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+        document.querySelectorAll('.credit-balance-value').forEach(function (el) {
+            el.textContent = formatted;
+        });
+    })
+    .catch(function (err) {
+        console.error('Credit balance polling error:', err);
+    });
+}
+
+let creditPollInterval = setInterval(pollCreditBalance, 5000);
+
+// หยุด polling เมื่อแท็บถูกซ่อน และเริ่มใหม่เมื่อกลับมาแสดงผล เพื่อลดการยิง request โดยไม่จำเป็น
+document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+        clearInterval(notifPollInterval);
+        clearInterval(creditPollInterval);
+    } else {
+        notifPollInterval = setInterval(pollNotifications, 10000);
+        creditPollInterval = setInterval(pollCreditBalance, 5000);
+        pollNotifications();
+        pollCreditBalance();
     }
 });
 

@@ -199,6 +199,24 @@ class DashboardController extends Controller
     }
 
     /**
+     * Static Jan-Dec month name options (value '01'-'12'), used by the Day
+     * view's month dropdown - independent of which year is selected, since
+     * the year itself is chosen via a separate dropdown.
+     */
+    private function monthOptions(): array
+    {
+        $options = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $options[] = [
+                'value' => sprintf('%02d', $m),
+                'label' => Carbon::create(2000, $m, 1)->translatedFormat('F'),
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
      * Resolve the [start, end] Y-m-d date range that Cancellation Analysis,
      * Peak Booking Hours, Occupancy Timeline, and Court Utilization should
      * aggregate over, based on the current view_type.
@@ -435,7 +453,9 @@ class DashboardController extends Controller
 
     /**
      * Booking Trend data, shaped according to view_type:
-     *  - day:   last 30 days, one point per day
+     *  - day:   every day of the calendar month containing $viewDate, one
+     *           point per day (chart width varies 28-31 pts depending on
+     *           the month picked via the Day view's Month/Year dropdown)
      *  - month: Jan-Dec of $chartYear, one point per month (replaces the
      *           old standalone "Monthly Booking Volume" chart)
      *  - year:  last 6 calendar years, one point per year
@@ -503,31 +523,39 @@ class DashboardController extends Controller
             ];
         }
 
-        // day: last 30 days
-        $since = $now->copy()->subDays(29)->toDateString();
+        // day: every day of the calendar month containing $viewDate. The
+        // Day view's Month/Year dropdown changes $viewDate's month/year, so
+        // this naturally re-scopes to whichever month is selected instead
+        // of always showing a rolling 30-day window from today.
+        $dStart = Carbon::parse($viewDate)->startOfMonth();
+        $dEnd = $dStart->copy()->endOfMonth();
+        $sinceStr = $dStart->toDateString();
+        $untilStr = $dEnd->toDateString();
 
-        $byDate = Booking::where('booking_date', '>=', $since)->where('status', 'pending_payment')
+        $byDate = Booking::whereBetween('booking_date', [$sinceStr, $untilStr])->where('status', 'pending_payment')
             ->get(['booking_date'])->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
-        $cancelledByDate = Booking::where('booking_date', '>=', $since)->whereIn('status', ['cancelled', 'rejected'])
+        $cancelledByDate = Booking::whereBetween('booking_date', [$sinceStr, $untilStr])->whereIn('status', ['cancelled', 'rejected'])
             ->get(['booking_date'])->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
-        $approvedByDate = Booking::where('booking_date', '>=', $since)->where('status', 'approved')
+        $approvedByDate = Booking::whereBetween('booking_date', [$sinceStr, $untilStr])->where('status', 'approved')
             ->get(['booking_date'])->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
-        $rejectedByDate = Booking::where('booking_date', '>=', $since)->where('status', 'rejected')
+        $rejectedByDate = Booking::whereBetween('booking_date', [$sinceStr, $untilStr])->where('status', 'rejected')
             ->get(['booking_date'])->groupBy(fn($b) => $b->booking_date->toDateString())->map->count();
 
         $labels = $keys = $total = $cancelled = $approved = $rejected = [];
-        for ($i = 29; $i >= 0; $i--) {
-            $d = $now->copy()->subDays($i);
-            $labels[] = $d->format('M j');
-            $keys[] = $d->toDateString();
-            $total[] = (int) ($byDate[$d->toDateString()] ?? 0);
-            $cancelled[] = (int) ($cancelledByDate[$d->toDateString()] ?? 0);
-            $approved[] = (int) ($approvedByDate[$d->toDateString()] ?? 0);
-            $rejected[] = (int) ($rejectedByDate[$d->toDateString()] ?? 0);
+        $cursor = $dStart->copy();
+        while ($cursor->lte($dEnd)) {
+            $ds = $cursor->toDateString();
+            $labels[] = $cursor->format('j');
+            $keys[] = $ds;
+            $total[] = (int) ($byDate[$ds] ?? 0);
+            $cancelled[] = (int) ($cancelledByDate[$ds] ?? 0);
+            $approved[] = (int) ($approvedByDate[$ds] ?? 0);
+            $rejected[] = (int) ($rejectedByDate[$ds] ?? 0);
+            $cursor->addDay();
         }
 
         return [
-            'labels' => $labels, 'keys' => $keys, 'currentKey' => $now->toDateString(),
+            'labels' => $labels, 'keys' => $keys, 'currentKey' => $viewDate,
             'total' => $total, 'cancelled' => $cancelled, 'approved' => $approved, 'rejected' => $rejected,
         ];
     }
@@ -677,6 +705,7 @@ class DashboardController extends Controller
         $chartMonth = $this->resolveChartMonth($request, $currentMonthStr);
         $chartYear = $this->resolveChartYear($request, $now->year, $availableYears);
         $availableChartMonths = $this->availableMonths($now);
+        $monthOptions = $this->monthOptions();
 
         [$periodStart, $periodEnd] = $this->periodRange($viewType, $viewDate, $chartMonth, $chartYear, $now);
         $periodLabel = $this->resolvePeriodLabel($viewType, $viewDate, $chartMonth, $chartYear, $now);
@@ -871,6 +900,7 @@ class DashboardController extends Controller
             'chartYear',
             'availableYears',
             'availableChartMonths',
+            'monthOptions',
             'periodLabel',
             'isCurrentPeriod',
             'todayStr',

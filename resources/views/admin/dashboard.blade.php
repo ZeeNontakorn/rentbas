@@ -248,6 +248,29 @@
             <button type="button" data-type="year" class="view-type-btn px-3 py-1.5 rounded-md font-semibold cursor-pointer transition">Year</button>
         </div>
 
+        @php
+            $viewDateMonth = substr($viewDate, 5, 2);
+            $viewDateYear = substr($viewDate, 0, 4);
+        @endphp
+
+        <!-- Static Month + Year picker, always visible across all view
+             types. Month is only meaningful in Day view; Year is
+             meaningful in Day and Month views. Each select is enabled or
+             disabled for the current view type by JS below, rather than
+             being swapped in/out. -->
+        <div id="dateMonthYearPicker" class="w-full flex items-center gap-2">
+            <select id="dayMonthSelect" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-400">
+                @foreach($monthOptions as $m)
+                    <option value="{{ $m['value'] }}" @selected($m['value'] === $viewDateMonth)>{{ $m['label'] }}</option>
+                @endforeach
+            </select>
+            <select id="dayYearSelect" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-400">
+                @foreach($availableYears as $y)
+                    <option value="{{ $y }}" @selected((string) $y === $viewDateYear)>{{ $y }}</option>
+                @endforeach
+            </select>
+        </div>
+
         <span class="text-xs text-gray-400">กำลังดู: <span id="globalPeriodLabel" class="font-semibold text-gray-600">{{ $periodLabel }}</span></span>
 
         <button type="button" id="periodResetBtn"
@@ -278,6 +301,16 @@
             background: #fff;
             color: #ea580c;
             box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* Time selector: neutral disabled state, used both while a
+           period change is in flight and for the Month/Year selects
+           that don't apply to the current view type. */
+        #viewTypeToggle .view-type-btn:disabled,
+        #dateMonthYearPicker select:disabled,
+        #periodResetBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 
@@ -600,12 +633,46 @@
 
             // ---- Day / Month / Year toggle ----
             var toggleBtns = document.querySelectorAll('.view-type-btn');
-            var chartMonthSelect = document.getElementById('chartMonthSelect');
-            var chartYearSelect = document.getElementById('chartYearSelect');
             var periodResetBtn = document.getElementById('periodResetBtn');
             var periodResetLabel = document.getElementById('periodResetLabel');
             var globalPeriodLabel = document.getElementById('globalPeriodLabel');
             var trendSubtitle = document.getElementById('trendSubtitle');
+
+            // Single static Month + Year picker, shared across all view
+            // types. Which select is usable depends on state.view_type
+            // (see updatePickerEnablement below) rather than swapping
+            // pickers in/out.
+            var dayMonthSelect = document.getElementById('dayMonthSelect');
+            var dayYearSelect = document.getElementById('dayYearSelect');
+
+            function daysInMonth(year, month) {
+                return new Date(year, month, 0).getDate();
+            }
+
+            // Month is only meaningful in Day view (Month/Year views pick
+            // their month/year via the trend chart or the reset button).
+            // Year is meaningful in Day and Month view, but not Year view
+            // (there's nothing above "year" to pick it against). This is
+            // a structural rule based on view type only — it does not
+            // change while a fetch is in flight.
+            function updatePickerEnablement() {
+                var monthDisabled = state.view_type !== 'day';
+                var yearDisabled = state.view_type === 'year';
+                if (dayMonthSelect) dayMonthSelect.disabled = monthDisabled;
+                if (dayYearSelect) dayYearSelect.disabled = yearDisabled;
+            }
+
+            function syncPickerValues() {
+                if (state.view_type === 'day') {
+                    if (dayMonthSelect) dayMonthSelect.value = state.view_date.slice(5, 7);
+                    if (dayYearSelect) dayYearSelect.value = state.view_date.slice(0, 4);
+                } else if (state.view_type === 'month') {
+                    if (dayMonthSelect) dayMonthSelect.value = state.chart_month.slice(5, 7);
+                    if (dayYearSelect) dayYearSelect.value = String(state.chart_year);
+                } else {
+                    if (dayYearSelect) dayYearSelect.value = String(state.chart_year);
+                }
+            }
 
             function syncControlsUI() {
                 toggleBtns.forEach(function (btn) {
@@ -621,6 +688,8 @@
 
                     trendSubtitle.textContent = 'แน้วโน้มรายวัน — คลิกเพื่อเลือกวัน';
                 }
+                syncPickerValues();
+                updatePickerEnablement();
             }
             syncControlsUI();
 
@@ -636,7 +705,54 @@
                 else fetchChartData({ view_date: TODAY_STR });
             });
 
+            // Month select only fires in Day view (it's disabled
+            // otherwise). Keeps the current day-of-month and swaps in the
+            // new month, clamping the day down if the target month has
+            // fewer days (e.g. Jan 31 -> Feb 28). A resulting future date
+            // is safely caught server-side by resolveViewDate(), which
+            // falls back to today.
+            function onMonthSelectChange() {
+                if (isFetching || state.view_type !== 'day') return;
+                var day = Number(state.view_date.slice(8, 10));
+                var month = Number(dayMonthSelect.value);
+                var year = Number(dayYearSelect.value);
+                var maxDay = daysInMonth(year, month);
+                if (day > maxDay) day = maxDay;
+                var newDate = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                fetchChartData({ view_date: newDate });
+            }
+
+            // Year select fires in Day view (swap the date's year, same
+            // clamping as above) or Month view (keep the selected month
+            // number and swap in the new year). Disabled in Year view.
+            function onYearSelectChange() {
+                if (isFetching) return;
+                var year = Number(dayYearSelect.value);
+                if (state.view_type === 'day') {
+                    var day = Number(state.view_date.slice(8, 10));
+                    var month = Number(dayMonthSelect.value);
+                    var maxDay = daysInMonth(year, month);
+                    if (day > maxDay) day = maxDay;
+                    var newDate = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                    fetchChartData({ view_date: newDate });
+                } else if (state.view_type === 'month') {
+                    var monthPart = state.chart_month.slice(5, 7);
+                    fetchChartData({ chart_year: year, chart_month: year + '-' + monthPart });
+                }
+            }
+
+            if (dayMonthSelect) dayMonthSelect.addEventListener('change', onMonthSelectChange);
+            if (dayYearSelect) dayYearSelect.addEventListener('change', onYearSelectChange);
+
             var fadeTargets = document.querySelectorAll('#cancelChart, #peakChart, #courtUtilChart, #occupancyChart, #bookingTrendChart');
+
+            // Fades the charts while a fetch is in flight. Only used for
+            // user-driven fetches — the silent background poll never
+            // touches this. Controls are no longer locked while loading;
+            // the Month/Year selects still go through
+            // updatePickerEnablement() for their view-type-based disabled
+            // state (Month only usable in Day view, Year unusable in Year
+            // view), independent of loading.
             function setLoading(loading) {
                 fadeTargets.forEach(function (el) { el.classList.toggle('opacity-40', loading); });
             }
