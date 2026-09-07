@@ -133,7 +133,33 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('home'));
+        $fallback = $user->isAdmin() ? route('admin.dashboard') : route('home');
+
+        return redirect()->to($this->resolveIntendedUrl($request) ?? $fallback);
+    }
+
+    /**
+     * ดึง URL ที่ผู้ใช้ตั้งใจจะไปก่อนโดนเด้งมาหน้า login (เก็บไว้ใน session โดย Laravel เอง) แล้วแก้ prefix
+     * ให้ถูกต้อง — เว็บนี้รันอยู่หลัง reverse proxy ที่ deploy ใต้ path ย่อย (เช่น /thata-home-court) ซึ่งตัว
+     * proxy ตัด prefix ออกก่อนส่งมาถึงแอปจริง (ดู supervisor: php artisan serve รันอยู่ภายในเท่านั้น)
+     * ทำให้ $request->fullUrl() ที่ Laravel ใช้เก็บ intended URL ไม่มี prefix ติดมาด้วย ต่างจากลิงก์อื่นๆ
+     * ในระบบที่ถูกต้องเพราะสร้างผ่าน route()/url() ซึ่งใช้ URL::forceRootUrl() ใน AppServiceProvider
+     * แก้ไขไว้ให้แล้ว — จุดนี้จึงต้องดึงเฉพาะ path+query จาก intended URL เดิม แล้วยิงผ่าน url() ใหม่
+     * เพื่อให้ prefix ถูกเติมกลับมาด้วยกลไกเดียวกัน ไม่งั้นหลัง login เสร็จจะเด้งไป URL ที่ไม่มี prefix
+     * (เช่น /booking แทนที่จะเป็น /thata-home-court/booking) แล้วเจอ 404 จาก webserver ทันที
+     */
+    private function resolveIntendedUrl(Request $request): ?string
+    {
+        $intended = $request->session()->pull('url.intended');
+
+        if (! $intended) {
+            return null;
+        }
+
+        $path = parse_url($intended, PHP_URL_PATH) ?: '/';
+        $query = parse_url($intended, PHP_URL_QUERY);
+
+        return url($path . ($query ? '?'.$query : ''));
     }
 
     public function logout(Request $request)
