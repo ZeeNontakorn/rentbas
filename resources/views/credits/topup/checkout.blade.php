@@ -11,24 +11,15 @@
 
 .tu-card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 26px; }
 
-/* ปรับ tu-qr-box ให้รองรับการวางโลโก้ทับตรงกลาง */
+/* ปรับ tu-qr-box ให้สูงตามสัดส่วนจริงของรูปที่แอดมินอัปโหลด แทนที่จะบีบให้เป็นสี่เหลี่ยมจัตุรัสตายตัว
+   เพื่อให้รูป QR (ซึ่งมักเป็นภาพแนวตั้งยาว) แสดงผลได้ใหญ่และชัดเจนขึ้น */
 .tu-qr-box {
     position: relative;
-    width: 200px; height: 200px; margin: 0 auto 14px; padding: 10px;
+    width: 100%; max-width: 260px; margin: 0 auto 14px; padding: 10px;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
     display: flex; justify-content: center; align-items: center;
 }
-.tu-qr-box canvas { width: 100% !important; height: 100% !important; }
-
-/* CSS สำหรับโลโก้พร้อมเพย์ตรงกลาง */
-.qr-logo-overlay {
-    position: absolute;
-    width: 45px; /* ขนาดโลโก้ตรงกลาง (ห้ามใหญ่เกินไปเดี๋ยวสแกนไม่ได้) */
-    height: auto;
-    background-color: transparent;
-    padding: 0;
-    border-radius: 8px;
-}
+.tu-qr-box img { width: 100%; height: auto; max-height: 480px; object-fit: contain; }
 
 .method-option {
     display: flex; align-items: center; gap: 10px; border: 1.5px solid #e5e7eb; border-radius: 10px;
@@ -84,17 +75,16 @@
         {{-- QR PromptPay --}}
         <div id="promptpayPanel" class="tu-card text-center">
 
-            {{-- พื้นที่แสดง QR Code พร้อมโลโก้ตรงกลาง --}}
+            {{-- พื้นที่แสดงรูป QR PromptPay ที่แอดมินอัปโหลดไว้ — กรอบสูงตามสัดส่วนจริงของรูป --}}
             <div class="tu-qr-box">
-                <canvas id="qrCanvas"></canvas>
-                <!-- โลโก้พร้อมเพย์ที่จะแสดงทับตรงกลาง -->
-                <img src="{{ Storage::disk('public')->url('icon-thaiqr.png') }}" class="qr-logo-overlay" alt="PromptPay">
+                @if ($promptpayQrImage)
+                    <img src="{{ $promptpayQrImage }}" alt="QR PromptPay">
+                @else
+                    <span class="text-xs text-gray-400 px-4">ยังไม่ได้ตั้งค่ารูป QR PromptPay</span>
+                @endif
             </div>
 
-            {{-- จัดรูปแบบเบอร์ให้สวยงาม (ถ้าเป็นเบอร์โทรให้ใส่ขีดดเพื่อให้ดูง่าย) --}}
-            <p class="text-sm text-gray-600 mb-0.5">พร้อมเพย์: <span class="font-bold text-gray-900">{{ $promptpayNumber ?? 'ยังไม่ได้ตั้งค่าเบอร์' }}</span></p>
-
-            {{-- แนะนำให้ส่ง $promptpayName มาจาก Controller ด้วยวิธีเดียวกับเบอร์ครับ --}}
+            {{-- แนะนำให้ส่ง $promptpayName มาจาก Controller ด้วยวิธีเดียวกับรูป QR ครับ --}}
             <p class="text-sm text-gray-600 mb-4">ชื่อบัญชี: <span class="font-bold text-gray-900">{{ $promptpayName ?? 'THATA HOMECOURT' }}</span></p>
 
             <label for="slipInput" class="tu-upload block relative" id="uploadLabel">
@@ -114,18 +104,6 @@
 
 @push('scripts')
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // กำหนดข้อมูล
-    const mobileNumber = '{{ $promptpayNumber ?? "" }}';
-    const amount = {{ $priceSatang / 100 }}; // แปลงสตางค์เป็นบาท
-    const canvas = document.getElementById('qrCanvas');
-
-    // ตรวจสอบว่ามีเบอร์หรือไม่ และเรียกใช้ฟังก์ชันที่ Bundle มาจาก Vite
-    if (mobileNumber && typeof window.generatePromptPayQR === 'function') {
-        window.generatePromptPayQR(mobileNumber, amount, canvas);
-    }
-});
-
 function onSlipChange(input) {
     const label = document.getElementById('uploadLabel');
     const textSpan = document.getElementById('uploadText');

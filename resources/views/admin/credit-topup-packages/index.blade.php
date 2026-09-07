@@ -18,22 +18,35 @@
 
         @if (auth()->user()->role === 'superadmin')
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <p class="mb-2">ตั้งค่าเบอร์มือถือ PromptPay เพื่อรับเงิน</p>
-                <form method="POST" action="{{ route('admin.credit-topup-packages.promptpay') }}">
+                <p class="mb-2">ตั้งค่ารูป QR PromptPay เพื่อรับเงิน</p>
+                <p class="text-[11px] text-gray-400 mb-3">เลือกรูปแล้วระบบจะให้ซูม/เลื่อนเพื่อตัดเฉพาะส่วน QR ก่อนบันทึก จะได้ไม่มีขอบ/โลโก้ธนาคารเหลือติดมา</p>
+                <form method="POST" action="{{ route('admin.credit-topup-packages.promptpay') }}" enctype="multipart/form-data" id="promptpayForm">
                     @csrf
-                    <div class="flex flex-wrap gap-3 items-start">
+                    <div class="flex flex-wrap gap-4 items-start">
+
+                        {{-- ตัวอย่างรูป QR ปัจจุบัน / ที่เพิ่งตัดใหม่ --}}
+                        <img id="qrPreviewImg" src="{{ $promptpayQrImage ?? '' }}" alt="QR PromptPay ปัจจุบัน"
+                             class="w-24 h-24 object-contain rounded-lg border border-gray-200 p-1 bg-white {{ $promptpayQrImage ? '' : 'hidden' }}">
+
                         <div>
-                            <input type="tel" name="promptpay_number" value="{{ old('promptpay_number', $promptpayNumber) }}"
-                                   placeholder="เช่น 0812345678" maxlength="10" inputmode="numeric"
-                                   title="เบอร์มือถือ 10 หลัก ขึ้นต้นด้วย 0"
-                                   class="w-48 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2
-                                          {{ $errors->promptpay->has('promptpay_number')
-                                              ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500 bg-red-50/40'
-                                              : 'border-gray-300 focus:ring-emerald-500/20 focus:border-emerald-500' }}">
-                            @error('promptpay_number', 'promptpay')
+                            {{-- input จริงที่จะถูกส่งไป backend (ถูกแทนที่ด้วยไฟล์ที่ตัดแล้วผ่าน JS) --}}
+                            <input type="file" name="promptpay_qr_image" id="qrFileInput" accept="image/*" class="hidden">
+
+                            <button type="button" id="qrPickBtn"
+                                    class="rounded-lg border px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition
+                                           {{ $errors->promptpay->has('promptpay_qr_image')
+                                               ? 'border-red-400 bg-red-50/40'
+                                               : 'border-gray-300' }}">
+                                เลือกรูป QR PromptPay
+                            </button>
+                            @error('promptpay_qr_image', 'promptpay')
                                 <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                             @enderror
+                            @if ($promptpayQrImage)
+                                <p class="text-[11px] text-gray-400 mt-1">อัปโหลดรูปใหม่เพื่อแทนที่รูป QR เดิม</p>
+                            @endif
                         </div>
+
                         <div>
                             <input type="text" name="promptpay_name" value="{{ old('promptpay_name', $promptpayName) }}"
                                    placeholder="ชื่อบัญชี PromptPay (ภาษาไทย)"
@@ -46,10 +59,172 @@
                                 <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                             @enderror
                         </div>
-                        <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 transition whitespace-nowrap">บันทึกข้อมูล PromptPay</button>
+                        <button type="submit" class="text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg px-5 py-2 cursor-pointer transition whitespace-nowrap">บันทึกข้อมูล PromptPay</button>
                     </div>
                 </form>
             </div>
+
+            {{-- Modal ตัดรูป QR: เลือกได้เฉพาะพื้นที่สี่เหลี่ยมจัตุรัส ลาก/ซูม แล้วตัดให้เหลือแค่ QR --}}
+            <div id="qrCropModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl p-5 w-full max-w-sm">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-1">ตัดรูป QR PromptPay</h3>
+                    <p class="text-[14px] text-gray-400 mb-3">ลากรูปเพื่อเลื่อน และใช้แถบเลื่อนเพื่อซูม ให้กรอบสี่เหลี่ยมครอบเฉพาะ QR</p>
+
+                    <div id="qrCropViewport" class="relative mx-auto overflow-hidden rounded-lg border border-gray-300 bg-gray-100 cursor-move select-none" style="width:280px; height:280px;">
+                        <img id="qrCropImg" src="" alt="" class="absolute top-0 left-0 origin-top-left pointer-events-none max-w-none">
+                    </div>
+
+                    <input type="range" id="qrZoomRange" min="1" max="4" step="0.01" value="1" class="w-full mt-3 accent-orange-500">
+
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" id="qrCropCancel" class="text-sm text-gray-500 hover:text-gray-800 px-4 py-2 rounded-lg cursor-pointer transition">ยกเลิก</button>
+                        <button type="button" id="qrCropConfirm" class="text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2 cursor-pointer transition">ยืนยัน</button>
+                    </div>
+                </div>
+            </div>
+
+            @push('scripts')
+            <script>
+            (function () {
+                const pickBtn = document.getElementById('qrPickBtn');
+                const fileInput = document.getElementById('qrFileInput');
+                const previewImg = document.getElementById('qrPreviewImg');
+
+                const modal = document.getElementById('qrCropModal');
+                const viewport = document.getElementById('qrCropViewport');
+                const cropImg = document.getElementById('qrCropImg');
+                const zoomRange = document.getElementById('qrZoomRange');
+                const cancelBtn = document.getElementById('qrCropCancel');
+                const confirmBtn = document.getElementById('qrCropConfirm');
+
+                const VIEWPORT_SIZE = 280;
+                const OUTPUT_SIZE = 640;
+
+                let naturalW = 0, naturalH = 0, baseScale = 1;
+                let scale = 1, posX = 0, posY = 0;
+                let dragging = false, dragStartX = 0, dragStartY = 0, startPosX = 0, startPosY = 0;
+                let sourceObjectUrl = null;
+
+                pickBtn.addEventListener('click', () => fileInput.click());
+
+                fileInput.addEventListener('change', () => {
+                    const file = fileInput.files && fileInput.files[0];
+                    if (!file) return;
+                    openCropper(file);
+                });
+
+                function openCropper(file) {
+                    if (sourceObjectUrl) URL.revokeObjectURL(sourceObjectUrl);
+                    sourceObjectUrl = URL.createObjectURL(file);
+                    cropImg.src = sourceObjectUrl;
+
+                    cropImg.onload = () => {
+                        naturalW = cropImg.naturalWidth;
+                        naturalH = cropImg.naturalHeight;
+                        // baseScale = ระดับซูมต่ำสุดที่ทำให้รูปคลุมเต็มกรอบสี่เหลี่ยมจัตุรัสพอดี (cover)
+                        baseScale = VIEWPORT_SIZE / Math.min(naturalW, naturalH);
+                        scale = 1;
+                        zoomRange.value = 1;
+                        centerImage();
+                        applyTransform();
+                        modal.classList.remove('hidden');
+                    };
+                }
+
+                function displayedSize() {
+                    const s = baseScale * scale;
+                    return { w: naturalW * s, h: naturalH * s, s };
+                }
+
+                function centerImage() {
+                    const { w, h } = displayedSize();
+                    posX = (VIEWPORT_SIZE - w) / 2;
+                    posY = (VIEWPORT_SIZE - h) / 2;
+                }
+
+                function clampPosition() {
+                    const { w, h } = displayedSize();
+                    const minX = Math.min(0, VIEWPORT_SIZE - w);
+                    const minY = Math.min(0, VIEWPORT_SIZE - h);
+                    posX = Math.max(minX, Math.min(0, posX));
+                    posY = Math.max(minY, Math.min(0, posY));
+                }
+
+                function applyTransform() {
+                    clampPosition();
+                    cropImg.style.width = displayedSize().w + 'px';
+                    cropImg.style.height = displayedSize().h + 'px';
+                    cropImg.style.transform = `translate(${posX}px, ${posY}px)`;
+                }
+
+                zoomRange.addEventListener('input', () => {
+                    scale = parseFloat(zoomRange.value);
+                    applyTransform();
+                });
+
+                function startDrag(x, y) {
+                    dragging = true;
+                    dragStartX = x; dragStartY = y;
+                    startPosX = posX; startPosY = posY;
+                }
+                function moveDrag(x, y) {
+                    if (!dragging) return;
+                    posX = startPosX + (x - dragStartX);
+                    posY = startPosY + (y - dragStartY);
+                    applyTransform();
+                }
+                function endDrag() { dragging = false; }
+
+                viewport.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+                window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+                window.addEventListener('mouseup', endDrag);
+
+                viewport.addEventListener('touchstart', (e) => {
+                    const t = e.touches[0];
+                    startDrag(t.clientX, t.clientY);
+                }, { passive: true });
+                viewport.addEventListener('touchmove', (e) => {
+                    const t = e.touches[0];
+                    moveDrag(t.clientX, t.clientY);
+                }, { passive: true });
+                viewport.addEventListener('touchend', endDrag);
+
+                cancelBtn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    fileInput.value = '';
+                });
+
+                confirmBtn.addEventListener('click', () => {
+                    const { s } = displayedSize();
+                    const sx = -posX / s;
+                    const sy = -posY / s;
+                    const sSize = VIEWPORT_SIZE / s;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = OUTPUT_SIZE;
+                    canvas.height = OUTPUT_SIZE;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(cropImg, sx, sy, sSize, sSize, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+
+                    canvas.toBlob((blob) => {
+                        if (!blob) return;
+                        const croppedFile = new File([blob], 'promptpay-qr.png', { type: 'image/png' });
+                        const dt = new DataTransfer();
+                        dt.items.add(croppedFile);
+                        fileInput.files = dt.files;
+
+                        const previewUrl = URL.createObjectURL(blob);
+                        previewImg.src = previewUrl;
+                        previewImg.classList.remove('hidden');
+
+                        modal.classList.add('hidden');
+                    }, 'image/png');
+                });
+            })();
+            </script>
+            @endpush
         @endif
 
         {{-- LINE URL --}}

@@ -41,6 +41,7 @@ class Setting extends Model
         'about_img_3',
         'courts_bg',
         'community_img',
+        'promptpay_qr_image',
     ];
 
     protected $primaryKey = 'key';

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\CreditTopupPackage;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CreditTopupPackageController extends Controller
 {
@@ -16,10 +18,10 @@ class CreditTopupPackageController extends Controller
     {
         $packages = CreditTopupPackage::orderBy('sort_order')->orderBy('price_satang')->get();
         $lineUrl = Setting::getVal('line_topup_url');
-        $promptpayNumber = Setting::getVal('promptpay_number');
+        $promptpayQrImage = Setting::getVal('promptpay_qr_image');
         $promptpayName   = Setting::getVal('promptpay_name');
 
-        return view('admin.credit-topup-packages.index', compact('packages', 'lineUrl', 'promptpayNumber', 'promptpayName'));
+        return view('admin.credit-topup-packages.index', compact('packages', 'lineUrl', 'promptpayQrImage', 'promptpayName'));
     }
 
     protected function rules(): array
@@ -141,27 +143,56 @@ class CreditTopupPackageController extends Controller
     public function updatePromptpayInfo(Request $request)
     {
         $data = $request->validateWithBag('promptpay', [
-            // เบอร์มือถือไทย: ขึ้นต้นด้วย 0 ตามด้วยเลข 9 หลัก (รวม 10 หลัก) ไม่รับขีด/วงเล็บ/เว้นวรรค
-            'promptpay_number' => ['required', 'string', 'regex:/^0[0-9]{9}$/'],
+            // ต้องมีรูป QR อยู่แล้ว หรือแนบรูปใหม่มาด้วยอย่างน้อยหนึ่งอย่าง
+            'promptpay_qr_image' => [
+                Setting::getVal('promptpay_qr_image') ? 'nullable' : 'required',
+                'image',
+                'max:5120',
+            ],
             // ชื่อบัญชีต้องเป็นตัวอักษรไทยเท่านั้น (เว้นวรรค/จุดได้ เผื่อคำนำหน้าเช่น "น.ส.")
             'promptpay_name' => ['required', 'string', 'max:100', 'regex:/^[\x{0E00}-\x{0E7F}\s.]+$/u'],
         ], [
-            'promptpay_number.required' => 'กรุณากรอกเบอร์มือถือ PromptPay',
+            'promptpay_qr_image.required' => 'กรุณาอัปโหลดรูป QR PromptPay',
+            'promptpay_qr_image.image' => 'ไฟล์ที่แนบต้องเป็นรูปภาพเท่านั้น',
+            'promptpay_qr_image.max' => 'ไฟล์รูป QR ต้องมีขนาดไม่เกิน 5MB',
             'promptpay_name.required' => 'กรุณากรอกชื่อบัญชี PromptPay',
-            'promptpay_number.regex' => 'กรุณากรอกเบอร์มือถือให้ถูกต้อง (ขึ้นต้นด้วย 0 ตามด้วยตัวเลข 9 หลัก เช่น 0812345678)',
             'promptpay_name.regex' => 'กรุณากรอกชื่อบัญชีเป็นภาษาไทยเท่านั้น',
         ]);
 
-        Setting::updateOrCreate(
-            ['key' => 'promptpay_number'],
-            ['value' => $data['promptpay_number']],
-        );
+        if ($request->hasFile('promptpay_qr_image')) {
+            $this->deleteOldPromptpayQrImage();
+
+            $path = $request->file('promptpay_qr_image')->store('promptpay', 'public');
+
+            Setting::updateOrCreate(
+                ['key' => 'promptpay_qr_image'],
+                ['value' => 'media/'.$path],
+            );
+        }
 
         Setting::updateOrCreate(
             ['key' => 'promptpay_name'],
             ['value' => $data['promptpay_name']]
         );
 
-        return back()->with('success', 'บันทึกเบอร์ PromptPay เรียบร้อยแล้ว');
+        return back()->with('success', 'บันทึกข้อมูล PromptPay เรียบร้อยแล้ว');
+    }
+
+    /**
+     * ลบไฟล์ QR PromptPay เดิมออกจาก storage ก่อนที่จะบันทึกรูปใหม่ทับ (ถ้ามี และไม่ใช่ URL ภายนอก)
+     */
+    protected function deleteOldPromptpayQrImage(): void
+    {
+        $old = Setting::where('key', 'promptpay_qr_image')->value('value');
+
+        if (! $old || Str::startsWith($old, ['http://', 'https://'])) {
+            return;
+        }
+
+        $relativePath = Setting::normalizeStoragePath($old);
+
+        if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
+        }
     }
 }
