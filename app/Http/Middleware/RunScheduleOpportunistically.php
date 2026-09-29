@@ -93,7 +93,11 @@ class RunScheduleOpportunistically
         try {
             $lastRunAt = Cache::get('opportunistic-schedule-last-run-at');
 
-            if ($lastRunAt && now()->diffInSeconds($lastRunAt) < self::MIN_INTERVAL_SECONDS) {
+            // ใช้ abs() เสมอ — Carbon 3 (โปรเจกต์นี้ใช้ ^3.8) เปลี่ยน diffInSeconds() ให้คืนค่าติดลบได้
+            // เมื่อ $lastRunAt อยู่ในอดีต (ต่างจาก Carbon 2 ที่ default เป็นค่าสัมบูรณ์เสมอ) ถ้าลืม abs()
+            // ผลลัพธ์จะติดลบตลอด (เช่น -1398) ซึ่ง < 55 เสมอ ทำให้เข้าเงื่อนไข "ยังไม่ถึงเวลา" ทุกครั้ง
+            // แล้ว schedule:run จะไม่ถูกเรียกอีกเลยหลังจากครั้งแรก (บั๊กนี้เกิดขึ้นจริงตอนทดสอบ)
+            if ($lastRunAt && abs(now()->diffInSeconds($lastRunAt)) < self::MIN_INTERVAL_SECONDS) {
                 return;
             }
 
