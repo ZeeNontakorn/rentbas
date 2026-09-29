@@ -81,26 +81,37 @@ class RunScheduleOpportunistically
             return;
         }
 
-        $lastRunAt = Cache::get('opportunistic-schedule-last-run-at');
-
-        if ($lastRunAt && now()->diffInSeconds($lastRunAt) < self::MIN_INTERVAL_SECONDS) {
-            return;
-        }
-
-        // Cache::lock กันสอง request ที่เข้ามาพร้อมกันรันซ้อนกัน (atomic แม้ cache driver จะเป็น database)
-        $lock = Cache::lock('opportunistic-schedule-lock', 50);
-
-        if (! $lock->get()) {
-            return;
-        }
-
+        // ครอบทั้งก้อนด้วย try/catch ชั้นนอกสุด — middleware ตัวนี้รันทุก request ทั้งเว็บ ต่อให้ภายใน
+        // พังด้วยเหตุผลอะไรก็ตาม (cache เพี้ยน, DB ล่ม, ฯลฯ) ต้อง "กลืน" error ไว้เอง ห้ามหลุดออกไปทำให้
+        // ทั้งหน้าเว็บ 500 เด็ดขาด เพราะงาน schedule ไม่ควรมีสิทธิ์ทำให้ผู้ใช้จริงเข้าเว็บไม่ได้
+        //
+        // บั๊กที่เคยเกิดจริง (เจอตอนทดสอบ local): เดิมเก็บ now() (object Carbon) ลง Cache::put() ตรงๆ
+        // พอ unserialize กลับมาแล้วเจอ "__PHP_Incomplete_Class" (สาเหตุ deserialize object จาก cache
+        // driver ที่ใช้ serialize() ธรรมดา ผิดพลาดได้ง่ายกว่าที่คิด) แล้วโค้ดจุดเทียบเวลาที่อยู่ "นอก"
+        // try/catch เดิม โยน TypeError ออกมาตรงๆ ทำให้ทุกหน้าในเว็บ 500 หมด — แก้โดยเก็บเป็น string
+        // (toDateTimeString) แทน object กัน deserialize พังแบบนี้ซ้ำ และย้าย try/catch มาครอบทั้งก้อน
         try {
-            Artisan::call('schedule:run');
-            Cache::put('opportunistic-schedule-last-run-at', now(), now()->addDay());
+            $lastRunAt = Cache::get('opportunistic-schedule-last-run-at');
+
+            if ($lastRunAt && now()->diffInSeconds($lastRunAt) < self::MIN_INTERVAL_SECONDS) {
+                return;
+            }
+
+            // Cache::lock กันสอง request ที่เข้ามาพร้อมกันรันซ้อนกัน (atomic แม้ cache driver จะเป็น database)
+            $lock = Cache::lock('opportunistic-schedule-lock', 50);
+
+            if (! $lock->get()) {
+                return;
+            }
+
+            try {
+                Artisan::call('schedule:run');
+                Cache::put('opportunistic-schedule-last-run-at', now()->toDateTimeString(), now()->addDay());
+            } finally {
+                $lock->release();
+            }
         } catch (\Throwable $e) {
             Log::error('รัน schedule:run แบบ opportunistic (ไม่มี cron) ไม่สำเร็จ: '.$e->getMessage());
-        } finally {
-            $lock->release();
         }
     }
 }
