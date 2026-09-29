@@ -24,20 +24,31 @@ use Symfony\Component\HttpFoundation\Response;
  * หายไปเลย เพราะ isDue() ของงานที่เป็น ->dailyAt() ยังนับว่า due อยู่จนกว่าจะรันสำเร็จในวันนั้น)
  *
  * ข้อควรระวังสำคัญ: terminate() จะ "ไม่บล็อกผู้ใช้" จริงๆ ก็ต่อเมื่อรันอยู่หลัง PHP-FPM ซึ่งเรียก
- * fastcgi_finish_request() ปิดการเชื่อมต่อกับ browser ก่อนแล้วค่อยรัน terminate() ต่อเบื้องหลัง — แต่
- * production ของโปรเจกต์นี้รันด้วย `php artisan serve` ผ่าน supervisorctl (ดู memory: ไม่ใช่ php-fpm)
- * ซึ่งไม่มี fastcgi_finish_request ผู้ใช้ที่บังเอิญเป็นคนยิง request ที่ทำให้ schedule ทำงานพอดี
- * จะต้องรอ response จนกว่างานนั้นจะรันเสร็จจริงๆ (เช่น วันที่ credits:expire-due ส่งอีเมลหาหลายคน
- * อาจทำให้หน้านั้นโหลดช้าไปสองสามวินาที) ถ้าจะให้ไม่บล็อกผู้ใช้เลย ต้องย้าย production ไปรันผ่าน
- * PHP-FPM (เช่น nginx + php-fpm) แทน `php artisan serve` — ทางเลือกนี้จึงเหมาะกับงานที่ไม่ได้ไวมาก
- * (query DB สั้นๆ) เท่านั้น เพื่อจำกัด impact ต่อผู้ใช้ที่โชคไม่ดี
+ * fastcgi_finish_request() ปิดการเชื่อมต่อกับ browser ก่อนแล้วค่อยรัน terminate() ต่อเบื้องหลัง —
+ * ตรวจสอบแล้วว่า production จริงของโดเมน courts.ninetytwotech.co.th (ที่ deploy แบบ FTP บน ruk-com)
+ * วิ่งผ่าน nginx + PHP-FPM (เห็น header X-ACCEL-INTERNAL ตอน debug ปัญหาอื่น) ไม่ใช่ `php artisan
+ * serve` แบบที่เอกสารรุ่นก่อนหน้าสมมติไว้ (อันนั้นเป็นข้อมูลของโดเมนเก่า demo.ninetytwotech.co.th
+ * คนละ deployment กัน) ดังนั้นในทางปฏิบัติ terminate() ควรไม่บล็อก user จริงตามที่ออกแบบไว้
+ *
+ * เหตุผลที่เลือกใช้แนวทางนี้แทนคู่มือ cron ปกติ: บนแพ็กเกจ ruk-com ที่ใช้อยู่ DirectAdmin ให้ตั้ง
+ * cron job ได้ แต่พอรันจริงกลับ error/ใช้ไม่ได้ (คาดว่า PHP-CLI ถูกปิดสำหรับ cron บนแพ็กเกจนี้)
+ * middleware นี้เลี่ยงปัญหานั้นได้เพราะรันผ่าน request ของเว็บปกติ (PHP-FPM ที่เสิร์ฟหน้าเว็บอยู่แล้ว)
+ * ไม่ได้พึ่ง PHP-CLI เลย และในทางปฏิบัติมี traffic กระตุ้นถี่มากอยู่แล้วจาก polling ที่มีอยู่ก่อนแล้ว
+ * ในระบบ (navbar.blade.php: แจ้งเตือนทุก 10 วิ, ยอดเครดิตทุก 5 วิ ตราบใดที่มีแท็บเปิดอยู่) จึงมักไม่
+ * ต้องรอ "คนเข้าเว็บบังเอิญ" เลย — ขอแค่มีคนล็อกอินเปิดหน้าทิ้งไว้ก็พอ
+ *
+ * Trade-off ที่ยังคงมีอยู่เทียบกับ cron ทุกนาที (ไม่เปลี่ยนแม้ยืนยันแล้วว่าเป็น PHP-FPM):
+ * 1) ทุก GET/HEAD request ที่ผ่านเข้ามา (รวม polling ที่ถี่มาก) ต้องเสีย Cache::get() เพิ่ม 1 ครั้งเพื่อ
+ *    เช็คว่าถึงเวลารึยัง — ถ้า CACHE_STORE เป็น database คือ query เพิ่มทุก request จริงๆ (แม้เล็กน้อย)
+ * 2) ตอนถึงเวลารันจริง (~ทุก 55 วิ) จะไปกิน CPU/DB time ของ worker ที่กำลังเสิร์ฟ user คนนั้นอยู่พอดี
+ *    ก่อนปล่อยคืน pool ต่างจาก cron ที่รันแยกโปรเซสไม่แย่ง worker ของ user จริงเลย
+ * ถ้าโหลดสูงขึ้นมากในอนาคตจนกังวลจุดนี้ พิจารณาทางเลือก feature/cron-http-endpoint (external
+ * scheduler ยิง URL แยก) แทน แต่ต้องเช็คก่อนว่า route แบบ HTTP ธรรมดาใช้ได้ปกติบนโฮสต์นี้
  *
  * ทดสอบตอน dev แล้วพบว่า ถ้า DB ต่อไม่ติด (ทดสอบโดยปิด MySQL ไว้) PHP จะ fatal ด้วย
  * "Maximum execution time exceeded" ซึ่งไม่สามารถ catch ด้วย try/catch(\Throwable) ได้ เพราะเป็น
  * fatal error ระดับ engine ไม่ใช่ exception ธรรมดา ทำให้ request ของผู้ใช้ที่โชคไม่ดีพังไปเต็มๆ (500)
  * แทนที่จะ fail อย่างสวยงาม ในทางปฏิบัติ DB ของ production เป็น external MySQL ที่ควรเสถียรอยู่แล้ว
- * แต่ถ้าจะให้ทนทานกว่านี้ ควรพิจารณาทางเลือกที่ 1 (cron-job.org ยิง endpoint) แทน เพราะ request ของ
- * ผู้ใช้จริงจะไม่ถูกดึงไปรัน schedule เลย
  */
 class RunScheduleOpportunistically
 {
@@ -64,7 +75,8 @@ class RunScheduleOpportunistically
         }
 
         // ทำเฉพาะ GET/HEAD (เข้าดูหน้าเว็บทั่วไป) — ไม่ทำตอน POST/PUT/DELETE เพื่อไม่ให้การจอง/ชำระเงิน/
-        // ฟอร์มต่างๆ ต้องมาเสี่ยงรอ schedule:run รันเสร็จก่อน (ดูหมายเหตุเรื่อง php artisan serve ด้านบน)
+        // ฟอร์มต่างๆ ต้องมาเสี่ยงรอ schedule:run รันเสร็จก่อน (กันไว้เผื่อกรณีที่ fastcgi_finish_request
+        // ใช้ไม่ได้ด้วยเหตุผลอะไรก็ตาม — ดูหมายเหตุเรื่อง PHP-FPM ด้านบน)
         if (! $request->isMethod('GET') && ! $request->isMethod('HEAD')) {
             return;
         }
