@@ -558,31 +558,27 @@
     {{-- แจ้งเตือนเครดิตหมดอายุแบบบังคับ (SweetAlert กลางจอ) — ค้างอยู่จนกว่าจะกดรับทราบ กันผู้ใช้ตกใจเห็นยอด
          หายไปโดยไม่รู้สาเหตุ แยกจากกระดิ่งแจ้งเตือนปกติเพราะต้องการันตีว่าเห็นแน่นอน ไม่ใช่แค่ขึ้น badge เฉยๆ
          ต้องครอบด้วย @auth เพราะ $notifications ถูกประกาศไว้ในบล็อก @auth ก่อนหน้านี้เท่านั้น — หน้า guest
-         (เช่น /login) จะไม่มีตัวแปรนี้เลย --}}
-    @auth
-    @php
-        $creditExpiredAlerts = $notifications->where('type', 'credit_expired')->values();
-        // สร้าง array ธรรมดาไว้ในบล็อก PHP นี้ก่อน แล้วค่อยส่งตัวแปรเดี่ยวๆ เข้า json() directive ด้านล่าง
-        // ถ้าใส่ expression ที่มี nested call (เช่น route()) ปนอยู่ในนี้ตรงๆ ตัว parser ของ json() directive
-        // จะพังเวลามี array key ตั้งแต่ 3 ตัวขึ้นไป (บั๊กใน regex จับคู่วงเล็บของ Blade เอง ไม่ใช่ syntax ผิด)
-        $creditExpiredAlertsData = $creditExpiredAlerts->map(function ($n) {
-            return [
-                'title' => $n->title,
-                'message' => $n->message,
-                'readUrl' => route('notifications.read', $n),
-            ];
-        })->values();
-    @endphp
-    @if($creditExpiredAlerts->isNotEmpty())
-        <script>
-        (function () {
-            const alerts = @json($creditExpiredAlertsData);
+         (เช่น /login) จะไม่มีตัวแปรนี้เลย
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+         สำคัญ: ฟังก์ชันนี้ต้องถูกประกาศไว้เสมอ (ไม่ครอบด้วย @if มีข้อมูลไหม แบบเดิม) เพราะตอนนี้ถูกเรียกจาก
+         pollNotifications() ด้วย (ดูด้านล่าง) — เคสจริงที่เจอบั๊ก: user เปิดหน้าทิ้งไว้เฉยๆ (ไม่ reload)
+         ตอนเปิดหน้ายังไม่มีเครดิตหมดอายุเลยไม่มี array นี้ แล้วพอเครดิตหมดอายุจริงระหว่างที่หน้ายังเปิดอยู่
+         (ตัดผ่าน RunScheduleOpportunistically ที่ทำงานเงียบๆ อยู่เบื้องหลัง) จะไม่มีอะไรไปเรียก Swal.fire
+         เลยเพราะฟังก์ชันไม่เคยถูกประกาศไว้ตั้งแต่แรก ผู้ใช้เลยเห็นยอดหายจาก polling เฉยๆ โดยไม่มี alert เตือน --}}
+    @auth
+    <script>
+    (function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        // กันเด้ง alert ซ้ำถ้า id เดียวกันโผล่มาทั้งจากตอนโหลดหน้าแรกและจาก polling รอบถัดไป
+        const shownCreditExpiredIds = new Set();
+
+        function showCreditExpiredAlerts(alerts) {
+            const pending = alerts.filter(a => !shownCreditExpiredIds.has(a.id));
 
             function showNext(i) {
-                if (i >= alerts.length) return;
-                const a = alerts[i];
+                if (i >= pending.length) return;
+                const a = pending[i];
+                shownCreditExpiredIds.add(a.id);
                 Swal.fire({
                     icon: 'warning',
                     title: a.title,
@@ -604,9 +600,31 @@
             }
 
             showNext(0);
-        })();
-        </script>
-    @endif
+        }
+
+        // เรียกจาก pollNotifications() ด้านล่างได้ทุกครั้งที่มีแจ้งเตือนใหม่ประเภทนี้เข้ามาระหว่างที่หน้ายังเปิดอยู่
+        window.__showCreditExpiredAlerts = showCreditExpiredAlerts;
+
+        @php
+            $creditExpiredAlerts = $notifications->where('type', 'credit_expired')->values();
+            // สร้าง array ธรรมดาไว้ในบล็อก PHP นี้ก่อน แล้วค่อยส่งตัวแปรเดี่ยวๆ เข้า json() directive ด้านล่าง
+            // ถ้าใส่ expression ที่มี nested call (เช่น route()) ปนอยู่ในนี้ตรงๆ ตัว parser ของ json() directive
+            // จะพังเวลามี array key ตั้งแต่ 3 ตัวขึ้นไป (บั๊กใน regex จับคู่วงเล็บของ Blade เอง ไม่ใช่ syntax ผิด)
+            $creditExpiredAlertsData = $creditExpiredAlerts->map(function ($n) {
+                return [
+                    'id' => $n->id,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'readUrl' => route('notifications.read', $n),
+                ];
+            })->values();
+        @endphp
+        const initialCreditExpiredAlerts = @json($creditExpiredAlertsData);
+        if (initialCreditExpiredAlerts.length) {
+            showCreditExpiredAlerts(initialCreditExpiredAlerts);
+        }
+    })();
+    </script>
     @endauth
 
     <!-- Scripts สำหรับ Notification & Admin Dropdown & Mobile Menu -->
@@ -926,6 +944,25 @@ function pollNotifications() {
     })
     .then(function (data) {
         const newNotifications = data.notifications || [];
+
+        // เครดิตหมดอายุระหว่างที่หน้ายังเปิดค้างอยู่ (ไม่ได้ reload) — ต้องเด้ง SweetAlert บังคับกดรับทราบ
+        // เหมือนตอนโหลดหน้าแรก ไม่งั้นผู้ใช้จะเห็นแค่ยอดเครดิตหายไปเฉยๆ จาก polling โดยไม่รู้สาเหตุ
+        // (ดูฟังก์ชัน showCreditExpiredAlerts ที่ผูกไว้กับ window.__showCreditExpiredAlerts ด้านบน)
+        if (typeof window.__showCreditExpiredAlerts === 'function') {
+            const creditExpiredAlerts = newNotifications
+                .filter(n => n.type === 'credit_expired')
+                .map(n => ({
+                    id: n.id,
+                    title: n.title,
+                    message: n.messagePart2 ? (n.message + '|' + n.messagePart2) : n.message,
+                    readUrl: n.readUrl,
+                }));
+
+            if (creditExpiredAlerts.length) {
+                window.__showCreditExpiredAlerts(creditExpiredAlerts);
+            }
+        }
+
         const notifItemsWrap = document.getElementById('notifItemsWrap');
         const notifDropdown = document.getElementById('notifDropdown');
 

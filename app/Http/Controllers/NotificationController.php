@@ -131,11 +131,15 @@ class NotificationController extends Controller
 
                 return [
                     'id' => $n->id,
+                    'type' => $n->type,
                     'title' => $n->title ?? 'การจอง',
                     'message' => trim($msgParts[0] ?? ''),
                     'messagePart2' => isset($msgParts[1]) && trim($msgParts[1]) !== '' ? trim($msgParts[1]) : null,
                     'created_at' => $n->created_at->format('d M Y H:i'),
                     'target' => $notifTarget,
+                    // URL แยกไว้เฉพาะสำหรับ mark-as-read ผ่าน POST (ต่างจาก target ที่เป็น GET สำหรับ
+                    // เปิดดู/redirect) — ใช้กับ credit_expired alert ที่ต้อง POST ปิดแจ้งเตือนหลังกดรับทราบ
+                    'readUrl' => route('notifications.read', $n),
                     'visual' => $visual,
                 ];
             })->values(),
